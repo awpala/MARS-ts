@@ -83,6 +83,8 @@ setsid "${SERVICE_COMMAND[@]}" &
 SERVICE_PROCESS_PID=$!
 
 # on_signal forwards shutdown to the owned process group and waits for teardown.
+# ShellCheck does not resolve the calls inside the trap strings below.
+# shellcheck disable=SC2317
 on_signal() {
   local signal=$1 status=$2
   log_lifecycle signal "name=${signal}"

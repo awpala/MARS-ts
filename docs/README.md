@@ -4,9 +4,11 @@ These decision records document the MARS-ts port: its plan, environment, and the
 
 | Decision | Status | Scope |
 | --- | --- | --- |
-| [Port plan](adrs/0000-port-plan.md) | Accepted (P0 complete; P1 preparation) | Scope, stack, legacy-to-target mapping, parity strategy, milestones, open decisions |
+| [Port plan](adrs/0000-port-plan.md) | Accepted (P0–P2 complete) | Scope, stack, legacy-to-target mapping, parity strategy, milestones, open decisions |
 | [Local development](adrs/0001-local-development-environment.md) | Accepted | One devcontainer, provisional JDK, setup ordering, persistence, live helpers |
+| [Browser file workflows](adrs/0003-browser-file-workflows.md) | Accepted | Browser downloads, dirty documents, same-tab dialogs, browser validation |
 | [Port fidelity](adrs/0002-port-fidelity.md) | Accepted | Like-for-like classes and algorithms, desktop layout, browser adaptations, assets, and fixture layout |
+| [Cooperative simulation](adrs/0004-cooperative-simulation.md) | Accepted | Browser scheduling, asynchronous input, execution ownership, and callback contracts |
 
 The [agent directory](../AGENTS.md) carries coding conventions for assistants; the guides under [agents/](agents/) are routed from it.
 

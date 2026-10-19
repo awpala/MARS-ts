@@ -34,7 +34,7 @@ Subfolders name a responsibility (`assembler/`, `hardware/`, `instructions/`, `s
 - **Comments preserve contracts and reasoning.** Prefer clear names to comments that repeat statements. Public API documentation stays mandatory, and provisioning/configuration files keep comprehensive inline explanations.
 - **Do not leave vestigial comments on code removal.** A removal is net-reductive; history lives in Git, not in commentary.
 - **Do not add backwards-compatibility shims** for retired internal paths. Update callers together.
-- **Exercise UI changes** in the dev server (`run-app`, port `6277`) before reporting them done.
+- **Exercise UI changes** with `npm run test:browser` on port `6278` before reporting them done. Port `6277` is reserved for human review; agents must not start, stop, or test against that listener. Set `MARS_VALIDATION=1` for aggregate app gates to keep generated output separate.
 - **Use American English** in all code, comments, docs, and commit messages.
 - Markdown does **not** hard-wrap semantic paragraphs. One paragraph is one line, one bullet is one line. Fenced code blocks and diagram bodies keep their line structure.
 - Relative Markdown links only. A link to a path that does not exist is a defect, and `run-checks harness` reports it.

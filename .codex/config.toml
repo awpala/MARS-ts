@@ -22,9 +22,7 @@ network_access = true
 # --- MCP servers -----------------------------------------------------------
 #
 # Direct first-party: official Svelte/SvelteKit documentation, static analysis,
-# and the Svelte autofixer. Svelte's hosted endpoint until the app is
-# scaffolded (P1); then switch to the lockfile-pinned local server:
-#   command = "/workspace/node_modules/.bin/svelte-mcp"
-# and make the same change in /.mcp.json (docs/agents/tooling.md).
+# and the Svelte autofixer run from the project lockfile. Keep /.mcp.json
+# aligned; npm ci installs the pinned first-party executable.
 [mcp_servers.svelte]
-url = "https://mcp.svelte.dev/mcp"
+command = "/workspace/node_modules/.bin/svelte-mcp"

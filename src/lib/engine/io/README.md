@@ -1,0 +1,11 @@
+# Platform I/O boundary
+
+This module owns the engine-facing console boundary translated from the GUI paths of `mars/util/SystemIO.java`. `SystemIO` preserves integer, float, double, string, and character read responsibilities and output dispatch. The browser or test host supplies input, output, the current popup-input preference, exact Java floating conversion, and optional open-file cleanup. No DOM, framework, filesystem, process stream, or command-line entry point enters the engine.
+
+Input returns a promise so the simulator can suspend a syscall while the browser remains responsive. The host owns pending input controls and cancellation; rejected host operations propagate instead of becoming unrelated numeric-input errors. Popup prompts retain the original service number and text. Run I/O string input removes one final newline; popup string input does not. String bounds use UTF-16 code units, and `readChar` returns the first code unit, matching Java rather than a Unicode code point. The browser adapter owns the original `MessagesPane` popup-input echo and console editing behavior.
+
+Integer reads use Java's ASCII-control `trim` boundary, signed decimal range checks, and JDK BMP decimal-digit classification. Floating parsing and formatting are explicit runtime services rather than JavaScript parsing/printing shortcuts. Words remain signed 32-bit `number` values; memory byte truncation remains the memory owner's responsibility.
+
+File descriptor allocation and file syscalls are separate pending work. `resetFiles` currently delegates cleanup to the host when one supplies file services; console-only sessions own no descriptors. Extend this boundary with the original file table and algorithms when browser-backed file operations are implemented, without moving platform access into the engine.
+
+The [core syscall probe](../../../../tests/oracle/core-syscalls/README.md) records deterministic input/output, raw register bits, memory, errors, and normal exit against the Java implementation. Colocated syscall tests additionally exercise popup prompts, console newline removal, UTF-16 input, and asynchronous completion; those browser-facing adaptations are not represented as Swing visual parity.

@@ -1,0 +1,9 @@
+# Editor highlighting oracle
+
+This probe invokes the unmodified Java MIPSTokenMarker with padded Swing Segments to exercise nonzero offsets. It records every token ID and UTF-16 length, line-end state, and next-line repaint flag for 628 source cases, including every instruction mnemonic and directive, register aliases, labels, escaped quotes/backslashes, incomplete strings/characters, macros, Unicode, blank lines, and deterministic random lexical fragments. It also captures the complete mnemonic vocabulary, canonical default styles, and JDK character tables used by the port.
+
+Run `node tests/oracle/highlighting/run.mjs` after `build-legacy` to capture, or add `--check` to verify. The shared method-probe runner supplies headless execution, fresh Preferences directories, JDK-major validation, source hashes, stdout/stderr/status capture, and temporary-directory cleanup. Neither command changes legacy Java or resources. The capture is compared byte-for-byte; generated tables are compared as parsed JSON so repository formatting does not change their meaning. The check also verifies that the engine's character-data copy matches the captured JDK table.
+
+`highlighting.json` is oracle output, not an expected value invented by the port. The colocated TypeScript highlighting tests consume its source strings and compare linked tokens and line state, then verify that detached painting spans reconstruct the exact source. Browser tests separately exercise colored presentation, source editing, and scrolling. These fixtures do not validate assembler or simulator behavior.
+
+Probe ownership is editor highlighting; the generated character-data copy in the engine is maintained by the engine owner. The canonical lexer is copyright Slava Pestov, Mike Dillon, and Pete Sanderson under the notice retained in its Java sources. MARS is copyright Pete Sanderson and Kenneth Vollmar under the [MIT license](../../../MARSlicense.txt).

@@ -11,4 +11,4 @@ Before changing anything, read [AGENTS.md](../../AGENTS.md), then [application e
 - Do not edit engine modules; report the API change you need to the engine owner. Do not edit shared harness files or the port plan.
 - Do not add dependencies without the human's approval; name the package and why.
 - Never run Git write commands.
-- Finish by running `run-checks app`, then exercise the changed behavior in the dev server (`run-app`, port 6277) when available. Report the commands and results, what you exercised in the browser, and what you could not validate.
+- Finish by running `run-checks app`, then exercise the changed behavior with `npm run test:browser` on isolated port 6278 (6277 is reserved for human review) when available. Report the commands and results, what you exercised in the browser, and what you could not validate.

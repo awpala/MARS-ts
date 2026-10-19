@@ -7,11 +7,11 @@ Determine exact language, runtime, framework, and dependency versions from manif
 | Toolchain | Authority |
 | --- | --- |
 | Node, global TypeScript, JDK, CLIs | Feature pins in [devcontainer.json](../../.devcontainer/devcontainer.json) and digests in [devcontainer-lock.json](../../.devcontainer/devcontainer-lock.json) |
-| Svelte, SvelteKit, Vite, Tailwind, Vitest, project TypeScript | `package.json` and `package-lock.json`, **created at P1**; none exist yet |
+| Svelte, SvelteKit, Vite, Tailwind, Vitest, project TypeScript | [package.json](../../package.json) and [package-lock.json](../../package-lock.json), created by the P1 scaffold |
 | Legacy behavior | The Java sources and the oracle ([legacy guide](legacy.md)), not the MARS website or third-party forks |
 | CI runtimes | [verify.yml](../../.github/workflows/verify.yml), which must match the container's Node and JDK majors |
 
-Until P1, do not state a Svelte, SvelteKit, or Vite major anywhere; the [port plan](../adrs/0000-port-plan.md#2-planned-stack) names the intended stack without versions. The global TypeScript feature is pinned to major 6 because the planned SvelteKit lint and check tooling supports it; the app's own TypeScript devDependency becomes authoritative for its gates at P1.
+The installed stack is Svelte 5, SvelteKit 3, Vite 8, Tailwind 4, Vitest 4, and TypeScript 6. The global TypeScript feature is pinned to major 6 because the planned SvelteKit lint and check tooling supports it; the app's own TypeScript devDependency becomes authoritative for its gates at P1.
 
 ## Authoritative implementation policy
 
@@ -24,6 +24,6 @@ Until P1, do not state a Svelte, SvelteKit, or Vite major anywhere; the [port pl
 
 ## MCP servers
 
-[.mcp.json](../../.mcp.json) (Claude Code) and [.codex/config.toml](../../.codex/config.toml) (Codex) declare the same first-party `svelte` server. Before P1 it is Svelte's hosted endpoint, `https://mcp.svelte.dev/mcp`, because there is no `node_modules` to run a local copy from. At P1, add `@sveltejs/mcp` as a pinned devDependency and switch both configurations to `/workspace/node_modules/.bin/svelte-mcp`, so the server version follows the lockfile.
+[.mcp.json](../../.mcp.json) (Claude Code) and [.codex/config.toml](../../.codex/config.toml) (Codex) declare the same first-party `svelte` server. Both configurations launch `/workspace/node_modules/.bin/svelte-mcp`, provided by the exact-pinned `@sveltejs/mcp` devDependency. Restart an existing MCP connection to select the local server; tools already connected to the hosted endpoint remain usable during the transition.
 
 Agent tooling for a technology comes only from that technology's authors. Do not add community MCP servers, third-party plugins, or third-party skill installers. No first-party agent tooling is configured for Java; the legacy tree is read with ordinary file tools and the Red Hat Java extension in the editor.

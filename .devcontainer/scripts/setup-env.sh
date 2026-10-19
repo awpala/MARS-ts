@@ -23,7 +23,8 @@ WORKSPACE_DIR="/workspace"
 SCRIPTS_DIR="/scripts"
 SCRIPTS_BIN_DIR="${SCRIPTS_DIR}/bin"
 BASH_RC="/root/.bashrc"
-BASH_ALIASES="/root/.bash_aliases"
+# BASH_ALIASES is Bash's special associative array; keep our path independent.
+MARS_BASH_ALIASES_FILE="/root/.bash_aliases"
 LOGFILE="/tmp/setup-env-debug.log"
 # postCreateCommand has no operator to answer package configuration or service
 # restart prompts. apt's switches and these environment values handle its
@@ -65,7 +66,7 @@ echo
 # mechanics; this file owns the intended names and targets. Only add the
 # .bash_aliases hook when absent, preserving other root shell customization.
 echo "--- Configuring the Bash profile ---"
-touch "$BASH_RC" "$BASH_ALIASES"
+touch "$BASH_RC" "$MARS_BASH_ALIASES_FILE"
 if ! grep -q 'bash_aliases' "$BASH_RC"; then
   cat >> "$BASH_RC" <<'PROFILE'
 if [ -f ~/.bash_aliases ]; then

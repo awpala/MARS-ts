@@ -73,7 +73,7 @@ These rules apply to every engine port. Each is a known source of silent parity 
 - **Randomness.** `java.util.Random` is a specified 48-bit linear congruential generator. Seeded random syscalls must reproduce its sequence exactly.
 - **Global state.** `Globals`, `RegisterFile`, `Memory`, and the coprocessors are process-wide statics in Java. In the port they are per-instance and owned by a simulator session; see [application engineering](app.md#engine-boundary).
 - **Observers.** `java.util.Observable` access notices become explicit subscriptions that return an unsubscribe function, and every subscriber releases them.
-- **Threads.** The simulator runs on a `SwingWorker` thread and blocking reads wait on it. The port must not block the browser's main thread; the execution model is an [open decision](../adrs/0000-port-plan.md#8-open-decisions).
+- **Threads.** The simulator runs on a `SwingWorker` thread and blocking reads wait on it. The port preserves its sequencing through injected cooperative scheduling and asynchronous input ([ADR 0004](../adrs/0004-cooperative-simulation.md)).
 
 ## Skills and roles
 

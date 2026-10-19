@@ -1,0 +1,12 @@
+{
+	"_description": "Build-time editorial configuration for runtime table highlighting. Rebuild after editing. Text/data highlights are consumed when execution views are connected.",
+	"_attribution": "Defaults derived from Settings.properties and mars/venus/SettingsHighlightingAction.java. Copyright Pete Sanderson and Kenneth Vollmar, MIT; see MARSlicense.txt.",
+	"fontFamily": "'Courier New', monospace",
+	"fontSize": "12px",
+	"evenRow": { "background": "#e0e0e0", "foreground": "#000000" },
+	"oddRow": { "background": "#ffffff", "foreground": "#000000" },
+	"registers": { "enabled": true, "background": "#99cc55", "foreground": "#000000" },
+	"data": { "enabled": true, "background": "#99ccff", "foreground": "#000000" },
+	"text": { "background": "#ffff99", "foreground": "#000000" },
+	"delaySlot": { "background": "#33ff00", "foreground": "#000000" }
+}

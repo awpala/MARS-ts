@@ -87,7 +87,10 @@ main:   li   $v0, 4
         li   $v0, 10
         syscall
 ASM
+  # MIPS register names are literal text, not shell variables.
+  # shellcheck disable=SC2016
   printf 'hello from MARS\n\n8\n\n$t0\t0x0000002a\n' > "${work}/expected.out"
+  # shellcheck disable=SC2016
   "${SCRIPT_DIR}/run-legacy.sh" nc ic '$t0' "${work}/smoke.asm" > "${work}/actual.out" 2> "${work}/actual.err"
   status=$?
   if [ "$status" -ne 0 ] || [ -s "${work}/actual.err" ] || ! cmp -s "${work}/expected.out" "${work}/actual.out"; then
@@ -117,6 +120,26 @@ check_legacy() {
   # never accept stale classes. Keep that invariant when calling it from CI;
   # this extra build is provisional and disappears with Java at offboarding.
   run_gate "legacy: oracle fixtures" node "${WORKSPACE_DIR}/tests/oracle/run.mjs" --check
+  # Method probes call the same freshly built classes without editing Java.
+  # Vitest consumes these committed captures without requiring the JDK.
+  run_gate "legacy: hardware and numeric probes" node "${WORKSPACE_DIR}/tests/oracle/units/run.mjs" --check
+  run_gate "legacy: assembler probes" node "${WORKSPACE_DIR}/tests/oracle/assembler-units/run.mjs" --check --reuse-build
+  run_gate "legacy: diagnostic probes" node "${WORKSPACE_DIR}/tests/oracle/diagnostics-units/run.mjs" --check
+  run_gate "legacy: instruction descriptor probes" node "${WORKSPACE_DIR}/tests/oracle/instruction-units/run.mjs" --check
+  run_gate "legacy: tokenizer probes" node "${WORKSPACE_DIR}/tests/oracle/tokenizer-units/run.mjs" --check
+  run_gate "legacy: memory probes" node "${WORKSPACE_DIR}/tests/oracle/memory-units/run.mjs" --check
+  run_gate "legacy: editor highlighting probes" node "${WORKSPACE_DIR}/tests/oracle/highlighting/run.mjs" --check
+  run_gate "legacy: statement probes" node "${WORKSPACE_DIR}/tests/oracle/statement-units/run.mjs" --check
+  run_gate "legacy: extended instruction probes" node "${WORKSPACE_DIR}/tests/oracle/extended-instruction-units/run.mjs" --check
+  run_gate "legacy: instruction execution probes" node "${WORKSPACE_DIR}/tests/oracle/instruction-set/run.mjs" --check
+  run_gate "legacy: backstep probes" node "${WORKSPACE_DIR}/tests/oracle/backstep-units/run.mjs" --check
+  run_gate "legacy: program lifecycle probes" node "${WORKSPACE_DIR}/tests/oracle/program-units/run.mjs" --check
+  run_gate "legacy: floating runtime probes" node "${WORKSPACE_DIR}/tests/oracle/floating-units/run.mjs" --check
+  run_gate "legacy: operand probes" node "${WORKSPACE_DIR}/tests/oracle/operand-format-units/run.mjs" --check
+  run_gate "legacy: complete assembler probes" node "${WORKSPACE_DIR}/tests/oracle/assembler-programs/run.mjs" --check
+  run_gate "legacy: core syscall probes" node "${WORKSPACE_DIR}/tests/oracle/core-syscalls/run.mjs" --check
+  run_gate "legacy: simulator probes" node "${WORKSPACE_DIR}/tests/oracle/simulator-units/run.mjs" --check
+  run_gate "legacy: settings probes" node "${WORKSPACE_DIR}/tests/oracle/settings-units/run.mjs" --check
 }
 
 # Run each app gate independently so the summary names every failed command.

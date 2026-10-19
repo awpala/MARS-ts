@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "svelte": {
-      "type": "http",
-      "url": "https://mcp.svelte.dev/mcp"
+      "type": "stdio",
+      "command": "/workspace/node_modules/.bin/svelte-mcp"
     }
   }
 }

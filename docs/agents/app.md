@@ -2,7 +2,7 @@
 
 Read this guide for port implementation and review: the framework-free simulator engine, Svelte components, SvelteKit routes, TypeScript boundaries, and styling. Use the [shared workflow](workflow.md) for ownership and organization, the [legacy guide](legacy.md) for Java semantics, and the [tooling policy](tooling.md) before choosing ecosystem APIs.
 
-**The app is not scaffolded yet** (milestone P1 of the [port plan](../adrs/0000-port-plan.md#6-milestones)). The conventions below are binding from the first scaffolded file; references to `vite.config.ts`, `package.json`, and `src/` describe what P1 creates. When the scaffold lands, replace this paragraph with links to the real files and confirm every rule against the installed versions.
+The application package is [package.json](../../package.json), with SvelteKit 3 configuration in [vite.config.ts](../../vite.config.ts) and strict TypeScript in [tsconfig.json](../../tsconfig.json). Svelte 5 runes, Tailwind 4, Vite 8, TypeScript 6, and Vitest 4 are installed; the lockfile fixes exact versions. The application lives under [src/](../../src/). P1 and P2 validation is complete; remaining web IDE and platform parity implementation continues.
 
 ## Engine boundary
 
@@ -29,10 +29,10 @@ The simulator engine (assembler, instruction set, hardware, simulator, syscalls,
 
 - File-based routing under `src/routes/`. The planned adapter is static output with every page prerendered; the simulator runs entirely in the browser.
 - The root route launches directly into the main GUI. Do not port `MarsSplashScreen` or introduce a splash or intermediary launch screen.
-- Keep SvelteKit configuration where the scaffolded major expects it, and record that location here at P1. Do not add a second configuration file that duplicates it.
-- Import shared modules through the package's declared subpath imports or SvelteKit's `$lib` alias, consistently, with whatever extension rule the scaffold's TypeScript configuration enforces.
+- SvelteKit 3 takes configuration through `sveltekit(...)` in the root `vite.config.ts`; do not add a competing `svelte.config.js`. Imports use the declared `#lib/*` package subpath.
+- Import shared modules through the package's declared subpath imports or SvelteKit's library alias, consistently, with whatever extension rule the scaffold's TypeScript configuration enforces.
 - Internal links resolve through SvelteKit's typed path helpers rather than bare string paths.
-- Vite's `server.port` and `preview.port` are `6277`, bound to all interfaces so the devcontainer's published port reaches them. Because the workspace is a host bind mount, the watcher polls (`server.watch.usePolling`).
+- Normal development and preview use port `6277`, reserved for human review. Agents must not start, stop, or test against that listener. `npm run test:browser` owns an isolated server on `6278`; `MARS_VALIDATION=1` isolates other validation output under `__build/`. Browser-test mode and Vitest also use isolated generated files and dependency caches. The host bind mount uses polling (`server.watch.usePolling`).
 
 ## TypeScript
 
@@ -56,4 +56,4 @@ Once scaffolded, run from the repository root:
 - `npm run lint` / `npm run lint:fix`, `npm run format` / `npm run format:check`.
 - `npm run test`: Vitest, including oracle-fixture parity tests.
 
-Gate: `check`, `lint`, `format:check`, `test`, and `build` must all pass (`run-checks app`). Type checking does not validate behavior; exercise UI changes in the dev server before reporting them done. Use the [Svelte implementation workflow](../../.agents/skills/svelte-code-writer/SKILL.md) for MCP analysis.
+Gate: `check`, `lint`, `format:check`, `test`, and `build` must all pass (`run-checks app`). Type checking does not validate behavior; exercise UI changes with `npm run test:browser` on the isolated test server before reporting them done. Use the [Svelte implementation workflow](../../.agents/skills/svelte-code-writer/SKILL.md) for MCP analysis.
