@@ -1,0 +1,37 @@
+name: Verify
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    name: Harness, docs, legacy oracle, and app gates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      # Same JDK major as the dev container's provisional Java feature; the
+      # legacy gate builds and runs the original MARS as the port's oracle.
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends shellcheck
+      # Installs app dependencies only once the SvelteKit app is scaffolded;
+      # until then checks.sh reports the app tier as skipped.
+      - name: Install app dependencies
+        run: if [ -f package-lock.json ]; then npm ci; fi
+      - name: Run all gates
+        run: bash .devcontainer/scripts/bin/checks.sh

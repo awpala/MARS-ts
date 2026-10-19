@@ -1,0 +1,1 @@
+../../.agents/agents/svelte-file-editor.md

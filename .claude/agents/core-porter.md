@@ -1,0 +1,1 @@
+../../.agents/agents/core-porter.md

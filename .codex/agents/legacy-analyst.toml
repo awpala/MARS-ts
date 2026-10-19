@@ -1,0 +1,8 @@
+# Codex adapter for the canonical role definition in .agents/agents/legacy-analyst.md.
+# Keep name and description identical to that file's frontmatter; the
+# instructions only load the canonical definition and never restate it.
+name = "legacy-analyst"
+description = "Investigates what the original Java MARS actually does, reading its sources and running the headless oracle (build-legacy/run-legacy), and reports behavior with reproducible evidence. Use before porting a unit or when port behavior is disputed. Read-only by default."
+developer_instructions = """
+Read AGENTS.md at the repository root, then read .agents/agents/legacy-analyst.md and act as that role. That file is canonical: follow its ownership and delegation boundary and load the guides and skills it names. Do not preload other guides or skills.
+"""

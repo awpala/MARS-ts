@@ -1,4 +1,32 @@
-# MARS
+# MARS-ts
+
+A port of **MARS**, the MIPS Assembler and Runtime Simulator, from its original Java/Swing desktop application to a SvelteKit web application in TypeScript.
+
+> **Status:** development environment and agent harness only (milestone P0). No port code exists yet. The [port plan](docs/adrs/0000-port-plan.md) sets out the scope, stack, parity strategy, milestones, and open decisions.
+
+The original Java sources at the repository root (`Mars.java`, `mars/`, and their resource files) are MARS 4.5 as released. They are kept unmodified as the behavioral reference for the port and are removed at the end of it.
+
+## Development setup
+
+Open the folder in its [development container](.devcontainer/devcontainer.json). It provides Node 24, the global TypeScript and Svelte (`sv`) CLIs, GitHub/Claude/Codex CLIs, and a **provisional JDK 21** used only to build and run the legacy Java MARS headlessly as the reference oracle ([ADR 0001](docs/adrs/0001-local-development-environment.md)). Setup runs [setup-env.sh](.devcontainer/scripts/setup-env.sh); open a new terminal afterward to load the commands.
+
+| Command | Behavior |
+| --- | --- |
+| `run-checks [harness\|docs\|legacy\|app]` | Run the gates and report every failure; the app tier is reported as skipped until the app is scaffolded |
+| `build-legacy` | Compile the legacy Java MARS into `__build/legacy/Mars.jar` |
+| `run-legacy nc prog.asm` | Run legacy MARS in command-line mode (`run-legacy h` lists its options) |
+| `run-app` | Start the SvelteKit dev server on port **6277** (phoneword "MARS"), once scaffolded |
+| `tests`, `format`, `build-app`, `kill-app` | Vitest, ESLint+Prettier, clean build, stop the app listener (once scaffolded) |
+
+`cleanup.sh` runs on the host and removes the dev container; `cleanup.sh --volumes` also removes its dependency caches and CLI credentials. [Development operations](docs/agents/operations.md) documents the gates and helper contracts.
+
+AI coding assistants start at [AGENTS.md](AGENTS.md) (`CLAUDE.md` links to it).
+
+## License and attribution
+
+MARS is copyright 2003–2013 Pete Sanderson and Kenneth Vollmar and is distributed under the MIT license in [MARSlicense.txt](MARSlicense.txt). This port is a derivative work under the same license.
+
+## Original MARS README
 MARS (official) MIPS Assembler and Runtime Simulator
 
  MARS is a lightweight interactive development environment (IDE) for programming in MIPS assembly language, intended for educational-level use with Patterson and Hennessy's Computer Organization and Design.

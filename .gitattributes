@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+# Shell scripts run inside the Linux dev container and CI; a CRLF checkout
+# breaks the shebang and every line continuation.
+*.sh text eol=lf

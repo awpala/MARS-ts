@@ -1,0 +1,50 @@
+# Development operations and validation
+
+The port runs in one container described by [devcontainer.json](../../.devcontainer/devcontainer.json); the decision and its persistence model are in [ADR 0001](../adrs/0001-local-development-environment.md). [setup-env.sh](../../.devcontainer/scripts/setup-env.sh) installs OS tools, verifies the feature toolchains (Node, TypeScript, JDK, CLIs), installs the global `sv` CLI, runs `npm ci` once a lockfile exists, writes shell entries, and exposes live helpers for interactive and noninteractive shells. There is no service orchestration layer.
+
+## Commands
+
+| Command | Behavior |
+| --- | --- |
+| `run-checks [harness\|docs\|legacy\|app]` | Run gates and report every failure and skip; no selector runs all tiers |
+| `build-legacy` | Compile the legacy Java MARS into `__build/legacy/Mars.jar`, from scratch (provisional) |
+| `run-legacy <options> <file.asm>` | Run legacy MARS headlessly with isolated preferences (provisional) |
+| `run-app` | Start `npm run dev` on `6277` with timestamped `__logs/local/app-*.log` and a latest symlink |
+| `tests` | Run Vitest |
+| `format` | ESLint fixes, then Prettier (stops at the first failure) |
+| `build-app` | Clean generated output, `npm ci`, and build |
+| `kill-app` | Stop only the listener on `6277`, preserving PID identity through bounded escalation |
+| `cd "$app"`, `cd "$legacy"` | Both `/workspace` while the legacy tree lives at the root |
+
+App commands exit with "not scaffolded" until `package.json` exists. Noninteractive callers (agents, CI) can use `run-checks`, `tests`, `format`, `build-app`, `kill-app`, `build-legacy`, and `run-legacy` from `PATH`; `run-app` is an interactive alias, and noninteractive callers run `/scripts/bin/run-local-service.sh app`.
+
+## Gates
+
+[checks.sh](../../.devcontainer/scripts/bin/checks.sh) runs each tier and continues after a failure so the summary is complete:
+
+| Tier | Gates |
+| --- | --- |
+| `harness` | [check-harness.sh](../../.devcontainer/scripts/bin/check-harness.sh): `CLAUDE.md` link, role adapters, skill mirror, strict JSON, relative Markdown links, Codex rules (when the CLI is present); then `bash -n` and ShellCheck over every script |
+| `docs` | [check-adr-index.sh](../../.devcontainer/scripts/bin/check-adr-index.sh): `docs/README.md` indexes exactly the ADRs on disk |
+| `legacy` | `build-legacy`, then a byte-exact smoke run of a fixed program through `run-legacy` |
+| `app` | `check`, `lint`, `format:check`, `test`, `build`; reported as **skipped** until the app is scaffolded |
+
+CI ([verify.yml](../../.github/workflows/verify.yml)) installs the same Node and JDK majors and ShellCheck, then runs `checks.sh`. A skipped tier is listed separately and never counts as passed.
+
+## Helper contracts
+
+Scripts resolve the workspace from their own real path (following the `/usr/local/bin` and `/scripts` links), so they run unchanged in the container, in CI, and from a Linux checkout with the toolchains installed. Do not add environment-variable overrides or workspace discovery beyond that.
+
+The setup script's `upsert_alias` and `upsert_export` calls are authoritative. Profile entries are replaced idempotently, never appended as competing definitions. Command links point at the live scripts and are never copies. Runtime installation directories (`/usr/local/bin`, Node, the SDKMAN JDK) must not be hidden by persistent volumes.
+
+The app launcher keeps timestamped output with a latest symlink, records the source revision and lifecycle events, and forwards signals to its process group. `kill-app` targets only the configured port and verifies process identity before escalation. Neither helper starts unrelated services or kills processes by name.
+
+`run-legacy` must keep its isolation: headless AWT, a fresh preferences root per run with its store directories pre-created (so the JDK logs nothing to stderr), and MARS's own stdin, stdout, stderr, and exit status. `build-legacy` always deletes and rebuilds its output so stale classes cannot mask a source difference.
+
+## Provisioning rules
+
+Keep provisioning comments explaining order, dependencies, failures, recovery, ownership, and what is provisional. Required installs fail loudly; never paper over a broken lockfile with `npm install`. No tracing or environment dumps during setup. Setup success means tools are ready, not that any gate passed.
+
+The Java feature, `build-legacy.sh`, `run-legacy.sh`, the `legacy` tier, the `$legacy` export, the Java extension and settings, and the CI Java step are **provisional**. They are removed together at offboarding (milestone P5 of the [port plan](../adrs/0000-port-plan.md#6-milestones)); do not remove part of the set early or leave any of it behind.
+
+`cleanup.sh` runs on the host and removes the `mars-ts-dev-env` container; `cleanup.sh --volumes` also deletes this project's dependency caches and CLI credentials. It never removes the bind-mounted checkout. Deployment is not decided; no deployment procedure exists.
