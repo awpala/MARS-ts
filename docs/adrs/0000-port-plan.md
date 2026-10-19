@@ -1,25 +1,28 @@
 # ADR 0000: Port Plan — MARS (Java/Swing) to SvelteKit
 
-- **Status**: Proposed. Milestone P0 (development environment and agent harness) is complete; no port code exists.
+- **Status**: Accepted for implementation. Milestone P0 is complete; P1 oracle fixtures and browser assets are prepared, but the app and engine are not implemented yet.
 - **Date**: 2026-10-19
 
 This plan is the authority for the port's scope, stack, layout, milestones, and open decisions. It settles what the human has decided and names what is still open. Later ADRs record each open decision as it is made; when they disagree with this plan, update this plan in the same change.
 
 ## 1. Outcome and scope
 
-MARS 4.5 is a Java/Swing desktop IDE for MIPS assembly programming, written by Pete Sanderson and Kenneth Vollmar and used in Computer Organization courses. MARS-ts delivers the same assembler and simulator as a web application that runs in a browser without a Java installation.
+MARS is a Java/Swing desktop IDE for MIPS assembly programming, written by Pete Sanderson and Kenneth Vollmar and used in Computer Organization courses. The checked-in Java implementation is canonical regardless of legacy version labels. MARS-ts targets version 1.0 of the TypeScript port, delivering the same assembler and simulator as a web application that runs in a browser without a Java installation.
 
 | Settled input | Decision |
 | --- | --- |
 | Target | SvelteKit web application, TypeScript |
+| Target release | MARS-ts 1.0, independent of the Java version |
 | Local dev/preview port | `6277` (phoneword "MARS") in Vite, the devcontainer, and the helpers |
 | Reference behavior | The original Java sources in this repository, built and run headlessly as an oracle |
 | Java toolchain | Provisional: present in the dev container only until the Java sources are offboarded (P5) |
 | Development | One devcontainer ([ADR 0001](0001-local-development-environment.md)) |
+| Port fidelity | Translate existing algorithms and corresponding classes; initial desktop layout, SVG UI assets, browser file picker, and same-tab modals ([ADR 0002](0002-port-fidelity.md)) |
+| Launch view | Open directly into the main GUI; no splash screen |
 
-**In scope for the port as a whole:** the assembler (including pseudo-instructions, macros, directives, and `.include`), the simulator (step, run, backstep, breakpoints, delayed branching, exceptions, memory configurations), the syscalls, the editor and execution views of the Venus UI, settings, and help content. **Not decided:** which of the 20 bundled MARS tools (`mars/tools/`) are ported, and in what order; see [§8](#8-open-decisions).
+**In scope for the full port:** the assembler (including pseudo-instructions, macros, directives, and `.include`), the simulator (step, run, backstep, breakpoints, delayed branching, exceptions, memory configurations), the syscalls, the editor and execution views of the Venus UI, settings, help content, and the bundled MARS tools (`mars/tools/`). The tools' implementation order remains open; the requested full port does not authorize dropping existing functionality.
 
-**Out of scope:** changing MIPS semantics, extending the instruction set beyond MARS 4.5, and the legacy Java packaging (`CreateMarsJar.bat`, the Swing UI's look and feel).
+**Out of scope:** changing MIPS semantics, extending the instruction set beyond the legacy reference, and reproducing legacy Java packaging (`CreateMarsJar.bat`). The initial web UI uses the Swing desktop layout and appearance as its reference, with the browser adaptations in [ADR 0002](0002-port-fidelity.md).
 
 ## 2. Planned stack
 
@@ -56,7 +59,7 @@ Port correctness is measured against the legacy app, not against reading of its 
 
 ## 5. Proposed layout
 
-The SvelteKit app is planned at the repository root (`package.json`, `src/`, `vite.config.ts`), beside the legacy sources until P5. Whether the legacy tree moves under a `legacy/` directory first is open ([§8](#8-open-decisions)). If it moves, `build-legacy.sh`, the `$legacy` export, and the [legacy guide](../agents/legacy.md) change in the same commit.
+The SvelteKit package and configuration are planned at the repository root (`package.json`, `vite.config.ts`), with all application implementation under `src/` (`/workspace/src` in the devcontainer): engine classes in `src/lib/engine/`, GUI and browser adapters in `src/lib/`, and routes in `src/routes/`. Root scripts and TypeScript/SvelteKit configuration resolve that source tree, including the `$lib` alias. The legacy tree stays at its current root paths until P5; [ADR 0002](0002-port-fidelity.md) also assigns browser assets to `static/` and oracle fixtures and their runner to `tests/oracle/`.
 
 ## 6. Milestones
 
@@ -66,7 +69,7 @@ The SvelteKit app is planned at the repository root (`package.json`, `src/`, `vi
 | **P1 — Scaffold and fixtures** | `sv create` app at the root with the planned stack, Vite on `6277`, pinned local Svelte MCP, golden-fixture format and regeneration script, a first fixture corpus | Full `run-checks` passes, including the app tier; fixtures regenerate byte-identically |
 | **P2 — Engine core** | Numeric helpers, hardware, basic instructions, assembler, pseudo-instructions, simulator (run/step/backstep), deterministic console syscalls, parity runner | The fixture corpus passes against the engine |
 | **P3 — Web IDE** | Editor with MIPS highlighting, assemble/run/step/backstep/breakpoints, register, coprocessor, memory, and label views, messages and run I/O, settings | Browser exercise of the core workflows; engine parity unchanged |
-| **P4 — Remaining syscalls and tools** | Dialog, file (virtual file system), and MIDI syscalls, dump formats, the selected tools, help content | Per-feature fixtures or documented manual checks |
+| **P4 — Remaining syscalls and tools** | Dialog, file (virtual file system), and MIDI syscalls, dump formats, bundled tools, help content | Per-feature fixtures or documented manual checks |
 | **P5 — Offboarding Java** | Remove the Java sources, Javadoc `docs/` HTML, legacy resources not used as data, the Java feature, `build-legacy`/`run-legacy`, the legacy gate, and the Java editor extension | Gates pass without a JDK; fixtures remain; attribution retained |
 
 ## 7. Porting hazards
@@ -84,10 +87,9 @@ These Java behaviors differ from TypeScript defaults and are the expected source
 
 Each becomes an ADR when it is decided.
 
-- Whether to move the legacy sources under `legacy/` before P1.
 - Execution model: Web Worker or chunked execution on the main thread, and how blocking input syscalls are surfaced.
 - Editor component for P3.
-- Which bundled tools are ported, and in what order.
+- Implementation order of the bundled tools.
 - Deployment target and public origin, if the app is published.
 
 ## 9. Consequences

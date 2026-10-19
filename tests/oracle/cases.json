@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    { "id": "include-source", "program": "include.asm", "auxiliaryFiles": ["included.inc"], "options": ["$s0"], "arguments": [], "stdin": "", "expectedExitCode": 0 },
+    { "id": "integer-boundaries", "program": "integer.asm", "options": ["ic", "$zero", "$t1", "$t3", "$t4", "$t5", "$t6", "$t7", "$s0", "$s1", "$s2", "$s3"], "arguments": [], "stdin": "", "expectedExitCode": 0 },
+    { "id": "data-memory", "program": "data.asm", "options": ["$s0", "$s1", "$s2", "$s3", "$s4", "0x10010000-0x1001001c"], "arguments": [], "stdin": "", "expectedExitCode": 0 },
+    { "id": "macro-pseudo", "program": "macro.asm", "options": ["ic", "$s0", "$s1", "0x00400000-0x00400030"], "arguments": [], "stdin": "", "expectedExitCode": 0 },
+    { "id": "branch-default", "program": "branch.asm", "options": ["ic", "$s0"], "arguments": [], "stdin": "", "expectedExitCode": 0 },
+    { "id": "branch-delayed", "program": "branch.asm", "options": ["db", "ic", "$s0"], "arguments": [], "stdin": "", "expectedExitCode": 0 },
+    { "id": "console-input", "program": "console.asm", "options": ["me", "$s0", "0x10010000-0x10010004"], "arguments": [], "stdin": "-2147483648\nhello\nZ\n", "expectedExitCode": 0 },
+    { "id": "float-bits-print", "program": "float.asm", "options": ["me", "$s0", "$f0", "$f12", "0x10010000-0x1001000c"], "arguments": [], "stdin": "", "expectedExitCode": 0 },
+    { "id": "seeded-random", "program": "random.asm", "options": ["$s0", "$s1", "$s2", "$s3", "$s4"], "arguments": [], "stdin": "", "expectedExitCode": 0 },
+    { "id": "heap-alignment", "program": "heap.asm", "options": ["$s0", "$s1", "$s2"], "arguments": [], "stdin": "", "expectedExitCode": 0 },
+    { "id": "program-arguments", "program": "arguments.asm", "options": ["me", "$s0"], "arguments": ["first", "second"], "stdin": "", "expectedExitCode": 0 },
+    { "id": "main-default", "program": "main.asm", "options": ["$s0"], "arguments": [], "stdin": "", "expectedExitCode": 0 },
+    { "id": "main-global", "program": "main.asm", "options": ["sm", "$s0"], "arguments": [], "stdin": "", "expectedExitCode": 0 },
+    { "id": "undefined-label", "program": "undefined.asm", "options": ["me"], "arguments": [], "stdin": "", "expectedExitCode": 2 },
+    { "id": "pseudo-disabled", "program": "macro.asm", "options": ["np", "me"], "arguments": [], "stdin": "", "expectedExitCode": 2 },
+    { "id": "signed-overflow", "program": "overflow.asm", "options": ["me", "$t0", "$t1"], "arguments": [], "stdin": "", "expectedExitCode": 3 },
+    { "id": "unaligned-load", "program": "unaligned.asm", "options": ["me", "$t0", "$t1"], "arguments": [], "stdin": "", "expectedExitCode": 3 },
+    { "id": "unknown-syscall", "program": "unknown-syscall.asm", "options": ["me"], "arguments": [], "stdin": "", "expectedExitCode": 3 },
+    { "id": "invalid-integer-input", "program": "read-int.asm", "options": ["me"], "arguments": [], "stdin": "not-an-integer\n", "expectedExitCode": 3 },
+    { "id": "exit-status", "program": "exit.asm", "options": ["me"], "arguments": [], "stdin": "", "expectedExitCode": 7 },
+    { "id": "step-limit", "program": "loop.asm", "options": ["100", "ic", "$s0"], "arguments": [], "stdin": "", "expectedExitCode": 0 }
+  ]
+}

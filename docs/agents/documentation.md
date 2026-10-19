@@ -20,7 +20,7 @@ The MARS 4.5 Javadoc (`docs/*.html`, `docs/mars/`, `docs/resources/`) and help p
 
 ## Attribution
 
-Every ported source module and every copied legacy data file carries the MARS copyright notice (Pete Sanderson and Kenneth Vollmar, MIT) in a header comment, alongside a line naming the legacy file it derives from. [MARSlicense.txt](../../MARSlicense.txt) stays at the repository root through offboarding.
+Every ported source module and every copied legacy data file carries the MARS copyright notice (Pete Sanderson and Kenneth Vollmar, MIT) in a header comment, alongside a line naming the legacy file it derives from. Derived assets retain attribution as well. Wholly original browser integration code containing no substantial copied or translated source does not need a legacy-source header; transformation alone does not remove attribution obligations for substantial portions ([ADR 0002](../adrs/0002-port-fidelity.md)). [MARSlicense.txt](../../MARSlicense.txt) stays at the repository root through offboarding.
 
 ## Documentation version policy
 

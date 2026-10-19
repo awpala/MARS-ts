@@ -23,7 +23,7 @@ These are hard constraints at review time; a change containing one is blocked un
 
 Keep one class per file, together with the helpers and types describing that class's contract. Pure functions need no class, and a small helper needs no separate file merely to satisfy a size target. Related records may stay together when they describe one cohesive contract.
 
-The Java package structure is a starting map, not a mandate: a TypeScript module may merge Java classes that exist only because of Java's one-public-class rule, or split a Java god class (`InstructionSet.java` holds every instruction) along real responsibilities. Record the mapping in the module's README.
+The port translates existing Java algorithms and class responsibilities rather than inventing replacements. Retain corresponding TypeScript class names and public behavior, preserving method names where practical. The Java package structure is the starting map; any necessary split or merge must retain behavior and have its source mapping and rationale recorded in the module's README ([ADR 0002](../adrs/0002-port-fidelity.md)).
 
 Subfolders name a responsibility (`assembler/`, `hardware/`, `instructions/`, `syscalls/`, `simulator/`, `formatting/`). Do not introduce `utils/`, `common/`, `shared/`, or `misc/`. Extract shared logic only when callers share the same rule. When moving code, update every importer and remove the old path; do not leave forwarding files or barrel exports at retired paths. The [module-organization skill](../../.agents/skills/module-organization/SKILL.md) carries the full checklist.
 

@@ -6,7 +6,7 @@ Read this guide for port implementation and review: the framework-free simulator
 
 ## Engine boundary
 
-The simulator engine (assembler, instruction set, hardware, simulator, syscalls, dump formats) is framework-free TypeScript under its own `src/lib/` subtree, separate from components and routes. The port plan's [mapping table](../adrs/0000-port-plan.md#3-legacy-architecture-and-target-mapping) shows the intended modules.
+The simulator engine (assembler, instruction set, hardware, simulator, syscalls, dump formats) is framework-free TypeScript under `src/lib/engine/`, separate from components and routes. All application implementation lives under `src/`, with the package manifest and build configuration at the repository root. The port plan's [mapping table](../adrs/0000-port-plan.md#3-legacy-architecture-and-target-mapping) shows the intended modules.
 
 - The engine imports nothing from `svelte`, `@sveltejs/kit`, `$app/*`, or DOM types. It runs unchanged in Vitest under Node, in the Node parity runner, in the browser, and in a Web Worker.
 - **All I/O goes through injected host interfaces**: console output, input (which may be asynchronous), files, dialogs, audio, time, and randomness seeds. The browser UI, the parity runner, and tests each supply their own host.
@@ -28,6 +28,7 @@ The simulator engine (assembler, instruction set, hardware, simulator, syscalls,
 ## SvelteKit
 
 - File-based routing under `src/routes/`. The planned adapter is static output with every page prerendered; the simulator runs entirely in the browser.
+- The root route launches directly into the main GUI. Do not port `MarsSplashScreen` or introduce a splash or intermediary launch screen.
 - Keep SvelteKit configuration where the scaffolded major expects it, and record that location here at P1. Do not add a second configuration file that duplicates it.
 - Import shared modules through the package's declared subpath imports or SvelteKit's `$lib` alias, consistently, with whatever extension rule the scaffold's TypeScript configuration enforces.
 - Internal links resolve through SvelteKit's typed path helpers rather than bare string paths.
@@ -43,7 +44,7 @@ The simulator engine (assembler, instruction set, hardware, simulator, syscalls,
 
 - Tailwind 4 through its Vite plugin; no `tailwind.config.js` or PostCSS configuration.
 - Utility classes on elements; extract a Svelte component rather than `@apply` for repeated class lists.
-- The Venus UI's layout (editor/execute tabs, register and memory tables, message panes) is the functional reference, not a visual specification. Match its information and workflows, not its Swing styling.
+- The Venus UI is the initial visual and functional reference: preserve its desktop layout, compact styling, pane arrangement, and workflows. Convert raster UI icons to SVG, retain the existing MARS favicon, use the browser file picker, and render application dialogs in the current tab ([ADR 0002](../adrs/0002-port-fidelity.md)).
 
 ## Commands
 

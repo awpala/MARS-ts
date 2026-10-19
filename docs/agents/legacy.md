@@ -22,6 +22,8 @@ run-legacy h                       # MARS's full option reference
 
 `run-legacy` runs MARS headlessly with Java Preferences redirected to a fresh temporary directory, so no run's settings leak into another and stderr carries only MARS's own output. Its stdout, stderr, and exit status are MARS's. `__build/legacy/BUILD_INFO` records the Git revision and `javac` version that produced the jar. Do not invoke `java -jar` directly for oracle output; the wrapper's isolation is what makes results comparable.
 
+The checked-in Java implementation is canonical regardless of historical release labels. The TypeScript port targets MARS-ts 1.0; its version is independent of the Java source's version strings.
+
 Useful options for fixtures (all from `mars/MarsLaunch.java`):
 
 | Option | Effect |

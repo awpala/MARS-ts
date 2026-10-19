@@ -2,9 +2,9 @@
 
 A port of **MARS**, the MIPS Assembler and Runtime Simulator, from its original Java/Swing desktop application to a SvelteKit web application in TypeScript.
 
-> **Status:** development environment and agent harness only (milestone P0). No port code exists yet. The [port plan](docs/adrs/0000-port-plan.md) sets out the scope, stack, parity strategy, milestones, and open decisions.
+> **Target:** MARS-ts 1.0, translating the checked-in canonical Java implementation. **Status:** P0 complete, with [oracle fixtures](tests/oracle/README.md) and [browser assets](static/README.md) prepared. The app and engine are not implemented yet. The [port plan](docs/adrs/0000-port-plan.md) sets out the scope, stack, parity strategy, milestones, and open decisions.
 
-The original Java sources at the repository root (`Mars.java`, `mars/`, and their resource files) are MARS 4.5 as released. They are kept unmodified as the behavioral reference for the port and are removed at the end of it.
+The original Java sources at the repository root (`Mars.java`, `mars/`, and their resource files) are kept unmodified as the canonical behavioral reference for the port and are removed at the end of it. The initial implementation preserves existing class responsibilities, algorithms, and desktop layout, with browser file selection, same-tab dialogs, and SVG icons ([port fidelity decision](docs/adrs/0002-port-fidelity.md)).
 
 ## Development setup
 
@@ -15,6 +15,7 @@ Open the folder in its [development container](.devcontainer/devcontainer.json).
 | `run-checks [harness\|docs\|legacy\|app]` | Run the gates and report every failure; the app tier is reported as skipped until the app is scaffolded |
 | `build-legacy` | Compile the legacy Java MARS into `__build/legacy/Mars.jar` |
 | `run-legacy nc prog.asm` | Run legacy MARS in command-line mode (`run-legacy h` lists its options) |
+| `node tests/oracle/run.mjs --check` | Rebuild Java and compare the captured oracle corpus; `--update` regenerates goldens |
 | `run-app` | Start the SvelteKit dev server on port **6277** (phoneword "MARS"), once scaffolded |
 | `tests`, `format`, `build-app`, `kill-app` | Vitest, ESLint+Prettier, clean build, stop the app listener (once scaffolded) |
 

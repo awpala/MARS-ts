@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "command": [
+    "run-legacy",
+    "nc",
+    "ae2",
+    "se3",
+    "me",
+    "$t0",
+    "$t1",
+    "tests/oracle/programs/unaligned.asm"
+  ],
+  "inputSha256": "37aa09a5feb03bc8bbdfee32e3bfac9b2830d373de7e55124dfda0583540d42d",
+  "exitCode": 3
+}

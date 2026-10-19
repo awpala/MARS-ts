@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "command": [
+    "run-legacy",
+    "nc",
+    "ae2",
+    "se3",
+    "$s0",
+    "$s1",
+    "$s2",
+    "$s3",
+    "$s4",
+    "tests/oracle/programs/random.asm"
+  ],
+  "inputSha256": "770464303eed21fd921e66e55bf969b2ff02f7bd7f85a313fab73ef7bf8c7aa7",
+  "exitCode": 0
+}

@@ -1,0 +1,36 @@
+# ADR 0002: Like-for-like implementation and browser UI adaptations
+
+- **Status**: Accepted
+- **Date**: 2026-10-19
+
+## Context
+
+The requested outcome is the full Java-to-TypeScript/SvelteKit port, targeting MARS-ts 1.0. The checked-in Java implementation is canonical regardless of historical version labels; the port's version is independent. The first implementation must preserve the desktop IDE's layout and behavior, rather than redesigning the application or substituting new assembler and simulator logic. This clarifies the [port plan](0000-port-plan.md) and supersedes its original exclusion of Swing look and feel as a visual reference.
+
+## Decision
+
+Translate the existing Java algorithms and class responsibilities directly. Retain corresponding TypeScript class names and public behavior wherever the language and browser permit. Preserve method names where practical; document necessary mappings instead of introducing a parallel domain model. A source defect remains reference behavior unless a separate decision and fixture authorize a divergence.
+
+Necessary adaptations remain explicit: Java process-global mutable state becomes session-owned instances; Java observers become subscriptions with teardown; blocking I/O and execution threads require an injected browser host and an execution model that keeps the page responsive. These changes do not authorize changes to MIPS semantics or replacement algorithms. The execution model remains an open decision until its implementation is selected and validated.
+
+Use the Venus desktop UI as the initial visual and functional reference: menu and toolbar order, run-speed control, Edit/Execute tabs, register and coprocessor panes, text/data/label views, and Messages/Run I/O panes. Preserve the initial desktop arrangement and compact presentation; adapt sizing and scrolling to the browser viewport. Svelte components replace Swing rendering, while source mappings retain the original responsibilities.
+
+Launch directly into the main GUI at the root route. Do not port `MarsSplashScreen` or add a splash, welcome, onboarding, or intermediary launch screen. Any necessary initialization status belongs within the main GUI.
+
+Replace the desktop file chooser with the browser's user-initiated file picker. Application dialogs appear as accessible modals in the current tab, not new browser windows. Browser download and virtual-file-system behavior must be documented when those features are implemented. Convert raster UI assets to corresponding SVGs while preserving their visual meaning. Use the existing [MARS icon](../../images/mars.ico) as the favicon. Keep the source raster files unchanged as reference material.
+
+Preserve source attribution in translated modules, copied data, and derived assets. Wholly original browser integration code that contains no substantial copied or translated source need not carry a legacy-source header. Transformation alone does not remove the MIT notice requirement for copied or substantial portions; retain [MARSlicense.txt](../../MARSlicense.txt) and application About credits.
+
+The port remains ordered by the existing milestones. The human has authorized proceeding through the full port, including the P1 scaffold and bundled tools; no additional milestone confirmation is needed. The tools' implementation order remains open, but existing functionality is not silently excluded. Environment restrictions still apply. Java offboarding waits for the existing parity and feature-completion evidence.
+
+## Layout
+
+Keep the legacy tree at its current root paths through implementation; no preliminary move is needed. All target application implementation lives under `src/` (`/workspace/src` in the devcontainer): framework-free classes under `src/lib/engine/`, GUI components and browser adapters under responsibility-specific `src/lib/` directories, and SvelteKit routes under `src/routes/`. The root `package.json` names the package `mars-ts`, owns dependencies and scripts, and works with the root SvelteKit/TypeScript/Vite configuration to resolve this source tree; `$lib` maps to `src/lib`. Keep one root application package; do not create a second app directory or nest another package inside `src/`.
+
+Reserve `static/` for browser assets, with converted toolbar icons under `static/icons/`. Keep oracle inputs, generated outputs, and their dependency-free regeneration/check runner under `tests/oracle/`; the later Vitest parity suite consumes the same fixtures. These preparatory assets and fixtures may be created before the app scaffold and do not constitute an implemented UI or engine.
+
+## Consequences and validation
+
+Review each translated unit against its named Java source and committed oracle evidence. Do not replace full source behavior with a small instruction subset presented as a complete engine. Browser validation must compare the initial layout and exercise file opening, modal focus/closing, editing, assembly, execution controls, and register/memory updates. SVG conversion and a copied favicon alone do not establish UI parity.
+
+The fixture runner must preserve stdout, stderr, and exit status, record options and stdin, and identify any environment-path normalization. Fixture checks prove the reference corpus is reproducible; only comparisons against the TypeScript engine establish port parity.

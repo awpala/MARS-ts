@@ -11,7 +11,7 @@ Read the affected module's README and the port plan's [legacy-to-target mapping]
 
 - Keep one class per file with the helpers and types belonging to its contract. A private error type beside its owning class is cohesive. Related contract records can remain together when they describe one boundary.
 - Pure functions need no class. A small helper needs no file solely to satisfy a size target.
-- Treat Java packages as a starting map. Merge Java classes that exist only because of Java's one-public-class rule; split Java god classes (`InstructionSet.java`, `VenusUI.java`) along real responsibilities. Record the resulting legacy-to-module mapping in the module README.
+- Treat Java packages as the starting map and retain corresponding class names and responsibilities. Split or merge only where a necessary language or browser adaptation warrants it; record its rationale and legacy-to-module mapping in the module README ([ADR 0002](../../../docs/adrs/0002-port-fidelity.md)).
 - Name subfolders for responsibilities such as `assembler/`, `hardware/`, `instructions/`, `syscalls/`, `simulator/`, or `formatting/`. Avoid `utils`, `common`, `shared`, and `misc`; `mars/util/` in particular is split by what each helper actually does.
 - Keep the engine free of UI and platform imports; components and routes depend on the engine, never the reverse.
 - Extract a rule only when its callers share that rule. Keep instance state and teardown with the owner; never turn a Java static into process-global mutable state.

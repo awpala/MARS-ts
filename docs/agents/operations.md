@@ -26,7 +26,7 @@ App commands exit with "not scaffolded" until `package.json` exists. Noninteract
 | --- | --- |
 | `harness` | [check-harness.sh](../../.devcontainer/scripts/bin/check-harness.sh): `CLAUDE.md` link, role adapters, skill mirror, strict JSON, relative Markdown links, Codex rules (when the CLI is present); then `bash -n` and ShellCheck over every script |
 | `docs` | [check-adr-index.sh](../../.devcontainer/scripts/bin/check-adr-index.sh): `docs/README.md` indexes exactly the ADRs on disk |
-| `legacy` | `build-legacy`, then a byte-exact smoke run of a fixed program through `run-legacy` |
+| `legacy` | `build-legacy`, a byte-exact smoke run through `run-legacy`, then `node tests/oracle/run.mjs --check` to verify the captured corpus (the standalone runner rebuilds independently) |
 | `app` | `check`, `lint`, `format:check`, `test`, `build`; reported as **skipped** until the app is scaffolded |
 
 CI ([verify.yml](../../.github/workflows/verify.yml)) installs the same Node and JDK majors and ShellCheck, then runs `checks.sh`. A skipped tier is listed separately and never counts as passed.

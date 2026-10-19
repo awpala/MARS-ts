@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "command": [
+    "run-legacy",
+    "nc",
+    "ae2",
+    "se3",
+    "me",
+    "tests/oracle/programs/unknown-syscall.asm"
+  ],
+  "inputSha256": "055c9fb465a221fa45f58af1ff5471b888b555aecaf448cd90c46d84a9a0946b",
+  "exitCode": 3
+}

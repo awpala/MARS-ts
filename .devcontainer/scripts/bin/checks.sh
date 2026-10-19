@@ -6,7 +6,7 @@
 # Tiers:
 #   harness  agent-harness integrity (check-harness.sh) and shell lint
 #   docs     ADR index matches the decision records on disk
-#   legacy   build the Java MARS oracle and run a known program through it
+#   legacy   build the Java MARS oracle, smoke it, and verify captured fixtures
 #   app      svelte-check, ESLint, Prettier, Vitest, production build
 #
 # Before the SvelteKit app is scaffolded (no package.json), the app tier is
@@ -113,6 +113,10 @@ check_docs() {
 check_legacy() {
   run_gate "legacy: build Mars.jar" "${SCRIPT_DIR}/build-legacy.sh"
   run_gate "legacy: oracle smoke run" smoke_legacy
+  # The fixture runner also rebuilds so its standalone --check/--update modes
+  # never accept stale classes. Keep that invariant when calling it from CI;
+  # this extra build is provisional and disappears with Java at offboarding.
+  run_gate "legacy: oracle fixtures" node "${WORKSPACE_DIR}/tests/oracle/run.mjs" --check
 }
 
 # Run each app gate independently so the summary names every failed command.

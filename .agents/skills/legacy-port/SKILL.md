@@ -27,7 +27,7 @@ Work one unit at a time and finish each with evidence. A unit is small enough th
 
 - Place the code by responsibility ([module organization](../module-organization/SKILL.md)), not by Java package name alone. Head each module with the MARS copyright notice and the legacy file(s) it ports.
 - Keep state per-instance, I/O behind host interfaces, and notifications as subscriptions with unsubscribe.
-- Translate behavior, not syntax. Replace Java scaffolding (getters for public data, one-class-per-file wrappers, `Observable` plumbing) with idiomatic TypeScript while keeping every observable effect identical.
+- Translate existing Java algorithms and class responsibilities directly, retaining corresponding TypeScript class names, public behavior, and method names where practical. Adapt only what the language and browser require, including `Observable` plumbing and session ownership; document those mappings instead of inventing replacement logic ([ADR 0002](../../../docs/adrs/0002-port-fidelity.md)).
 - Document every export with JSDoc, including ownership and teardown.
 
 ## 4. Prove parity
