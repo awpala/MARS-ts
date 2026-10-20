@@ -8,7 +8,10 @@
 		content="A browser-based MIPS IDE for writing, assembling, running, and debugging MIPS assembly programs."
 	/>
 	<meta name="application-name" content="MARS" />
-	<meta name="keywords" content="MARS, MIPS, assembler, simulator, IDE, debugger, assembly language" />
+	<meta
+		name="keywords"
+		content="MARS, MIPS, assembler, simulator, IDE, debugger, assembly language"
+	/>
 	<meta property="og:type" content="website" />
 	<meta property="og:title" content="MARS — MIPS Assembler and Runtime Simulator" />
 	<meta
