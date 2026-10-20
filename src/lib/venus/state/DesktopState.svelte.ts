@@ -171,7 +171,8 @@ export class DesktopState {
 		if (helpArticles.some((article) => article.id === action.command)) return true;
 		if (this.simulation.running && action.command !== 'copy') return false;
 		if (['new', 'open', 'import', 'autoSave', 'exit'].includes(action.command)) return true;
-		if (action.command === 'exportAll') return this.workspace.tabs.length >= 2;
+		if (action.command === 'exportAll')
+			return this.workspace.tabs.length > 0 || this.workspace.libraryFiles.length > 0;
 		if (!this.workspace.current) return false;
 		if (action.command === 'undo') return this.workspace.current.undo.length > 0;
 		if (action.command === 'redo') return this.workspace.current.redo.length > 0;

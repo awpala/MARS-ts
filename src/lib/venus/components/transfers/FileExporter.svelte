@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { downloadSource } from '#lib/browser/download.js';
+	import { downloadSource, downloadSourceArchive } from '#lib/browser/download.js';
 	import { getDesktop } from '../../context/desktop.js';
 
 	/** Export behavior for the corresponding desktop command; renders no additional control. */
@@ -15,17 +15,19 @@
 			const sources = desktop.workspace.sourcesForExport(variant === 'all');
 			// eslint-disable-next-line svelte/prefer-svelte-reactivity -- Download filenames are temporary bookkeeping, never rendered state.
 			const names = new Set<string>();
-			for (const file of sources) {
+			const files = sources.map((file) => {
 				const stem = file.name
-					.split('/')
+					.split(/[\\/]/)
 					.at(-1)!
 					.replace(/\.[^.]+$/, '');
 				let name = `${stem}.asm`;
 				let suffix = 2;
 				while (names.has(name)) name = `${stem}-${suffix++}.asm`;
 				names.add(name);
-				downloadSource(name, file.source);
-			}
+				return { name, source: file.source };
+			});
+			if (variant === 'all') downloadSourceArchive(files);
+			else for (const file of files) downloadSource(file.name, file.source);
 		} catch (error) {
 			desktop.simulation.report(error);
 		}

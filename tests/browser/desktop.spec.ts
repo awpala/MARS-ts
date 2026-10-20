@@ -1,6 +1,7 @@
 import { openDesktop, openStoredSources, waitForDesktop } from './openDesktop.js';
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
 
 test('Alt and Option N create editor buffers from source and register focus', async ({ page }) => {
 	await openDesktop(page);
@@ -605,11 +606,28 @@ test('Export and Export All download exact working source and closed library fil
 	await openDesktop(page);
 	const exportAll = page.getByRole('button', { name: 'Export All', exact: true });
 	await expect(exportAll).toBeDisabled();
-	await openStoredSources(page, [
-		{ name: 'closed.asm', source: '.text\nnop\n' },
-		{ name: 'working.asm', source: '.text\nli $t0, 1\n' }
-	]);
-	await page.getByRole('button', { name: 'Close closed.asm', exact: true }).click();
+	await openStoredSources(
+		page,
+		[
+			{ name: 'closed.asm', source: '.text\nnop\n' },
+			{ name: 'folder/closed.asm', source: '# nested source\n' },
+			{ name: 'other/café.asm', source: '# café 中文\n' },
+			{ name: 'empty.asm', source: '' },
+			{ name: 'working.asm', source: '.text\nli $t0, 1\n' }
+		],
+		['working.asm']
+	);
+	await page.getByRole('button', { name: 'Close working.asm', exact: true }).click();
+	await expect(exportAll).toBeEnabled();
+	const libraryDownload = page.waitForEvent('download');
+	await exportAll.click();
+	const libraryZip = await libraryDownload;
+	expect(libraryZip.suggestedFilename()).toBe('mars-asm-src-files.zip');
+	expect(readArchive((await libraryZip.path())!)).toHaveLength(5);
+	await page.getByRole('button', { name: 'Open ...', exact: true }).click();
+	const openDialog = page.getByRole('dialog', { name: 'Open', exact: true });
+	await openDialog.getByRole('checkbox', { name: 'working.asm', exact: true }).check();
+	await openDialog.getByRole('button', { name: 'Open', exact: true }).click();
 	const current = '.text\nli $t0, 99\n# latest working source\n';
 	await page.getByRole('textbox', { name: 'Source working.asm', exact: true }).fill(current);
 	const autoSave = page.getByRole('button', { name: 'Auto Save', exact: true });
@@ -643,7 +661,7 @@ test('Export and Export All download exact working source and closed library fil
 	expect(single.suggestedFilename()).toBe('working.asm');
 	expect(await readFile((await single.path())!, 'utf8')).toBe(current);
 	await expect(page).toHaveTitle('* working.asm - MARS');
-	await expect(exportAll).toBeDisabled();
+	await expect(exportAll).toBeEnabled();
 	await page.getByRole('button', { name: 'New', exact: true }).click();
 	const second = '.text\nli $t1, 7\n# second open buffer\n';
 	await page.getByRole('textbox', { name: 'Source mips1.asm', exact: true }).fill(second);
@@ -652,20 +670,22 @@ test('Export and Export All download exact working source and closed library fil
 	const downloads: import('@playwright/test').Download[] = [];
 	page.on('download', (download) => downloads.push(download));
 	await exportAll.click();
-	await expect.poll(() => downloads.length).toBe(3);
-	const contents = await Promise.all(
-		downloads.map(async (download) => ({
-			name: download.suggestedFilename(),
-			source: await readFile((await download.path())!, 'utf8')
-		}))
-	);
+	await expect.poll(() => downloads.length).toBe(1);
+	const archive = downloads[0];
+	expect(archive.suggestedFilename()).toBe('mars-asm-src-files.zip');
+	const contents = readArchive((await archive.path())!);
+	expect(contents).toHaveLength(6);
 	expect(contents).toEqual(
 		expect.arrayContaining([
 			{ name: 'closed.asm', source: '.text\nnop\n' },
+			{ name: 'closed-2.asm', source: '# nested source\n' },
+			{ name: 'café.asm', source: '# café 中文\n' },
+			{ name: 'empty.asm', source: '' },
 			{ name: 'working.asm', source: current },
 			{ name: 'mips1.asm', source: second }
 		])
 	);
+	expect(downloads).toHaveLength(1);
 	await expect(page).toHaveTitle('* working.asm - MARS');
 });
 
@@ -1086,3 +1106,13 @@ test('Line and Column status appears only when editing an open source', async ({
 		.click();
 	await expect(position).toBeHidden();
 });
+
+// Decode with an independent ZIP reader, which also verifies entry CRCs.
+function readArchive(path: string): { name: string; source: string }[] {
+	execFileSync('unzip', ['-t', path]);
+	const names = execFileSync('unzip', ['-Z1', path], { encoding: 'utf8' }).trimEnd().split('\n');
+	return names.map((name) => ({
+		name,
+		source: execFileSync('unzip', ['-p', path, name], { encoding: 'utf8' })
+	}));
+}

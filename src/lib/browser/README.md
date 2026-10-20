@@ -1,6 +1,6 @@
 # Browser host
 
-This module owns browser platform integrations used by the IDE. Source downloads use a temporary object URL and an anchor in the current document, with URL and DOM cleanup after initiation. [ADR 0003](../../../docs/adrs/0003-browser-file-workflows.md) defines the distinction between local source commits, recovery backups, and portable exports.
+This module owns browser platform integrations used by the IDE. Export All packages UTF-8 source text as a single `mars-asm-src-files.zip` download with flat, disambiguated `.asm` entries and no directories. ZIP entries use the stored (uncompressed) format with CRC-32 checksums. Downloads follow the browser’s configured save/prompt behavior. Source downloads use a temporary object URL and an anchor in the current document, with URL and DOM cleanup after initiation. [ADR 0003](../../../docs/adrs/0003-browser-file-workflows.md) defines the distinction between local source commits, recovery backups, and portable exports.
 
 Browser adapters must remain outside the framework-free engine. Add host implementations here when their engine interfaces exist; assembly, runtime console/file I/O, scheduling, audio, and simulator dialogs are not implemented by this download adapter.
 

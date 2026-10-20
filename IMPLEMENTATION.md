@@ -287,7 +287,7 @@ flowchart TB
 | Delete in Open           | Confirm the selected names and any unsaved-buffer loss, then remove records and close matching tabs; cancellation preserves selection and content               |
 | Import                   | Read one or more `.asm` files with the system picker, commit a batch, and open them; confirm saved-name replacement and refuse to overwrite edited open buffers |
 | Export                   | Download current buffer text as `.asm`, without changing dirty state or saved baselines                                                                         |
-| Export All               | Enabled with at least two open buffers; download the union of library sources and open buffers, preferring current open text and disambiguating flattened names |
+| Export All               | Enabled when saved sources or open buffers exist; download `mars-asm-src-files.zip` containing the union of library sources and open buffers as flat `.asm` entries, preferring current open text and disambiguating flattened names |
 | Close / Exit             | Resolve dirty buffers through Save, Discard, or Cancel; Exit closes documents, not the browser tab                                                              |
 
 ### Inline rename and name validation
