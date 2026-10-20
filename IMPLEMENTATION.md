@@ -352,7 +352,7 @@ When adding a capability, preserve the owning Java class responsibility and algo
 
 MARS is copyright 2003–2013 Pete Sanderson and Kenneth Vollmar and is distributed under the [MIT license](MARSlicense.txt). Translated modules and copied data retain their notices and identify their Java source. The editor's inherited jEdit syntax package retains the additional Slava Pestov and Mike Dillon notices described in its [module documentation](src/lib/editor/highlighting/README.md). The [static asset documentation](static/README.md) records asset provenance; About MARS opens the unchanged [bundled license](static/MARSlicense.txt) in a new tab.
 
-The checked-in Java implementation is the behavioral authority regardless of its historical release labels. Legacy help and generated Javadoc remain read-only reference material; current product behavior is described here and in authored port documentation. The historical project introduction previously embedded in the root README is retained below for provenance, not as instructions for running this web application.
+The checked-in Java implementation is the behavioral authority regardless of its historical release labels. Legacy help under `help/` and generated Javadoc under [docs-legacy/](docs-legacy/README.md) remain read-only reference material; current product behavior is described here and in authored port documentation under [docs/](docs/README.md). The historical project introduction previously embedded in the root README is retained below for provenance, not as instructions for running this web application.
 
 <details>
 <summary>Original MARS README</summary>

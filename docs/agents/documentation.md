@@ -18,7 +18,7 @@ Application behavior is documented against the current implementation, never aga
 
 ## Legacy documentation
 
-The MARS 4.5 Javadoc (`docs/*.html`, `docs/mars/`, `docs/resources/`) and help pages (`help/`) are legacy reference material. Do not edit them. When the port needs user-facing help, write new content for the web app and credit the original where text is adapted; the help pages are MIT-licensed with the rest of MARS.
+The MARS 4.5 Javadoc and its supporting files under [docs-legacy/](../../docs-legacy/README.md) and help pages (`help/`) are legacy reference material. Do not edit the generated files or help pages. When the port needs user-facing help, write new content for the web app and credit the original where text is adapted; the help pages are MIT-licensed with the rest of MARS.
 
 ## Attribution
 

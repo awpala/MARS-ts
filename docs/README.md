@@ -19,4 +19,4 @@ Keep decision records current when the port changes a boundary, and add an ADR w
 
 ## Legacy Javadoc
 
-The HTML files at the top of this directory (`index.html`, `overview-*.html`, `package-*.html`, and the rest) and the `mars/` and `resources/` subdirectories are the generated Javadoc of MARS 4.5. They belong to the legacy reference: read them, do not edit them, and do not mix authored documentation into them. They are removed at offboarding (milestone P5 of the [port plan](adrs/0000-port-plan.md#6-milestones)). The MARS runtime never reads them, so `build-legacy` does not package them.
+The generated MARS 4.5 Javadoc and its supporting indexes, stylesheet, and images live in [docs-legacy/](../docs-legacy/README.md). They remain read-only legacy reference material until offboarding (milestone P5 of the [port plan](adrs/0000-port-plan.md#6-milestones)). This directory holds authored documentation for the TypeScript port, including the [backend translation plan](backend-port.md), [GUI port mapping](gui-port.md), and oracle guidance.

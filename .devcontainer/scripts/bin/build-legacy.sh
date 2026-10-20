@@ -26,8 +26,9 @@ BUILD_INFO="${OUT_DIR}/BUILD_INFO"
 
 # Runtime resources MARS loads from the classpath (Globals, PropertiesFile,
 # InstructionSet, the Swing UI). This mirrors CreateMarsJar.bat minus the
-# sources, build scripts, and docs/ -- docs/ is generated Javadoc that the
-# application never reads at runtime.
+# sources, build scripts, and generated Javadoc (the batch file's historical
+# docs/ entry, now archived under docs-legacy/). The application never reads
+# Javadoc at runtime; docs/ now holds authored port documentation.
 RESOURCES=(
   PseudoOps.txt
   Config.properties

@@ -59,7 +59,7 @@ Port correctness is measured against the legacy app, not against reading of its 
 
 ## 5. Proposed layout
 
-The SvelteKit package and configuration are at the repository root (`package.json`, `vite.config.ts`), with all application implementation under `src/` (`/workspace/src` in the devcontainer): engine classes in `src/lib/engine/`, GUI and browser adapters in `src/lib/`, and routes in `src/routes/`. Root scripts and TypeScript/SvelteKit configuration resolve that source tree, including the `$lib` alias. The legacy tree stays at its current root paths until P5; [ADR 0002](0002-port-fidelity.md) also assigns browser assets to `static/` and oracle fixtures and their runner to `tests/oracle/`.
+The SvelteKit package and configuration are at the repository root (`package.json`, `vite.config.ts`), with all application implementation under `src/` (`/workspace/src` in the devcontainer): engine classes in `src/lib/engine/`, GUI and browser adapters in `src/lib/`, and routes in `src/routes/`. Root scripts and TypeScript/SvelteKit configuration resolve that source tree, including the `$lib` alias. The legacy Java sources and runtime resources stay at their current root paths until P5; generated Javadoc and its supporting files live separately under [docs-legacy/](../../docs-legacy/README.md), leaving `docs/` for authored port documentation. [ADR 0002](0002-port-fidelity.md) also assigns browser assets to `static/` and oracle fixtures and their runner to `tests/oracle/`.
 
 ## 6. Milestones
 
@@ -70,7 +70,7 @@ The SvelteKit package and configuration are at the repository root (`package.jso
 | **P2 — Engine core** (complete) | Numeric helpers, hardware, basic instructions, assembler, pseudo-instructions, simulator (run/step/backstep), deterministic console syscalls, parity runner | All 19 in-scope core corpus cases pass through production engine APIs, alongside unit oracle probes; CLI arguments are excluded and seeded random remains in P4 |
 | **P3 — Web IDE** | Editor with MIPS highlighting, assemble/run/step/backstep/breakpoints, register, coprocessor, memory, and label views, messages and run I/O, settings | Browser exercise of the core workflows; engine parity unchanged |
 | **P4 — Remaining syscalls and tools** | Dialog, file (virtual file system), and MIDI syscalls, dump formats, bundled tools, help content | Per-feature fixtures or documented manual checks |
-| **P5 — Offboarding Java** | Remove the Java sources, Javadoc `docs/` HTML, legacy resources not used as data, the Java feature, `build-legacy`/`run-legacy`, the legacy gate, and the Java editor extension | Gates pass without a JDK; fixtures remain; attribution retained |
+| **P5 — Offboarding Java** | Remove the Java sources, legacy Javadoc archive `docs-legacy/`, legacy resources not used as data, the Java feature, `build-legacy`/`run-legacy`, the legacy gate, and the Java editor extension | Gates pass without a JDK; fixtures remain; attribution retained |
 
 ## 7. Porting hazards
 

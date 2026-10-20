@@ -58,7 +58,7 @@ Nondeterministic behavior must stay out of exact-match fixtures: the time syscal
 | A UI behavior | `mars/venus/` (the Swing IDE) |
 | User-facing explanations | `help/*.html` |
 
-The legacy Javadoc under `docs/` is generated from the same sources; read the source when the two disagree.
+The legacy Javadoc under [docs-legacy/](../../docs-legacy/README.md) is generated from the same sources; read the source when the two disagree.
 
 ## Java-to-TypeScript semantics
 

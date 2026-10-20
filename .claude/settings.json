@@ -53,11 +53,11 @@
       "Edit(/mainclass.txt)",
       "Edit(/help/**)",
       "Edit(/images/**)",
-      "Edit(/docs/*.html)",
-      "Edit(/docs/package-list)",
-      "Edit(/docs/stylesheet.css)",
-      "Edit(/docs/mars/**)",
-      "Edit(/docs/resources/**)"
+      "Edit(/docs-legacy/*.html)",
+      "Edit(/docs-legacy/package-list)",
+      "Edit(/docs-legacy/stylesheet.css)",
+      "Edit(/docs-legacy/mars/**)",
+      "Edit(/docs-legacy/resources/**)"
     ],
     "ask": [
       "Bash(git add *)",
