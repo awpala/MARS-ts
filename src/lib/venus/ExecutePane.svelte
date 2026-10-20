@@ -1,7 +1,7 @@
 <script lang="ts">
 	/** Ports the views in mars/venus/TextSegmentWindow.java, DataSegmentWindow.java, and LabelsWindow.java.
 	 * Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license. */
-	import { asset } from '$app/paths';
+	import ToolbarIcon from './ToolbarIcon.svelte';
 	import type { Globals } from '#lib/engine/Globals.js';
 	import { Settings } from '#lib/engine/Settings.js';
 	import { AddressErrorException } from '#lib/engine/hardware/AddressErrorException.js';
@@ -221,7 +221,7 @@
 	}
 	const id = $props.id();
 	function followPC(node: HTMLElement) {
-		const viewport = node.closest<HTMLElement>('.text-segment');
+		const viewport = node.closest<HTMLElement>('.text-scroll');
 		if (!viewport) return;
 		const headerHeight = viewport.querySelector('thead')?.getBoundingClientRect().height ?? 0;
 		// Keep the current row below the sticky headings; scrollTop clamps at the last page.
@@ -252,52 +252,54 @@
 	<div class="text-row">
 		<section class="segment text-segment" aria-label="Text Segment">
 			<h2>Text Segment</h2>
-			<table>
-				<thead
-					><tr
-						>{#each ['Bkpt', 'Address', 'Code', 'Basic', 'Source'] as heading (heading)}<th
-								>{heading}</th
-							>{/each}</tr
-					></thead
-				><tbody>
-					{#each rows as row (row.address)}<tr
-							{@attach row.address === pc && followPC}
-							id={`${id}-instruction-${row.address >>> 0}`}
-							class={{ current: row.address === pc, delay: row.address === pc && delaySlot }}
-							aria-current={row.address === pc ? 'step' : undefined}
-						>
-							<td
-								><input
-									type="checkbox"
-									aria-label={`Breakpoint ${Binary.intToHexString(row.address)}`}
-									checked={breakpoints.includes(row.address)}
-									disabled={running}
-									onchange={() => ontogglebreakpoint(row.address)}
-								/></td
+			<div class="text-scroll">
+				<table>
+					<thead
+						><tr
+							>{#each ['Bkpt', 'Address', 'Code', 'Basic', 'Source'] as heading (heading)}<th
+									>{heading}</th
+								>{/each}</tr
+						></thead
+					><tbody>
+						{#each rows as row (row.address)}<tr
+								{@attach row.address === pc && followPC}
+								id={`${id}-instruction-${row.address >>> 0}`}
+								class={{ current: row.address === pc, delay: row.address === pc && delaySlot }}
+								aria-current={row.address === pc ? 'step' : undefined}
 							>
-							<td>{formatAddress(row.address)}</td><td
-								><input
-									class="code-value"
-									aria-label={`Code ${Binary.intToHexString(row.address)}`}
-									value={Binary.intToHexString(row.code)}
-									readonly={running || !selfModifying}
-									onchange={(event) => changeWord(row.address, event.currentTarget, true)}
-									onkeydown={(event) => {
-										if (event.key === 'Enter') event.currentTarget.blur();
-									}}
-								/></td
-							><td>{row.basic}</td>
-							<td
-								>{#if row.modified}<span> ------ </span>{:else}<button
-										class="source-link"
-										title={row.filename}
-										onclick={() => onsource(row.filename, row.line)}
-										>{row.line}: {row.source}</button
-									>{/if}</td
-							>
-						</tr>{/each}
-				</tbody>
-			</table>
+								<td
+									><input
+										type="checkbox"
+										aria-label={`Breakpoint ${Binary.intToHexString(row.address)}`}
+										checked={breakpoints.includes(row.address)}
+										disabled={running}
+										onchange={() => ontogglebreakpoint(row.address)}
+									/></td
+								>
+								<td>{formatAddress(row.address)}</td><td
+									><input
+										class="code-value"
+										aria-label={`Code ${Binary.intToHexString(row.address)}`}
+										value={Binary.intToHexString(row.code)}
+										readonly={running || !selfModifying}
+										onchange={(event) => changeWord(row.address, event.currentTarget, true)}
+										onkeydown={(event) => {
+											if (event.key === 'Enter') event.currentTarget.blur();
+										}}
+									/></td
+								><td>{row.basic}</td>
+								<td
+									>{#if row.modified}<span> ------ </span>{:else}<button
+											class="source-link"
+											title={row.filename}
+											onclick={() => onsource(row.filename, row.line)}
+											>{row.line}: {row.source}</button
+										>{/if}</td
+								>
+							</tr>{/each}
+					</tbody>
+				</table>
+			</div>
 		</section>
 		{#if showLabels}<section class="labels segment" aria-label="Labels">
 				<h2>Labels</h2>
@@ -377,7 +379,7 @@
 		</div>
 		<div class="data-controls">
 			<button aria-label="Previous memory page" onclick={() => (pageOffset -= memoryPageBytes)}
-				><img src={asset('icons/Previous.svg')} alt="" /></button
+				><ToolbarIcon name="previousMemoryPage" /></button
 			><select
 				aria-label="Data segment base"
 				bind:value={segment}
@@ -392,7 +394,7 @@
 				<option value="kernel">{Binary.intToHexString(memoryBases.kernel)} (.kdata)</option>
 				<option value="mmio">{Binary.intToHexString(memoryBases.mmio)} (MMIO)</option></select
 			><button aria-label="Next memory page" onclick={() => (pageOffset += memoryPageBytes)}
-				><img src={asset('icons/Next.svg')} alt="" /></button
+				><ToolbarIcon name="nextMemoryPage" /></button
 			>
 			<div class="control-separator" role="separator" aria-orientation="vertical"></div>
 			<div class="display-options">
@@ -433,6 +435,19 @@
 	}
 	.labels {
 		flex: 0 0 25%;
+	}
+	.text-segment {
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+	.text-segment h2 {
+		flex-shrink: 0;
+	}
+	.text-scroll {
+		flex: 1;
+		min-height: 0;
+		overflow: auto;
 	}
 	.label-controls {
 		display: flex;
@@ -531,7 +546,9 @@
 		margin: 2px 0;
 		background: var(--theme-divider, #b3b3b3);
 	}
-	.data-controls img {
+	.data-controls > button {
+		display: grid;
+		place-items: center;
 		width: 22px;
 		height: 22px;
 	}

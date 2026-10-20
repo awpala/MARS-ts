@@ -10,6 +10,33 @@ const finished = '\n-- program is finished running --\n\n';
 
 const action = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
 
+test('Text Segment heading stays visible while following and scrolling instructions', async ({
+	page
+}) => {
+	await openDesktop(page);
+	await source(page, '.text\nmain:\n' + 'nop\n'.repeat(80) + 'li $v0,10\nsyscall\n');
+	await action(page, 'Assemble').click();
+	const text = page.getByRole('region', { name: 'Text Segment', exact: true });
+	const heading = text.getByRole('heading', { name: 'Text Segment', exact: true });
+	await expect(heading).toBeInViewport();
+	await page.getByLabel('Breakpoint 0x004000c8', { exact: true }).check();
+	await action(page, 'Go').click();
+	await expect(page.getByLabel('Execution status')).toHaveText('paused');
+	await expect(heading).toBeInViewport();
+	const bounds = await text.evaluate((panel) => ({
+		headingBottom: panel.querySelector('h2')!.getBoundingClientRect().bottom,
+		columnsTop: panel.querySelector('th')!.getBoundingClientRect().top,
+		columnsBottom: panel.querySelector('th')!.getBoundingClientRect().bottom,
+		currentTop: panel.querySelector('tr.current')!.getBoundingClientRect().top
+	}));
+	expect(bounds.columnsTop).toBeGreaterThanOrEqual(bounds.headingBottom - 1);
+	expect(bounds.currentTop).toBeGreaterThanOrEqual(bounds.columnsBottom - 1);
+	await text.locator('table').evaluate((table) => {
+		table.parentElement!.scrollTop = table.parentElement!.scrollHeight;
+	});
+	await expect(heading).toBeInViewport();
+});
+
 test('breakpoint toolbar actions follow Reset and suspend or clear breakpoints', async ({
 	page
 }) => {
@@ -107,10 +134,14 @@ test('Labels filters data and text and sorts names or unsigned addresses in both
 test('data pages show sixteen rows and ASCII follows hexadecimal values inline', async ({
 	page
 }) => {
+	await page.route('**/icons/Previous.svg', (route) => route.abort());
+	await page.route('**/icons/Next.svg', (route) => route.abort());
 	await openDesktop(page);
 	await source(page, '.data\n.word 0x44434241\n.text\nnop\n');
 	await action(page, 'Assemble').click();
 	const data = page.getByRole('region', { name: 'Data Segment', exact: true });
+	await expect(action(page, 'Previous memory page').locator('svg')).toBeVisible();
+	await expect(action(page, 'Next memory page').locator('svg')).toBeVisible();
 	await expect(data.locator('tbody tr')).toHaveCount(16);
 	await expect(data.locator('tbody tr').last()).toContainText('0x100101e0');
 	await expect(data.locator('tbody tr').last()).toBeInViewport();

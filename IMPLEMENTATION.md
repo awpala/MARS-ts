@@ -169,7 +169,7 @@ Input does not allow a subsequent instruction to overtake the pending syscall. P
 | Data Segment | Show 16 address rows per page, navigation/range selection, and decimal/hexadecimal/ASCII views; permit word editing while stopped |
 | Labels | Filter Data/Text symbols, sort by Label or Address, and navigate to the corresponding segment location |
 
-As the highlighted instruction changes during execution or stepping, the Text Segment scrolls that row to the top beneath the sticky column headings. Near the end of the program, scrolling clamps at the last page rather than adding blank rows. Tracking scrolls only the instruction pane and preserves horizontal position and keyboard focus.
+The Text Segment heading stays above its independently scrolling instruction table, matching the other Execute sub-panel titles. As the highlighted instruction changes during execution or stepping, the Text Segment scrolls that row to the top beneath the sticky column headings. Near the end of the program, scrolling clamps at the last page rather than adding blank rows. Tracking scrolls only the instruction pane and preserves horizontal position and keyboard focus.
 
 Backstepping uses bounded history and restores recorded machine changes with recording temporarily disabled. It is machine-state undo, not a persistent session checkpoint or reversal of browser side effects: source editing history is a different subsystem, and already-emitted console text is not an external transaction that the machine can retract.
 
@@ -248,7 +248,7 @@ The source/messages split has a horizontal resize bar; the register sidebar has 
 
 The toolbar groups file workflows, editing, execution/debugging, and display toggles. Debugging uses recognizable play, step, backstep, pause, stop, reset, and filled-hammer assembly shapes. Toggle all breakpoints precedes Clear all breakpoints immediately after Reset. The display group before Help orders label visibility, hexadecimal addresses, hexadecimal values, ASCII, line numbers, and popup syscall input. Active toggles show a pressed background and expose their labels as hover text.
 
-Data Segment navigation, address-range selection, hexadecimal controls, and ASCII share one row with a separator between groups. Fixed ranges use address-first captions such as `0x10040000 (heap)`; the dynamic stack/global-pointer choices retain `current $sp` and `current $gp`. The ASCII toolbar button and Data Segment checkbox control the same persisted state. Labels filters and sort direction persist independently of assembled program data.
+Data Segment navigation, address-range selection, hexadecimal controls, and ASCII share one row with a separator between groups. Previous/next memory-page buttons render fixed-size, theme-aware inline SVG arrows, avoiding a separate image request for these controls. Fixed ranges use address-first captions such as `0x10040000 (heap)`; the dynamic stack/global-pointer choices retain `current $sp` and `current $gp`. The ASCII toolbar button and Data Segment checkbox control the same persisted state. Labels filters and sort direction persist independently of assembled program data.
 
 Keyboard commands route to the same actions as menus and buttons. New uses Alt+N / Option+N, matching the physical N key for dead-key layouts. Browser- or OS-reserved combinations can still be intercepted before the page receives them; toolbar/menu actions remain the reliable alternative. The application does not attempt to override browser window creation through Ctrl+N.
 

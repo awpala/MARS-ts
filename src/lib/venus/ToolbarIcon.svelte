@@ -1,5 +1,7 @@
 <script module lang="ts">
-	/** Names of the original SVG glyphs used by file actions, debugger actions, and view toggles. */
+	/** Memory paging glyphs adapt static/icons/Previous.svg and Next.svg.
+	 * Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license. */
+	/** SVG glyph names for file actions, debugger actions, view toggles, and memory paging. */
 	export type ToolbarIconName =
 		| 'autoSave'
 		| 'import'
@@ -9,6 +11,8 @@
 		| 'go'
 		| 'step'
 		| 'backstep'
+		| 'previousMemoryPage'
+		| 'nextMemoryPage'
 		| 'pause'
 		| 'stop'
 		| 'reset'
@@ -32,7 +36,7 @@
 	let { name }: Props = $props();
 </script>
 
-<!-- @component Original, compact file, debugger, and display SVG glyphs. The parent button owns labeling and state. -->
+<!-- @component Compact file, debugger, display, and memory-navigation SVG glyphs. The parent button owns labeling and state. -->
 <svg
 	xmlns="http://www.w3.org/2000/svg"
 	viewBox="0 0 24 24"
@@ -99,6 +103,13 @@
 		<path d="M12 3v12m-5-5 5 5 5-5M5 20h14" stroke="var(--theme-icon-blue, #236ba5)" />
 	{:else if name === 'backstep'}
 		<path d="M10 4 5 9l5 5M5 9h9a5 5 0 0 1 0 10h-3" stroke="var(--theme-icon-blue, #236ba5)" />
+	{:else if name === 'previousMemoryPage' || name === 'nextMemoryPage'}
+		<path
+			d={name === 'previousMemoryPage' ? 'M2 12 12 3v6h10v6H12v6Z' : 'M22 12 12 3v6H2v6h10v6Z'}
+			fill="var(--theme-icon-green, #88be47)"
+			stroke="var(--theme-icon-green, #4f7f20)"
+			stroke-width="1"
+		/>
 	{:else if name === 'assemble'}
 		<g transform="rotate(40 12 12)" stroke-width="1.3">
 			<rect
