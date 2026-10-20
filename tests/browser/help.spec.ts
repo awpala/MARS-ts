@@ -1,5 +1,66 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Route } from '@playwright/test';
 import { openDesktop } from './openDesktop.js';
+
+test('Help articles load on demand and a late response cannot replace the current article', async ({
+	page
+}) => {
+	const requestedArticles: string[] = [];
+	page.on('request', (request) => {
+		const url = new URL(request.url());
+		if (url.pathname.endsWith('.html') && url.searchParams.has('raw'))
+			requestedArticles.push(url.pathname);
+	});
+	let pendingArticle: Route | undefined;
+	await page.route(
+		(url) => url.pathname.endsWith('/MarsHelpIntro.html') && url.searchParams.has('raw'),
+		(route) => {
+			pendingArticle = route;
+		}
+	);
+	await openDesktop(page);
+	expect(requestedArticles).toEqual([]);
+	const helpMenu = page.locator('.menubar summary').filter({ hasText: /^Help$/ });
+	await helpMenu.click();
+	await page.getByRole('button', { name: 'Introduction', exact: true }).click();
+	const introduction = page.getByRole('dialog', { name: 'Introduction', exact: true });
+	await expect(introduction.getByRole('status')).toHaveText('Loading article…');
+	await expect.poll(() => !!pendingArticle).toBe(true);
+	expect(requestedArticles).toHaveLength(1);
+	await page.keyboard.press('Escape');
+	await expect(introduction).toBeHidden();
+	await expect(helpMenu).toBeFocused();
+	await helpMenu.click();
+	await page.getByRole('button', { name: 'Debugging', exact: true }).click();
+	const debugging = page.getByRole('dialog', { name: 'Interactive Debugging', exact: true });
+	await expect(debugging).toContainText('2000');
+	await pendingArticle!.continue();
+	await expect(debugging).toBeVisible();
+	await expect(introduction).toBeHidden();
+	await page.keyboard.press('Escape');
+	await helpMenu.click();
+	await page.getByRole('button', { name: 'Introduction', exact: true }).click();
+	await expect(introduction).toContainText('Original article: Release 4.5 · August 2014');
+	await expect(introduction.getByRole('article')).toBeFocused();
+	expect(requestedArticles).toHaveLength(2);
+});
+
+test('a failed Help article displays an error and remains dismissible', async ({ page }) => {
+	await page.route(
+		(url) => url.pathname.endsWith('/MarsHelpIntro.html') && url.searchParams.has('raw'),
+		(route) => route.abort('failed')
+	);
+	await openDesktop(page);
+	const helpMenu = page.locator('.menubar summary').filter({ hasText: /^Help$/ });
+	await helpMenu.click();
+	await page.getByRole('button', { name: 'Introduction', exact: true }).click();
+	const dialog = page.getByRole('dialog', { name: 'Introduction', exact: true });
+	await expect(dialog.getByRole('alert')).toHaveText(
+		'Unable to load this article. Reload the page and try again.'
+	);
+	await page.keyboard.press('Escape');
+	await expect(dialog).toBeHidden();
+	await expect(helpMenu).toBeFocused();
+});
 
 test('Help menu opens all ten attributed articles and restores keyboard focus', async ({
 	page
@@ -154,6 +215,7 @@ test('every code block has controls and clipboard rejection shows recoverable fe
 			.click();
 		await page.getByRole('button', { name: 'Macros', exact: true }).click();
 		const dialog = page.getByRole('dialog', { name: 'Macros', exact: true });
+		await expect(dialog.locator('pre').first()).toBeVisible();
 		const examples = await dialog.locator('pre').count();
 		expect(examples).toBeGreaterThan(1);
 		await expect(dialog.getByRole('button', { name: /^Copy code example/ })).toHaveCount(examples);

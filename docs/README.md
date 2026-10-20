@@ -12,7 +12,7 @@ The [implementation guide](../IMPLEMENTATION.md) describes the current MARS-ts s
 | [Coolify deployment](adrs/0005-coolify-deployment.md)                             | Accepted                  | Static build, production origin, GitHub App deployment, and release ownership                                            |
 | [Object ownership and runtime lifetimes](adrs/0006-object-lifetime-management.md) | Accepted                  | Per-desktop state, scoped resources, asynchronous result validity, teardown ordering, and browser persistence boundaries |
 
-The [Coolify deployment runbook](runbooks/prod-deployment.md) covers configuration, publication, verification, and rollback at `mars-ide.portfolio-projects.dev`.
+The [Coolify deployment runbook](runbooks/prod-deployment.md) covers ongoing configuration maintenance, releases, smoke checks, and rollback for the live, stable service at `mars-ide.portfolio-projects.dev`.
 
 The [agent directory](../AGENTS.md) carries coding conventions for assistants; the guides under [agents/](agents/) are routed from it.
 

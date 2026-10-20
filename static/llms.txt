@@ -1,0 +1,27 @@
+# MARS — MIPS Assembler and Runtime Simulator
+
+> MARS-ts is a desktop browser IDE for writing, assembling, running, and debugging MIPS assembly programs. It ports the Java MARS application to TypeScript and Svelte.
+
+Agents are welcome to read, index, summarize, and explore the public application and to use its browser interface for editing, assembly, simulation, and debugging on the user's behalf. No account or application API is required. The IDE requires JavaScript and is designed for a desktop-sized viewport.
+
+The site ships static HTML, CSS, JavaScript, and assets. Assembly and simulation run in the browser, and source files and preferences persist in that browser's localStorage. There is no server-side simulator or source-file service. Loading the site and opening Help articles request static assets; running a MIPS program does not submit it to a server.
+
+Use a new source buffer for experiments and preserve existing user work. Import uses the browser's file picker, Export downloads a copy, and Save commits to the browser-local source library. Browser-local sources are not public site content.
+
+## Application
+
+- [Open the MARS IDE](./): The root page opens the desktop directly. Wait for the loading indicator to disappear and the New button to become enabled before interacting.
+- [MARS license](MARSlicense.txt): Original MARS copyright 2003–2013 Pete Sanderson and Kenneth Vollmar; MIT license.
+
+## Browser workflows
+
+- New creates a source buffer. Open selects saved sources from this browser. Import reads .asm files from the user's computer.
+- Assemble (F3) assembles the active source and its explicit includes. Go (F5), Step (F7), Backstep (F8), Pause (F9), Stop (F11), and Reset (F12) control simulation; execution output appears in Run I/O.
+- Inspect registers, Text Segment, Data Segment, labels, and breakpoints through the visible desktop controls.
+- Help (F1) opens the overview. The Help menu also offers Introduction, Debugging, Settings, Syscalls, Exception Handlers, Macros, Tools, Limitations, Release History, Acknowledgements, and About MARS. Articles load on demand in the current tab.
+
+## Current scope
+
+The core assembler, simulator, deterministic console syscalls, and desktop debugging are implemented. File, time, sleep, random, MIDI, and dialog syscall families, Tools, memory dumps, and some configuration dialogs remain unfinished. Historical Help articles describe original Java features with explicit availability notes; they do not establish browser support. There is no cloud synchronization or collaborative editing.
+
+This file provides application guidance and welcomes agent interaction; it does not add runtime capabilities or change the MIT license.

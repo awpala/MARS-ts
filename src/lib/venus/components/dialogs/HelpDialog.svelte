@@ -14,7 +14,7 @@
 		title={desktop.help.title}
 		onclose={desktop.closeHelp}
 		initialFocus=".help-article"
-		--modal-width={desktop.help.html ? 'min(900px, 94vw)' : 'min(560px, 90vw)'}
+		--modal-width={desktop.help.loadHtml ? 'min(900px, 94vw)' : 'min(560px, 90vw)'}
 	>
 		<HelpArticle
 			article={desktop.help}

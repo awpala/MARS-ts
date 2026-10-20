@@ -11,5 +11,8 @@
 </script>
 
 <!-- @component Root static application layout, preserving the original MARS favicon. -->
-<svelte:head><link rel="icon" href={asset('favicon.ico')} /></svelte:head>
+<svelte:head>
+	<link rel="icon" href={asset('favicon.ico')} />
+	<link rel="describedby" href={asset('llms.txt')} type="text/plain" />
+</svelte:head>
 {@render children()}

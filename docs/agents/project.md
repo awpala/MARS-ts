@@ -15,7 +15,7 @@ Milestones P0, P1, and P2 are complete. The root [package](../../package.json), 
 | Target release | `1.0` | TypeScript port release target; does not claim implementation completion |
 | Repository | `awpala/MARS-ts` | GitHub owner `awpala` |
 | Local dev/preview port | `6277` | Phoneword "MARS"; Vite `server.port` and `preview.port`, devcontainer publish/forward, `kill-app` |
-| Production port and origin | Internal `80`; `https://mars-ide.portfolio-projects.dev` | Coolify static hosting through the corresponding GitHub App; [ADR 0005](../adrs/0005-coolify-deployment.md) |
+| Production port and origin | Internal `80`; `https://mars-ide.portfolio-projects.dev` | Live, stable Coolify static hosting through the corresponding GitHub App; [ADR 0005](../adrs/0005-coolify-deployment.md) |
 
 Keep display names out of machine identifiers, and update related configuration together when a value changes. The port number appears in `devcontainer.json`, `kill-app.sh`, `setup-env.sh`'s handoff text, these guides, and (from P1) `vite.config.ts`.
 

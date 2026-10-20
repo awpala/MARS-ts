@@ -90,7 +90,7 @@ Each becomes an ADR when it is decided.
 - Execution model resolved in [ADR 0004](0004-cooperative-simulation.md): cooperative execution through an injected scheduler and asynchronous input services.
 - Editor component for P3.
 - Implementation order of the bundled tools.
-- Deployment target and public origin resolved in [ADR 0005](0005-coolify-deployment.md): static hosting on Coolify at `https://mars-ide.portfolio-projects.dev` through the corresponding GitHub App.
+- Deployment target and public origin resolved in [ADR 0005](0005-coolify-deployment.md): live, stable static hosting on Coolify at `https://mars-ide.portfolio-projects.dev` through the corresponding GitHub App.
 
 ## 9. Consequences
 

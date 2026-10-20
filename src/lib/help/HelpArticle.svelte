@@ -19,6 +19,7 @@
 		canOpen: boolean;
 	};
 	let { article, onopen, canOpen }: Props = $props();
+	const content = $derived(article.loadHtml?.());
 
 	// Preserve valid article HTML; each injected control is a Svelte component with explicit teardown.
 	function enhanceExamples(element: HTMLElement) {
@@ -55,12 +56,18 @@
 
 <!-- @component Help article presentation, including the overview and About; the app-wide Modal owns dialog behavior. Adapted articles credit MARS, copyright 2003–2013 Pete Sanderson and Kenneth Vollmar, MIT. -->
 <article class="help-article" tabindex="-1" aria-label={article.title}>
-	{#if article.html}
+	{#if article.loadHtml}
 		{#key article.id}
-			<div {@attach enhanceExamples}>
-				<!-- eslint-disable-next-line svelte/no-at-html-tags -- Only static, repository-authored HTML imports from the Help catalog; no user or network content. -->
-				{@html article.html}
-			</div>
+			{#await content}
+				<p role="status">Loading article…</p>
+			{:then loaded}
+				<div {@attach enhanceExamples}>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -- Only repository-authored HTML modules from the Help catalog; no user-provided content. -->
+					{@html loaded?.default ?? ''}
+				</div>
+			{:catch}
+				<p role="alert">Unable to load this article. Reload the page and try again.</p>
+			{/await}
 		{/key}
 		<footer>
 			Adapted from MARS help. Copyright © 2003–2013 Pete Sanderson and Kenneth Vollmar.

@@ -1,23 +1,25 @@
 # Coolify deployment runbook
 
-Deploy `awpala/MARS-ts` at `https://mars-ide.portfolio-projects.dev` through the corresponding GitHub App in Coolify. Follow these steps in order; each names the system being used. Steps 1–4 prepare the application, and step 5 publishes it.
+MARS-ts is live and stable at `https://mars-ide.portfolio-projects.dev`, deployed from `awpala/MARS-ts` through the corresponding GitHub App in Coolify. This runbook covers maintenance of that existing deployment, routine releases, configuration changes, and recovery.
 
-This procedure adapts the Financial Calculators runbook to this repository's existing static build. MARS-ts has no production Dockerfile or custom Nginx configuration. Use **Nixpacks with static output**, which builds with Node 24 and serves `build/` through Coolify's Nginx image. The [deployment decision](../adrs/0005-coolify-deployment.md) records that boundary. Java is needed for development and oracle checks, not production serving.
+For an ordinary release, use steps 4–6 to validate the revision, follow its deployment, and run release smoke checks. Consult steps 1–3 when changing configuration or recreating the service, step 7 when maintaining deployment filters, and step 8 for rollback. The configuration and smoke checks are operating procedures for the live service.
 
-The domain and repository are known; the Coolify project, environment, application ID, GitHub App display name, server address, DNS records, and installed dashboard layout have not been inspected. Confirm those values in your installation. The UI instructions follow Coolify's official documentation, with older control names noted where useful. The reference project's IP address, internal port, health endpoint, and routes are not MARS-ts settings.
+This procedure applies to this repository's existing static build. MARS-ts has no production Dockerfile or repository-managed Nginx configuration. Use **Nixpacks with static output**, which builds with Node 24 and serves `build/` through Coolify's Nginx image. Configure asset caching in Coolify's generated Nginx configuration as described below. The [deployment decision](../adrs/0005-coolify-deployment.md) records that boundary. Java is needed for development and oracle checks, not production serving.
 
-## 1. Coolify dashboard: select the application and GitHub App
+Use the existing Coolify project, environment, application, GitHub App, and server when maintaining this service. Keep their installation-specific identifiers and DNS values in the deployment records. The Custom Nginx configuration field is under **Settings → General → Build pipeline**; older control names are noted elsewhere where useful.
+
+## 1. Coolify dashboard: locate or recreate the application
 
 1. Open **Projects**, select the MARS project's environment, and open the application whose Git Source is `awpala/MARS-ts`. Use `mars-ts` when a new project or application name is needed.
-2. If no application exists, select **+ New → Private Repository (with GitHub App)** in that environment. Select the intended deployment server, then the existing GitHub App corresponding to MARS-ts. This source method also works when the repository is public.
+2. When recreating the service, select **+ New → Private Repository (with GitHub App)** in that environment. Select the intended deployment server, then the existing GitHub App corresponding to MARS-ts. This source method also works when the repository is public.
 3. Select `awpala/MARS-ts`, then **Load Repository**. Select branch `main`, Build Pack **Nixpacks**, Base Directory `/`, and static output with Publish Directory `/build` and internal port `80`. Select **Continue** and finish configuration before deploying.
 4. If the repository is missing, open **Sources → the corresponding GitHub App → General → Repositories** (older layouts use **Update Repositories**). On GitHub, confirm that the App installation has access to `awpala/MARS-ts`, then refresh the repository list in Coolify. Keep a dedicated App restricted to this repository.
 
 The [official GitHub App procedure](https://coolify.io/docs/applications/sources/github/app) describes source installation and application creation. An App source or project alone does not create a deployable Application. Its credentials belong to Coolify's source integration, not application variables or the browser bundle.
 
-**Expected result:** one Git-backed Application points to `awpala/MARS-ts` through its corresponding App and intended server. Record its project, environment, application name/ID, and server public address for the release record.
+The service uses one Git-backed Application pointing to `awpala/MARS-ts` through its corresponding App and intended server. Keep its project, environment, application name/ID, and server public address in the deployment records when recreating or moving it.
 
-## 2. Coolify dashboard: save build, domain, and runtime settings
+## 2. Coolify dashboard: maintain build, domain, and runtime settings
 
 ### Git Source
 
@@ -25,7 +27,7 @@ Under **Application → Configuration → Git Source**, confirm repository `awpa
 
 ### General: build and network
 
-Open **Configuration → General** and configure the build and network sections. Newer layouts call these **Build pipeline** and **Networking**.
+Open **Settings → General** and maintain the **Build pipeline** and **Networking** cards using the following configuration reference. Older layouts place General under Configuration.
 
 | Field | Value |
 | --- | --- |
@@ -38,7 +40,7 @@ Open **Configuration → General** and configure the build and network sections.
 | Build Command | `npm run build` |
 | Start Command | Empty; the static server owns startup |
 | Static server | Nginx |
-| Custom Nginx configuration | Default generated configuration initially; verify it in step 6 |
+| Custom Nginx configuration | Generated configuration with the static asset cache rules below; verify it in step 6 |
 | Ports Exposes | `80` |
 | Port Mappings | Empty |
 | HTTP Basic Authentication / Authentication | Disabled / `None` |
@@ -49,6 +51,26 @@ The [package manifest](../../package.json) requires Node 24. Keep development de
 
 Leave `MARS_VALIDATION` unset in Coolify. [Vite configuration](../../vite.config.ts) deliberately sends validation builds to `__build/browser-site`; the normal production build writes `build/`. No application runtime secrets, database, persistent volumes, or bind mounts are required. Keep Coolify-managed metadata, but do not copy local environment files or GitHub App credentials into application variables.
 
+### Static asset caching
+
+The desktop Lighthouse report captured on October 20, 2026 identified hashed-asset caching as a maintenance improvement for the live site. When updating this policy, use **Settings → General → Build pipeline** (card/section) → **Custom Nginx configuration** (input field) and merge the following into the existing `server` block. Keep its listen port, document root, MIME types, compression, security headers, and genuine-404 routing. Replace any competing cache directives rather than appending conflicting headers.
+
+```nginx
+# Unversioned documents and assets must revalidate after a release.
+expires off;
+add_header Cache-Control "no-cache";
+
+# SvelteKit content hashes change whenever these files change.
+location ^~ /_app/immutable/ {
+    try_files $uri =404;
+    add_header Cache-Control "public, max-age=31536000, immutable";
+}
+```
+
+Only `/_app/immutable/` receives the year-long immutable policy. HTML, `/_app/version.json`, `/llms.txt`, the license, favicon, and unversioned icons retain revalidation. Do not use `always` for the immutable header: missing chunks must return a real `404` without a long-lived cache policy. Nginx inherits `add_header` directives only when the current level defines none, so repeat any existing higher-level security headers in the new location and ensure other locations do not override the intended revalidation policy. See the [Nginx header module](https://nginx.org/en/docs/http/ngx_http_headers_module.html).
+
+Save and **redeploy/rebuild** after editing the Nginx configuration; restarting an existing image does not incorporate it. [Coolify's static-server guidance](https://coolify.io/docs/applications/builds/static#nginx-configuration) describes that image-build boundary. Include the header checks in step 6 when releasing cache-policy changes.
+
 ### Domain
 
 Open **Configuration → Domains → Add domain**, choose HTTPS, enter `mars-ide.portfolio-projects.dev`, and select internal port `80` if requested. Enable HTTP-to-HTTPS redirection. In older layouts, set **General → Domains** to `https://mars-ide.portfolio-projects.dev`. Save and keep Coolify-managed proxy routing. The [domain settings documentation](https://coolify.io/docs/applications/configuration/general#domains) distinguishes the internal target port from the visitor-facing HTTPS origin.
@@ -57,7 +79,7 @@ Open **Configuration → Domains → Add domain**, choose HTTPS, enter `mars-ide
 
 In **Configuration → Healthcheck**, enable an HTTP check using `GET`, scheme `http`, host `localhost`, port `80`, and path `/`. Use interval `30` seconds, timeout `5` seconds, retries `3`, and start period `10` seconds. If expected status is shown, set `200`, but independently verify the public response in step 6. There is no `/healthz` endpoint in this application. A successful root request checks static serving; it does not test the simulator.
 
-Coolify's [health-check documentation](https://coolify.io/docs/applications/configuration/health-checks) requires `curl` or `wget` inside the final container. After startup, use the application's **Terminal** to confirm the client exists and request `http://localhost:80/` with it. A health-check configuration change requires container recreation through restart or redeployment. Do not treat an unhealthy deployment as complete.
+Coolify's [health-check documentation](https://coolify.io/docs/applications/configuration/health-checks) requires `curl` or `wget` inside the final container. After startup, use the application's **Terminal** to confirm the client exists and request `http://localhost:80/` with it. A health-check configuration change requires container recreation through restart or redeployment. Check health after releases and recovery operations.
 
 Open **Rollback → Image retention**, retain at least two images, and verify server cleanup does not override retention. Step 8 needs a retained working image.
 
@@ -65,7 +87,7 @@ Open **Rollback → Image retention**, retain at least two images, and verify se
 
 ### Selective automatic deployment
 
-**Watch Paths belongs to this Coolify Application, not GitHub.** Under **Configuration → General → Build / Build pipeline → Watch Paths**, paste the following, one pattern per line:
+**Watch Paths belongs to this Coolify Application, not GitHub.** Under **Settings → General → Build pipeline → Watch Paths**, maintain the following, one pattern per line:
 
 ```text
 src/**
@@ -82,7 +104,7 @@ tests/**
 .github/workflows/**
 .devcontainer/scripts/bin/**
 !**/*.md
-static/**
+!_legacy-app/**
 ```
 
 Save, reload, and confirm the complete list remains. These paths select application code, dependencies, public assets, build configuration, tests, and verification tooling. The final `static/**` restores all published assets after the Markdown exclusion: even `static/README.md` is copied by the current static build. Repository documentation under `docs/`, library READMEs, and unrelated agent/editor settings do not select a deployment. Changes to the read-only Java reference are not part of the release workflow. Add paths here if new build inputs are introduced elsewhere.
@@ -95,7 +117,7 @@ Under **Configuration → Advanced → Deployment**, set **Auto deploy** to **De
 
 The App integration supplies push events. No manually copied deploy webhook, Actions deployment secret, or new deployment workflow is needed. The existing [Verify workflow](../../.github/workflows/verify.yml) runs independently: Auto Deploy can publish before Verify finishes, and a failed Verify run does not automatically roll back a release. Keep releases sequential and check the deployed SHA against its CI result.
 
-## 4. Devcontainer terminal and DNS provider: complete pre-flight checks
+## 4. Devcontainer terminal and DNS provider: validate a release or infrastructure change
 
 For the intended release revision, run inside the devcontainer:
 
@@ -107,9 +129,9 @@ npm run test:browser
 
 Require the harness, documentation, legacy oracle, and app tiers to pass. Install browser prerequisites with `npm run test:browser:install` if needed. Browser tests use `6278`; leave `6277` available for human review. These commands verify source and the isolated static build, not Coolify's generated image. Current CI runs the aggregate gates but does not run the Playwright suite or a production-container HTTP test.
 
-In the **DNS provider's dashboard for `portfolio-projects.dev`**, configure the `mars-ide` record for the selected Coolify deployment server's public address. Confirm that address from **Coolify → Servers** or the server provider; do not assume the reference application's address. Publish an AAAA record only when that server's IPv6 routing and proxy are configured. Ensure public ports `80` and `443` reach the Coolify proxy for this hostname.
+Ordinary application releases retain the current domain and DNS. When moving servers or changing DNS, update the `mars-ide` record in the **DNS provider's dashboard for `portfolio-projects.dev`** using the server's public address from **Coolify → Servers** or the server provider. Publish an AAAA record only when that server's IPv6 routing and proxy are configured. Keep public ports `80` and `443` routed to the Coolify proxy for this hostname.
 
-In the **devcontainer terminal**, inspect DNS using `dig` if available, or an equivalent DNS lookup tool:
+After DNS or ingress changes, inspect the records from the **devcontainer terminal** using `dig` if available, or an equivalent DNS lookup tool:
 
 ```sh
 dig +short A mars-ide.portfolio-projects.dev
@@ -118,28 +140,31 @@ dig +short CAA mars-ide.portfolio-projects.dev
 dig +short CAA portfolio-projects.dev
 ```
 
-Confirm A/AAAA answers match the intended ingress and that any effective CAA policy permits the configured certificate issuer. A missing route or default certificate before deployment is not a passing site check. Require valid HTTPS after deployment.
+Confirm A/AAAA answers match the intended ingress and that any effective CAA policy permits the configured certificate issuer. Check the public HTTPS origin after DNS, ingress, or certificate changes.
 
 Export any important sources from an existing development or previous production origin before moving. Source files and preferences are browser-local and origin-scoped; they do not automatically appear at the new domain. See the [persistence contract](../../IMPLEMENTATION.md#configuration-and-persistence).
 
-**Preparation is complete. The next step publishes the application.**
+Use the existing release pipeline below after validating the intended revision or configuration change.
 
-## 5. GitHub website and Coolify dashboard: deploy
+## 5. GitHub website and Coolify dashboard: publish a release
 
 1. **GitHub:** confirm the intended release is on `main` in `awpala/MARS-ts`. If a prepared branch still needs merging, review its checks and merge through the normal human release workflow. The release must contain the application source, `static/`, manifest, lockfile, and Vite configuration.
-2. **Coolify → Deployments / Deployment Logs:** open the deployment triggered by the matching push. If the revision was already on `main` before configuration, select **Deploy** once. A documentation-only change may also require this initial manual deployment. Avoid starting another deployment while one is running.
+2. **Coolify → Deployments / Deployment Logs:** open the deployment triggered by the matching push. Use **Deploy** for an intended manual release or a configuration change that requires rebuilding the image; repository documentation changes alone normally do not select a deployment. Avoid starting another deployment while one is running.
 3. Follow the log through source checkout, Node 24 selection, dependency installation, `npm run build`, publication of `build/`, and container startup. Confirm the final serving process is Nginx on `80`, and that the application becomes healthy.
 4. Record the checked-out SHA and Coolify deployment ID. In **GitHub → Actions → Verify**, require success for that exact revision. Do not substitute a passing run for a different SHA.
 5. Complete step 6. A successful image build or green health indicator alone is insufficient release evidence.
 
-## 6. Devcontainer terminal and browser: verify the public site
+## 6. Devcontainer terminal and browser: run release smoke checks
 
-Run these requests without disabling certificate validation:
+Use these checks after application or hosting changes, rollback, or incident recovery. Run the requests without disabling certificate validation:
 
 ```sh
 curl --connect-timeout 10 --max-time 30 -i https://mars-ide.portfolio-projects.dev/
 curl --connect-timeout 10 --max-time 30 -I http://mars-ide.portfolio-projects.dev/
 curl --connect-timeout 10 --max-time 30 -i https://mars-ide.portfolio-projects.dev/MARSlicense.txt
+curl --connect-timeout 10 --max-time 30 -i https://mars-ide.portfolio-projects.dev/llms.txt
+curl --connect-timeout 10 --max-time 30 -I https://mars-ide.portfolio-projects.dev/_app/version.json
+curl --connect-timeout 10 --max-time 30 -I https://mars-ide.portfolio-projects.dev/_app/immutable/missing-chunk.js
 curl --connect-timeout 10 --max-time 30 -i https://mars-ide.portfolio-projects.dev/missing-page/
 ```
 
@@ -148,13 +173,16 @@ curl --connect-timeout 10 --max-time 30 -i https://mars-ide.portfolio-projects.d
 | HTTPS `/` | HTTP `200`, MARS HTML, valid certificate for this hostname |
 | HTTP `/` | Redirect to the HTTPS origin, without an internal port or hostname |
 | `/MARSlicense.txt` | HTTP `200`, the bundled Pete Sanderson and Kenneth Vollmar license text |
+| `/llms.txt` | HTTP `200`, plain-text MARS agent guidance matching the shipped asset; cache revalidation |
+| `/_app/version.json` | HTTP `200`, JSON with cache revalidation |
+| `/_app/immutable/missing-chunk.js` | HTTP `404`, no year-long immutable cache policy, no HTML fallback |
 | `/missing-page/` | HTTP `404`; no successful SPA fallback to the IDE |
 
 The current application has only the root route. Do not copy the calculator's nested-route, sitemap, or `/healthz` checks. If the generated server returns the IDE for unknown paths, confirm **Static** rather than **SPA** mode and correct the generated Nginx configuration before accepting the release. Custom Nginx changes require a rebuild.
 
 In a clean **browser profile**, open the HTTPS site:
 
-1. Confirm the desktop becomes interactive, toolbar icons load, and developer tools show no failed `/_app/` JavaScript/CSS requests or uncaught startup errors. Refresh the root URL directly.
+1. Confirm the desktop becomes interactive, toolbar icons load, and developer tools show no failed `/_app/` JavaScript/CSS requests or uncaught startup errors. Refresh the root URL directly. In the page head, confirm the `rel="describedby"` link resolves to `/llms.txt`.
 2. Create a new file, paste the following program, and save it as `deployment-smoke.asm` in the browser library:
 
    ```asm
@@ -170,13 +198,16 @@ In a clean **browser profile**, open the HTTPS site:
 
 3. Select **Assemble**, then run the program. Confirm the Run I/O output includes `42` and execution finishes. Reset, single-step, and confirm the execution display advances. This is a deployment smoke check, not additional oracle parity evidence.
 4. Reload and confirm the saved source remains available. Use **Export** to download it, then open **About MARS** and confirm its license link resolves. Test downloads in the actual browser used for the IDE.
-5. In developer tools, inspect HTML and asset cache headers. HTML must not have a long-lived immutable cache policy. Confirm a normal reload after a later release loads that release's assets; a forced refresh must not be the only way to see updated code. Any custom cache policy needs verification on the deployed image.
+5. In developer tools, inspect HTML and asset cache headers. Copy an actual hashed JavaScript or CSS URL from this release and verify its response has `Cache-Control: public, max-age=31536000, immutable`; repeat with `curl -I` against that URL. Confirm HTML, `/_app/version.json`, and `/llms.txt` use `Cache-Control: no-cache`. With **Disable cache** unchecked, reload and confirm unchanged hashed assets are reused. Confirm a normal reload after a later release loads that release's assets; a forced refresh must not be the only way to see updated code.
+6. With a fresh page load and the Network panel open, confirm the ten Help article chunks are absent from the initial requests. Open **Help → Introduction** and **Help → Syscalls**; each should request its corresponding hashed article chunk when first opened, display its content and snippet controls, and close with Escape. Loading or a failed request must leave the dialog dismissible. The F1 overview and About MARS remain immediately available.
+
+For desktop Lighthouse comparisons, use an extension-free browser profile and the same desktop settings, distinguishing a cold load from a warm-cache reload. Extension-injected scripts, styles, and layout work are outside the application measurement. Bundle-size comparisons alone do not establish an improved Lighthouse score; collect a new report after deploying the intended revision. Mobile layout and mobile audits are outside the current desktop performance scope.
 
 Record the source SHA, Verify result, local gate/browser results, deployment ID, health, DNS/TLS results, and browser smoke results together. The simulator needs JavaScript; a static HTTP response alone does not establish that it works.
 
-## 7. GitHub and Coolify: verify selective deployment
+## 7. GitHub and Coolify: maintain selective deployment
 
-Use the next ordinary intended changes to test the filter:
+After changing Watch Paths or deployment triggers, use ordinary intended changes to check the filter:
 
 1. Before a `docs/`-only merge, note the current deployment ID/SHA. After the merge, confirm Verify runs but Coolify creates no deployment for that commit.
 2. After the next intended `src/`, `static/`, dependency, or selected verification change on `main`, confirm a webhook deployment is queued for its SHA and repeat steps 5–6.

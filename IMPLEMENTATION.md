@@ -46,7 +46,7 @@ During initialization, an accessible, continuously rotating loading spinner appe
 
 ### Help and source examples
 
-The Help dropdown opens individual articles for Introduction, Debugging, Settings, Syscalls, Exception Handlers, Macros, Tools, Limitations, Release History, and Acknowledgements, alongside the F1 overview and About MARS. The [Help module](src/lib/help/README.md) owns their catalog and content. Current-use articles describe implemented browser behavior; historical acknowledgements, release history, and Java extension instructions retain original credits and dates with explicit legacy context. The syscall reference marks each service’s availability and uses a bounded, independently scrollable table with fixed column headers. Long articles scroll inside the shared dialog, keeping its title and dismissal control visible. Code snippets offer clipboard copying with feedback and an action to open the exact snippet in a new editor source without replacing existing buffers; opening code is disabled during execution. Shared Clipboard variants own copy feedback and transfer controls; the Help attachment mounts and releases them while the workspace remains responsible for creating the new source.
+The Help dropdown opens individual articles for Introduction, Debugging, Settings, Syscalls, Exception Handlers, Macros, Tools, Limitations, Release History, and Acknowledgements, alongside the F1 overview and About MARS. The [Help module](src/lib/help/README.md) owns their catalog and content. Menu metadata, the overview, and About are available immediately; each longer article loads as a separate hashed asset when opened, with loading and failure feedback inside the dismissible dialog. Current-use articles describe implemented browser behavior; historical acknowledgements, release history, and Java extension instructions retain original credits and dates with explicit legacy context. The syscall reference marks each service’s availability and uses a bounded, independently scrollable table with fixed column headers. Long articles scroll inside the shared dialog, keeping its title and dismissal control visible. Code snippets offer clipboard copying with feedback and an action to open the exact snippet in a new editor source without replacing existing buffers; opening code is disabled during execution. Shared Clipboard variants own copy feedback and transfer controls; the Help attachment mounts and releases them while the workspace remains responsible for creating the new source.
 
 These adaptations are specified in [ADR 0002](docs/adrs/0002-port-fidelity.md), [ADR 0003](docs/adrs/0003-browser-file-workflows.md), and [ADR 0004](docs/adrs/0004-cooperative-simulation.md). They do not authorize replacement assembly or simulation algorithms in the GUI.
 
@@ -427,6 +427,8 @@ Report the result of the actual run, including skipped tests and unavailable pre
 
 The root [package manifest](package.json) and lockfile own dependency resolution; [Vite configuration](vite.config.ts) integrates SvelteKit, its static adapter, Tailwind, and Vitest. Application implementation stays under `src/`; browser-ready assets stay under `static/`. The original Java app is isolated under [_legacy-app/](_legacy-app/README.md), with its sources, resources, packaging files, and generated Javadoc. The oracle build reads that directory and copies the shared root license into `__build/legacy/Mars.jar`. Browser runtime assets remain under `static/`, and the TypeScript app does not load files from `_legacy-app/`.
 
+The shipped [llms.txt](static/llms.txt), advertised by the root layout, welcomes agent exploration and browser IDE use. It describes supported desktop workflows, browser-local source persistence, and deferred features without introducing a server-side API or access-control policy.
+
 ### Toolchain and helper commands
 
 | Layer                 | Current stack                                                             |
@@ -446,7 +448,7 @@ Normal development and preview use port 6277 with strict binding. Browser tests 
 
 ### Static delivery and hosting
 
-The production output is static. [ADR 0005](docs/adrs/0005-coolify-deployment.md) selects Coolify hosting at `https://mars-ide.portfolio-projects.dev` through the corresponding GitHub App: Nixpacks builds with Node 24 and Coolify serves `build/` through Nginx on internal port 80. The [deployment runbook](docs/runbooks/prod-deployment.md) describes configuration and the remote verification still required for a live release. LocalStorage belongs to that origin, so changing the hosting origin is also a source-persistence boundary. A static build does not by itself provide offline caching, cloud synchronization, or a packaged desktop executable.
+The application is live and stable at `https://mars-ide.portfolio-projects.dev`. Its static Coolify deployment follows [ADR 0005](docs/adrs/0005-coolify-deployment.md) through the corresponding GitHub App: Nixpacks builds with Node 24 and Coolify serves `build/` through Nginx on internal port 80. The [deployment runbook](docs/runbooks/prod-deployment.md) maintains that existing service with configuration references, routine release smoke checks, cache-policy updates, and recovery procedures. LocalStorage belongs to that origin, so changing the hosting origin is also a source-persistence boundary. A static build does not by itself provide offline caching, cloud synchronization, or a packaged desktop executable.
 
 ## Remaining scope and extension rules
 
@@ -462,7 +464,7 @@ The core is usable for the supported instruction and console-service workflows, 
 | Editor                    | Hover descriptions and lexical highlighting exist; instruction popup completion and full legacy editor behavior remain incomplete; appearance dialogs are deliberately replaced by presets |
 | CLI and OS integration    | Command-line launcher, program arguments, native directory assembly, and native linked-file saving are intentionally excluded                                                              |
 | Persistence               | Source and preferences persist locally; machine checkpoints, undo-history recovery, cross-device sync, and collaborative editing are not implemented                                       |
-| Delivery                  | Static build exists; Coolify deployment is documented but remote release verification remains pending; final legacy offboarding remains governed by the port plan                          |
+| Delivery                  | Live, stable static hosting on Coolify; offline caching and a packaged desktop executable are not implemented; final legacy offboarding remains governed by the port plan                   |
 
 ### Extension contract
 
