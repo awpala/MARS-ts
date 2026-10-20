@@ -221,7 +221,16 @@
 	}
 	const id = $props.id();
 	function followPC(node: HTMLElement) {
-		node.scrollIntoView({ block: 'nearest' });
+		const viewport = node.closest<HTMLElement>('.text-segment');
+		if (!viewport) return;
+		const headerHeight = viewport.querySelector('thead')?.getBoundingClientRect().height ?? 0;
+		// Keep the current row below the sticky headings; scrollTop clamps at the last page.
+		// Scroll only this pane, preserving horizontal position and keyboard focus.
+		viewport.scrollTop +=
+			node.getBoundingClientRect().top -
+			viewport.getBoundingClientRect().top -
+			viewport.clientTop -
+			headerHeight;
 	}
 </script>
 
@@ -252,6 +261,7 @@
 					></thead
 				><tbody>
 					{#each rows as row (row.address)}<tr
+							{@attach row.address === pc && followPC}
 							id={`${id}-instruction-${row.address >>> 0}`}
 							class={{ current: row.address === pc, delay: row.address === pc && delaySlot }}
 							aria-current={row.address === pc ? 'step' : undefined}
@@ -278,8 +288,7 @@
 								/></td
 							><td>{row.basic}</td>
 							<td
-								>{#if row.address === pc}<span {@attach followPC}
-									></span>{/if}{#if row.modified}<span> ------ </span>{:else}<button
+								>{#if row.modified}<span> ------ </span>{:else}<button
 										class="source-link"
 										title={row.filename}
 										onclick={() => onsource(row.filename, row.line)}

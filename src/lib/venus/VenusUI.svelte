@@ -44,7 +44,8 @@
 	};
 	const paneId = $props.id();
 	let ready = $state(false);
-	onMount(() => {
+	let desktopVisible = $state(false);
+	const initializeDesktop = () => {
 		let recoveredConflict = false;
 		try {
 			libraryFiles = sourceLibrary.read();
@@ -179,10 +180,34 @@
 		execution = controls.getState();
 		ready = true;
 		refresh();
+		let revealFrame: number | undefined;
+		// Measure restored panes while hidden, then reveal after the first layout frame.
+		void tick().then(() => {
+			if (disposed) return;
+			revealFrame = requestAnimationFrame(() => {
+				revealFrame = requestAnimationFrame(() => {
+					if (!disposed) desktopVisible = true;
+				});
+			});
+		});
 		return () => {
 			disposed = true;
+			if (revealFrame !== undefined) cancelAnimationFrame(revealFrame);
 			release();
 			void controls.dispose().finally(wake);
+		};
+	};
+	onMount(() => {
+		let cleanup: (() => void) | undefined;
+		// Let the loading indicator paint before synchronous engine initialization begins.
+		let initializeFrame = requestAnimationFrame(() => {
+			initializeFrame = requestAnimationFrame(() => {
+				cleanup = initializeDesktop();
+			});
+		});
+		return () => {
+			cancelAnimationFrame(initializeFrame);
+			cleanup?.();
 		};
 	});
 	$effect(() => {
@@ -1312,7 +1337,18 @@
 	onkeydown={keydown}
 	onbeforeunload={beforeUnload}
 />
-<fieldset disabled={!ready} class="application-controls" aria-busy={!ready}>
+{#if !desktopVisible}
+	<div class="loading-screen" role="status">
+		<span class="loading-spinner" aria-hidden="true"></span>
+		<span>Loading MARS…</span>
+	</div>
+{/if}
+<fieldset
+	disabled={!desktopVisible}
+	class="application-controls"
+	class:initializing={!desktopVisible}
+	aria-busy={!desktopVisible}
+>
 	<input
 		class="hidden"
 		type="file"
@@ -1576,6 +1612,14 @@
 								else runIO = '';
 							}}>Clear</button
 						>
+						<button
+							class="clear-all"
+							title="Clear Mars Messages and Run I/O"
+							onclick={() => {
+								messages = '';
+								runIO = '';
+							}}>Clear All</button
+						>
 					</div>
 					<textarea
 						readonly
@@ -1811,6 +1855,34 @@
 	>{/if}
 
 <style>
+	.initializing {
+		visibility: hidden;
+	}
+	.loading-screen {
+		position: fixed;
+		inset: 0;
+		display: grid;
+		place-content: center;
+		justify-items: center;
+		gap: 12px;
+		background: #ededed;
+		color: #17202b;
+		font-size: 14px;
+	}
+	.loading-spinner {
+		width: 32px;
+		height: 32px;
+		border: 3px solid #c4cbd2;
+		border-top-color: #315e88;
+		border-radius: 50%;
+		animation: loading-spin 0.8s linear infinite;
+		will-change: transform;
+	}
+	@keyframes loading-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
 	.backup-error {
 		padding: 6px 10px;
 		color: #8b1a1a;
@@ -2134,6 +2206,9 @@
 	}
 	.tabs .clear {
 		margin-left: auto;
+	}
+	.tabs .clear,
+	.tabs .clear-all {
 		border: 1px solid #aaa;
 		padding: 1px 12px;
 		margin-bottom: 2px;

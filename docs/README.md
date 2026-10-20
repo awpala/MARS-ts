@@ -1,12 +1,12 @@
 # Architecture and operations
 
-These decision records document the MARS-ts port: its plan, environment, and the choices made along the way.
+The [implementation guide](../IMPLEMENTATION.md) describes the current MARS-ts system, its architecture, browser adaptations, supported behavior, and remaining limitations. These decision records explain its plan, environment, and consequential design choices.
 
 | Decision | Status | Scope |
 | --- | --- | --- |
 | [Port plan](adrs/0000-port-plan.md) | Accepted (P0–P2 complete) | Scope, stack, legacy-to-target mapping, parity strategy, milestones, open decisions |
 | [Local development](adrs/0001-local-development-environment.md) | Accepted | One devcontainer, provisional JDK, setup ordering, persistence, live helpers |
-| [Browser file workflows](adrs/0003-browser-file-workflows.md) | Accepted | Browser downloads, dirty documents, same-tab dialogs, browser validation |
+| [Browser file workflows](adrs/0003-browser-file-workflows.md) | Accepted | Local source library, recovery, save/import/export, same-tab dialogs, browser validation |
 | [Port fidelity](adrs/0002-port-fidelity.md) | Accepted | Like-for-like classes and algorithms, desktop layout, browser adaptations, assets, and fixture layout |
 | [Cooperative simulation](adrs/0004-cooperative-simulation.md) | Accepted | Browser scheduling, asynchronous input, execution ownership, and callback contracts |
 

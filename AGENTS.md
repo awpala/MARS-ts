@@ -6,6 +6,8 @@ Guidance for AI coding agents working in this repository. Compatible with the [a
 
 ## Load guidance for the current task
 
+The root [implementation guide](IMPLEMENTATION.md) describes the current system at module level. Keep it current as features are added or ported, following the [documentation contract](docs/agents/documentation.md#port-documentation); the root README remains a brief entry point.
+
 Start here, then read only the guides whose scope matches the assignment. These are the detailed repository instructions, not optional summaries. Do not load every document under `docs/agents/`, every skill, or every ADR at startup. For a task crossing boundaries, load each affected specialty; follow further references when their subject is involved. Reuse guidance already read in the current context instead of reloading it through each referring skill.
 
 | Task or responsibility | Detailed guidance | When to load it |

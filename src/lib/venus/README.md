@@ -2,7 +2,13 @@
 
 This module presents the MARS desktop arrangement in Svelte: menus and toolbar, Edit/Execute panes above Messages/Run I/O, and the persistent register sidebar. It adapts `mars/venus/VenusUI.java`, `MainPane.java`, `MessagesPane.java`, `ExecutePane.java`, `RunSpeedPanel.java`, and the register-window classes. The root route mounts the desktop directly without a launch screen.
 
+An accessible, continuously rotating loading spinner covers initialization. The desktop is hidden while storage and engine state initialize and its restored layout is measured, then appears automatically. Teardown cancels pending reveal frames.
+
 The desktop owns an Editor and interaction state per component instance. Source open, new, local save, import/export, unsaved close, undo/redo, clipboard, and find/replace actions operate on source buffers. Modals use the current document's native dialog element for focus containment and restore focus on teardown. [Browser file adaptations](../../../docs/adrs/0003-browser-file-workflows.md) describe the local working filesystem, recovery backups, manual/automatic commits, import/export, and Exit.
+
+The bottom panel's Clear button clears only the selected output. Clear All immediately to its right clears both Mars Messages and Run I/O without changing the selected tab, machine state, or pending input.
+
+The Text Segment follows the highlighted instruction at the top below its sticky column headings, clamping at the bottom when too few rows remain. Tracking changes only that pane's vertical scroll position and does not steal keyboard focus.
 
 The browser mounts one `Globals` machine and one `RunController` per desktop. The register pane consumes that machine's integer and coprocessor registers rather than maintaining independent hardware. It refreshes from controller revisions and register subscriptions, using nonnotifying reads. Integer cells retain the original edit restrictions; floating cells accept decimal values through the Java floating-point compatibility adapter or exact hexadecimal bit patterns. Editing is suspended during execution. Condition flags display the real coprocessor state.
 
