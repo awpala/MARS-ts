@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readOracleJson, parseJsonRows } from '../oracle/fixtures.js';
 import { describe, expect, it } from 'vitest';
 import {
 	ExtendedInstruction,
@@ -44,13 +44,12 @@ interface Operators {
 	kind: 'operators';
 	names: string[];
 }
-const captured = JSON.parse(
-	readFileSync(new URL('./oracle/extended-instruction-units/golden.json', import.meta.url), 'utf8')
-) as { stdout: string; stderr: string; status: number };
-const rows = captured.stdout
-	.trimEnd()
-	.split('\n')
-	.map((line) => JSON.parse(line) as Metadata | Expansion | Operators);
+const captured = readOracleJson('extended-instruction-units/golden.json') as {
+	stdout: string;
+	stderr: string;
+	status: number;
+};
+const rows = parseJsonRows<Metadata | Expansion | Operators>(captured.stdout);
 const operators = new Set((rows[0] as Operators).names);
 const metadata = rows.filter((row): row is Metadata => row.kind === 'metadata');
 const expansions = rows.filter((row): row is Expansion => row.kind === 'expansion');

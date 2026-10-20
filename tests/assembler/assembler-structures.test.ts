@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readOracleJson, parseTabRows } from '../oracle/fixtures.js';
 import { describe, expect, it } from 'vitest';
 import { SourceLine } from '#lib/engine/assembler/SourceLine.js';
 import { Token } from '#lib/engine/assembler/Token.js';
@@ -8,13 +8,8 @@ import { SymbolTable } from '#lib/engine/assembler/SymbolTable.js';
 import { ErrorList } from '#lib/engine/diagnostics/ErrorList.js';
 import type { DiagnosticProgram } from '#lib/engine/diagnostics/ErrorMessage.js';
 
-const fixture: { stdout: string } = JSON.parse(
-	readFileSync(new URL('./oracle/assembler-units/golden.json', import.meta.url), 'utf8')
-);
-const lines = fixture.stdout
-	.trimEnd()
-	.split('\n')
-	.map((line) => line.split('\t'));
+const fixture: { stdout: string } = readOracleJson('assembler-units/golden.json');
+const lines = parseTabRows(fixture.stdout);
 function program(filename: string): DiagnosticProgram & { filename: string } {
 	return {
 		filename,

@@ -1,16 +1,13 @@
-import { readFileSync } from 'node:fs';
+import { readOracleJson, parseTabRows } from '../oracle/fixtures.js';
 import { describe, expect, it } from 'vitest';
 import { Directives } from '#lib/engine/assembler/Directives.js';
 import { Symbol } from '#lib/engine/assembler/Symbol.js';
 import { DelayedBranch } from '#lib/engine/simulator/DelayedBranch.js';
 
-const fixture: { stdout: string; stderr: string; exitCode: number } = JSON.parse(
-	readFileSync(new URL('./oracle/assembler-units/golden.json', import.meta.url), 'utf8')
+const fixture: { stdout: string; stderr: string; exitCode: number } = readOracleJson(
+	'assembler-units/golden.json'
 );
-const lines = fixture.stdout
-	.trimEnd()
-	.split('\n')
-	.map((line) => line.split('\t'));
+const lines = parseTabRows(fixture.stdout);
 
 describe('assembler foundation Java oracle', () => {
 	it('matches all directive names, help text, order, and numeric kinds', () => {

@@ -1,6 +1,6 @@
 # Java oracle fixtures
 
-This directory owns deterministic inputs and captured behavior for the TypeScript engine. The original Java implementation is the only producer of the goldens. The runner uses Node built-ins and the repository's isolated Java wrapper; it has no npm dependencies and implements no assembler or simulator behavior. The TypeScript [core-programs test](../core-programs.test.ts) consumes the original corpus through the production `Globals` composition and `RunController`. The capture runner alone establishes oracle reproducibility; the separate TypeScript comparisons establish the covered port behavior.
+This directory owns deterministic inputs and captured behavior for the TypeScript engine. The original Java implementation is the only producer of the goldens. The runner uses Node built-ins and the repository's isolated Java wrapper; it has no npm dependencies and implements no assembler or simulator behavior. The TypeScript [core-programs test](../session/core-programs.test.ts) consumes the original corpus through the production `Globals` composition and `RunController`. The capture runner alone establishes oracle reproducibility; the separate TypeScript comparisons establish the covered port behavior.
 
 ## Capture and verify
 
@@ -17,6 +17,8 @@ Only `--update` writes expected results. Review every changed golden after regen
 
 ## Format and normalization
 
+The TypeScript [fixture helpers](fixtures.ts) read checked-in JSON relative to this directory and decode tab-separated or JSON-lines probe output for the responsibility-grouped suites. They preserve the consumers' existing trailing-whitespace handling, do not cache mutable data, and neither generate observations nor validate their schemas. Capture types and assertions remain with each suite; raw whole-program stdout and stderr comparisons retain their separate byte-preserving path.
+
 [cases.json](cases.json) uses schema version 1. Each case declares its stable ID, source basename, MARS options, program arguments, UTF-8 stdin, and expected termination code. `auxiliaryFiles`, when present, lists every included source dependency; the runner hashes their bytes along with the program and case configuration. Keep all include dependencies declared and local to `programs/`. The runner always prepends `nc ae2 se3`; `pa` and program arguments come after the filename. `expectedExitCode` is a guard against accidentally capturing a broken probe as a successful fixture; the recorded exit code still comes from the actual Java process.
 
 Each case has three golden files: `.stdout` and `.stderr` preserve raw output bytes, including empty output and trailing newlines; `.json` records the command, input SHA-256, schema version, and actual exit code. Buffers are compared directly without newline conversion, whitespace trimming, or decoding/re-encoding. The sole normalization replaces the absolute checkout root plus `/` with `<repo>/` in either stream. This makes diagnostic source paths reproducible across checkouts. It also affects a program that prints that exact prefix, so probes must not intentionally print an absolute checkout path. Relative paths, line numbers, columns, diagnostic wording, register formatting, and all remaining bytes are significant. The TypeScript consumer applies this same normalization to engine diagnostics and console output before comparison.
@@ -25,7 +27,7 @@ Each case has three golden files: `.stdout` and `.stderr` preserve raw output by
 
 ## TypeScript core-program comparisons
 
-Run `npm run test -- tests/core-programs.test.ts` from the repository root. The test constructs the production `Globals` machine and Venus `RunController`, reads only the case’s declared source buffers, assembles with the actual tokenizer/assembler/instruction set, and executes with the actual simulator and syscall registry. It does not provide substitute instruction execution, a replacement assembler, or a CLI implementation.
+Run `npm run test -- tests/session/core-programs.test.ts` from the repository root. The test constructs the production `Globals` machine and Venus `RunController`, reads only the case’s declared source buffers, assembles with the actual tokenizer/assembler/instruction set, and executes with the actual simulator and syscall registry. It does not provide substitute instruction execution, a replacement assembler, or a CLI implementation.
 
 Nineteen of the 21 original cases are enabled and pass. The test compares exact console bytes for captures that separate program output, verifies empty program output for the other enabled fixtures, and compares captured diagnostic wording and source locations, assembly warnings, general/floating registers, raw memory words, and selected machine encodings. Instruction-count cases observe actual text reads using the Java launcher’s address-deduplication criterion. Runtime failures and maximum-step termination are checked through controller state. Expected snapshots are decoded from the original Java display in test code; launcher headings, process messages, and display separators are not browser output contracts.
 

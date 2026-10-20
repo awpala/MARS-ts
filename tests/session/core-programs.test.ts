@@ -1,13 +1,14 @@
+import { readOracleJson } from '../oracle/fixtures.js';
 import { readFileSync } from 'node:fs';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import manifest from './oracle/cases.json';
-import { Globals } from '../src/lib/engine/Globals.js';
-import { Settings } from '../src/lib/engine/Settings.js';
-import { ProcessingException } from '../src/lib/engine/diagnostics/ProcessingException.js';
-import { AccessNotice } from '../src/lib/engine/hardware/AccessNotice.js';
-import { Simulator } from '../src/lib/engine/simulator/Simulator.js';
-import { RunController } from '../src/lib/venus/RunController.js';
+import manifest from '../oracle/cases.json';
+import { Globals } from '#lib/engine/Globals.js';
+import { Settings } from '#lib/engine/Settings.js';
+import { ProcessingException } from '#lib/engine/diagnostics/ProcessingException.js';
+import { AccessNotice } from '#lib/engine/hardware/AccessNotice.js';
+import { Simulator } from '#lib/engine/simulator/Simulator.js';
+import { RunController } from '#lib/venus/RunController.js';
 
 const rootPrefix = resolve('.') + '/';
 const normalize = (text: string) => Buffer.from(text.replaceAll(rootPrefix, '<repo>/'), 'utf8');
@@ -64,9 +65,7 @@ describe('original Java corpus through production Globals and RunController', ()
 			async () => {
 				const stdout = readFileSync(`tests/oracle/golden/${entry.id}.stdout`);
 				const stderr = readFileSync(`tests/oracle/golden/${entry.id}.stderr`);
-				const metadata = JSON.parse(
-					readFileSync(`tests/oracle/golden/${entry.id}.json`, 'utf8')
-				) as { exitCode: number };
+				const metadata = readOracleJson(`golden/${entry.id}.json`) as { exitCode: number };
 				expect(metadata.exitCode).toBe(entry.expectedExitCode);
 				const captured = stdout.toString('utf8') + stderr.toString('utf8');
 				const expected = capturedState(captured);

@@ -1,3 +1,4 @@
+import { readOracleJson, parseJsonRows } from '../oracle/fixtures.js';
 import { Globals } from '#lib/engine/Globals.js';
 import { Settings } from '#lib/engine/Settings.js';
 import { readFileSync } from 'node:fs';
@@ -48,13 +49,12 @@ interface Case {
 	globals: SymbolRecord[];
 	memory: [number, number | null][];
 }
-const captured = JSON.parse(
-	readFileSync(new URL('./oracle/assembler-programs/golden.json', import.meta.url), 'utf8')
-) as { stdout: string; stderr: string; status: number };
-const rows = captured.stdout
-	.trimEnd()
-	.split('\n')
-	.map((line) => JSON.parse(line) as Case);
+const captured = readOracleJson('assembler-programs/golden.json') as {
+	stdout: string;
+	stderr: string;
+	status: number;
+};
+const rows = parseJsonRows<Case>(captured.stdout);
 function statements(list: ProgramStatement[] | null): StatementRecord[] | null {
 	return (
 		list?.map((s) => ({

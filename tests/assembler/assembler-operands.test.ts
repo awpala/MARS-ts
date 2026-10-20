@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readOracleJson, parseJsonRows } from '../oracle/fixtures.js';
 import { describe, expect, it } from 'vitest';
 import { Instruction } from '#lib/engine/instructions/Instruction.js';
 import { OperandFormat } from '#lib/engine/assembler/OperandFormat.js';
@@ -29,13 +29,12 @@ interface Row {
 	failure: string | null;
 	errors?: { file: string | null; line: number; column: number; message: string }[];
 }
-const captured = JSON.parse(
-	readFileSync(new URL('./oracle/operand-format-units/golden.json', import.meta.url), 'utf8')
-) as { stdout: string; stderr: string; status: number };
-const rows = captured.stdout
-	.trimEnd()
-	.split('\n')
-	.map((line) => JSON.parse(line) as Row);
+const captured = readOracleJson('operand-format-units/golden.json') as {
+	stdout: string;
+	stderr: string;
+	status: number;
+};
+const rows = parseJsonRows<Row>(captured.stdout);
 const types = new Map(
 	Object.values(TokenTypes)
 		.filter((value): value is TokenTypes => value instanceof TokenTypes)

@@ -1,3 +1,4 @@
+import { readOracleJson, parseJsonRows } from '../oracle/fixtures.js';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
@@ -51,13 +52,10 @@ interface Fixture {
 	sourceMap?: { source: string; file: string | null; line: number }[] | null;
 	plainSource?: string[];
 }
-const captured: { stdout: string; stderr: string; status: number } = JSON.parse(
-	readFileSync(new URL('./oracle/tokenizer-units/golden.json', import.meta.url), 'utf8')
+const captured: { stdout: string; stderr: string; status: number } = readOracleJson(
+	'tokenizer-units/golden.json'
 );
-const fixtures: Fixture[] = captured.stdout
-	.trimEnd()
-	.split('\n')
-	.map((line) => JSON.parse(line));
+const fixtures: Fixture[] = parseJsonRows<Fixture>(captured.stdout);
 const operators = new Set(fixtures.find((fixture) => fixture.kind === 'operators')!.names!);
 function context(): TokenClassificationContext {
 	return {
@@ -285,8 +283,8 @@ describe('Tokenizer Java oracle', () => {
 		expect(second.getErrors().errorCount()).toBe(0);
 	});
 	it('uses the pinned Java character table for every UTF-16 code unit', () => {
-		const expected: { letterRanges: number[][]; digitRanges: number[][] } = JSON.parse(
-			readFileSync(new URL('./oracle/highlighting/character-data.json', import.meta.url), 'utf8')
+		const expected: { letterRanges: number[][]; digitRanges: number[][] } = readOracleJson(
+			'highlighting/character-data.json'
 		);
 		const letters = new Uint8Array(65536);
 		const digits = new Uint8Array(65536);

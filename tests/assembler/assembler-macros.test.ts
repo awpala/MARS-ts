@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readOracleJson, parseTabRows } from '../oracle/fixtures.js';
 import { describe, expect, it } from 'vitest';
 import { TokenTypes, type TokenClassificationContext } from '#lib/engine/assembler/TokenTypes.js';
 import { Macro, type MacroProgram, type MacroRegisters } from '#lib/engine/assembler/Macro.js';
@@ -10,13 +10,8 @@ import { Coprocessor0 } from '#lib/engine/hardware/Coprocessor0.js';
 import { Coprocessor1 } from '#lib/engine/hardware/Coprocessor1.js';
 import { ErrorList } from '#lib/engine/diagnostics/ErrorList.js';
 
-const fixture: { stdout: string } = JSON.parse(
-	readFileSync(new URL('./oracle/assembler-units/golden.json', import.meta.url), 'utf8')
-);
-const lines = fixture.stdout
-	.trimEnd()
-	.split('\n')
-	.map((line) => line.split('\t'));
+const fixture: { stdout: string } = readOracleJson('assembler-units/golden.json');
+const lines = parseTabRows(fixture.stdout);
 const registers: MacroRegisters = {
 	registerFile: new RegisterFile(),
 	coprocessor0: new Coprocessor0(),

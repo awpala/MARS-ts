@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readOracleJson } from '../oracle/fixtures.js';
 import { describe, expect, it } from 'vitest';
 import { Globals, type GlobalsHost } from '#lib/engine/Globals.js';
 import { Settings } from '#lib/engine/Settings.js';
@@ -41,9 +41,11 @@ describe('Settings Java oracle', () => {
 		);
 	});
 	it('preserves all boolean defaults, nonpersistent setters, change notifications, and engine limits', () => {
-		const fixture = JSON.parse(
-			readFileSync(new URL('./oracle/settings-units/golden.json', import.meta.url), 'utf8')
-		) as { stdout: string; stderr: string; status: number };
+		const fixture = readOracleJson('settings-units/golden.json') as {
+			stdout: string;
+			stderr: string;
+			status: number;
+		};
 		expect(fixture.status).toBe(0);
 		expect(fixture.stderr).toBe('');
 		const saved = new Map<string, string>();
