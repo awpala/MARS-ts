@@ -27,3 +27,7 @@ About MARS links to the unchanged license bundled under `static/MARSlicense.txt`
 Alt+N (Option+N on macOS) creates a new file from focused controls, including register inputs, and focuses its source editor while preserving existing buffers. The shortcut matches the physical N key so macOS dead-key events are canceled before accent composition. Key repeats and active dialogs do not create additional files.
 
 The source Line/Column status appears only for the active source buffer in Edit. Execute omits that editor-only annotation. The ASCII toolbar toggle shares its persisted state with the Data Segment checkbox.
+
+The menu-bar appearance toggle retains the original palette as the default light theme and offers a complementary dark theme across all panes, syntax, highlights, and dialogs. Shared semantic color overrides live in [layout.css](../../routes/layout.css), with existing colors and JSON presets as light fallbacks. The selection is stored separately as `mars-ts:theme:v1` and applied before first paint; storage failures retain in-memory switching. Appearance changes do not recreate the editor or machine.
+
+The theme control remains at the right of the menu bar as an accessible sun/moon switch. Its thumb slides horizontally between light and dark over 300 ms, including under reduced-motion preferences as explicitly requested. Space or Enter toggles the focused switch.

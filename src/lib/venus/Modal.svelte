@@ -69,10 +69,10 @@
 	dialog {
 		margin: auto;
 		width: min(560px, 90vw);
-		border: 1px solid #6a7786;
+		border: 1px solid var(--theme-border, #6a7786);
 		padding: 0;
-		color: #17202b;
-		background: #f0f0f0;
+		color: var(--theme-text, #17202b);
+		background: var(--theme-surface, #f0f0f0);
 		box-shadow: 0 8px 32px #0005;
 	}
 	dialog::backdrop {
@@ -82,9 +82,9 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		background: #d9e4ef;
+		background: var(--theme-heading, #d9e4ef);
 		padding: 5px 9px;
-		border-bottom: 1px solid #94a3b8;
+		border-bottom: 1px solid var(--theme-border, #94a3b8);
 	}
 	h2 {
 		font-weight: 600;

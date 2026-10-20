@@ -4,6 +4,15 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="text-scale" content="scale" />
+		<script>
+			// Apply the saved palette before the stylesheet and desktop can paint.
+			try {
+				document.documentElement.dataset.theme =
+					localStorage.getItem('mars-ts:theme:v1') === 'dark' ? 'dark' : 'light';
+			} catch {
+				document.documentElement.dataset.theme = 'light';
+			}
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

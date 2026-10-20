@@ -239,15 +239,15 @@
 	class="execute-pane"
 	style:--table-font={preset.fontFamily}
 	style:--table-font-size={preset.fontSize}
-	style:--pc-background={preset.text.background}
-	style:--pc-foreground={preset.text.foreground}
-	style:--changed-background={preset.data.background}
-	style:--delay-background={preset.delaySlot.background}
-	style:--delay-foreground={preset.delaySlot.foreground}
-	style:--even-background={preset.evenRow.background}
-	style:--even-foreground={preset.evenRow.foreground}
-	style:--odd-background={preset.oddRow.background}
-	style:--odd-foreground={preset.oddRow.foreground}
+	style:--pc-background={`var(--theme-pc, ${preset.text.background})`}
+	style:--pc-foreground={`var(--theme-text, ${preset.text.foreground})`}
+	style:--changed-background={`var(--theme-data-changed, ${preset.data.background})`}
+	style:--delay-background={`var(--theme-delay, ${preset.delaySlot.background})`}
+	style:--delay-foreground={`var(--theme-text, ${preset.delaySlot.foreground})`}
+	style:--even-background={`var(--theme-row-even, ${preset.evenRow.background})`}
+	style:--even-foreground={`var(--theme-text, ${preset.evenRow.foreground})`}
+	style:--odd-background={`var(--theme-canvas, ${preset.oddRow.background})`}
+	style:--odd-foreground={`var(--theme-text, ${preset.oddRow.foreground})`}
 >
 	<div class="text-row">
 		<section class="segment text-segment" aria-label="Text Segment">
@@ -421,13 +421,13 @@
 	.segment {
 		flex: 1;
 		overflow: auto;
-		border: 1px solid #a2aab1;
+		border: 1px solid var(--theme-border, #a2aab1);
 		min-height: 0;
 		min-width: 0;
 	}
 	h2 {
-		background: #dde4eb;
-		border-bottom: 1px solid #a2aab1;
+		background: var(--theme-heading, #dde4eb);
+		border-bottom: 1px solid var(--theme-border, #a2aab1);
 		padding: 3px 6px;
 		font-weight: 600;
 	}
@@ -438,7 +438,7 @@
 		display: flex;
 		gap: 12px;
 		padding: 3px 6px;
-		background: #eee;
+		background: var(--theme-chrome, #eee);
 	}
 	.labels th button {
 		width: 100%;
@@ -453,12 +453,12 @@
 	th {
 		position: sticky;
 		top: 0;
-		background: #e5e5e5;
+		background: var(--theme-chrome, #e5e5e5);
 		font-weight: 400;
 	}
 	th,
 	td {
-		border: 1px solid #bbb;
+		border: 1px solid var(--theme-border, #bbb);
 		padding: 2px 4px;
 	}
 	tbody tr:nth-child(odd) {
@@ -498,8 +498,8 @@
 	}
 	.code-value:focus,
 	.data-scroll input:focus {
-		outline: 1px solid #467ca8;
-		background: white;
+		outline: 1px solid var(--theme-focus, #467ca8);
+		background: var(--theme-canvas, white);
 	}
 	td.changed {
 		background: var(--changed-background);
@@ -509,7 +509,7 @@
 		gap: 10px;
 		align-items: center;
 		overflow-x: auto;
-		background: #eee;
+		background: var(--theme-chrome, #eee);
 		flex-shrink: 0;
 		padding: 2px 5px;
 	}
@@ -517,11 +517,19 @@
 	.data-controls > select {
 		flex-shrink: 0;
 	}
+	.data-controls select {
+		background: var(--theme-chrome, #eee);
+		color: var(--theme-text, #17202b);
+	}
+	.data-controls option {
+		background: var(--theme-canvas, white);
+		color: var(--theme-text, #17202b);
+	}
 	.control-separator {
 		flex: 0 0 1px;
 		align-self: stretch;
 		margin: 2px 0;
-		background: #b3b3b3;
+		background: var(--theme-divider, #b3b3b3);
 	}
 	.data-controls img {
 		width: 22px;
@@ -534,7 +542,7 @@
 		gap: 15px;
 	}
 	p {
-		color: #a11;
+		color: var(--theme-error, #a11);
 		padding: 4px;
 	}
 </style>

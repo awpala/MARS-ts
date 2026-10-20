@@ -154,12 +154,12 @@
 	class="register-pane"
 	style:--table-font={highlightingPreset.fontFamily}
 	style:--table-font-size={highlightingPreset.fontSize}
-	style:--even-background={highlightingPreset.evenRow.background}
-	style:--even-foreground={highlightingPreset.evenRow.foreground}
-	style:--odd-background={highlightingPreset.oddRow.background}
-	style:--odd-foreground={highlightingPreset.oddRow.foreground}
-	style:--changed-background={highlightingPreset.registers.background}
-	style:--changed-foreground={highlightingPreset.registers.foreground}
+	style:--even-background={`var(--theme-row-even, ${highlightingPreset.evenRow.background})`}
+	style:--even-foreground={`var(--theme-text, ${highlightingPreset.evenRow.foreground})`}
+	style:--odd-background={`var(--theme-canvas, ${highlightingPreset.oddRow.background})`}
+	style:--odd-foreground={`var(--theme-text, ${highlightingPreset.oddRow.foreground})`}
+	style:--changed-background={`var(--theme-register-changed, ${highlightingPreset.registers.background})`}
+	style:--changed-foreground={`var(--theme-text, ${highlightingPreset.registers.foreground})`}
 >
 	<div class="tabs">
 		{#each ['Registers', 'Coproc 1', 'Coproc 0'] as tab (tab)}<button
@@ -239,26 +239,26 @@
 		min-width: 260px;
 		width: var(--register-width, 310px);
 		overflow: auto;
-		border: 1px solid #8d969e;
-		background: #fafafa;
+		border: 1px solid var(--theme-border, #8d969e);
+		background: var(--theme-surface, #fafafa);
 	}
 	.tabs {
 		display: flex;
 		gap: 2px;
 		padding: 2px 3px 0;
-		background: #e4e4e4;
-		border-bottom: 1px solid #9ca7b0;
+		background: var(--theme-chrome, #e4e4e4);
+		border-bottom: 1px solid var(--theme-border, #9ca7b0);
 		flex-shrink: 0;
 	}
 	.tabs button {
 		white-space: nowrap;
 		padding: 4px 9px;
-		border: 1px solid #a6aeb5;
+		border: 1px solid var(--theme-border, #a6aeb5);
 		border-bottom: 0;
 		border-radius: 3px 3px 0 0;
 	}
 	.tabs button.active {
-		background: white;
+		background: var(--theme-canvas, white);
 		font-weight: 600;
 	}
 	.register-scroll {
@@ -274,12 +274,12 @@
 	th {
 		position: sticky;
 		top: 0;
-		background: #e5e5e5;
+		background: var(--theme-chrome, #e5e5e5);
 		font-weight: 400;
 	}
 	th,
 	td {
-		border: 1px solid #c5c5c5;
+		border: 1px solid var(--theme-border, #c5c5c5);
 		padding: 2px 5px;
 		height: 21px;
 		white-space: nowrap;
@@ -307,8 +307,8 @@
 		font: inherit;
 	}
 	input:focus {
-		outline: 1px solid #467ca8;
-		background: #fff;
+		outline: 1px solid var(--theme-focus, #467ca8);
+		background: var(--theme-canvas, #fff);
 	}
 	.flags {
 		padding: 5px;
@@ -331,7 +331,7 @@
 		width: auto;
 	}
 	p {
-		color: #a11;
+		color: var(--theme-error, #a11);
 		padding: 5px;
 	}
 	@media print {

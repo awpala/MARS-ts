@@ -1,5 +1,62 @@
 @import 'tailwindcss';
 
+/* Light mode retains the original component colors and JSON preset fallbacks.
+   Dark overrides share semantic roles across the desktop, dialogs, and editor. */
+:root {
+	color-scheme: light;
+	background: var(--theme-background, #ededed);
+	color: var(--theme-text, #17202b);
+}
+:root[data-theme='dark'] {
+	color-scheme: dark;
+	--theme-background: #202833;
+	--theme-canvas: #161e27;
+	--theme-surface: #252f3c;
+	--theme-chrome: #2d3948;
+	--theme-gutter: #202a36;
+	--theme-divider: #3d4c5e;
+	--theme-heading: #33465b;
+	--theme-text: #e1e9f2;
+	--theme-muted: #a5b3c4;
+	--theme-disabled: #8391a3;
+	--theme-border: #526277;
+	--theme-focus: #91c8ff;
+	--theme-accent: #91bfee;
+	--theme-hover: #354f69;
+	--theme-selected: #365b7b;
+	--theme-selected-hover: #416a8e;
+	--theme-accent-border: #80afd5;
+	--theme-accent-text: #b7dcff;
+	--theme-error: #ffaaaa;
+	--theme-warning: #49362c;
+	--theme-tooltip: #343b32;
+	--theme-selection: #548cc866;
+	--theme-row-even: #253140;
+	--theme-register-changed: #38542d;
+	--theme-data-changed: #254d70;
+	--theme-pc: #625124;
+	--theme-delay: #255b46;
+	--theme-icon-blue: #8fc7ff;
+	--theme-icon-green: #8bd6a1;
+	--theme-icon-red: #ff9696;
+	--theme-icon-wood: #d2a572;
+	--theme-icon-metal: #a6c6df;
+	--theme-icon-outline: #d6e2ed;
+	/* Canonical token IDs retain their existing font weight and italic styles. */
+	--theme-syntax-0: #e1e9f2;
+	--theme-syntax-1: #8bc995;
+	--theme-syntax-2: #e4a0b6;
+	--theme-syntax-3: #a3d99b;
+	--theme-syntax-4: #a3d99b;
+	--theme-syntax-5: #e1e9f2;
+	--theme-syntax-6: #8fc7ff;
+	--theme-syntax-7: #dfa9f2;
+	--theme-syntax-8: #ffa6a0;
+	--theme-syntax-9: #e1e9f2;
+	--theme-syntax-10: #ffa6a0;
+	--theme-syntax-11: #e4cd83;
+}
+
 html,
 body {
 	margin: 0;
@@ -17,14 +74,22 @@ button {
 	cursor: default;
 }
 button:disabled {
-	color: #858585;
+	color: var(--theme-disabled, #858585);
 }
 button:focus-visible,
 summary:focus-visible,
 a:focus-visible {
-	outline: 2px solid #2c679c;
+	outline: 2px solid var(--theme-focus, #2c679c);
 	outline-offset: -2px;
 }
 input[type='checkbox'] {
-	accent-color: #507b9f;
+	accent-color: var(--theme-accent, #507b9f);
+}
+
+@media print {
+	:root {
+		color-scheme: light;
+		background: white;
+		color: black;
+	}
 }
