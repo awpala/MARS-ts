@@ -3,8 +3,18 @@ export const DISPLAY_SETTINGS_STORAGE_KEY = 'mars-ts:display-settings:v1';
 
 /** Persistent view preferences, independent of source documents and machine state. */
 export interface DisplaySettings {
+	/** Commit all changed open sources automatically; defaults to false for older records. */
+	autoSave: boolean;
+	/** Render Data Segment bytes as ASCII; defaults to false for older records. */
+	ascii: boolean;
 	/** Whether Execute displays the Labels pane. */
 	showLabels: boolean;
+	/** Whether the Labels panel includes data symbols; defaults to true for older records. */
+	showDataLabels: boolean;
+	/** Whether the Labels panel includes text symbols; defaults to true for older records. */
+	showTextLabels: boolean;
+	/** LabelsWindow's eight-state column/direction selection, zero through seven. */
+	labelSortState: number;
 	/** Whether the editor displays line numbers. */
 	showLines: boolean;
 	/** Whether register and memory values display in hexadecimal. */
@@ -31,8 +41,25 @@ function validate(value: unknown): DisplaySettings | undefined {
 		data.speed > 40
 	)
 		return;
+	if (
+		(data.autoSave !== undefined && typeof data.autoSave !== 'boolean') ||
+		(data.ascii !== undefined && typeof data.ascii !== 'boolean') ||
+		(data.showDataLabels !== undefined && typeof data.showDataLabels !== 'boolean') ||
+		(data.showTextLabels !== undefined && typeof data.showTextLabels !== 'boolean') ||
+		(data.labelSortState !== undefined &&
+			(typeof data.labelSortState !== 'number' ||
+				!Number.isInteger(data.labelSortState) ||
+				data.labelSortState < 0 ||
+				data.labelSortState > 7))
+	)
+		return;
 	return {
+		autoSave: data.autoSave ?? false,
+		ascii: data.ascii ?? false,
 		showLabels: data.showLabels,
+		showDataLabels: data.showDataLabels ?? true,
+		showTextLabels: data.showTextLabels ?? true,
+		labelSortState: data.labelSortState ?? 0,
 		showLines: data.showLines,
 		hexValues: data.hexValues,
 		hexAddresses: data.hexAddresses,

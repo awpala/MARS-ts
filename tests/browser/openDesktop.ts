@@ -7,3 +7,21 @@ export async function openDesktop(page: Page): Promise<void> {
 		timeout: 30000
 	});
 }
+
+/** Seed browser-local source records and open selected names (all by default) through the actual Open dialog. */
+export async function openStoredSources(
+	page: Page,
+	sources: { name: string; source: string }[],
+	selectedNames: string[] = sources.map((source) => source.name)
+): Promise<void> {
+	await page.evaluate(
+		(records) => localStorage.setItem('mars-ts:sources:v1', JSON.stringify(records)),
+		sources
+	);
+	await page.getByRole('button', { name: 'Open ...', exact: true }).click();
+	const dialog = page.getByRole('dialog', { name: 'Open', exact: true });
+	for (const name of selectedNames) {
+		await dialog.getByRole('checkbox', { name, exact: true }).check();
+	}
+	await dialog.getByRole('button', { name: 'Open', exact: true }).click();
+}

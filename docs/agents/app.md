@@ -44,7 +44,7 @@ The simulator engine (assembler, instruction set, hardware, simulator, syscalls,
 
 - Tailwind 4 through its Vite plugin; no `tailwind.config.js` or PostCSS configuration.
 - Utility classes on elements; extract a Svelte component rather than `@apply` for repeated class lists.
-- The Venus UI is the initial visual and functional reference: preserve its desktop layout, compact styling, pane arrangement, and workflows. Convert raster UI icons to SVG, retain the existing MARS favicon, use the browser file picker, and render application dialogs in the current tab ([ADR 0002](../adrs/0002-port-fidelity.md)).
+- The Venus UI is the initial visual and functional reference: preserve its desktop layout, compact styling, pane arrangement, and workflows. Convert raster UI icons to SVG, retain the existing MARS favicon, use the local source library for Open/Save and the browser file picker for Import, and render application dialogs in the current tab ([ADR 0002](../adrs/0002-port-fidelity.md)).
 
 ## Commands
 

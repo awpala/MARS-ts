@@ -17,7 +17,7 @@ MARS is a Java/Swing desktop IDE for MIPS assembly programming, written by Pete 
 | Reference behavior | The original Java sources in this repository, built and run headlessly as an oracle |
 | Java toolchain | Provisional: present in the dev container only until the Java sources are offboarded (P5) |
 | Development | One devcontainer ([ADR 0001](0001-local-development-environment.md)) |
-| Port fidelity | Translate existing algorithms and corresponding classes; initial desktop layout, SVG UI assets, browser file picker, and same-tab modals ([ADR 0002](0002-port-fidelity.md)) |
+| Port fidelity | Translate existing algorithms and corresponding classes; initial desktop layout, SVG UI assets, local source library, browser import/export, and same-tab modals ([ADR 0002](0002-port-fidelity.md)) |
 | Launch view | Open directly into the main GUI; no splash screen |
 
 **In scope for the full port:** the assembler (including pseudo-instructions, macros, directives, and `.include`), the simulator (step, run, backstep, breakpoints, delayed branching, exceptions, memory configurations), the syscalls, the editor and execution views of the Venus UI, settings, help content, and the bundled MARS tools (`mars/tools/`). The tools' implementation order remains open; the requested full port does not authorize dropping existing functionality.

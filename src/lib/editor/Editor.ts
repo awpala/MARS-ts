@@ -7,11 +7,11 @@
 export interface EditPane {
 	/** Stable session-local tab identity. */
 	id: number;
-	/** Download filename, without a native filesystem path. */
+	/** Virtual source filename, without a native filesystem path. */
 	name: string;
 	/** Current source text. */
 	text: string;
-	/** Text at the last successful open or initiated download. */
+	/** Text at the last successful library open or save. */
 	savedText: string;
 	/** True until the first named save. */
 	isNew: boolean;
@@ -44,15 +44,25 @@ export class Editor {
 	getNextDefaultFilename(): string {
 		return `mips${++this.newUsageCount}.asm`;
 	}
-	/** Opens a new untitled source buffer. */
-	newFile(): EditPane {
-		return this.openFile(this.getNextDefaultFilename(), '', true);
+	/** Opens a new source buffer, skipping names already open or reserved by the saved library. */
+	newFile(reservedNames: readonly string[] = []): EditPane {
+		let name: string;
+		do {
+			name = this.getNextDefaultFilename();
+		} while (reservedNames.includes(name) || this.documents.some((tab) => tab.name === name));
+		return this.openFile(name, '', true);
 	}
-	/** Adds user-selected source text; equal filenames remain separate browser files. */
+	/** Adds source text; the presenter selects existing library tabs instead of reopening them. */
 	openFile(name: string, text: string, isNew = false): EditPane {
 		const tab = { id: this.nextId++, name, text, savedText: text, isNew, undo: [], redo: [] };
 		this.documents.push(tab);
 		this.selectedId = tab.id;
+		return tab;
+	}
+	/** Restores a persisted working buffer and its explicit save baseline, with fresh undo history. */
+	restoreFile(name: string, text: string, savedText: string, isNew: boolean): EditPane {
+		const tab = this.openFile(name, text, isNew);
+		tab.savedText = savedText;
 		return tab;
 	}
 	/** Records one source edit and discards the redo branch. */
@@ -81,11 +91,11 @@ export class Editor {
 			tab.text = next;
 		}
 	}
-	/** Reports edits since open/download, including unsaved new buffers. */
+	/** Reports edits since open/save, including unsaved new buffers. */
 	isDirty(tab: EditPane): boolean {
 		return tab.isNew || tab.text !== tab.savedText;
 	}
-	/** Marks a download as initiated; this does not claim native disk overwrite. */
+	/** Records a successful persistent library save and its filename. */
 	markSaved(id: number, name: string): void {
 		const tab = this.documents.find((pane) => pane.id === id);
 		if (tab) {

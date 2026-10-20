@@ -2,13 +2,20 @@ import { describe, expect, it } from 'vitest';
 import { Editor } from './Editor.js';
 
 describe('browser editor buffer lifecycle', () => {
+	it('restores exact draft text and dirty baseline while avoiding persisted default names', () => {
+		const editor = new Editor();
+		const restored = editor.restoreFile('mips1.asm', 'draft', 'saved', false);
+		expect(editor.isDirty(restored)).toBe(true);
+		expect(restored.text).toBe('draft');
+		expect(editor.newFile(['mips2.asm']).name).toBe('mips3.asm');
+	});
 	it('counts default names independently of opening existing files', () => {
 		const editor = new Editor();
 		editor.openFile('existing.asm', '');
 		expect(editor.newFile().name).toBe('mips1.asm');
 		expect(editor.newFile().name).toBe('mips2.asm');
 	});
-	it('isolates tabs and restores dirty state across undo, redo, and download', () => {
+	it('isolates tabs and restores dirty state across undo, redo, and save', () => {
 		const editor = new Editor();
 		const original = editor.openFile('same.asm', 'one');
 		editor.setText('two');

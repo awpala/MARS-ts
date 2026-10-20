@@ -6,7 +6,12 @@ import {
 } from './DisplaySettings.js';
 
 const settings = {
+	autoSave: false,
+	ascii: false,
 	showLabels: true,
+	showDataLabels: false,
+	showTextLabels: true,
+	labelSortState: 5,
 	showLines: false,
 	hexValues: false,
 	hexAddresses: false,
@@ -31,10 +36,14 @@ describe('working display preference persistence', () => {
 			null,
 			{},
 			{ ...settings, showLines: 'false' },
+			{ ...settings, autoSave: 'true' },
+			{ ...settings, ascii: 'true' },
 			{ ...settings, speed: -1 },
 			{ ...settings, speed: 41 },
 			{ ...settings, speed: 1.5 },
-			{ ...settings, speed: '12' }
+			{ ...settings, speed: '12' },
+			{ ...settings, showDataLabels: 'false' },
+			{ ...settings, labelSortState: 8 }
 		]) {
 			expect(
 				loadDisplaySettings(() => ({ getItem: () => JSON.stringify(value), setItem: () => {} }))
@@ -43,6 +52,15 @@ describe('working display preference persistence', () => {
 		expect(
 			loadDisplaySettings(() => ({ getItem: () => 'broken JSON', setItem: () => {} }))
 		).toBeUndefined();
+	});
+	it('preserves existing display preferences when adding label filter and sort defaults', () => {
+		const { showDataLabels, showTextLabels, labelSortState, ...older } = settings;
+		void showDataLabels;
+		void showTextLabels;
+		void labelSortState;
+		expect(
+			loadDisplaySettings(() => ({ getItem: () => JSON.stringify(older), setItem: () => {} }))
+		).toEqual({ ...older, showDataLabels: true, showTextLabels: true, labelSortState: 0 });
 	});
 	it('tolerates denied storage access and quota failures', () => {
 		const denied = () => {

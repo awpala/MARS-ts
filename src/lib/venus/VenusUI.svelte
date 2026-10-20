@@ -7,14 +7,18 @@
 	import { asset } from '$app/paths';
 	import { onMount, tick } from 'svelte';
 	import { highlightSource } from '#lib/editor/highlighting/MIPSTokenMarker.js';
+	import { Token } from '#lib/editor/highlighting/Token.js';
+	import { Directives } from '#lib/engine/assembler/Directives.js';
 	import editorPreset from '#lib/editor/editor-preset.json';
 	import { loadPaneLayout, savePaneLayout } from '#lib/browser/PaneLayout.js';
 	import { loadDisplaySettings, saveDisplaySettings } from '#lib/browser/DisplaySettings.js';
 	import { Editor, type EditPane } from '#lib/editor/Editor.js';
 	import { downloadSource } from '#lib/browser/download.js';
+	import { SourceLibrary, sourceName, type SavedSource } from '#lib/browser/SourceLibrary.js';
 	import Modal from './Modal.svelte';
 	import RegistersPane from './RegistersPane.svelte';
 	import ExecutePane from './ExecutePane.svelte';
+	import ToolbarIcon, { type ToolbarIconName } from './ToolbarIcon.svelte';
 	import { Globals } from '#lib/engine/Globals.js';
 	import { ProcessingException } from '#lib/engine/diagnostics/ProcessingException.js';
 	import { Settings } from '#lib/engine/Settings.js';
@@ -25,30 +29,49 @@
 	const icons: Record<string, string> = {
 		Previous: asset('icons/Previous.svg'),
 		Paste: asset('icons/Paste.svg'),
-		Pause: asset('icons/Pause.svg'),
-		Assemble: asset('icons/Assemble.svg'),
 		Redo: asset('icons/Redo.svg'),
-		StepForward: asset('icons/StepForward.svg'),
 		Next: asset('icons/Next.svg'),
-		StepBack: asset('icons/StepBack.svg'),
-		Play: asset('icons/Play.svg'),
 		Open: asset('icons/Open.svg'),
 		Dump: asset('icons/Dump.svg'),
 		Help: asset('icons/Help.svg'),
 		Find: asset('icons/Find.svg'),
-		Stop: asset('icons/Stop.svg'),
 		SaveAs: asset('icons/SaveAs.svg'),
 		New: asset('icons/New.svg'),
 		Undo: asset('icons/Undo.svg'),
-		Reset: asset('icons/Reset.svg'),
 		Save: asset('icons/Save.svg'),
-		Print: asset('icons/Print.svg'),
 		Copy: asset('icons/Copy.svg'),
 		Cut: asset('icons/Cut.svg')
 	};
 	const paneId = $props.id();
 	let ready = $state(false);
 	onMount(() => {
+		let recoveredConflict = false;
+		try {
+			libraryFiles = sourceLibrary.read();
+		} catch (error) {
+			fileFailure(error);
+		}
+		try {
+			const drafts = sourceLibrary.readWorkspace();
+			let selected: number | undefined;
+			for (const draft of drafts) {
+				const saved = libraryFiles.find((file) => file.name === draft.name);
+				const clean = !draft.isNew && draft.source === draft.savedSource;
+				const matchesSaved = saved?.source === draft.source;
+				if (saved && !clean && !matchesSaved && saved.source !== draft.savedSource)
+					recoveredConflict = true;
+				const tab =
+					saved && (clean || matchesSaved)
+						? editor.openFile(saved.name, saved.source)
+						: editor.restoreFile(draft.name, draft.source, draft.savedSource, draft.isNew);
+				if (draft.selected) selected = tab.id;
+			}
+			if (selected !== undefined) editor.setCurrentEditTab(selected);
+			workspaceWritable = true;
+			refresh();
+		} catch (error) {
+			backupError = `Unable to restore source workspace: ${error instanceof Error ? error.message : String(error)}. Existing backup has been preserved.`;
+		}
 		const layout = loadPaneLayout();
 		if (layout) {
 			registerWidth = layout.registerWidth;
@@ -56,11 +79,21 @@
 		}
 		const settings = loadDisplaySettings();
 		if (settings) {
+			autoSave = settings.autoSave;
+			ascii = settings.ascii;
 			showLabels = settings.showLabels;
+			showDataLabels = settings.showDataLabels;
+			showTextLabels = settings.showTextLabels;
+			labelSortState = settings.labelSortState;
 			showLines = settings.showLines;
 			hexValues = settings.hexValues;
 			hexAddresses = settings.hexAddresses;
 			speed = settings.speed;
+		}
+		if (recoveredConflict) {
+			autoSave = false;
+			autoSaveError =
+				'A recovered draft differs from its latest saved source. Both versions are retained; Auto Save is off. Review the draft before saving or enabling Auto Save.';
 		}
 		let disposed = false;
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- Scheduler handles are owned resources, never rendered reactive state.
@@ -77,8 +110,10 @@
 				const tab = editor
 					.getEditPanes()
 					.find((entry) => normalizePath(entry.name) === normalizePath(name));
-				if (!tab) throw new Error(`Source file "${name}" is not open in the editor.`);
-				return tab.text;
+				if (tab) return tab.text;
+				const saved = sourceLibrary.read().find((entry) => entry.name === normalizePath(name));
+				if (!saved) throw new Error(`Source file "${name}" is not in the source library.`);
+				return saved.source;
 			},
 			sourcePaths: {
 				separator: '/',
@@ -143,6 +178,7 @@
 		});
 		execution = controls.getState();
 		ready = true;
+		refresh();
 		return () => {
 			disposed = true;
 			release();
@@ -150,7 +186,19 @@
 		};
 	});
 	$effect(() => {
-		if (ready) saveDisplaySettings({ showLabels, showLines, hexValues, hexAddresses, speed });
+		if (ready)
+			saveDisplaySettings({
+				autoSave,
+				ascii,
+				showLabels,
+				showDataLabels,
+				showTextLabels,
+				labelSortState,
+				showLines,
+				hexValues,
+				hexAddresses,
+				speed
+			});
 	});
 	const syntaxStyles = editorPreset.syntaxStyles;
 	const editor = new Editor();
@@ -175,12 +223,39 @@
 		return tab ? { ...tab, undo: [...tab.undo], redo: [...tab.redo] } : undefined;
 	});
 	const highlighted = $derived(highlightSource(current?.text ?? ''));
+	let sourceHelp = $state.raw<{
+		buffer: number;
+		source: string;
+		start: number;
+		left: number;
+		edge: number;
+		above: boolean;
+		entries: { example: string; description: string }[];
+	} | null>(null);
+	const visibleSourceHelp = $derived(
+		sourceHelp && sourceHelp.buffer === current?.id && sourceHelp.source === current.text
+			? sourceHelp
+			: null
+	);
 	let view = $state('Edit');
 	let registerTab = $state('Registers');
 	let messageTab = $state('Mars Messages');
 	let messages = $state('');
 	let runIO = $state('');
-	let modal = $state<'save' | 'close' | 'find' | 'help' | 'about' | null>(null);
+	const sourceLibrary = new SourceLibrary();
+	let libraryFiles = $state.raw<SavedSource[]>([]);
+	let selectedSources = $state<string[]>([]);
+	let importSources = $state.raw<SavedSource[]>([]);
+	let fileError = $state('');
+	let backupError = $state('');
+	let autoSave = $state(false);
+	let autoSaveError = $state('');
+	let workspaceWritable = false;
+	let replaceSave = $state(false);
+	let renameSource = $state(false);
+	let modal = $state<
+		'open' | 'delete' | 'import' | 'save' | 'close' | 'find' | 'help' | 'about' | null
+	>(null);
 	let filename = $state('');
 	let saveTarget = $state.raw<EditPane>();
 	let closeQueue: number[] = [];
@@ -191,7 +266,11 @@
 	let caseSensitive = $state(false);
 	let findStatus = $state('');
 	let showLabels = $state(false);
+	let showDataLabels = $state(true);
+	let showTextLabels = $state(true);
+	let labelSortState = $state(0);
 	let showLines = $state(true);
+	let ascii = $state(false);
 	let hexValues = $state(true);
 	let hexAddresses = $state(true);
 	let speed = $state(40);
@@ -230,20 +309,24 @@
 	type Action = {
 		label: string;
 		icon?: string;
+		debugIcon?: ToolbarIconName;
 		command: string;
 		shortcut?: string;
 		unavailable?: boolean;
 	};
 	const fileActions: Action[] = [
-		{ label: 'New', icon: 'New', command: 'new', shortcut: 'Ctrl+N' },
+		{ label: 'New', icon: 'New', command: 'new', shortcut: 'Alt+N / Option+N' },
 		{ label: 'Open ...', icon: 'Open', command: 'open', shortcut: 'Ctrl+O' },
 		{ label: 'Close', command: 'close' },
 		{ label: 'Close All', command: 'closeAll' },
 		{ label: 'Save', icon: 'Save', command: 'save', shortcut: 'Ctrl+S' },
 		{ label: 'Save as ...', icon: 'SaveAs', command: 'saveAs' },
 		{ label: 'Save All', command: 'saveAll' },
+		{ label: 'Auto Save', debugIcon: 'autoSave', command: 'autoSave' },
+		{ label: 'Import ...', debugIcon: 'import', command: 'import' },
 		{ label: 'Dump Memory ...', command: 'dump', unavailable: true },
-		{ label: 'Print ...', icon: 'Print', command: 'print' },
+		{ label: 'Export', debugIcon: 'export', command: 'export' },
+		{ label: 'Export All', debugIcon: 'exportAll', command: 'exportAll' },
 		{ label: 'Exit', command: 'exit' }
 	];
 	const editActions: Action[] = [
@@ -256,15 +339,17 @@
 		{ label: 'Select All', command: 'selectAll' }
 	];
 	const runActions: Action[] = [
-		{ label: 'Assemble', icon: 'Assemble', command: 'assemble', shortcut: 'F3' },
-		{ label: 'Go', icon: 'Play', command: 'go', shortcut: 'F5' },
-		{ label: 'Step', icon: 'StepForward', command: 'step', shortcut: 'F7' },
-		{ label: 'Backstep', icon: 'StepBack', command: 'backstep', shortcut: 'F8' },
-		{ label: 'Pause', icon: 'Pause', command: 'pause', shortcut: 'F9' },
-		{ label: 'Stop', icon: 'Stop', command: 'stop', shortcut: 'F11' },
-		{ label: 'Reset', icon: 'Reset', command: 'reset', shortcut: 'F12' },
-		{ label: 'Clear all breakpoints', command: 'clearBreakpoints' },
-		{ label: 'Toggle all breakpoints', command: 'toggleBreakpoints' }
+		{ label: 'Assemble', debugIcon: 'assemble', command: 'assemble', shortcut: 'F3' },
+		{ label: 'Go', debugIcon: 'go', command: 'go', shortcut: 'F5' },
+		{ label: 'Step', debugIcon: 'step', command: 'step', shortcut: 'F7' },
+		{ label: 'Backstep', debugIcon: 'backstep', command: 'backstep', shortcut: 'F8' },
+		{ label: 'Pause', debugIcon: 'pause', command: 'pause', shortcut: 'F9' },
+		{ label: 'Stop', debugIcon: 'stop', command: 'stop', shortcut: 'F11' },
+		{ label: 'Reset', debugIcon: 'reset', command: 'reset', shortcut: 'F12' }
+	];
+	const breakpointActions: Action[] = [
+		{ label: 'Toggle all breakpoints', debugIcon: 'breakpoints', command: 'toggleBreakpoints' },
+		{ label: 'Clear all breakpoints', debugIcon: 'clearBreakpoints', command: 'clearBreakpoints' }
 	];
 	const helpActions: Action[] = [
 		{ label: 'Help', icon: 'Help', command: 'help', shortcut: 'F1' },
@@ -275,8 +360,12 @@
 		{ name: 'Edit', actions: editActions },
 		{ name: 'Run', actions: runActions }
 	];
+	const popupInputOption = {
+		id: Settings.POPUP_SYSCALL_INPUT,
+		label: 'Popup dialog for input syscalls'
+	};
 	const engineOptions = [
-		{ id: Settings.POPUP_SYSCALL_INPUT, label: 'Popup dialog for input syscalls' },
+		popupInputOption,
 		{ id: Settings.ASSEMBLE_ON_OPEN_ENABLED, label: 'Assemble file on open' },
 		{ id: Settings.ASSEMBLE_ALL_ENABLED, label: 'Assemble all open files in editor' },
 		{ id: Settings.WARNINGS_ARE_ERRORS, label: 'Assembler warnings are considered errors' },
@@ -289,6 +378,54 @@
 		{ id: Settings.SELF_MODIFYING_CODE_ENABLED, label: 'Self-modifying code' }
 	];
 	const pendingSettings = ['Exception Handler ...', 'Memory Configuration ...'];
+	const displayToggles = $derived([
+		{
+			icon: 'labels' as const,
+			label: 'Show Labels Window',
+			active: showLabels,
+			toggle: () => (showLabels = !showLabels),
+			disabled: false
+		},
+		{
+			icon: 'addresses' as const,
+			label: 'Addresses displayed in hexadecimal',
+			active: hexAddresses,
+			toggle: () => (hexAddresses = !hexAddresses),
+			disabled: false
+		},
+		{
+			icon: 'values' as const,
+			label: 'Values displayed in hexadecimal',
+			active: hexValues,
+			toggle: () => (hexValues = !hexValues),
+			disabled: false
+		},
+		{
+			icon: 'ascii' as const,
+			label: 'Display Data Segment values as ASCII',
+			active: ascii,
+			toggle: () => (ascii = !ascii),
+			disabled: false
+		},
+		{
+			icon: 'lines' as const,
+			label: 'Show line numbers',
+			active: showLines,
+			toggle: () => (showLines = !showLines),
+			disabled: false
+		},
+		{
+			icon: 'input' as const,
+			label: popupInputOption.label,
+			active: engineSettings[Settings.POPUP_SYSCALL_INPUT] ?? false,
+			toggle: () =>
+				updateEngineSetting(
+					Settings.POPUP_SYSCALL_INPUT,
+					!engineSettings[Settings.POPUP_SYSCALL_INPUT]
+				),
+			disabled: running
+		}
+	]);
 	$effect(() => {
 		if (machine) {
 			machine.runSpeed = speed > 35 ? 40 : speedTable[speed];
@@ -503,14 +640,46 @@
 		if (['clearBreakpoints', 'toggleBreakpoints'].includes(action.command))
 			return breakpoints.length > 0 && !running;
 		if (running && !['help', 'about', 'copy'].includes(action.command)) return false;
-		if (['new', 'open', 'help', 'about', 'exit'].includes(action.command)) return true;
+		if (['new', 'open', 'import', 'autoSave', 'help', 'about', 'exit'].includes(action.command))
+			return true;
+		if (action.command === 'exportAll') return tabs.length >= 2;
 		if (!current) return false;
 		if (action.command === 'undo') return current.undo.length > 0;
 		if (action.command === 'redo') return current.redo.length > 0;
 		return true;
 	}
-	function refresh() {
+	function refresh(commit = false) {
 		revision++;
+		if (ready && autoSave && commit) {
+			const changed = editor.getEditPanes().filter((tab) => editor.isDirty(tab));
+			if (changed.length) {
+				try {
+					libraryFiles = sourceLibrary.saveMany(
+						changed.map((tab) => ({ name: tab.name, source: tab.text }))
+					);
+					for (const tab of changed) editor.markSaved(tab.id, tab.name);
+					autoSaveError = '';
+				} catch (error) {
+					autoSaveError = `Auto Save failed: ${error instanceof Error ? error.message : String(error)}. Changes remain uncommitted.`;
+				}
+			}
+		}
+		if (ready && workspaceWritable) {
+			try {
+				sourceLibrary.saveWorkspace(
+					editor.getEditPanes().map((tab) => ({
+						name: tab.name,
+						source: tab.text,
+						savedSource: tab.savedText,
+						isNew: tab.isNew,
+						selected: tab.id === editor.getCurrentEditTab()?.id
+					}))
+				);
+				backupError = '';
+			} catch (error) {
+				backupError = `Source backup failed: ${error instanceof Error ? error.message : String(error)}. Keep this tab open or export your work.`;
+			}
+		}
 	}
 	function select(id: number) {
 		editor.setCurrentEditTab(id);
@@ -521,9 +690,10 @@
 	function edit(text: string) {
 		editor.setText(text);
 		controller?.invalidate();
-		refresh();
+		refresh(true);
 	}
 	function sourceKeydown(event: KeyboardEvent) {
+		sourceHelp = null;
 		// JEditTextArea only intercepts unmodified Tab; insert_tab replaces the selection
 		// with one literal tab. Shift+Tab remains available for keyboard focus traversal.
 		if (event.key !== 'Tab' || event.shiftKey || event.ctrlKey || event.altKey || event.metaKey)
@@ -535,6 +705,52 @@
 		edit(input.value);
 		selection();
 	}
+	function hoverSource(event: PointerEvent) {
+		if (!current || !machine || event.buttons) {
+			sourceHelp = null;
+			return;
+		}
+		// Hit-test the painted tokens under the native textarea, preserving its selection behavior.
+		const surface = (event.currentTarget as HTMLTextAreaElement).parentElement;
+		for (const node of surface?.querySelectorAll<HTMLElement>('[data-help-start]') ?? []) {
+			const rect = node.getBoundingClientRect();
+			if (
+				event.clientX < rect.left ||
+				event.clientX >= rect.right ||
+				event.clientY < rect.top ||
+				event.clientY >= rect.bottom
+			)
+				continue;
+			const start = Number(node.dataset.helpStart);
+			if (visibleSourceHelp?.start === start) return;
+			const span = highlighted.find((entry) => entry.start === start);
+			if (!span) break;
+			const directive = span.id === Token.KEYWORD2 ? Directives.matchDirective(span.text) : null;
+			const entries = directive
+				? [{ example: directive.getName(), description: directive.getDescription() }]
+				: (machine.instructionSet.matchOperator(span.text) ?? []).map((instruction) => ({
+						example: instruction.getExampleFormat(),
+						description: instruction.getDescription()
+					}));
+			if (!entries.length) break;
+			const above = window.innerHeight - rect.bottom < 260;
+			sourceHelp = {
+				buffer: current.id,
+				source: current.text,
+				start,
+				entries,
+				above,
+				left: Math.max(8, Math.min(rect.left, window.innerWidth - 528)),
+				edge: above ? window.innerHeight - rect.top : rect.bottom
+			};
+			return;
+		}
+		sourceHelp = null;
+	}
+	function leaveSource(event: PointerEvent) {
+		if (!(event.relatedTarget instanceof Element) || !event.relatedTarget.closest('.source-help'))
+			sourceHelp = null;
+	}
 	function selection() {
 		selectionStart = sourceInput?.selectionStart ?? 0;
 		selectionEnd = sourceInput?.selectionEnd ?? 0;
@@ -544,45 +760,146 @@
 		closeQueue = [];
 		saveQueue = [];
 		closingAfterSave = false;
+		renameSource = false;
+		fileError = '';
+		replaceSave = false;
+		importSources = [];
 	}
 	function report(error: unknown) {
 		messages += `${error instanceof ProcessingException ? (error.errors()?.generateErrorAndWarningReport() ?? '') : error instanceof Error ? error.message : String(error)}\n`;
 		messageTab = 'Mars Messages';
 	}
-	async function openFiles(event: Event) {
-		const input = event.currentTarget as HTMLInputElement;
-		const files = [...(input.files ?? [])];
-		for (const file of files) {
-			try {
-				editor.openFile(file.name, await file.text());
-				refresh();
-			} catch (error) {
-				report(error);
-			}
+	function fileFailure(error: unknown) {
+		fileError = error instanceof Error ? error.message : String(error);
+		report(error);
+	}
+	function showOpen() {
+		fileError = '';
+		selectedSources = [];
+		modal = 'open';
+		try {
+			libraryFiles = sourceLibrary.read();
+		} catch (error) {
+			fileFailure(error);
 		}
-		input.value = '';
+	}
+	async function openSources(sources: readonly SavedSource[]) {
+		for (const file of sources) {
+			const existing = editor.getEditPanes().find((tab) => tab.name === file.name);
+			if (existing) editor.setCurrentEditTab(existing.id);
+			else editor.openFile(file.name, file.source);
+		}
+		modal = null;
+		refresh();
 		view = 'Edit';
 		if (engineSettings[Settings.ASSEMBLE_ON_OPEN_ENABLED]) assemble();
 		await tick();
 		sourceInput?.focus();
 	}
-	function download(tab: EditPane, name: string) {
+	function requestDelete() {
+		fileError = '';
+		modal = 'delete';
+	}
+	function cancelDelete() {
+		fileError = '';
+		modal = 'open';
+	}
+	function confirmDelete() {
 		try {
-			downloadSource(name, tab.text);
+			libraryFiles = sourceLibrary.delete(selectedSources);
+			for (const tab of [...editor.getEditPanes()]) {
+				if (selectedSources.includes(tab.name)) editor.close(tab.id);
+			}
+			controller?.invalidate();
+			refresh();
+			selectedSources = [];
+			fileError = '';
+			modal = 'open';
+		} catch (error) {
+			fileFailure(error);
+		}
+	}
+	function confirmOpen() {
+		try {
+			libraryFiles = sourceLibrary.read();
+			void openSources(libraryFiles.filter((file) => selectedSources.includes(file.name)));
+		} catch (error) {
+			fileFailure(error);
+		}
+	}
+	async function importFiles(event: Event) {
+		const input = event.currentTarget as HTMLInputElement;
+		const files = [...(input.files ?? [])];
+		input.value = '';
+		if (!files.length) return;
+		fileError = '';
+		importSources = [];
+		try {
+			const selected = await Promise.all(
+				files.map(async (file) => {
+					if (!/\.asm$/i.test(file.name)) throw new Error('Import accepts .asm source files.');
+					return { name: sourceName(file.name), source: await file.text() };
+				})
+			);
+			if (new Set(selected.map((file) => file.name)).size !== selected.length)
+				throw new Error('The selected files contain duplicate names. Import distinct filenames.');
+			importSources = selected;
+			libraryFiles = sourceLibrary.read();
+			modal = 'import';
+			if (!importSources.some((file) => libraryFiles.some((saved) => saved.name === file.name)))
+				confirmImport();
+		} catch (error) {
+			modal = 'import';
+			fileFailure(error);
+		}
+	}
+	function confirmImport() {
+		try {
+			if (running) throw new Error('Stop execution before importing sources.');
+			for (const file of importSources) {
+				const tab = editor.getEditPanes().find((entry) => entry.name === file.name);
+				if (tab && editor.isDirty(tab))
+					throw new Error(`Save or close the edited "${file.name}" before replacing it.`);
+			}
+			libraryFiles = sourceLibrary.saveMany(importSources);
+			for (const file of importSources) {
+				const tab = editor.getEditPanes().find((entry) => entry.name === file.name);
+				if (tab) editor.close(tab.id);
+			}
+			controller?.invalidate();
+			void openSources(importSources);
+			importSources = [];
+		} catch (error) {
+			fileFailure(error);
+		}
+	}
+	function persistSource(tab: EditPane, name: string, rename = false): boolean {
+		try {
+			libraryFiles = rename
+				? sourceLibrary.rename(tab.name, name, tab.text)
+				: sourceLibrary.save(name, tab.text);
+			if (name !== tab.name) controller?.invalidate();
 			editor.markSaved(tab.id, name);
 			refresh();
 			return true;
 		} catch (error) {
-			report(error);
+			fileFailure(error);
 			return false;
 		}
 	}
 	function save(tab: EditPane, as = false) {
+		renameSource = false;
+		fileError = '';
+		replaceSave = false;
 		if (as || tab.isNew) {
 			saveTarget = tab;
 			filename = tab.name;
 			modal = 'save';
-		} else download(tab, tab.name);
+		} else if (!persistSource(tab, tab.name)) {
+			saveTarget = tab;
+			filename = tab.name;
+			modal = 'save';
+		}
 	}
 	function nextSave() {
 		const id = saveQueue.shift();
@@ -594,18 +911,67 @@
 		}
 		select(id);
 		if (tab.isNew) save(tab);
-		else if (download(tab, tab.name)) nextSave();
+		else if (persistSource(tab, tab.name)) nextSave();
+		else {
+			saveQueue = [];
+			saveTarget = tab;
+			filename = tab.name;
+			modal = 'save';
+		}
 	}
-	function confirmSave() {
-		if (!saveTarget || !filename.trim()) return;
-		if (!download(saveTarget, filename.trim())) return;
-		modal = null;
-		if (closingAfterSave) {
-			closingAfterSave = false;
-			editor.close(saveTarget.id);
-			refresh();
-			nextClose();
-		} else nextSave();
+	function confirmSave(overwrite = false) {
+		if (!saveTarget) return;
+		fileError = '';
+		try {
+			const name = sourceName(filename);
+			if (editor.getEditPanes().some((tab) => tab.id !== saveTarget?.id && tab.name === name))
+				throw new Error(`"${name}" is already open. Choose another name or close that tab first.`);
+			libraryFiles = sourceLibrary.read();
+			if (
+				!overwrite &&
+				(saveTarget.isNew || name !== saveTarget.name) &&
+				libraryFiles.some((file) => file.name === name)
+			) {
+				replaceSave = true;
+				return;
+			}
+			if (!persistSource(saveTarget, name, renameSource && !saveTarget.isNew)) return;
+			modal = null;
+			replaceSave = false;
+			if (closingAfterSave) {
+				closingAfterSave = false;
+				editor.close(saveTarget.id);
+				refresh();
+				nextClose();
+			} else nextSave();
+		} catch (error) {
+			fileFailure(error);
+		}
+	}
+	function exportSources(all = false) {
+		try {
+			const sources: SavedSource[] = all ? sourceLibrary.read() : [];
+			for (const tab of all ? editor.getEditPanes() : current ? [current] : []) {
+				const index = sources.findIndex((file) => file.name === tab.name);
+				if (index < 0) sources.push({ name: tab.name, source: tab.text });
+				else sources[index] = { name: tab.name, source: tab.text };
+			}
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity -- Export filenames are transient bookkeeping, never rendered state.
+			const names = new Set<string>();
+			for (const file of sources) {
+				const stem = file.name
+					.split('/')
+					.at(-1)!
+					.replace(/\.[^.]+$/, '');
+				let name = `${stem}.asm`,
+					suffix = 2;
+				while (names.has(name)) name = `${stem}-${suffix++}.asm`;
+				names.add(name);
+				downloadSource(name, file.source);
+			}
+		} catch (error) {
+			fileFailure(error);
+		}
 	}
 	function nextClose() {
 		const id = closeQueue.shift();
@@ -638,7 +1004,7 @@
 		if (current.isNew) {
 			closingAfterSave = true;
 			save(current);
-		} else if (download(current, current.name)) {
+		} else if (persistSource(current, current.name)) {
 			editor.close(current.id);
 			refresh();
 			nextClose();
@@ -672,20 +1038,39 @@
 		document.querySelectorAll<HTMLDetailsElement>('details[open]').forEach((menu) => {
 			menu.open = false;
 		});
-		if (runActions.some((entry) => entry.command === command)) {
+		if ([...runActions, ...breakpointActions].some((entry) => entry.command === command)) {
 			await runCommand(command);
 			return;
 		}
 		switch (command) {
 			case 'new':
-				editor.newFile();
-				refresh();
+				try {
+					libraryFiles = sourceLibrary.read();
+				} catch (error) {
+					fileFailure(error);
+				}
+				editor.newFile(libraryFiles.map((file) => file.name));
+				refresh(true);
 				view = 'Edit';
 				await tick();
 				sourceInput?.focus();
 				break;
 			case 'open':
+				showOpen();
+				break;
+			case 'autoSave':
+				autoSave = !autoSave;
+				autoSaveError = '';
+				refresh(true);
+				break;
+			case 'import':
 				fileInput.click();
+				break;
+			case 'export':
+				exportSources();
+				break;
+			case 'exportAll':
+				exportSources(true);
 				break;
 			case 'close':
 				if (current) startClose([current.id]);
@@ -707,12 +1092,12 @@
 			case 'undo':
 				editor.undo();
 				controller?.invalidate();
-				refresh();
+				refresh(true);
 				break;
 			case 'redo':
 				editor.redo();
 				controller?.invalidate();
-				refresh();
+				refresh(true);
 				break;
 			case 'cut':
 			case 'copy':
@@ -727,9 +1112,6 @@
 			case 'find':
 				findStatus = '';
 				modal = 'find';
-				break;
-			case 'print':
-				window.print();
 				break;
 			case 'help':
 				modal = 'help';
@@ -784,7 +1166,25 @@
 		edit(output + source.slice(offset));
 		findStatus = `${count} occurrence(s) replaced.`;
 	}
+	function captureNewFile(event: KeyboardEvent) {
+		if (
+			!event.altKey ||
+			event.ctrlKey ||
+			event.metaKey ||
+			(event.code !== 'KeyN' && event.key.toLowerCase() !== 'n') ||
+			event.shiftKey ||
+			event.isComposing ||
+			event.getModifierState('AltGraph')
+		)
+			return;
+		// Capture before focused inputs handle the shortcut. Option+N can report a Dead key
+		// on macOS, so match its physical code and prevent accent composition as well.
+		event.preventDefault();
+		event.stopPropagation();
+		if (ready && !modal && !running && !event.repeat) void action('new');
+	}
 	function keydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') sourceHelp = null;
 		if (modal || (event.target instanceof HTMLInputElement && event.target !== fileInput)) return;
 		if (event.key === 'Escape') {
 			document.querySelectorAll<HTMLDetailsElement>('details[open]').forEach((menu) => {
@@ -796,7 +1196,6 @@
 		if (event.ctrlKey || event.metaKey)
 			command = (
 				{
-					n: 'new',
 					o: 'open',
 					s: event.shiftKey ? 'saveAs' : 'save',
 					f: 'find',
@@ -908,20 +1307,27 @@
 >
 <pre class="print-source">{current?.text ?? ''}</pre>
 <svelte:document onclick={closeMenusOutside} />
-<svelte:window onkeydown={keydown} onbeforeunload={beforeUnload} />
+<svelte:window
+	onkeydowncapture={captureNewFile}
+	onkeydown={keydown}
+	onbeforeunload={beforeUnload}
+/>
 <fieldset disabled={!ready} class="application-controls" aria-busy={!ready}>
 	<input
 		class="hidden"
 		type="file"
 		multiple
-		accept=".asm,.s,.txt,.inc"
+		accept=".asm"
 		bind:this={fileInput}
-		onchange={openFiles}
-		aria-label="Open assembly files"
+		onchange={importFiles}
+		aria-label="Import assembly files"
 	/>
 	<div
 		class="desktop flex h-dvh min-h-[480px] flex-col overflow-hidden bg-[#ededed] text-[12px] text-[#17202b]"
 	>
+		{#if backupError || autoSaveError}<p class="backup-error" role="alert">
+				{backupError || autoSaveError}
+			</p>{/if}
 		<nav class="menubar" aria-label="Application menus">
 			{#each menus as menu (menu.name)}<details name="menus">
 					<summary>{menu.name}</summary>
@@ -936,15 +1342,7 @@
 			<details name="menus">
 				<summary>Settings</summary>
 				<div class="menu settings-menu">
-					<label><input type="checkbox" bind:checked={showLabels} /> Show Labels Window</label>
-					<label
-						><input type="checkbox" bind:checked={hexAddresses} /> Addresses displayed in hexadecimal</label
-					>
-					<label
-						><input type="checkbox" bind:checked={hexValues} /> Values displayed in hexadecimal</label
-					>
-					<label><input type="checkbox" bind:checked={showLines} /> Show line numbers</label>
-					{#each engineOptions as option (option.id)}<label
+					{#each engineOptions.filter((option) => option !== popupInputOption) as option (option.id)}<label
 							><input
 								type="checkbox"
 								checked={engineSettings[option.id] ?? false}
@@ -972,19 +1370,49 @@
 			</details>
 		</nav>
 		<div class="toolbar" aria-label="Toolbar">
-			{#each [fileActions.filter((item) => item.icon), editActions.filter((item) => item.icon), runActions.filter((item) => item.icon), [helpActions[0]]] as group, groupIndex (groupIndex)}
+			{#each [fileActions.filter((item) => item.icon || item.debugIcon), editActions.filter((item) => item.icon), [...runActions, ...breakpointActions].filter((item) => item.debugIcon)] as group, groupIndex (groupIndex)}
 				<div class="toolgroup">
 					{#each group as item (item.command)}<button
 							title={item.unavailable
 								? `${item.label} — not yet available`
 								: `${item.label}${item.shortcut ? ` (${item.shortcut})` : ''}`}
 							aria-label={item.label}
+							aria-pressed={item.command === 'toggleBreakpoints'
+								? breakpointsEnabled
+								: item.command === 'autoSave'
+									? autoSave
+									: undefined}
 							disabled={!enabled(item)}
 							onclick={() => action(item.command)}
-							><img src={icons[item.icon ?? '']} alt="" width="22" height="22" /></button
+							>{#if item.debugIcon}<ToolbarIcon
+									name={item.debugIcon === 'breakpoints' && !breakpointsEnabled
+										? 'breakpointsDisabled'
+										: item.debugIcon}
+								/>{:else}<img
+									src={icons[item.icon ?? '']}
+									alt=""
+									width="22"
+									height="22"
+								/>{/if}</button
 						>{/each}
 				</div>
 			{/each}
+			<div class="toolgroup view-toggles" role="group" aria-label="Display settings">
+				{#each displayToggles as toggle (toggle.icon)}
+					<button
+						title={toggle.label}
+						aria-label={toggle.label}
+						aria-pressed={toggle.active}
+						disabled={toggle.disabled}
+						onclick={toggle.toggle}><ToolbarIcon name={toggle.icon} /></button
+					>
+				{/each}
+			</div>
+			<div class="toolgroup">
+				<button title="Help (F1)" aria-label="Help" onclick={() => action('help')}>
+					<img src={icons.Help} alt="" width="22" height="22" />
+				</button>
+			</div>
 			<label class="speed"
 				>Run speed {runSpeed}<input
 					type="range"
@@ -1043,6 +1471,9 @@
 										aria-hidden="true"
 										style:transform={`translate(${-scrollLeft}px, ${-scrollTop}px)`}>{#each highlighted as span (span.start)}<span
 												data-token={span.id}
+												data-help-start={span.id === Token.KEYWORD1 || span.id === Token.KEYWORD2
+													? span.start
+													: undefined}
 												style:color={syntaxStyles[span.id].color}
 												style:font-style={syntaxStyles[span.id].italic ? 'italic' : 'normal'}
 												style:font-weight={syntaxStyles[span.id].bold ? 'bold' : 'normal'}
@@ -1051,6 +1482,7 @@
 									<textarea
 										bind:this={sourceInput}
 										aria-label={`Source ${current.name}`}
+										aria-describedby={visibleSourceHelp ? `${paneId}-source-help` : undefined}
 										value={current.text}
 										readonly={running}
 										oninput={(event) => {
@@ -1058,10 +1490,15 @@
 											selection();
 										}}
 										onclick={selection}
+										onpointermove={hoverSource}
+										onpointerleave={leaveSource}
+										onpointerdown={() => (sourceHelp = null)}
+										onblur={() => (sourceHelp = null)}
 										onkeydown={sourceKeydown}
 										onkeyup={selection}
 										onselect={selection}
 										onscroll={(event) => {
+											sourceHelp = null;
 											scrollTop = event.currentTarget.scrollTop;
 											scrollLeft = event.currentTarget.scrollLeft;
 										}}
@@ -1069,6 +1506,25 @@
 										autocapitalize="off"
 										autocomplete="off"
 										wrap="off"></textarea>
+									{#if visibleSourceHelp && !modal}
+										<div
+											id={`${paneId}-source-help`}
+											class="source-help"
+											role="tooltip"
+											style:left={`${visibleSourceHelp.left}px`}
+											style:top={visibleSourceHelp.above
+												? undefined
+												: `${visibleSourceHelp.edge}px`}
+											style:bottom={visibleSourceHelp.above
+												? `${visibleSourceHelp.edge}px`
+												: undefined}
+											onpointerleave={() => (sourceHelp = null)}
+										>
+											{#each visibleSourceHelp.entries as entry (entry.example)}
+												<p><code>{entry.example}</code><br />{entry.description}</p>
+											{/each}
+										</div>
+									{/if}
 								</div>
 							</div>
 						{:else}<div class="empty-editor"></div>{/if}
@@ -1081,6 +1537,10 @@
 								onedit={() => controller?.refresh()}
 								onsource={showSource}
 								{showLabels}
+								bind:showDataLabels
+								bind:showTextLabels
+								bind:labelSortState
+								bind:ascii
 								bind:hexAddresses
 								bind:hexValues
 							/>{/if}
@@ -1173,7 +1633,9 @@
 		</main>
 		<footer>
 			<span>{current?.name ?? 'No file open'}</span><span
-				>{current ? `Line ${position.line}, Column ${position.column}` : ''}</span
+				>{view === 'Edit' && current
+					? `Line ${position.line}, Column ${position.column}`
+					: ''}</span
 			><span aria-label="Execution status"
 				>{execution?.status ?? 'idle'}{!breakpointsEnabled ? ' — breakpoints suspended' : ''}</span
 			>
@@ -1202,15 +1664,90 @@
 			</div>
 		</form></Modal
 	>{/if}
-{#if modal === 'save'}{#key saveTarget?.id}<Modal title="Save As" onclose={dismiss}
+{#if modal === 'open'}<Modal title="Open" onclose={dismiss}>
+		<form
+			onsubmit={(event) => {
+				event.preventDefault();
+				confirmOpen();
+			}}
+		>
+			<p>Source files stored in this browser</p>
+			<div class="source-files">
+				{#each libraryFiles as file (file.name)}
+					<label
+						><input type="checkbox" bind:group={selectedSources} value={file.name} />
+						{file.name}</label
+					>
+				{:else}<p>No saved files yet. Create a source or import .asm files.</p>{/each}
+			</div>
+			{#if fileError}<p role="alert">{fileError}</p>{/if}
+			<div class="dialog-buttons">
+				<button type="submit" disabled={!selectedSources.length || !!fileError}>Open</button>
+				<button
+					type="button"
+					disabled={!selectedSources.length || !!fileError}
+					onclick={requestDelete}>Delete</button
+				><button type="button" onclick={dismiss}>Cancel</button>
+			</div>
+		</form>
+	</Modal>
+{:else if modal === 'delete'}<Modal title="Delete sources?" onclose={cancelDelete}>
+		<p>Delete these saved sources and close their open editor buffers? This cannot be undone.</p>
+		{#if tabs.some((tab) => selectedSources.includes(tab.name) && editor.isDirty(tab))}<p
+				role="alert"
+			>
+				Selected files have unsaved edits. Deleting these files will also discard those edits.
+			</p>{/if}
+		<ul>
+			{#each selectedSources as name (name)}<li>
+					{name}{#if tabs.some((tab) => tab.name === name && editor.isDirty(tab))}
+						— unsaved edits will also be deleted{/if}
+				</li>{/each}
+		</ul>
+		{#if fileError}<p role="alert">{fileError}</p>{/if}
+		<div class="dialog-buttons">
+			<button onclick={confirmDelete}>Delete</button><button onclick={cancelDelete}>Cancel</button>
+		</div>
+	</Modal>
+{:else if modal === 'import'}<Modal title="Replace imported sources?" onclose={dismiss}>
+		<p>Importing will replace saved sources with matching names:</p>
+		<ul>
+			{#each importSources as file (file.name)}<li>{file.name}</li>{/each}
+		</ul>
+		{#if fileError}<p role="alert">{fileError}</p>{/if}
+		<div class="dialog-buttons">
+			<button disabled={!importSources.length} onclick={confirmImport}>Replace</button><button
+				onclick={dismiss}>Cancel</button
+			>
+		</div>
+	</Modal>
+{:else if modal === 'save'}{#key saveTarget?.id}<Modal title="Save As" onclose={dismiss}
 			><form
 				onsubmit={(event) => {
 					event.preventDefault();
 					confirmSave();
 				}}
 			>
-				<label class="form-field">File name<input bind:value={filename} required /></label>
-				<p>Save downloads a copy. It does not overwrite the original file.</p>
+				<label class="form-field"
+					>File name<input
+						bind:value={filename}
+						oninput={() => {
+							replaceSave = false;
+							fileError = '';
+						}}
+						required
+					/></label
+				>
+				{#if saveTarget && !saveTarget.isNew}
+					<label><input type="checkbox" bind:checked={renameSource} /> Rename existing file</label>
+					{#if renameSource}<label class="form-field"
+							>Old filename<input value={saveTarget.name} readonly /></label
+						>{/if}
+				{/if}
+				<p>Save this source in the browser’s local library.</p>
+				{#if fileError}<p role="alert">{fileError}</p>{/if}
+				{#if replaceSave}<p>A saved source named “{filename}” already exists.</p>
+					<button type="button" onclick={() => confirmSave(true)}>Replace</button>{/if}
 				<div class="dialog-buttons">
 					<button type="submit">Save</button><button type="button" onclick={dismiss}>Cancel</button>
 				</div>
@@ -1218,6 +1755,7 @@
 		>
 	{/key}{:else if modal === 'close'}<Modal title="Save changes?" onclose={dismiss}
 		><p>Save changes to {current?.name} before closing?</p>
+		{#if fileError}<p role="alert">{fileError}</p>{/if}
 		<div class="dialog-buttons">
 			<button onclick={saveAndClose}>Save</button><button onclick={discard}>Discard</button><button
 				onclick={dismiss}>Cancel</button
@@ -1240,12 +1778,14 @@
 	>
 {:else if modal === 'help'}<Modal title="MARS Help" onclose={dismiss}
 		><p>
-			Use File → New or Open to edit MIPS assembly source. Each file has its own tab and undo
-			history. Save downloads a copy of the source.
+			New creates a source file; Open selects saved files in this browser. Save commits your source
+			locally, and Auto Save commits edits automatically when enabled. Open tabs and in-progress
+			text are recovered after reload. Import reads .asm files from your computer; Export downloads
+			copies.
 		</p>
 		<p>
-			Registers remain visible beside Edit and Execute. Use Settings to change value display and
-			label visibility.
+			Registers remain visible beside Edit and Execute. Use the toolbar toggles to change value
+			display and label visibility.
 		</p>
 		<p>
 			Assemble (F3) translates the current source. Go (F5), Step (F7), Backstep (F8), Pause (F9),
@@ -1262,11 +1802,32 @@
 			MIT license.
 		</p>
 		<p>Mars imagery credit: NASA/JPL.</p>
-		<p><a href={asset('MARSlicense.txt')}>Read the MIT license</a></p>
+		<p>
+			<a href={asset('MARSlicense.txt')} target="_blank" rel="noopener noreferrer"
+				>Read the MIT license (opens in a new tab)</a
+			>
+		</p>
 		<div class="dialog-buttons"><button onclick={dismiss}>Close</button></div></Modal
 	>{/if}
 
 <style>
+	.backup-error {
+		padding: 6px 10px;
+		color: #8b1a1a;
+		background: #fff1db;
+	}
+	.source-files {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		min-height: 120px;
+		max-height: 300px;
+		overflow: auto;
+		margin-block: 10px;
+		padding: 8px;
+		border: 1px solid #94a3b8;
+		background: white;
+	}
 	.editor-divider {
 		height: 5px;
 		flex: 0 0 5px;
@@ -1329,6 +1890,28 @@
 	}
 	.source-surface textarea::selection {
 		background: var(--editor-selection);
+	}
+	.source-help {
+		position: fixed;
+		z-index: 30;
+		width: max-content;
+		max-width: min(520px, calc(100vw - 16px));
+		max-height: min(240px, 40vh);
+		overflow: auto;
+		padding: 6px 9px;
+		border: 1px solid #8d969e;
+		background: #ffffe1;
+		color: #17202b;
+		box-shadow: 2px 3px 8px #0003;
+		font:
+			12px/1.4 system-ui,
+			sans-serif;
+	}
+	.source-help p + p {
+		margin-top: 7px;
+	}
+	.source-help code {
+		font-weight: bold;
 	}
 	@media (forced-colors: active) {
 		.syntax-layer {
@@ -1418,8 +2001,16 @@
 		border-color: #849eb5;
 		background: #dbe8f2;
 	}
-	.toolgroup button:disabled img {
+	.toolgroup button:disabled {
 		opacity: 0.35;
+	}
+	.toolgroup button[aria-pressed='true'] {
+		background: #c4ddef;
+		border-color: #648eae;
+		color: #164c75;
+	}
+	.toolgroup button[aria-pressed='true']:hover {
+		background: #b1d1e8;
 	}
 	.speed {
 		margin-left: auto;

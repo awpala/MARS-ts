@@ -1,6 +1,126 @@
-import { openDesktop } from './openDesktop.js';
+import { openDesktop, openStoredSources } from './openDesktop.js';
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+
+test('Alt and Option N create editor buffers from source and register focus', async ({ page }) => {
+	await openDesktop(page);
+	const pages = page.context().pages().length;
+	await page.getByLabel('$t0 value', { exact: true }).press('Alt+n');
+	const first = page.getByRole('textbox', { name: 'Source mips1.asm', exact: true });
+	await expect(first).toBeFocused();
+	await first.fill('# preserve this buffer');
+	await first.press('Alt+n');
+	await expect(page.getByRole('textbox', { name: 'Source mips2.asm', exact: true })).toBeFocused();
+	await page.getByRole('button', { name: '* mips1.asm', exact: true }).click();
+	await expect(first).toHaveValue('# preserve this buffer');
+	// macOS Option+N starts an accent unless its Dead-key event is canceled.
+	expect(
+		await first.evaluate((element) =>
+			element.dispatchEvent(
+				new KeyboardEvent('keydown', {
+					key: 'Dead',
+					code: 'KeyN',
+					altKey: true,
+					bubbles: true,
+					cancelable: true
+				})
+			)
+		)
+	).toBe(false);
+	await expect(page.getByRole('textbox', { name: 'Source mips3.asm', exact: true })).toBeFocused();
+	// A held shortcut is canceled but must not create a stream of new buffers.
+	expect(
+		await page.evaluate(() =>
+			document.activeElement!.dispatchEvent(
+				new KeyboardEvent('keydown', {
+					key: 'n',
+					code: 'KeyN',
+					altKey: true,
+					repeat: true,
+					bubbles: true,
+					cancelable: true
+				})
+			)
+		)
+	).toBe(false);
+	await expect(page.getByRole('textbox', { name: 'Source mips3.asm', exact: true })).toBeVisible();
+	await page.getByRole('button', { name: 'Help', exact: true }).click();
+	await page.keyboard.press('Alt+n');
+	await expect(page.getByRole('dialog', { name: 'MARS Help', exact: true })).toBeVisible();
+	await page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).click();
+	await expect(page.getByRole('textbox', { name: 'Source mips3.asm', exact: true })).toBeVisible();
+	expect(page.context().pages()).toHaveLength(pages);
+});
+
+test('About MARS opens the bundled unchanged license in a new tab', async ({ page }) => {
+	await openDesktop(page);
+	await page
+		.locator('.menubar summary')
+		.filter({ hasText: /^Help$/ })
+		.click();
+	await page.getByRole('button', { name: 'About MARS', exact: true }).click();
+	const about = page.getByRole('dialog', { name: 'About MARS', exact: true });
+	const popup = page.waitForEvent('popup');
+	await about.getByRole('link', { name: /Read the MIT license/ }).click();
+	const license = await popup;
+	await license.waitForLoadState();
+	await expect(license).toHaveURL(/\/MARSlicense\.txt$/);
+	const response = await license.request.get(license.url());
+	expect(await response.body()).toEqual(await readFile('MARSlicense.txt'));
+	await expect(about).toBeVisible();
+	await license.close();
+});
+
+test('source hover shows instruction syntax and documentation without interfering with editing', async ({
+	page
+}) => {
+	await openDesktop(page);
+	await page.getByRole('button', { name: 'New', exact: true }).click();
+	const source = page.getByRole('textbox', { name: 'Source mips1.asm', exact: true });
+	const program = '# li comment\n.asciiz "la"\nli $t0, 42\n\tla $t1, label\nadd $t0, $t1, $t2\n';
+	await source.fill(program);
+	const layer = page.locator('.syntax-layer');
+	const tooltip = page.getByRole('tooltip');
+	const hoverToken = async (text: string) => {
+		await page.mouse.move(5, 5);
+		const box = await layer
+			.locator('span')
+			.filter({ hasText: new RegExp(`^${text}$`) })
+			.boundingBox();
+		expect(box).not.toBeNull();
+		await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+	};
+	await hoverToken('li');
+	await expect(tooltip).toContainText('Load Immediate');
+	await expect(tooltip).toContainText('li $t1,100000');
+	await source.press('Escape');
+	await expect(tooltip).toBeHidden();
+	await hoverToken('la');
+	await expect(tooltip).toContainText('Load Address');
+	await expect(tooltip).toContainText("label's address");
+	await hoverToken('add');
+	await expect(tooltip).toContainText('Addition');
+	await hoverToken('# li comment');
+	await expect(tooltip).toBeHidden();
+	await hoverToken('"la"');
+	await expect(tooltip).toBeHidden();
+	await expect(source).toHaveValue(program);
+	// Tabs and both scroll axes must use painted token bounds, not guessed character widths.
+	await source.fill('\n'.repeat(60) + '\t'.repeat(20) + 'li $t0, 7\n');
+	await source.evaluate((node) => {
+		const input = node as HTMLTextAreaElement;
+		input.scrollTop = input.scrollHeight;
+		input.scrollLeft = input.scrollWidth;
+	});
+	await expect.poll(() => source.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
+	await expect.poll(() => source.evaluate((node) => node.scrollLeft)).toBeGreaterThan(0);
+	await hoverToken('li');
+	await expect(tooltip).toContainText('Load Immediate');
+	await source.press('Control+End');
+	await expect(tooltip).toBeHidden();
+	await source.press('x');
+	await expect(source).toHaveValue('\n'.repeat(60) + '\t'.repeat(20) + 'li $t0, 7\nx');
+});
 
 test('modal backdrop closes Help and cancels dirty-file closure without losing source', async ({
 	page
@@ -37,24 +157,51 @@ test('working display settings and run speed survive reload', async ({ page }) =
 	await expect(
 		page.getByRole('button', { name: 'Assemble all files in directory', exact: true })
 	).toHaveCount(0);
-	await page.getByLabel('Show line numbers', { exact: true }).uncheck();
-	await page.getByLabel('Show Labels Window', { exact: true }).check();
-	await page.getByLabel('Addresses displayed in hexadecimal', { exact: true }).uncheck();
-	await page.getByLabel('Values displayed in hexadecimal', { exact: true }).uncheck();
+	await expect(
+		page.locator('.settings-menu').getByText('Show Labels Window', { exact: true })
+	).toHaveCount(0);
+	await settings.click();
+	const toggles = page.getByRole('group', { name: 'Display settings', exact: true });
+	await expect(toggles.getByRole('button')).toHaveCount(6);
+	for (const label of [
+		'Show line numbers',
+		'Show Labels Window',
+		'Addresses displayed in hexadecimal',
+		'Values displayed in hexadecimal',
+		'Popup dialog for input syscalls'
+	]) {
+		const button = toggles.getByRole('button', { name: label, exact: true });
+		await expect(button).toHaveAttribute('title', label);
+		await button.click();
+	}
+	const groupBox = (await toggles.boundingBox())!;
+	const helpBox = (await page.getByRole('button', { name: 'Help', exact: true }).boundingBox())!;
+	expect(groupBox.x + groupBox.width).toBeLessThanOrEqual(helpBox.x);
+	await expect(page.locator('.line-numbers')).toHaveCount(0);
 	await page.getByRole('button', { name: 'Execute', exact: true }).click();
 	const slider = page.getByRole('slider');
 	await slider.fill('20');
 	await page.reload();
 	await expect(page.getByRole('button', { name: 'New', exact: true })).toBeEnabled();
-	await settings.click();
-	await expect(page.getByLabel('Show line numbers', { exact: true })).not.toBeChecked();
-	await expect(page.getByLabel('Show Labels Window', { exact: true })).toBeChecked();
+	await expect(page.getByLabel('Show line numbers', { exact: true })).toHaveAttribute(
+		'aria-pressed',
+		'false'
+	);
+	await expect(page.getByLabel('Show Labels Window', { exact: true })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
 	await expect(
 		page.getByLabel('Addresses displayed in hexadecimal', { exact: true })
-	).not.toBeChecked();
-	await expect(
-		page.getByLabel('Values displayed in hexadecimal', { exact: true })
-	).not.toBeChecked();
+	).toHaveAttribute('aria-pressed', 'false');
+	await expect(page.getByLabel('Values displayed in hexadecimal', { exact: true })).toHaveAttribute(
+		'aria-pressed',
+		'false'
+	);
+	await expect(page.getByLabel('Popup dialog for input syscalls', { exact: true })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
 	await expect(slider).toHaveValue('20');
 });
 
@@ -127,7 +274,7 @@ test('launches the desktop directly, renders original assets, and edits real ses
 	await expect(page.getByLabel('$t0 value', { exact: true })).toHaveValue('0x00000000');
 });
 
-test('new buffers save exact content through a same-tab modal and a browser download', async ({
+test('new buffers save exact content to the local library through a same-tab modal', async ({
 	page,
 	context
 }) => {
@@ -142,11 +289,10 @@ test('new buffers save exact content through a same-tab modal and a browser down
 	await expect(dialog).toBeVisible();
 	await expect(dialog.getByLabel('File name')).toBeFocused();
 	await dialog.getByLabel('File name').fill('exit.asm');
-	const downloadEvent = page.waitForEvent('download');
 	await dialog.getByRole('button', { name: 'Save', exact: true }).click();
-	const download = await downloadEvent;
-	expect(download.suggestedFilename()).toBe('exit.asm');
-	expect(await readFile((await download.path())!, 'utf8')).toBe(program);
+	expect(
+		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+	).toContainEqual({ name: 'exit.asm', source: program });
 	await expect(page.getByRole('dialog')).toHaveCount(0);
 	await expect(page).toHaveTitle('exit.asm - MARS');
 	expect(context.pages()).toHaveLength(1);
@@ -156,10 +302,9 @@ test('opens multiple files, preserves dirty content on cancel, finds/replaces, u
 	page
 }) => {
 	await openDesktop(page);
-	await expect(page.getByLabel('Open assembly files')).toBeEnabled();
-	await page.getByLabel('Open assembly files').setInputFiles([
-		{ name: 'one.asm', mimeType: 'text/plain', buffer: Buffer.from('one\none\n') },
-		{ name: 'two.asm', mimeType: 'text/plain', buffer: Buffer.from('two\n') }
+	await openStoredSources(page, [
+		{ name: 'one.asm', source: 'one\none\n' },
+		{ name: 'two.asm', source: 'two\n' }
 	]);
 	await expect(page.getByRole('textbox', { name: 'Source two.asm' })).toHaveValue('two\n');
 	await page.getByRole('button', { name: 'one.asm', exact: true }).click();
@@ -279,10 +424,10 @@ test('Save All prompts for each new file and cancel preserves the remaining buff
 	const dialog = page.getByRole('dialog', { name: 'Save As', exact: true });
 	await expect(dialog.getByLabel('File name')).toHaveValue('mips1.asm');
 	await expect(dialog.getByLabel('File name')).toBeFocused();
-	const downloadEvent = page.waitForEvent('download');
 	await dialog.getByRole('button', { name: 'Save', exact: true }).click();
-	const download = await downloadEvent;
-	expect(await readFile((await download.path())!, 'utf8')).toBe('first');
+	expect(
+		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+	).toContainEqual({ name: 'mips1.asm', source: 'first' });
 	await expect(dialog.getByLabel('File name')).toHaveValue('mips2.asm');
 	await expect(dialog.getByLabel('File name')).toBeFocused();
 	await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
@@ -291,4 +436,568 @@ test('Save All prompts for each new file and cancel preserves the remaining buff
 	await expect(page.getByRole('textbox', { name: 'Source mips2.asm', exact: true })).toHaveValue(
 		'second'
 	);
+});
+
+test('working source text, dirty tabs, and selected buffer survive an immediate reload', async ({
+	page
+}) => {
+	await openDesktop(page);
+	await openStoredSources(page, [{ name: 'saved.asm', source: '.text\nnop\n' }]);
+	const changed = '.text\nli $t0, 123\n# unsaved Unicode: λ\n';
+	await page.getByRole('textbox', { name: 'Source saved.asm', exact: true }).fill(changed);
+	await page.getByRole('button', { name: 'New', exact: true }).click();
+	const draft = '.data\nmessage: .asciiz "in progress"\n.text\n\tli $v0, 4\n';
+	await page.getByRole('textbox', { name: /^Source mips\d+\.asm$/ }).fill(draft);
+	page.once('dialog', (dialog) => dialog.accept());
+	await page.reload();
+	await expect(page.getByRole('button', { name: 'New', exact: true })).toBeEnabled();
+	await expect(page.getByRole('textbox', { name: /^Source mips\d+\.asm$/ })).toHaveValue(draft);
+	await expect(page).toHaveTitle(/^\* mips/);
+	await page.getByRole('button', { name: '* saved.asm', exact: true }).click();
+	await expect(page.getByRole('textbox', { name: 'Source saved.asm', exact: true })).toHaveValue(
+		changed
+	);
+	const records = await page.evaluate(() =>
+		JSON.parse(localStorage.getItem('mars-ts:workspace:v1')!)
+	);
+	expect(records).toContainEqual(
+		expect.objectContaining({
+			name: 'saved.asm',
+			source: changed,
+			savedSource: '.text\nnop\n',
+			isNew: false
+		})
+	);
+	expect(records).toContainEqual(
+		expect.objectContaining({
+			name: expect.stringMatching(/^mips\d+\.asm$/),
+			source: draft,
+			isNew: true
+		})
+	);
+});
+
+test('Open cancel and reopening an existing tab preserve in-progress source', async ({ page }) => {
+	await openDesktop(page);
+	await openStoredSources(page, [{ name: 'working.asm', source: 'original\n' }]);
+	const source = page.getByRole('textbox', { name: 'Source working.asm', exact: true });
+	await source.fill('modified in progress\n');
+	await page.getByRole('button', { name: 'Open ...', exact: true }).click();
+	const open = page.getByRole('dialog', { name: 'Open', exact: true });
+	await open.getByRole('checkbox', { name: 'working.asm', exact: true }).check();
+	await open.getByRole('button', { name: 'Cancel', exact: true }).click();
+	await expect(source).toHaveValue('modified in progress\n');
+	await page.getByRole('button', { name: 'Open ...', exact: true }).click();
+	await open.getByRole('checkbox', { name: 'working.asm', exact: true }).check();
+	await open.getByRole('button', { name: 'Open', exact: true }).click();
+	await expect(source).toHaveValue('modified in progress\n');
+	await expect(page.getByRole('button', { name: 'Close working.asm', exact: true })).toHaveCount(1);
+	await expect(page).toHaveTitle('* working.asm - MARS');
+});
+
+test('Save As cancel preserves edits and a new name retains the original local source', async ({
+	page
+}) => {
+	await openDesktop(page);
+	await openStoredSources(page, [{ name: 'original.asm', source: 'original source\n' }]);
+	const changed = '.text\nli $t0, 77\n';
+	await page.getByRole('textbox', { name: 'Source original.asm', exact: true }).fill(changed);
+	await page.getByRole('button', { name: 'Save as ...', exact: true }).click();
+	const save = page.getByRole('dialog', { name: 'Save As', exact: true });
+	await save.getByLabel('File name').fill('copy.asm');
+	await save.getByRole('button', { name: 'Cancel', exact: true }).click();
+	await expect(page).toHaveTitle('* original.asm - MARS');
+	await page.getByRole('button', { name: 'Save as ...', exact: true }).click();
+	await save.getByLabel('File name').fill('copy.asm');
+	await save.getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(page).toHaveTitle('copy.asm - MARS');
+	const records = await page.evaluate(() =>
+		JSON.parse(localStorage.getItem('mars-ts:sources:v1')!)
+	);
+	expect(records).toContainEqual({ name: 'original.asm', source: 'original source\n' });
+	expect(records).toContainEqual({ name: 'copy.asm', source: changed });
+	await page.reload();
+	await expect(page.getByRole('textbox', { name: 'Source copy.asm', exact: true })).toHaveValue(
+		changed
+	);
+	await expect(page).toHaveTitle('copy.asm - MARS');
+});
+
+test('Export and Export All download exact working source and closed library files without saving drafts', async ({
+	page
+}) => {
+	await openDesktop(page);
+	const exportAll = page.getByRole('button', { name: 'Export All', exact: true });
+	await expect(exportAll).toBeDisabled();
+	await openStoredSources(page, [
+		{ name: 'closed.asm', source: '.text\nnop\n' },
+		{ name: 'working.asm', source: '.text\nli $t0, 1\n' }
+	]);
+	await page.getByRole('button', { name: 'Close closed.asm', exact: true }).click();
+	const current = '.text\nli $t0, 99\n# latest working source\n';
+	await page.getByRole('textbox', { name: 'Source working.asm', exact: true }).fill(current);
+	const autoSave = page.getByRole('button', { name: 'Auto Save', exact: true });
+	const importButton = page.getByRole('button', { name: 'Import ...', exact: true });
+	await expect(autoSave.locator('xpath=following-sibling::button[1]')).toHaveAttribute(
+		'aria-label',
+		'Import ...'
+	);
+	await expect(page.locator('.toolbar').getByRole('button', { name: /^Print/ })).toHaveCount(0);
+	await page
+		.locator('.menubar summary')
+		.filter({ hasText: /^File$/ })
+		.click();
+	await expect(page.locator('.menubar').getByRole('button', { name: /^Print/ })).toHaveCount(0);
+	await page
+		.locator('.menubar summary')
+		.filter({ hasText: /^File$/ })
+		.click();
+	const exportButton = page.getByRole('button', { name: 'Export', exact: true });
+	await expect(importButton.locator('xpath=following-sibling::button[1]')).toHaveAttribute(
+		'aria-label',
+		'Export'
+	);
+	await expect(exportButton.locator('xpath=following-sibling::button[1]')).toHaveAttribute(
+		'aria-label',
+		'Export All'
+	);
+	const downloaded = page.waitForEvent('download');
+	await exportButton.click();
+	const single = await downloaded;
+	expect(single.suggestedFilename()).toBe('working.asm');
+	expect(await readFile((await single.path())!, 'utf8')).toBe(current);
+	await expect(page).toHaveTitle('* working.asm - MARS');
+	await expect(exportAll).toBeDisabled();
+	await page.getByRole('button', { name: 'New', exact: true }).click();
+	const second = '.text\nli $t1, 7\n# second open buffer\n';
+	await page.getByRole('textbox', { name: 'Source mips1.asm', exact: true }).fill(second);
+	await expect(exportAll).toBeEnabled();
+	await page.getByRole('button', { name: '* working.asm', exact: true }).click();
+	const downloads: import('@playwright/test').Download[] = [];
+	page.on('download', (download) => downloads.push(download));
+	await exportAll.click();
+	await expect.poll(() => downloads.length).toBe(3);
+	const contents = await Promise.all(
+		downloads.map(async (download) => ({
+			name: download.suggestedFilename(),
+			source: await readFile((await download.path())!, 'utf8')
+		}))
+	);
+	expect(contents).toEqual(
+		expect.arrayContaining([
+			{ name: 'closed.asm', source: '.text\nnop\n' },
+			{ name: 'working.asm', source: current },
+			{ name: 'mips1.asm', source: second }
+		])
+	);
+	await expect(page).toHaveTitle('* working.asm - MARS');
+});
+
+test('Import reads multiple assembly files into local sources and confirms clean replacements', async ({
+	page
+}) => {
+	await openDesktop(page);
+	const picker = page.getByLabel('Import assembly files', { exact: true });
+	const chosen = page.waitForEvent('filechooser');
+	await page.getByRole('button', { name: 'Import ...', exact: true }).click();
+	const fileChooser = await chosen;
+	expect(fileChooser.isMultiple()).toBe(true);
+	await fileChooser.setFiles([
+		{ name: 'one.asm', mimeType: 'text/plain', buffer: Buffer.from('.text\nnop\n') },
+		{ name: 'two.asm', mimeType: 'text/plain', buffer: Buffer.from('.data\n.word 42\n') }
+	]);
+	await expect(page.getByRole('textbox', { name: 'Source two.asm', exact: true })).toHaveValue(
+		'.data\n.word 42\n'
+	);
+	expect(
+		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+	).toEqual(
+		expect.arrayContaining([
+			{ name: 'one.asm', source: '.text\nnop\n' },
+			{ name: 'two.asm', source: '.data\n.word 42\n' }
+		])
+	);
+	const replacement = {
+		name: 'two.asm',
+		mimeType: 'text/plain',
+		buffer: Buffer.from('.data\n.word 99\n')
+	};
+	await picker.setInputFiles([replacement]);
+	const confirm = page.getByRole('dialog', { name: 'Replace imported sources?', exact: true });
+	await confirm.getByRole('button', { name: 'Cancel', exact: true }).click();
+	await expect(page.getByRole('textbox', { name: 'Source two.asm', exact: true })).toHaveValue(
+		'.data\n.word 42\n'
+	);
+	await picker.setInputFiles([replacement]);
+	await confirm.getByRole('button', { name: 'Replace', exact: true }).click();
+	await expect(page.getByRole('textbox', { name: 'Source two.asm', exact: true })).toHaveValue(
+		'.data\n.word 99\n'
+	);
+	await page.reload();
+	await expect(page.getByRole('textbox', { name: 'Source two.asm', exact: true })).toHaveValue(
+		'.data\n.word 99\n'
+	);
+});
+
+test('Save As requires confirmation before replacing a closed local source', async ({ page }) => {
+	await openDesktop(page);
+	await openStoredSources(page, [{ name: 'existing.asm', source: 'retained source\n' }]);
+	await page.getByRole('button', { name: 'Close existing.asm', exact: true }).click();
+	await page.getByRole('button', { name: 'New', exact: true }).click();
+	await page.getByRole('textbox', { name: /^Source mips\d+\.asm$/ }).fill('replacement source\n');
+	await page.getByRole('button', { name: 'Save', exact: true }).click();
+	const save = page.getByRole('dialog', { name: 'Save As', exact: true });
+	await save.getByLabel('File name').fill('existing.asm');
+	await save.getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(save.getByRole('button', { name: 'Replace', exact: true })).toBeVisible();
+	expect(
+		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+	).toContainEqual({ name: 'existing.asm', source: 'retained source\n' });
+	await save.getByRole('button', { name: 'Cancel', exact: true }).click();
+	await expect(page.getByRole('textbox', { name: /^Source mips\d+\.asm$/ })).toHaveValue(
+		'replacement source\n'
+	);
+	await page.getByRole('button', { name: 'Save', exact: true }).click();
+	await save.getByLabel('File name').fill('existing.asm');
+	await save.getByRole('button', { name: 'Save', exact: true }).click();
+	await save.getByRole('button', { name: 'Replace', exact: true }).click();
+	await expect(page).toHaveTitle('existing.asm - MARS');
+	expect(
+		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+	).toContainEqual({ name: 'existing.asm', source: 'replacement source\n' });
+});
+
+test('Import refuses to overwrite a dirty open source and retains its full recovery text', async ({
+	page
+}) => {
+	await openDesktop(page);
+	await openStoredSources(page, [{ name: 'working.asm', source: 'saved source\n' }]);
+	const source = page.getByRole('textbox', { name: 'Source working.asm', exact: true });
+	await source.fill('irreplaceable in-progress source\n');
+	await page
+		.getByLabel('Import assembly files', { exact: true })
+		.setInputFiles([
+			{ name: 'working.asm', mimeType: 'text/plain', buffer: Buffer.from('imported replacement\n') }
+		]);
+	const confirm = page.getByRole('dialog', { name: 'Replace imported sources?', exact: true });
+	await confirm.getByRole('button', { name: 'Replace', exact: true }).click();
+	await expect(confirm.getByRole('alert')).toHaveText(
+		'Save or close the edited "working.asm" before replacing it.'
+	);
+	await confirm.getByRole('button', { name: 'Cancel', exact: true }).click();
+	await expect(source).toHaveValue('irreplaceable in-progress source\n');
+	expect(
+		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+	).toContainEqual({ name: 'working.asm', source: 'saved source\n' });
+	page.once('dialog', (dialog) => dialog.accept());
+	await page.reload();
+	await expect(source).toHaveValue('irreplaceable in-progress source\n');
+	await expect(page).toHaveTitle('* working.asm - MARS');
+});
+
+test('Auto Save commits all working buffers, persists its setting, and disabling retains draft recovery', async ({
+	page
+}) => {
+	await openDesktop(page);
+	const autoSave = page.getByRole('button', { name: 'Auto Save', exact: true });
+	await expect(autoSave).toHaveAttribute('aria-pressed', 'false');
+	await page.getByRole('button', { name: 'New', exact: true }).click();
+	await page.getByRole('textbox', { name: 'Source mips1.asm', exact: true }).fill('first draft\n');
+	await page.getByRole('button', { name: 'New', exact: true }).click();
+	const second = page.getByRole('textbox', { name: 'Source mips2.asm', exact: true });
+	await second.fill('second draft\n');
+	await autoSave.click();
+	await expect(autoSave).toHaveAttribute('aria-pressed', 'true');
+	await expect(page).toHaveTitle('mips2.asm - MARS');
+	expect(
+		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+	).toEqual(
+		expect.arrayContaining([
+			{ name: 'mips1.asm', source: 'first draft\n' },
+			{ name: 'mips2.asm', source: 'second draft\n' }
+		])
+	);
+	await second.fill('second automatic save\n');
+	await expect
+		.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!)))
+		.toEqual(expect.arrayContaining([{ name: 'mips2.asm', source: 'second automatic save\n' }]));
+	await page.reload();
+	await expect(autoSave).toHaveAttribute('aria-pressed', 'true');
+	await expect(second).toHaveValue('second automatic save\n');
+	await second.fill('automatic save after reload\n');
+	await expect
+		.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!)))
+		.toEqual(
+			expect.arrayContaining([{ name: 'mips2.asm', source: 'automatic save after reload\n' }])
+		);
+	await autoSave.click();
+	await second.fill('protected draft with auto save off\n');
+	await expect(page).toHaveTitle('* mips2.asm - MARS');
+	expect(
+		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+	).toContainEqual({ name: 'mips2.asm', source: 'automatic save after reload\n' });
+	page.once('dialog', (dialog) => dialog.accept());
+	await page.reload();
+	await expect(autoSave).toHaveAttribute('aria-pressed', 'false');
+	await expect(second).toHaveValue('protected draft with auto save off\n');
+	await expect(page).toHaveTitle('* mips2.asm - MARS');
+});
+
+test('a source-library quota failure preserves the saved version and recovers the dirty working source', async ({
+	page
+}) => {
+	await openDesktop(page);
+	await openStoredSources(page, [{ name: 'quota.asm', source: '.text\nnop\n' }]);
+	await page.evaluate(() => {
+		const setItem = Storage.prototype.setItem;
+		Storage.prototype.setItem = function (key: string, value: string) {
+			if (key === 'mars-ts:sources:v1') {
+				throw new DOMException('Source library quota exceeded', 'QuotaExceededError');
+			}
+			setItem.call(this, key, value);
+		};
+	});
+	const draft = '.text\nli $t0, 1234\n# keep this unsaved source\n';
+	const source = page.getByRole('textbox', { name: 'Source quota.asm', exact: true });
+	await source.fill(draft);
+	await page.getByRole('button', { name: 'Save', exact: true }).click();
+	const save = page.getByRole('dialog', { name: 'Save As', exact: true });
+	await expect(save.getByRole('alert')).toContainText('Source library quota exceeded');
+	await expect(page).toHaveTitle('* quota.asm - MARS');
+	await expect(source).toHaveValue(draft);
+	expect(
+		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+	).toContainEqual({ name: 'quota.asm', source: '.text\nnop\n' });
+	expect(
+		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:workspace:v1')!))
+	).toContainEqual(
+		expect.objectContaining({ name: 'quota.asm', source: draft, savedSource: '.text\nnop\n' })
+	);
+	await save.getByRole('button', { name: 'Cancel', exact: true }).click();
+	page.once('dialog', (dialog) => dialog.accept());
+	await page.reload();
+	await expect(source).toHaveValue(draft);
+	await expect(page).toHaveTitle('* quota.asm - MARS');
+});
+
+test('Auto Save retains the latest committed source when workspace backup fails before reload', async ({
+	page
+}) => {
+	await openDesktop(page);
+	await openStoredSources(page, [{ name: 'saved.asm', source: '.text\nnop\n' }]);
+	await page.getByRole('button', { name: 'Auto Save', exact: true }).click();
+	await page.evaluate(() => {
+		const setItem = Storage.prototype.setItem;
+		Storage.prototype.setItem = function (key: string, value: string) {
+			if (key === 'mars-ts:workspace:v1') {
+				throw new DOMException('Workspace quota exceeded', 'QuotaExceededError');
+			}
+			setItem.call(this, key, value);
+		};
+	});
+	const latest = '.text\nli $t0, 4567\n# committed even though backup failed\n';
+	const source = page.getByRole('textbox', { name: 'Source saved.asm', exact: true });
+	await source.fill(latest);
+	await expect(page.getByRole('alert')).toContainText('Workspace quota exceeded');
+	expect(
+		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+	).toContainEqual({ name: 'saved.asm', source: latest });
+	await page.reload();
+	await expect(page.getByRole('button', { name: 'Auto Save', exact: true })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await expect(source).toHaveValue(latest);
+	await expect(page).toHaveTitle('saved.asm - MARS');
+	expect(
+		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+	).toContainEqual({ name: 'saved.asm', source: latest });
+});
+
+test('conflicting dirty recovery preserves both versions and suspends Auto Save across tab selection', async ({
+	page
+}) => {
+	await openDesktop(page);
+	await openStoredSources(page, [
+		{ name: 'other.asm', source: '# another buffer\n' },
+		{ name: 'conflict.asm', source: '# original saved A\n' }
+	]);
+	const source = page.getByRole('textbox', { name: 'Source conflict.asm', exact: true });
+	await source.fill('# recovered draft B\n');
+	await page.evaluate(() => {
+		const setItem = Storage.prototype.setItem;
+		Storage.prototype.setItem = function (key: string, value: string) {
+			if (key === 'mars-ts:workspace:v1') {
+				throw new DOMException('Workspace quota exceeded', 'QuotaExceededError');
+			}
+			setItem.call(this, key, value);
+		};
+	});
+	const autoSave = page.getByRole('button', { name: 'Auto Save', exact: true });
+	await autoSave.click();
+	await source.fill('# latest committed C\n');
+	expect(
+		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+	).toContainEqual({ name: 'conflict.asm', source: '# latest committed C\n' });
+	await page.reload();
+	await expect(source).toHaveValue('# recovered draft B\n');
+	await expect(page).toHaveTitle('* conflict.asm - MARS');
+	await expect(autoSave).toHaveAttribute('aria-pressed', 'false');
+	await expect(page.getByRole('alert')).toContainText(
+		'A recovered draft differs from its latest saved source'
+	);
+	await page.getByRole('button', { name: 'other.asm', exact: true }).click();
+	await page.getByRole('button', { name: '* conflict.asm', exact: true }).click();
+	await expect(source).toHaveValue('# recovered draft B\n');
+	expect(
+		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+	).toContainEqual({ name: 'conflict.asm', source: '# latest committed C\n' });
+});
+
+test('Delete confirms selected local sources, protects canceled drafts, and retains unrelated files', async ({
+	page
+}) => {
+	await openDesktop(page);
+	await openStoredSources(
+		page,
+		[
+			{ name: 'closed.asm', source: '# closed saved source\n' },
+			{ name: 'keep.asm', source: '# unrelated source\n' },
+			{ name: 'working.asm', source: '# saved source\n' }
+		],
+		['keep.asm', 'working.asm']
+	);
+	const source = page.getByRole('textbox', { name: 'Source working.asm', exact: true });
+	await source.fill('# edited source must survive cancel\n');
+	await page.getByRole('button', { name: 'Open ...', exact: true }).click();
+	const open = page.getByRole('dialog', { name: 'Open', exact: true });
+	await open.getByRole('checkbox', { name: 'closed.asm', exact: true }).check();
+	await open.getByRole('checkbox', { name: 'working.asm', exact: true }).check();
+	await open.getByRole('button', { name: 'Delete', exact: true }).click();
+	const confirm = page.getByRole('dialog', { name: 'Delete sources?', exact: true });
+	await expect(confirm).toContainText('closed.asm');
+	await expect(confirm).toContainText('working.asm');
+	await expect(confirm.getByRole('alert')).toContainText(/unsaved|edited|changes/i);
+	await confirm.getByRole('button', { name: 'Cancel', exact: true }).click();
+	await expect(open.getByRole('checkbox', { name: 'closed.asm', exact: true })).toBeChecked();
+	await expect(open.getByRole('checkbox', { name: 'working.asm', exact: true })).toBeChecked();
+	await expect(source).toHaveValue('# edited source must survive cancel\n');
+	expect(
+		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+	).toEqual(
+		expect.arrayContaining([
+			{ name: 'closed.asm', source: '# closed saved source\n' },
+			{ name: 'working.asm', source: '# saved source\n' }
+		])
+	);
+	await open.getByRole('button', { name: 'Delete', exact: true }).click();
+	await confirm.getByRole('button', { name: 'Delete', exact: true }).click();
+	await expect(page.getByRole('button', { name: 'Close working.asm', exact: true })).toHaveCount(0);
+	expect(
+		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+	).toEqual([{ name: 'keep.asm', source: '# unrelated source\n' }]);
+	await page.reload();
+	await expect(page.getByRole('textbox', { name: 'Source keep.asm', exact: true })).toHaveValue(
+		'# unrelated source\n'
+	);
+	await expect(page.getByRole('button', { name: 'Close working.asm', exact: true })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Open ...', exact: true }).click();
+	await expect(open.getByRole('checkbox')).toHaveCount(1);
+	await expect(open.getByRole('checkbox', { name: 'keep.asm', exact: true })).toBeVisible();
+});
+
+test('Save As Rename cancellation preserves both name and draft while confirmed rename moves exact source', async ({
+	page
+}) => {
+	await openDesktop(page);
+	await openStoredSources(page, [{ name: 'original.asm', source: '# saved original\n' }]);
+	const draft = '.text\nli $t0, 867\n# renamed working source\n';
+	await page.getByRole('textbox', { name: 'Source original.asm', exact: true }).fill(draft);
+	await page.getByRole('button', { name: 'Save as ...', exact: true }).click();
+	const save = page.getByRole('dialog', { name: 'Save As', exact: true });
+	await save.getByLabel('File name').fill('renamed.asm');
+	await save.getByRole('checkbox', { name: 'Rename existing file', exact: true }).check();
+	await expect(save.getByLabel('Old filename', { exact: true })).toHaveValue('original.asm');
+	await expect(save.getByLabel('Old filename', { exact: true })).toHaveAttribute('readonly', '');
+	await save.getByRole('button', { name: 'Cancel', exact: true }).click();
+	await expect(page).toHaveTitle('* original.asm - MARS');
+	await expect(page.getByRole('textbox', { name: 'Source original.asm', exact: true })).toHaveValue(
+		draft
+	);
+	expect(
+		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+	).toEqual([{ name: 'original.asm', source: '# saved original\n' }]);
+	await page.getByRole('button', { name: 'Save as ...', exact: true }).click();
+	await save.getByLabel('File name').fill('renamed.asm');
+	await save.getByRole('checkbox', { name: 'Rename existing file', exact: true }).check();
+	await expect(save.getByLabel('Old filename', { exact: true })).toHaveValue('original.asm');
+	await expect(save.getByLabel('Old filename', { exact: true })).toHaveAttribute('readonly', '');
+	await save.getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(page).toHaveTitle('renamed.asm - MARS');
+	expect(
+		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+	).toEqual([{ name: 'renamed.asm', source: draft }]);
+	await page.reload();
+	await expect(page.getByRole('textbox', { name: 'Source renamed.asm', exact: true })).toHaveValue(
+		draft
+	);
+	await expect(page.getByRole('button', { name: 'Close original.asm', exact: true })).toHaveCount(
+		0
+	);
+});
+
+test('Rename requires confirmation before replacing an existing closed source', async ({
+	page
+}) => {
+	await openDesktop(page);
+	await openStoredSources(
+		page,
+		[
+			{ name: 'original.asm', source: '# original source\n' },
+			{ name: 'target.asm', source: '# previous target\n' }
+		],
+		['original.asm']
+	);
+	await page.getByRole('button', { name: 'Save as ...', exact: true }).click();
+	const save = page.getByRole('dialog', { name: 'Save As', exact: true });
+	await save.getByLabel('File name').fill('target.asm');
+	await save.getByRole('checkbox', { name: 'Rename existing file', exact: true }).check();
+	await expect(save.getByLabel('Old filename', { exact: true })).toHaveValue('original.asm');
+	await expect(save.getByLabel('Old filename', { exact: true })).toHaveAttribute('readonly', '');
+	await save.getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(save.getByRole('button', { name: 'Replace', exact: true })).toBeVisible();
+	expect(
+		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+	).toEqual(
+		expect.arrayContaining([
+			{ name: 'original.asm', source: '# original source\n' },
+			{ name: 'target.asm', source: '# previous target\n' }
+		])
+	);
+	await save.getByRole('button', { name: 'Replace', exact: true }).click();
+	await expect(page).toHaveTitle('target.asm - MARS');
+	expect(
+		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+	).toEqual([{ name: 'target.asm', source: '# original source\n' }]);
+});
+
+test('Line and Column status appears only when editing an open source', async ({ page }) => {
+	await openDesktop(page);
+	const position = page.locator('footer').getByText(/^Line \d+, Column \d+$/);
+	await expect(position).toBeHidden();
+	await page.getByRole('button', { name: 'New', exact: true }).click();
+	const source = page.getByRole('textbox', { name: 'Source mips1.asm', exact: true });
+	await source.fill('one\ntwo\nabc');
+	await source.press('Control+End');
+	await expect(position).toHaveText('Line 3, Column 4');
+	await page.getByRole('button', { name: 'Execute', exact: true }).click();
+	await expect(position).toBeHidden();
+	await page.getByRole('button', { name: 'Edit', exact: true }).click();
+	await expect(position).toBeVisible();
+	await page.getByRole('button', { name: 'Close mips1.asm', exact: true }).click();
+	await page
+		.getByRole('dialog', { name: 'Save changes?', exact: true })
+		.getByRole('button', { name: 'Discard', exact: true })
+		.click();
+	await expect(position).toBeHidden();
 });

@@ -25,10 +25,18 @@
 		onsource: (filename: string, line: number) => void;
 		/** Whether to show labels, controlled by Settings. */
 		showLabels: boolean;
+		/** Parent-owned persisted inclusion of data labels; toggled inside the Labels panel. */
+		showDataLabels: boolean;
+		/** Parent-owned persisted inclusion of text labels; toggled inside the Labels panel. */
+		showTextLabels: boolean;
+		/** Parent-owned LabelsWindow sort state, integer zero through seven. */
+		labelSortState: number;
 		/** Parent-owned address display base, bindable through the bottom checkbox. */
 		hexAddresses: boolean;
 		/** Parent-owned value display base, bindable through the bottom checkbox. */
 		hexValues: boolean;
+		/** Parent-owned persisted ASCII display setting, shared by checkbox and toolbar toggle. */
+		ascii: boolean;
 	};
 	let {
 		machine,
@@ -38,14 +46,32 @@
 		onedit,
 		onsource,
 		showLabels,
+		showDataLabels = $bindable(),
+		showTextLabels = $bindable(),
+		labelSortState = $bindable(),
 		hexAddresses = $bindable(),
-		hexValues = $bindable()
+		hexValues = $bindable(),
+		ascii = $bindable()
 	}: Props = $props();
 	let segment = $state('data');
 	let pageOffset = $state(0);
-	let ascii = $state(false);
 	let memoryError = $state('');
 	let editedAddress = $state<number | null>(null);
+	const memoryRows = 16;
+	const memoryPageBytes = memoryRows * 32;
+	// LabelsWindow remembers the direction of each column when switching sort columns.
+	const sortTransitions = [
+		[4, 1],
+		[5, 0],
+		[6, 3],
+		[7, 2],
+		[6, 0],
+		[7, 1],
+		[4, 2],
+		[5, 3]
+	];
+	const sortColumn = $derived(labelSortState < 4 ? 1 : 0);
+	const sortDescending = $derived((labelSortState & (sortColumn === 0 ? 2 : 1)) !== 0);
 	$effect(() =>
 		machine.memory.addObserver((notice) => {
 			if (notice.getAccessType() === AccessNotice.WRITE) editedAddress = notice.getAddress() & ~3;
@@ -93,9 +119,18 @@
 					file: program.getFilename() ?? ''
 				}))
 			)
-		];
+		]
+			.filter(({ symbol }) => (symbol.getType() ? showDataLabels : showTextLabels))
+			.sort((left, right) => {
+				const a = sortDescending ? right.symbol : left.symbol;
+				const b = sortDescending ? left.symbol : right.symbol;
+				if (sortColumn === 1) return (a.getAddress() >>> 0) - (b.getAddress() >>> 0);
+				const nameA = a.getName().toLowerCase(),
+					nameB = b.getName().toLowerCase();
+				return nameA < nameB ? -1 : nameA > nameB ? 1 : 0;
+			});
 	});
-	const memoryBase = $derived.by(() => {
+	const memoryBases = $derived.by(() => {
 		void snapshot.revision;
 		const memory = machine.memory;
 		const bases: Record<string, number> = {
@@ -108,11 +143,12 @@
 			kernel: memory.kernelDataBaseAddress,
 			mmio: memory.memoryMapBaseAddress
 		};
-		return ((bases[segment] & ~3) + pageOffset) | 0;
+		return bases;
 	});
+	const memoryBase = $derived(((memoryBases[segment] & ~3) + pageOffset) | 0);
 	const dataRows = $derived.by(() => {
 		void snapshot.revision;
-		return Array.from({ length: 8 }, (_, row) => {
+		return Array.from({ length: memoryRows }, (_, row) => {
 			const address = (memoryBase + row * 32) | 0;
 			return {
 				address,
@@ -256,8 +292,38 @@
 		</section>
 		{#if showLabels}<section class="labels segment" aria-label="Labels">
 				<h2>Labels</h2>
+				<div class="label-controls">
+					<label title="Show labels defined in the data segment"
+						><input type="checkbox" bind:checked={showDataLabels} /> Data</label
+					>
+					<label title="Show labels defined in the text segment"
+						><input type="checkbox" bind:checked={showTextLabels} /> Text</label
+					>
+				</div>
 				<table>
-					<thead><tr><th>Label</th><th>Address</th></tr></thead><tbody
+					<thead
+						><tr
+							>{#each ['Label', 'Address'] as heading, column (heading)}
+								<th
+									aria-sort={sortColumn === column
+										? sortDescending
+											? 'descending'
+											: 'ascending'
+										: 'none'}
+								>
+									<button
+										aria-label={`Sort by ${heading}`}
+										title={`Sort by ${heading}`}
+										onclick={() => (labelSortState = sortTransitions[labelSortState][column])}
+									>
+										{heading}{#if sortColumn === column}<span aria-hidden="true">
+												{sortDescending ? '▼' : '▲'}</span
+											>{/if}
+									</button>
+								</th>
+							{/each}</tr
+						></thead
+					><tbody
 						>{#each labels as label (`${label.file}:${label.symbol.getName()}`)}<tr
 								><td
 									><button
@@ -301,7 +367,7 @@
 			</table>
 		</div>
 		<div class="data-controls">
-			<button aria-label="Previous memory page" onclick={() => (pageOffset -= 256)}
+			<button aria-label="Previous memory page" onclick={() => (pageOffset -= memoryPageBytes)}
 				><img src={asset('icons/Previous.svg')} alt="" /></button
 			><select
 				aria-label="Data segment base"
@@ -309,22 +375,25 @@
 				onchange={() => {
 					pageOffset = 0;
 				}}
-				><option value="extern">.extern</option><option value="data">.data</option><option
-					value="heap">heap</option
-				><option value="gp">$gp</option><option value="sp">$sp</option><option value="text"
-					>.text</option
-				><option value="kernel">.kdata</option><option value="mmio">MMIO</option></select
-			><button aria-label="Next memory page" onclick={() => (pageOffset += 256)}
+				><option value="extern">{Binary.intToHexString(memoryBases.extern)} (.extern)</option>
+				<option value="data">{Binary.intToHexString(memoryBases.data)} (.data)</option>
+				<option value="heap">{Binary.intToHexString(memoryBases.heap)} (heap)</option>
+				<option value="gp">current $gp</option><option value="sp">current $sp</option>
+				<option value="text">{Binary.intToHexString(memoryBases.text)} (.text)</option>
+				<option value="kernel">{Binary.intToHexString(memoryBases.kernel)} (.kdata)</option>
+				<option value="mmio">{Binary.intToHexString(memoryBases.mmio)} (MMIO)</option></select
+			><button aria-label="Next memory page" onclick={() => (pageOffset += memoryPageBytes)}
 				><img src={asset('icons/Next.svg')} alt="" /></button
-			><label><input type="checkbox" bind:checked={ascii} /> ASCII</label>
+			>
+			<div class="control-separator" role="separator" aria-orientation="vertical"></div>
+			<div class="display-options">
+				<label><input type="checkbox" bind:checked={hexAddresses} /> Hexadecimal Addresses</label>
+				<label><input type="checkbox" bind:checked={hexValues} /> Hexadecimal Values</label>
+				<label><input type="checkbox" bind:checked={ascii} /> ASCII</label>
+			</div>
 		</div>
 		{#if memoryError}<p role="alert">{memoryError}</p>{/if}
 	</section>
-	<div class="display-options">
-		<label><input type="checkbox" bind:checked={hexAddresses} /> Hexadecimal Addresses</label><label
-			><input type="checkbox" bind:checked={hexValues} /> Hexadecimal Values</label
-		>
-	</div>
 </div>
 
 <style>
@@ -333,12 +402,12 @@
 		display: flex;
 		flex-direction: column;
 		min-height: 0;
-		overflow: hidden;
+		overflow: auto;
 	}
 	.text-row {
 		display: flex;
-		height: 50%;
-		min-height: 60px;
+		flex: 1 0 100px;
+		min-height: 100px;
 	}
 	.segment {
 		flex: 1;
@@ -355,6 +424,16 @@
 	}
 	.labels {
 		flex: 0 0 25%;
+	}
+	.label-controls {
+		display: flex;
+		gap: 12px;
+		padding: 3px 6px;
+		background: #eee;
+	}
+	.labels th button {
+		width: 100%;
+		text-align: left;
 	}
 	table {
 		border-collapse: collapse;
@@ -394,11 +473,11 @@
 		white-space: pre;
 	}
 	.data-segment {
+		flex: 0 0 auto;
 		display: flex;
 		flex-direction: column;
 	}
 	.data-scroll {
-		flex: 1;
 		overflow: auto;
 	}
 	.code-value,
@@ -420,9 +499,20 @@
 		display: flex;
 		gap: 10px;
 		align-items: center;
+		overflow-x: auto;
 		background: #eee;
 		flex-shrink: 0;
 		padding: 2px 5px;
+	}
+	.data-controls > button,
+	.data-controls > select {
+		flex-shrink: 0;
+	}
+	.control-separator {
+		flex: 0 0 1px;
+		align-self: stretch;
+		margin: 2px 0;
+		background: #b3b3b3;
 	}
 	.data-controls img {
 		width: 22px;
@@ -430,9 +520,9 @@
 	}
 	.display-options {
 		display: flex;
+		flex-shrink: 0;
+		white-space: nowrap;
 		gap: 15px;
-		padding: 4px;
-		background: #eee;
 	}
 	p {
 		color: #a11;
