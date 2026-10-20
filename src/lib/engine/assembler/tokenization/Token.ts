@@ -27,7 +27,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 // Ports mars/assembler/Token.java.
 
-import type { DiagnosticProgram } from '../diagnostics/ErrorMessage.js';
+import type { DiagnosticProgram } from '../../diagnostics/ErrorMessage.js';
 
 import type { TokenTypes } from './TokenTypes.js';
 

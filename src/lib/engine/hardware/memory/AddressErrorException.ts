@@ -1,6 +1,6 @@
 /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt.
  * Ports mars/mips/hardware/AddressErrorException.java. */
-import { Binary } from '../formatting/Binary.js';
+import { Binary } from '../../formatting/Binary.js';
 
 /** An invalid memory address, with the MIPS load/store exception type. */
 export class AddressErrorException extends Error {

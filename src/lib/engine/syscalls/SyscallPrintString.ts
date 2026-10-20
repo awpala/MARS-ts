@@ -1,9 +1,9 @@
 /* Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license.
  * Ports mars/mips/instructions/syscalls/SyscallPrintString.java; see MARSlicense.txt. */
 import { AbstractSyscall, type SyscallHost } from './AbstractSyscall.js';
-import type { ProgramStatement } from '../assembler/ProgramStatement.js';
+import type { ProgramStatement } from '../assembler/programs/ProgramStatement.js';
 import { ProcessingException } from '../diagnostics/ProcessingException.js';
-import { AddressErrorException } from '../hardware/AddressErrorException.js';
+import { AddressErrorException } from '../hardware/memory/AddressErrorException.js';
 /** Canonical PrintString service; hardware and I/O remain owned by the injected session. */
 export class SyscallPrintString extends AbstractSyscall {
 	/** Construct service 4 (PrintString) for this session. */

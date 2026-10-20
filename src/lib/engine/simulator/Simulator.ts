@@ -1,6 +1,6 @@
 /* Copyright (c) 2003–2010 Pete Sanderson and Kenneth Vollmar. MIT; see MARSlicense.txt.
  * Ports mars/simulator/Simulator.java; cooperative scheduling is documented in ADR 0004. */
-import { ProgramStatement } from '../assembler/ProgramStatement.js';
+import { ProgramStatement } from '../assembler/programs/ProgramStatement.js';
 import { BasicInstruction } from '../instructions/BasicInstruction.js';
 import {
 	ProcessingException,
@@ -9,10 +9,10 @@ import {
 import { ErrorList } from '../diagnostics/ErrorList.js';
 import { ErrorMessage } from '../diagnostics/ErrorMessage.js';
 import { Binary } from '../formatting/Binary.js';
-import { AddressErrorException } from '../hardware/AddressErrorException.js';
-import { Coprocessor0 } from '../hardware/Coprocessor0.js';
-import type { Memory } from '../hardware/Memory.js';
-import type { RegisterFile } from '../hardware/RegisterFile.js';
+import { AddressErrorException } from '../hardware/memory/AddressErrorException.js';
+import { Coprocessor0 } from '../hardware/registers/Coprocessor0.js';
+import type { Memory } from '../hardware/memory/Memory.js';
+import type { RegisterFile } from '../hardware/registers/RegisterFile.js';
 import type { BackStepper } from './BackStepper.js';
 import type { DelayedBranch } from './DelayedBranch.js';
 import { Exceptions } from './Exceptions.js';

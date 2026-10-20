@@ -1,8 +1,8 @@
 /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license.
  * Ports the engine workflows in mars/venus/Run{Assemble,Go,Step,Backstep,Pause,Stop,Reset}Action.java. */
 import { Globals } from '../engine/Globals.js';
-import type { MIPSprogram } from '../engine/assembler/MIPSprogram.js';
-import type { ProgramStatement } from '../engine/assembler/ProgramStatement.js';
+import type { MIPSprogram } from '../engine/assembler/programs/MIPSprogram.js';
+import type { ProgramStatement } from '../engine/assembler/programs/ProgramStatement.js';
 import type { ErrorList } from '../engine/diagnostics/ErrorList.js';
 import { ProcessingException } from '../engine/diagnostics/ProcessingException.js';
 import { Simulator } from '../engine/simulator/Simulator.js';

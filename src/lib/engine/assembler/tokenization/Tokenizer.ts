@@ -27,10 +27,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 // Ports mars/assembler/Tokenizer.java.
 
-import { ErrorList } from '../diagnostics/ErrorList.js';
-import { ErrorMessage, type DiagnosticProgram } from '../diagnostics/ErrorMessage.js';
-import { ProcessingException } from '../diagnostics/ProcessingException.js';
-import { Directives } from './Directives.js';
+import { ErrorList } from '../../diagnostics/ErrorList.js';
+import { ErrorMessage, type DiagnosticProgram } from '../../diagnostics/ErrorMessage.js';
+import { ProcessingException } from '../../diagnostics/ProcessingException.js';
+import { Directives } from '../directives/Directives.js';
 import { JavaCharacter } from './JavaCharacter.js';
 import { SourceLine } from './SourceLine.js';
 import { Token } from './Token.js';

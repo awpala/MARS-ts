@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
 import { BackStepper } from './BackStepper.js';
-import { Memory, type MemoryStatement } from '../hardware/Memory.js';
-import { RegisterFile } from '../hardware/RegisterFile.js';
-import { Coprocessor0 } from '../hardware/Coprocessor0.js';
-import { Coprocessor1 } from '../hardware/Coprocessor1.js';
+import { Memory, type MemoryStatement } from '../hardware/memory/Memory.js';
+import { RegisterFile } from '../hardware/registers/RegisterFile.js';
+import { Coprocessor0 } from '../hardware/registers/Coprocessor0.js';
+import { Coprocessor1 } from '../hardware/registers/Coprocessor1.js';
 import { DelayedBranch } from './DelayedBranch.js';
 
 const T = 0x00400000,

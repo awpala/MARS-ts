@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { ErrorMessage, type DiagnosticProgram } from './ErrorMessage.js';
 import { ErrorList } from './ErrorList.js';
 import { ProcessingException } from './ProcessingException.js';
-import { RegisterFile } from '../hardware/RegisterFile.js';
-import { Coprocessor0 } from '../hardware/Coprocessor0.js';
-import { AddressErrorException } from '../hardware/AddressErrorException.js';
+import { RegisterFile } from '../hardware/registers/RegisterFile.js';
+import { Coprocessor0 } from '../hardware/registers/Coprocessor0.js';
+import { AddressErrorException } from '../hardware/memory/AddressErrorException.js';
 import { Exceptions } from '../simulator/Exceptions.js';
 
 const fixture = JSON.parse(readFileSync('tests/oracle/diagnostics-units/golden.json', 'utf8')) as {

@@ -1,21 +1,21 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
-import golden from '../../../../tests/oracle/program-units/golden.json';
+import golden from '../../../../../tests/oracle/program-units/golden.json';
 import { MIPSprogram, type MIPSprogramHost, type ProgramAssembler } from './MIPSprogram.js';
 import { ProgramStatement } from './ProgramStatement.js';
-import { SourceLine } from './SourceLine.js';
-import { SymbolTable } from './SymbolTable.js';
-import { Tokenizer } from './Tokenizer.js';
-import { Coprocessor0 } from '../hardware/Coprocessor0.js';
-import { Coprocessor1 } from '../hardware/Coprocessor1.js';
-import { RegisterFile } from '../hardware/RegisterFile.js';
-import { Memory } from '../hardware/Memory.js';
-import { InstructionSet } from '../instructions/InstructionSet.js';
-import { BackStepper } from '../simulator/BackStepper.js';
-import { DelayedBranch } from '../simulator/DelayedBranch.js';
-import { Exceptions } from '../simulator/Exceptions.js';
-import { ErrorList } from '../diagnostics/ErrorList.js';
-import { ProcessingException } from '../diagnostics/ProcessingException.js';
+import { SourceLine } from '../tokenization/SourceLine.js';
+import { SymbolTable } from '../symbols/SymbolTable.js';
+import { Tokenizer } from '../tokenization/Tokenizer.js';
+import { Coprocessor0 } from '../../hardware/registers/Coprocessor0.js';
+import { Coprocessor1 } from '../../hardware/registers/Coprocessor1.js';
+import { RegisterFile } from '../../hardware/registers/RegisterFile.js';
+import { Memory } from '../../hardware/memory/Memory.js';
+import { InstructionSet } from '../../instructions/InstructionSet.js';
+import { BackStepper } from '../../simulator/BackStepper.js';
+import { DelayedBranch } from '../../simulator/DelayedBranch.js';
+import { Exceptions } from '../../simulator/Exceptions.js';
+import { ErrorList } from '../../diagnostics/ErrorList.js';
+import { ProcessingException } from '../../diagnostics/ProcessingException.js';
 
 interface Snapshot {
 	filename: string | null;

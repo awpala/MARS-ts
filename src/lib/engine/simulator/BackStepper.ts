@@ -1,9 +1,9 @@
 /* Copyright (c) 2003–2006 Pete Sanderson and Kenneth Vollmar. MIT; see MARSlicense.txt.
  * Ports mars/simulator/BackStepper.java. */
-import type { Memory, MemoryStatement } from '../hardware/Memory.js';
-import type { RegisterFile } from '../hardware/RegisterFile.js';
-import type { Coprocessor0 } from '../hardware/Coprocessor0.js';
-import type { Coprocessor1 } from '../hardware/Coprocessor1.js';
+import type { Memory, MemoryStatement } from '../hardware/memory/Memory.js';
+import type { RegisterFile } from '../hardware/registers/RegisterFile.js';
+import type { Coprocessor0 } from '../hardware/registers/Coprocessor0.js';
+import type { Coprocessor1 } from '../hardware/registers/Coprocessor1.js';
 import { Instruction } from '../instructions/Instruction.js';
 import { BackStepAction } from './BackStep.js';
 import { BackstepStack } from './BackstepStack.js';

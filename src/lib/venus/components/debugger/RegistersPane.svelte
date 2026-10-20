@@ -7,10 +7,10 @@
 	 * Coprocessor0Window.java, and Coprocessor1Window.java.
 	 * Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license.
 	 */
-	import type { RegisterFile } from '#lib/engine/hardware/RegisterFile.js';
-	import type { Coprocessor0 } from '#lib/engine/hardware/Coprocessor0.js';
-	import type { Coprocessor1 } from '#lib/engine/hardware/Coprocessor1.js';
-	import { AccessNotice } from '#lib/engine/hardware/AccessNotice.js';
+	import type { RegisterFile } from '#lib/engine/hardware/registers/RegisterFile.js';
+	import type { Coprocessor0 } from '#lib/engine/hardware/registers/Coprocessor0.js';
+	import type { Coprocessor1 } from '#lib/engine/hardware/registers/Coprocessor1.js';
+	import { AccessNotice } from '#lib/engine/hardware/notices/AccessNotice.js';
 	import { Binary } from '#lib/engine/formatting/Binary.js';
 	import { JavaFloatingPoint } from '#lib/engine/formatting/JavaFloatingPoint.js';
 	import highlightingPreset from '../../highlighting-preset.json';

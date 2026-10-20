@@ -10,8 +10,8 @@
 	import Tooltip from '../feedback/Tooltip.svelte';
 	import type { Globals } from '#lib/engine/Globals.js';
 	import { Settings } from '#lib/engine/Settings.js';
-	import { AddressErrorException } from '#lib/engine/hardware/AddressErrorException.js';
-	import { AccessNotice } from '#lib/engine/hardware/AccessNotice.js';
+	import { AddressErrorException } from '#lib/engine/hardware/memory/AddressErrorException.js';
+	import { AccessNotice } from '#lib/engine/hardware/notices/AccessNotice.js';
 	import { Binary, NumberFormatException } from '#lib/engine/formatting/Binary.js';
 	import type { RunController } from '../../RunController.js';
 	import preset from '../../highlighting-preset.json';

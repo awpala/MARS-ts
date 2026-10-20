@@ -1,7 +1,7 @@
 /* Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license.
  * Ports mars/mips/instructions/syscalls/SyscallReadChar.java; see MARSlicense.txt. */
 import { AbstractSyscall, type SyscallHost } from './AbstractSyscall.js';
-import type { ProgramStatement } from '../assembler/ProgramStatement.js';
+import type { ProgramStatement } from '../assembler/programs/ProgramStatement.js';
 import { ProcessingException } from '../diagnostics/ProcessingException.js';
 import { Exceptions } from '../simulator/Exceptions.js';
 /** Canonical ReadChar service; hardware and I/O remain owned by the injected session. */

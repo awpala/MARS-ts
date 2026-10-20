@@ -1,13 +1,20 @@
 import { readOracleJson, parseTabRows } from '../oracle/fixtures.js';
 import { describe, expect, it } from 'vitest';
-import { TokenTypes, type TokenClassificationContext } from '#lib/engine/assembler/TokenTypes.js';
-import { Macro, type MacroProgram, type MacroRegisters } from '#lib/engine/assembler/Macro.js';
-import { MacroPool } from '#lib/engine/assembler/MacroPool.js';
-import { Token } from '#lib/engine/assembler/Token.js';
-import { TokenList } from '#lib/engine/assembler/TokenList.js';
-import { RegisterFile } from '#lib/engine/hardware/RegisterFile.js';
-import { Coprocessor0 } from '#lib/engine/hardware/Coprocessor0.js';
-import { Coprocessor1 } from '#lib/engine/hardware/Coprocessor1.js';
+import {
+	TokenTypes,
+	type TokenClassificationContext
+} from '#lib/engine/assembler/tokenization/TokenTypes.js';
+import {
+	Macro,
+	type MacroProgram,
+	type MacroRegisters
+} from '#lib/engine/assembler/macros/Macro.js';
+import { MacroPool } from '#lib/engine/assembler/macros/MacroPool.js';
+import { Token } from '#lib/engine/assembler/tokenization/Token.js';
+import { TokenList } from '#lib/engine/assembler/tokenization/TokenList.js';
+import { RegisterFile } from '#lib/engine/hardware/registers/RegisterFile.js';
+import { Coprocessor0 } from '#lib/engine/hardware/registers/Coprocessor0.js';
+import { Coprocessor1 } from '#lib/engine/hardware/registers/Coprocessor1.js';
 import { ErrorList } from '#lib/engine/diagnostics/ErrorList.js';
 
 const fixture: { stdout: string } = readOracleJson('assembler-units/golden.json');

@@ -1,31 +1,31 @@
 /* Copyright (c) 2003-2012, Pete Sanderson and Kenneth Vollmar. MIT license.
  * Ports mars/assembler/Assembler.java; see MARSlicense.txt. */
-import type { MIPSprogram } from './MIPSprogram.js';
+import type { MIPSprogram } from './programs/MIPSprogram.js';
 import { ErrorList } from '../diagnostics/ErrorList.js';
 import { ErrorMessage } from '../diagnostics/ErrorMessage.js';
 import { ProcessingException } from '../diagnostics/ProcessingException.js';
 import { Binary, NumberFormatException } from '../formatting/Binary.js';
 import { JavaFloatingPoint } from '../formatting/JavaFloatingPoint.js';
-import { Memory } from '../hardware/Memory.js';
-import { AddressErrorException } from '../hardware/AddressErrorException.js';
+import { Memory } from '../hardware/memory/Memory.js';
+import { AddressErrorException } from '../hardware/memory/AddressErrorException.js';
 import { BasicInstruction } from '../instructions/BasicInstruction.js';
 import {
 	ExtendedInstruction,
 	type ExtendedInstructionContext
 } from '../instructions/ExtendedInstruction.js';
 import { Instruction } from '../instructions/Instruction.js';
-import { ProgramStatement, type ProgramStatementHost } from './ProgramStatement.js';
-import { Tokenizer } from './Tokenizer.js';
-import { Token } from './Token.js';
-import { TokenList } from './TokenList.js';
-import { TokenTypes, type TokenClassificationContext } from './TokenTypes.js';
+import { ProgramStatement, type ProgramStatementHost } from './programs/ProgramStatement.js';
+import { Tokenizer } from './tokenization/Tokenizer.js';
+import { Token } from './tokenization/Token.js';
+import { TokenList } from './tokenization/TokenList.js';
+import { TokenTypes, type TokenClassificationContext } from './tokenization/TokenTypes.js';
 import { OperandFormat, type OperandFormatContext } from './OperandFormat.js';
-import { Macro } from './Macro.js';
-import { MacroPool } from './MacroPool.js';
-import { Symbol } from './Symbol.js';
-import { SymbolTable } from './SymbolTable.js';
-import { DataTypes } from './DataTypes.js';
-import { Directives } from './Directives.js';
+import { Macro } from './macros/Macro.js';
+import { MacroPool } from './macros/MacroPool.js';
+import { Symbol } from './symbols/Symbol.js';
+import { SymbolTable } from './symbols/SymbolTable.js';
+import { DataTypes } from './directives/DataTypes.js';
+import { Directives } from './directives/Directives.js';
 
 /** Actual session hardware, symbol registry, settings, and platform file reset consumed by assembly. */
 export type AssemblerHost = ProgramStatementHost &

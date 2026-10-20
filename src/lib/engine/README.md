@@ -2,7 +2,7 @@
 
 The engine owns framework-free, session-local MIPS behavior: source preparation, tokenization, assembly, instruction definitions and execution, hardware state, runtime services, numeric conversion, and diagnostics. It translates the corresponding algorithms and class responsibilities from the canonical [Java MARS application](../../../_legacy-app/README.md). The browser supplies presentation and host services; the engine imports neither Svelte nor the DOM and performs no platform I/O directly.
 
-[Globals](Globals.ts) composes one independent machine. [MIPSprogram](assembler/MIPSprogram.ts) carries source, tokens, assembly results, and undo history. The framework-free [Venus RunController](../venus/RunController.ts) coordinates desktop assembly and execution workflows over those owners. Views inspect the actual machine rather than maintaining a parallel register or memory model.
+[Globals](Globals.ts) composes one independent machine. [MIPSprogram](assembler/programs/MIPSprogram.ts) carries source, tokens, assembly results, and undo history. The framework-free [Venus RunController](../venus/RunController.ts) coordinates desktop assembly and execution workflows over those owners. Views inspect the actual machine rather than maintaining a parallel register or memory model.
 
 Core assembly, simulation, deterministic console syscalls, and machine debugging are implemented. Platform syscall families, device Tools, and memory dump formats remain unfinished. The [system implementation guide](../../../IMPLEMENTATION.md) describes the complete application; the [library guide](../README.md) places this engine beside the editor, browser adapters, and Venus. The [port plan](../../../docs/adrs/0000-port-plan.md) owns intended scope, while this guide describes the current engine boundary.
 
@@ -41,44 +41,46 @@ The constructor calls `initialize()`. Initialization loads the session's syscall
 
 `createProgram()` binds a new program to the existing machine's source, assembler, simulator, and history services. It does not select that program as `Globals.program`, read a source file, or assemble it. The controller assigns the current program when beginning assembly. Several source programs can participate in one assembly while sharing the machine's memory and global symbol table; each retains its own local symbols and source representation.
 
-| Owner | Mutable responsibility | Lifetime rule |
-| --- | --- | --- |
-| `Globals` | Hardware, current program reference, settings, instruction/service collaborators, and access context | One machine per session; dispose after active execution settles |
-| `MIPSprogram` | Source/tokens, local symbols/macros, parsed and machine statements, and backstep history | Successful assembly creates fresh history; preparation and failure retain the translated Java lifecycle |
-| `Simulator` | One active execution, stop state, observers, and pending external interrupt | Execution remains owned until its promise settles, including input waits |
-| `RunController` | Assembly policy, retained programs, active run promise, presentation state, and revision | Reject overlapping machine-changing operations; stop and await before releasing the machine |
-| Host and views | Pending input, scheduler resources, output, persistence, and inspection subscriptions | Release resources where acquired; a borrowed hardware reference does not transfer ownership |
+| Owner           | Mutable responsibility                                                                               | Lifetime rule                                                                                           |
+| --------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `Globals`       | Hardware, current program reference, settings, instruction/service collaborators, and access context | One machine per session; dispose after active execution settles                                         |
+| `MIPSprogram`   | Source/tokens, local symbols/macros, parsed and machine statements, and backstep history             | Successful assembly creates fresh history; preparation and failure retain the translated Java lifecycle |
+| `Simulator`     | One active execution, stop state, observers, and pending external interrupt                          | Execution remains owned until its promise settles, including input waits                                |
+| `RunController` | Assembly policy, retained programs, active run promise, presentation state, and revision             | Reject overlapping machine-changing operations; stop and await before releasing the machine             |
+| Host and views  | Pending input, scheduler resources, output, persistence, and inspection subscriptions                | Release resources where acquired; a borrowed hardware reference does not transfer ownership             |
 
 ## Subsystem boundaries and legacy mapping
 
 The engine root owns composition and settings. Responsibility-specific modules retain the translated class contracts even when their Java package location differs. In particular, `MIPSprogram` and `ProgramStatement` live with assembly and source representations, diagnostics form their own boundary, and numeric conversion is separated from platform I/O.
 
-| Boundary | Current responsibility | Canonical Java source responsibility |
-| --- | --- | --- |
-| [Composition](Globals.ts) and [settings](Settings.ts) | Construct a machine, inject collaborators, load boolean/engine string preferences, and expose canonical limits | `mars/Globals.java` and the implemented portions of `mars/Settings.java` |
-| [Assembler](assembler/README.md) | Source preparation, mapping, tokens, includes, equivalences, macros, symbols, directives, passes, and statement encoding/decoding | `mars/assembler/`, `mars/MIPSprogram.java`, and `mars/ProgramStatement.java` |
-| [Instructions](instructions/README.md) | Ordered basic/pseudo definitions, lookup, masks, decoding, expansion templates, and basic simulation callbacks | `mars/mips/instructions/` and `PseudoOps.txt` |
-| [Hardware](hardware/README.md) | Registers, coprocessors, sparse memory, address layouts, access notices, and recording hooks | `mars/mips/hardware/` |
-| [Simulator](simulator/README.md) | Execution ordering, delayed branches, exceptions, stop reasons, breakpoints, step limits, and grouped undo | `mars/simulator/` |
-| [Syscalls](syscalls/README.md) and [I/O](io/README.md) | Service algorithms, explicit registration/overrides, console conversion, and injected input/output | `mars/mips/instructions/syscalls/`, `SyscallLoader.java`, and GUI console paths of `mars/util/SystemIO.java` |
-| [Formatting](formatting/README.md) | Integer/binary/hexadecimal/ASCII conversion and Java-compatible floating text | `mars/util/Binary.java`, ASCII resource/padding behavior, and consumed Java runtime numeric contracts |
-| [Diagnostics](diagnostics/README.md) | Source locations, include/macro history, warning/error reports, and processing exceptions | `mars/ErrorMessage.java`, `mars/ErrorList.java`, and `mars/ProcessingException.java` |
+| Boundary                                               | Current responsibility                                                                                                            | Canonical Java source responsibility                                                                         |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| [Composition](Globals.ts) and [settings](Settings.ts)  | Construct a machine, inject collaborators, load boolean/engine string preferences, and expose canonical limits                    | `mars/Globals.java` and the implemented portions of `mars/Settings.java`                                     |
+| [Assembler](assembler/README.md)                       | Source preparation, mapping, tokens, includes, equivalences, macros, symbols, directives, passes, and statement encoding/decoding | `mars/assembler/`, `mars/MIPSprogram.java`, and `mars/ProgramStatement.java`                                 |
+| [Instructions](instructions/README.md)                 | Ordered basic/pseudo definitions, lookup, masks, decoding, expansion templates, and basic simulation callbacks                    | `mars/mips/instructions/` and `PseudoOps.txt`                                                                |
+| [Hardware](hardware/README.md)                         | Registers, coprocessors, sparse memory, address layouts, access notices, and recording hooks                                      | `mars/mips/hardware/`                                                                                        |
+| [Simulator](simulator/README.md)                       | Execution ordering, delayed branches, exceptions, stop reasons, breakpoints, step limits, and grouped undo                        | `mars/simulator/`                                                                                            |
+| [Syscalls](syscalls/README.md) and [I/O](io/README.md) | Service algorithms, explicit registration/overrides, console conversion, and injected input/output                                | `mars/mips/instructions/syscalls/`, `SyscallLoader.java`, and GUI console paths of `mars/util/SystemIO.java` |
+| [Formatting](formatting/README.md)                     | Integer/binary/hexadecimal/ASCII conversion and Java-compatible floating text                                                     | `mars/util/Binary.java`, ASCII resource/padding behavior, and consumed Java runtime numeric contracts        |
+| [Diagnostics](diagnostics/README.md)                   | Source locations, include/macro history, warning/error reports, and processing exceptions                                         | `mars/ErrorMessage.java`, `mars/ErrorList.java`, and `mars/ProcessingException.java`                         |
 
 The module guides own local API details, retained quirks, and focused evidence. Source modules name their Java origins and retain Pete Sanderson and Kenneth Vollmar's copyright and [MIT attribution](../../../MARSlicense.txt). The legacy tree is the behavioral reference; it is not a runtime dependency of the shipped application.
+
+Within hardware, [register banks](hardware/registers/README.md), [memory/layouts](hardware/memory/README.md), and [access notices](hardware/notices/README.md) separate state owners from published records. Within assembly, pass and operand coordination remain at the root while [tokenization](assembler/tokenization/README.md), [directives](assembler/directives/README.md), [symbols](assembler/symbols/README.md), [macros](assembler/macros/README.md), and [program representations](assembler/programs/README.md) own their existing contracts. These groups preserve the translated classes and use direct imports without forwarding files.
 
 ## Host services and portability
 
 [GlobalsHost](Globals.ts) is the composition-level contract for browser or test services. Subsystems receive narrower interfaces containing the collaborators they consume. Hosts provide platform mechanics; translated engine classes retain source-language, numeric, and MIPS behavior.
 
-| Host service | Engine use | Host responsibility |
-| --- | --- | --- |
-| Current source text and path operations | `MIPSprogram` and `Tokenizer` resolve explicitly named programs and includes | Make source text available synchronously and define virtual path rules; no engine directory discovery or fetching |
-| Input and exact output dispatch | `SystemIO` and implemented console syscalls | Supply text or a promise, append output, and own pending input controls |
-| Cooperative scheduling | `Simulator` requests yields or limited-speed waits | Implement event-loop scheduling and release outstanding waits during owner teardown |
-| Stop-triggered input release | Composition connects the simulator's stop listener to the host | Resolve pending input and handle a stop that precedes input installation |
-| Preference reads/writes | Session `Settings` loads defaults and applies persistence-aware setters | Own storage and persistence failures; no browser storage enters the engine |
-| Refresh and diagnostics | Timed execution requests a view refresh; configuration/debug paths emit text | Publish presentation revisions or route messages without constructing alternate machine state |
-| Optional file cleanup and service registrations | Reset existing host handles; construct explicitly supplied syscall implementations | Supply complete services when available; cleanup hooks alone do not implement runtime file I/O |
+| Host service                                    | Engine use                                                                         | Host responsibility                                                                                               |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Current source text and path operations         | `MIPSprogram` and `Tokenizer` resolve explicitly named programs and includes       | Make source text available synchronously and define virtual path rules; no engine directory discovery or fetching |
+| Input and exact output dispatch                 | `SystemIO` and implemented console syscalls                                        | Supply text or a promise, append output, and own pending input controls                                           |
+| Cooperative scheduling                          | `Simulator` requests yields or limited-speed waits                                 | Implement event-loop scheduling and release outstanding waits during owner teardown                               |
+| Stop-triggered input release                    | Composition connects the simulator's stop listener to the host                     | Resolve pending input and handle a stop that precedes input installation                                          |
+| Preference reads/writes                         | Session `Settings` loads defaults and applies persistence-aware setters            | Own storage and persistence failures; no browser storage enters the engine                                        |
+| Refresh and diagnostics                         | Timed execution requests a view refresh; configuration/debug paths emit text       | Publish presentation revisions or route messages without constructing alternate machine state                     |
+| Optional file cleanup and service registrations | Reset existing host handles; construct explicitly supplied syscall implementations | Supply complete services when available; cleanup hooks alone do not implement runtime file I/O                    |
 
 `Settings` ports boolean and engine string preferences; GUI font, color, and syntax-style objects remain presentation responsibilities. Its persistent boolean setter writes and notifies only on a real value change. The nonpersistent setter changes session state without persistence or notification. Canonical limits include 200 assembler errors, 2,000 backstep records, and a 1,000,000-character message-buffer setting; the output host still owns its actual console buffer.
 
@@ -171,26 +173,26 @@ Hardware recording hooks resolve the current program's enabled `BackStepper`. Th
 
 ### Reset and disposal
 
-| Operation | Required boundary |
-| --- | --- |
-| Run or Step | Use an assembled program and retain ownership until the returned promise settles |
-| Pause or Stop | Request interruption and release pending input; await the run before changing machine ownership |
-| Assemble, Reset, invalidate, or Backstep | Require idle execution; retained source/statement references still belong to their program |
-| Change memory configuration | Clear memory and update/reset `$gp`, `$sp`, and PC through the session's configuration callback; prior executable state must be reconciled by the owner |
-| Dispose the controller | Reject new commands, unsubscribe presentation observers, request Stop, await the pending run, then dispose the machine |
-| Dispose `Globals` directly | Stop and await execution first; `Globals.dispose()` removes composition-owned subscriptions and resets host files but does not stop the simulator itself |
+| Operation                                | Required boundary                                                                                                                                        |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Run or Step                              | Use an assembled program and retain ownership until the returned promise settles                                                                         |
+| Pause or Stop                            | Request interruption and release pending input; await the run before changing machine ownership                                                          |
+| Assemble, Reset, invalidate, or Backstep | Require idle execution; retained source/statement references still belong to their program                                                               |
+| Change memory configuration              | Clear memory and update/reset `$gp`, `$sp`, and PC through the session's configuration callback; prior executable state must be reconciled by the owner  |
+| Dispose the controller                   | Reject new commands, unsubscribe presentation observers, request Stop, await the pending run, then dispose the machine                                   |
+| Dispose `Globals` directly               | Stop and await execution first; `Globals.dispose()` removes composition-owned subscriptions and resets host files but does not stop the simulator itself |
 
 The host owns its scheduling resources and input UI; views own their hardware subscriptions. Controller disposal does not release subscriptions installed by unrelated consumers. [ADR 0006](../../../docs/adrs/0006-object-lifetime-management.md) describes the application-level ownership and teardown that surround these engine contracts.
 
 ## Hardware and numeric conventions
 
-| Representation | Engine convention | Consequence for callers |
-| --- | --- | --- |
-| Words, addresses, PC, and opcode masks | Signed 32-bit `number` with explicit Java wrapping | High addresses can be negative; unsigned ordering/display must interpret the same bits appropriately |
-| Long arithmetic and word pairs | Signed 64-bit `bigint` | Products, HI/LO accumulation, and paired bit patterns must not pass through an imprecise `number` |
-| Floating registers | Raw integer bits owned by `Coprocessor1` | Numeric conversion is explicit; the even register holds a double's low word and the odd register its high word |
-| Single-precision operations | Round through binary32 where the translated algorithm requires it | JavaScript binary64 arithmetic alone is insufficient |
-| Numeric text and UTF-16 characters | Java-compatible parsing, printing, and consumed character classifications | Native JavaScript coercion, Unicode rules, or shortest-number printing can change observable behavior |
+| Representation                         | Engine convention                                                         | Consequence for callers                                                                                        |
+| -------------------------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Words, addresses, PC, and opcode masks | Signed 32-bit `number` with explicit Java wrapping                        | High addresses can be negative; unsigned ordering/display must interpret the same bits appropriately           |
+| Long arithmetic and word pairs         | Signed 64-bit `bigint`                                                    | Products, HI/LO accumulation, and paired bit patterns must not pass through an imprecise `number`              |
+| Floating registers                     | Raw integer bits owned by `Coprocessor1`                                  | Numeric conversion is explicit; the even register holds a double's low word and the odd register its high word |
+| Single-precision operations            | Round through binary32 where the translated algorithm requires it         | JavaScript binary64 arithmetic alone is insufficient                                                           |
+| Numeric text and UTF-16 characters     | Java-compatible parsing, printing, and consumed character classifications | Native JavaScript coercion, Unicode rules, or shortest-number printing can change observable behavior          |
 
 Memory uses sparse block tables for user/kernel data, descending stack, MMIO, and user/kernel text. It owns alignment and address validation, heap allocation, byte order, statement storage, and access notifications. Default byte order is little-endian. The Default, CompactDataAtZero, and CompactTextAtZero layouts are implemented; having MMIO addresses does not implement a device Tool.
 
@@ -198,14 +200,14 @@ The [hardware guide](hardware/README.md) explains register access, storage, and 
 
 ## Implemented runtime services and remaining scope
 
-| Service family | Numbers | Current behavior |
-| --- | --- | --- |
-| Console integer, float, double, and string | 1–8 | Read/write through `SystemIO`; floating conversions use the exact Java runtime adapter |
-| Heap allocation | 9 | Allocate through the session's memory |
-| Termination | 10 and 17 | Canonical GUI exit; Exit2 does not set a browser/process exit status |
-| Character output/input | 11–12 | Preserve Java UTF-16/code-unit and byte-truncation behavior |
-| Integer display formats | 34–36 | Hexadecimal, binary, and unsigned decimal output |
-| File, time, sleep, random, MIDI, and syscall dialogs | Remaining platform families | Deferred; an unavailable service raises the canonical unsupported-service exception |
+| Service family                                       | Numbers                     | Current behavior                                                                       |
+| ---------------------------------------------------- | --------------------------- | -------------------------------------------------------------------------------------- |
+| Console integer, float, double, and string           | 1–8                         | Read/write through `SystemIO`; floating conversions use the exact Java runtime adapter |
+| Heap allocation                                      | 9                           | Allocate through the session's memory                                                  |
+| Termination                                          | 10 and 17                   | Canonical GUI exit; Exit2 does not set a browser/process exit status                   |
+| Character output/input                               | 11–12                       | Preserve Java UTF-16/code-unit and byte-truncation behavior                            |
+| Integer display formats                              | 34–36                       | Hexadecimal, binary, and unsigned decimal output                                       |
+| File, time, sleep, random, MIDI, and syscall dialogs | Remaining platform families | Deferred; an unavailable service raises the canonical unsupported-service exception    |
 
 `SyscallLoader` uses explicit factories instead of Java classpath reflection. It constructs session-owned services and preserves override matching, number reassignment, and collision checks. New services enter through this registry with their real algorithms and host contracts.
 
@@ -215,13 +217,13 @@ Popup presentation for an implemented console read is separate from the deferred
 
 The [oracle directory](../../../tests/oracle/README.md) owns deterministic Java captures and their provenance. Focused probes compare classes or operations; complete-program tests exercise composition through production engine APIs. These boundaries provide different evidence and should remain explicit.
 
-| Evidence | Covered contract | Limit |
-| --- | --- | --- |
-| [Assembler comparisons](../../../tests/assembler/README.md) and [complete assembly corpus](../../../tests/oracle/assembler-programs/README.md) | Source processing, macros, symbols, operand selection, diagnostics, and 603 complete assemblies | Catalog and focused-case coverage do not enumerate every operand/directive combination |
-| [Instruction-set probe](../../../tests/oracle/instruction-set/README.md) and [translation comparisons](../../../tests/instructions/README.md) | Every basic callback, decoding, pseudo metadata, and expansion behavior | Direct callback evidence is distinct from complete program execution |
-| [Foundation](../../../tests/oracle/units/README.md), [memory](../../../tests/oracle/memory-units/README.md), and [floating](../../../tests/oracle/floating-units/README.md) probes | Numeric boundaries, register/memory behavior, access order, raw bits, and Java runtime conversion | Deterministic boundary and seeded coverage is not exhaustive input enumeration |
-| [Simulator](../../../tests/oracle/simulator-units/README.md), [backstep](../../../tests/oracle/backstep-units/README.md), and [core syscall](../../../tests/oracle/core-syscalls/README.md) probes | Execution ordering, exception dispatch, grouped restoration, deterministic input/output, and runtime failures | Deferred platform services and browser interaction need separate evidence |
-| [Session integration](../../../tests/session/README.md) and [original core corpus](../../../tests/session/core-programs.test.ts) | Production `Globals`/`RunController`, machine isolation, execution transitions, disposal, and 19 enabled whole-program cases | Program arguments are excluded; seeded random remains deferred; Java launcher formatting is not browser output |
+| Evidence                                                                                                                                                                                           | Covered contract                                                                                                             | Limit                                                                                                          |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| [Assembler comparisons](../../../tests/assembler/README.md) and [complete assembly corpus](../../../tests/oracle/assembler-programs/README.md)                                                     | Source processing, macros, symbols, operand selection, diagnostics, and 603 complete assemblies                              | Catalog and focused-case coverage do not enumerate every operand/directive combination                         |
+| [Instruction-set probe](../../../tests/oracle/instruction-set/README.md) and [translation comparisons](../../../tests/instructions/README.md)                                                      | Every basic callback, decoding, pseudo metadata, and expansion behavior                                                      | Direct callback evidence is distinct from complete program execution                                           |
+| [Foundation](../../../tests/oracle/units/README.md), [memory](../../../tests/oracle/memory-units/README.md), and [floating](../../../tests/oracle/floating-units/README.md) probes                 | Numeric boundaries, register/memory behavior, access order, raw bits, and Java runtime conversion                            | Deterministic boundary and seeded coverage is not exhaustive input enumeration                                 |
+| [Simulator](../../../tests/oracle/simulator-units/README.md), [backstep](../../../tests/oracle/backstep-units/README.md), and [core syscall](../../../tests/oracle/core-syscalls/README.md) probes | Execution ordering, exception dispatch, grouped restoration, deterministic input/output, and runtime failures                | Deferred platform services and browser interaction need separate evidence                                      |
+| [Session integration](../../../tests/session/README.md) and [original core corpus](../../../tests/session/core-programs.test.ts)                                                                   | Production `Globals`/`RunController`, machine isolation, execution transitions, disposal, and 19 enabled whole-program cases | Program arguments are excluded; seeded random remains deferred; Java launcher formatting is not browser output |
 
 The core-program consumer preserves console bytes and compares the applicable diagnostics, registers, memory, and encodings from captured Java output. GUI `Exit2` behavior is interpreted explicitly rather than copying the launcher's process exit status. Passing covered comparisons does not establish unimplemented syscall, Tool, dump-format, or browser behavior.
 

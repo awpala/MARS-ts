@@ -2,12 +2,12 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { BasicInstruction } from './BasicInstruction.js';
 import { BasicInstructionFormat } from './BasicInstructionFormat.js';
-import { TokenList } from '../assembler/TokenList.js';
-import { Tokenizer } from '../assembler/Tokenizer.js';
-import { RegisterFile } from '../hardware/RegisterFile.js';
-import { Coprocessor1 } from '../hardware/Coprocessor1.js';
-import { Coprocessor0 } from '../hardware/Coprocessor0.js';
-import type { TokenClassificationContext } from '../assembler/TokenTypes.js';
+import { TokenList } from '../assembler/tokenization/TokenList.js';
+import { Tokenizer } from '../assembler/tokenization/Tokenizer.js';
+import { RegisterFile } from '../hardware/registers/RegisterFile.js';
+import { Coprocessor1 } from '../hardware/registers/Coprocessor1.js';
+import { Coprocessor0 } from '../hardware/registers/Coprocessor0.js';
+import type { TokenClassificationContext } from '../assembler/tokenization/TokenTypes.js';
 import { ErrorList } from '../diagnostics/ErrorList.js';
 import { ProcessingException } from '../diagnostics/ProcessingException.js';
 

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { highlightSource } from '#lib/editor/highlighting/MIPSTokenMarker.js';
 	import { Token } from '#lib/editor/highlighting/Token.js';
-	import { Directives } from '#lib/engine/assembler/Directives.js';
+	import { Directives } from '#lib/engine/assembler/directives/Directives.js';
 	import type { InstructionSet } from '#lib/engine/instructions/InstructionSet.js';
 	import type { EditPane } from '#lib/editor/Editor.js';
 	import editorPreset from '#lib/editor/editor-preset.json';

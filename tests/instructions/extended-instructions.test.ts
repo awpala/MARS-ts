@@ -4,15 +4,15 @@ import {
 	ExtendedInstruction,
 	type ExtendedInstructionHost
 } from '#lib/engine/instructions/ExtendedInstruction.js';
-import { Tokenizer } from '#lib/engine/assembler/Tokenizer.js';
-import { Token } from '#lib/engine/assembler/Token.js';
-import { TokenList } from '#lib/engine/assembler/TokenList.js';
-import { TokenTypes } from '#lib/engine/assembler/TokenTypes.js';
-import { SymbolTable } from '#lib/engine/assembler/SymbolTable.js';
+import { Tokenizer } from '#lib/engine/assembler/tokenization/Tokenizer.js';
+import { Token } from '#lib/engine/assembler/tokenization/Token.js';
+import { TokenList } from '#lib/engine/assembler/tokenization/TokenList.js';
+import { TokenTypes } from '#lib/engine/assembler/tokenization/TokenTypes.js';
+import { SymbolTable } from '#lib/engine/assembler/symbols/SymbolTable.js';
 import { ErrorList } from '#lib/engine/diagnostics/ErrorList.js';
-import { RegisterFile } from '#lib/engine/hardware/RegisterFile.js';
-import { Coprocessor0 } from '#lib/engine/hardware/Coprocessor0.js';
-import { Coprocessor1 } from '#lib/engine/hardware/Coprocessor1.js';
+import { RegisterFile } from '#lib/engine/hardware/registers/RegisterFile.js';
+import { Coprocessor0 } from '#lib/engine/hardware/registers/Coprocessor0.js';
+import { Coprocessor1 } from '#lib/engine/hardware/registers/Coprocessor1.js';
 
 interface Metadata {
 	kind: 'metadata';

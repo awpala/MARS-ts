@@ -1,7 +1,7 @@
 /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt.
  * Ports mars/mips/hardware/Register.java. */
-import { AccessNotice, type AccessOrigin } from './AccessNotice.js';
-import { RegisterAccessNotice } from './RegisterAccessNotice.js';
+import { AccessNotice, type AccessOrigin } from '../notices/AccessNotice.js';
+import { RegisterAccessNotice } from '../notices/RegisterAccessNotice.js';
 
 /** A register listener; the subscriber owns the returned unsubscribe function. */
 export type RegisterObserver = (notice: RegisterAccessNotice) => void;

@@ -1,7 +1,7 @@
 /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt.
  * Ports mars/mips/hardware/Coprocessor0.java. */
 import { Register, type RegisterObserver } from './Register.js';
-import type { AccessOrigin } from './AccessNotice.js';
+import type { AccessOrigin } from '../notices/AccessNotice.js';
 
 /** Session-owned interrupt and exception registers. */
 export class Coprocessor0 {

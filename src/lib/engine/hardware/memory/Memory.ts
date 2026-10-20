@@ -1,9 +1,9 @@
 /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt.
  * Ports mars/mips/hardware/Memory.java. */
-import { Binary } from '../formatting/Binary.js';
-import { AccessNotice, type AccessOrigin } from './AccessNotice.js';
+import { Binary } from '../../formatting/Binary.js';
+import { AccessNotice, type AccessOrigin } from '../notices/AccessNotice.js';
 import { AddressErrorException } from './AddressErrorException.js';
-import { MemoryAccessNotice } from './MemoryAccessNotice.js';
+import { MemoryAccessNotice } from '../notices/MemoryAccessNotice.js';
 import { MemoryConfigurations } from './MemoryConfigurations.js';
 
 /** The storage-facing ProgramStatement contract; instruction decoding belongs to the owning session. */

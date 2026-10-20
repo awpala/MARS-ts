@@ -5,14 +5,14 @@ import {
 	Tokenizer,
 	type TokenizerProgram,
 	type TokenizerSourceHost
-} from '#lib/engine/assembler/Tokenizer.js';
-import { TokenList } from '#lib/engine/assembler/TokenList.js';
-import { SourceLine } from '#lib/engine/assembler/SourceLine.js';
-import type { TokenClassificationContext } from '#lib/engine/assembler/TokenTypes.js';
-import { JavaCharacter } from '#lib/engine/assembler/JavaCharacter.js';
-import { RegisterFile } from '#lib/engine/hardware/RegisterFile.js';
-import { Coprocessor0 } from '#lib/engine/hardware/Coprocessor0.js';
-import { Coprocessor1 } from '#lib/engine/hardware/Coprocessor1.js';
+} from '#lib/engine/assembler/tokenization/Tokenizer.js';
+import { TokenList } from '#lib/engine/assembler/tokenization/TokenList.js';
+import { SourceLine } from '#lib/engine/assembler/tokenization/SourceLine.js';
+import type { TokenClassificationContext } from '#lib/engine/assembler/tokenization/TokenTypes.js';
+import { JavaCharacter } from '#lib/engine/assembler/tokenization/JavaCharacter.js';
+import { RegisterFile } from '#lib/engine/hardware/registers/RegisterFile.js';
+import { Coprocessor0 } from '#lib/engine/hardware/registers/Coprocessor0.js';
+import { Coprocessor1 } from '#lib/engine/hardware/registers/Coprocessor1.js';
 import { ErrorList } from '#lib/engine/diagnostics/ErrorList.js';
 import { ProcessingException } from '#lib/engine/diagnostics/ProcessingException.js';
 

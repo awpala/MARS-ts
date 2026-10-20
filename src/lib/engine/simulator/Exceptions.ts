@@ -1,8 +1,8 @@
 /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt.
  * Ports mars/simulator/Exceptions.java. */
 import { Binary } from '../formatting/Binary.js';
-import { Coprocessor0 } from '../hardware/Coprocessor0.js';
-import { RegisterFile } from '../hardware/RegisterFile.js';
+import { Coprocessor0 } from '../hardware/registers/Coprocessor0.js';
+import { RegisterFile } from '../hardware/registers/RegisterFile.js';
 
 /** MIPS cause codes and updates to one session's exception registers. */
 export class Exceptions {

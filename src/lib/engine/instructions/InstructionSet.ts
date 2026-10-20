@@ -1,16 +1,16 @@
 /* Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license.
  * Ports mars/mips/instructions/InstructionSet.java; see MARSlicense.txt. */
-import type { ProgramStatement } from '../assembler/ProgramStatement.js';
+import type { ProgramStatement } from '../assembler/programs/ProgramStatement.js';
 import {
 	ProcessingException,
 	type ProcessingExceptionHost
 } from '../diagnostics/ProcessingException.js';
 import { Binary } from '../formatting/Binary.js';
-import { AddressErrorException } from '../hardware/AddressErrorException.js';
-import { Coprocessor0 } from '../hardware/Coprocessor0.js';
-import type { Coprocessor1 } from '../hardware/Coprocessor1.js';
-import { Memory } from '../hardware/Memory.js';
-import type { RegisterFile } from '../hardware/RegisterFile.js';
+import { AddressErrorException } from '../hardware/memory/AddressErrorException.js';
+import { Coprocessor0 } from '../hardware/registers/Coprocessor0.js';
+import type { Coprocessor1 } from '../hardware/registers/Coprocessor1.js';
+import { Memory } from '../hardware/memory/Memory.js';
+import type { RegisterFile } from '../hardware/registers/RegisterFile.js';
 import type { DelayedBranch } from '../simulator/DelayedBranch.js';
 import { Exceptions } from '../simulator/Exceptions.js';
 import { BasicInstruction } from './BasicInstruction.js';

@@ -1,6 +1,6 @@
 /* Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license.
  * Ports console methods of mars/util/SystemIO.java; see MARSlicense.txt. */
-import { JavaCharacter } from '../assembler/JavaCharacter.js';
+import { JavaCharacter } from '../assembler/tokenization/JavaCharacter.js';
 import { NumberFormatException } from '../formatting/Binary.js';
 
 /** One console or same-tab input request; the owning browser adapter controls focus and cancellation. */

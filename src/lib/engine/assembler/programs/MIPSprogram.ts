@@ -1,18 +1,22 @@
 /* Copyright (c) 2003–2006 Pete Sanderson and Kenneth Vollmar. MIT license.
  * Ports mars/MIPSprogram.java; see MARSlicense.txt. */
-import { ErrorList } from '../diagnostics/ErrorList.js';
-import { ErrorMessage } from '../diagnostics/ErrorMessage.js';
-import { ProcessingException } from '../diagnostics/ProcessingException.js';
-import type { RegisterFile } from '../hardware/RegisterFile.js';
-import type { SimulatorAction } from '../simulator/SimulatorAction.js';
-import type { BackStepper } from '../simulator/BackStepper.js';
-import { MacroPool } from './MacroPool.js';
+import { ErrorList } from '../../diagnostics/ErrorList.js';
+import { ErrorMessage } from '../../diagnostics/ErrorMessage.js';
+import { ProcessingException } from '../../diagnostics/ProcessingException.js';
+import type { RegisterFile } from '../../hardware/registers/RegisterFile.js';
+import type { SimulatorAction } from '../../simulator/SimulatorAction.js';
+import type { BackStepper } from '../../simulator/BackStepper.js';
+import { MacroPool } from '../macros/MacroPool.js';
 import type { ProgramStatement } from './ProgramStatement.js';
-import type { SourceLine } from './SourceLine.js';
-import { SymbolTable } from './SymbolTable.js';
-import type { TokenList } from './TokenList.js';
-import { Tokenizer, type TokenizerProgram, type TokenizerSourceHost } from './Tokenizer.js';
-import type { TokenClassificationContext } from './TokenTypes.js';
+import type { SourceLine } from '../tokenization/SourceLine.js';
+import { SymbolTable } from '../symbols/SymbolTable.js';
+import type { TokenList } from '../tokenization/TokenList.js';
+import {
+	Tokenizer,
+	type TokenizerProgram,
+	type TokenizerSourceHost
+} from '../tokenization/Tokenizer.js';
+import type { TokenClassificationContext } from '../tokenization/TokenTypes.js';
 
 /** Real assembler operations invoked by a program; constructed fresh for each assembly. */
 export interface ProgramAssembler {

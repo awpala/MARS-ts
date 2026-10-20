@@ -27,11 +27,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 // Ports mars/assembler/TokenTypes.java.
 
-import { Binary, NumberFormatException } from '../formatting/Binary.js';
-import { DataTypes } from './DataTypes.js';
-import { Directives } from './Directives.js';
+import { Binary, NumberFormatException } from '../../formatting/Binary.js';
+import { DataTypes } from '../directives/DataTypes.js';
+import { Directives } from '../directives/Directives.js';
 import { JavaCharacter } from './JavaCharacter.js';
-import { Macro, type MacroRegisters } from './Macro.js';
+import { Macro, type MacroRegisters } from '../macros/Macro.js';
 
 /** Session-owned register and instruction lookups used by lexical classification. */
 export interface TokenClassificationContext extends MacroRegisters {

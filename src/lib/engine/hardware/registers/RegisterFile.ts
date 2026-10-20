@@ -1,10 +1,10 @@
 /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt.
  * Ports mars/mips/hardware/RegisterFile.java. */
-import { Binary } from '../formatting/Binary.js';
+import { Binary } from '../../formatting/Binary.js';
 import { Register, type RegisterObserver } from './Register.js';
-import type { AccessOrigin } from './AccessNotice.js';
-import { MemoryConfigurations } from './MemoryConfigurations.js';
-import type { MemoryConfiguration } from './MemoryConfiguration.js';
+import type { AccessOrigin } from '../notices/AccessNotice.js';
+import { MemoryConfigurations } from '../memory/MemoryConfigurations.js';
+import type { MemoryConfiguration } from '../memory/MemoryConfiguration.js';
 
 /** Session collaborators replace the Java Globals dependencies. */
 export interface RegisterFileHost {

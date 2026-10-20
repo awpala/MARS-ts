@@ -3,11 +3,11 @@ import { Globals } from '#lib/engine/Globals.js';
 import { Settings } from '#lib/engine/Settings.js';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { ProgramStatement } from '#lib/engine/assembler/ProgramStatement.js';
-import { SymbolTable } from '#lib/engine/assembler/SymbolTable.js';
+import { ProgramStatement } from '#lib/engine/assembler/programs/ProgramStatement.js';
+import { SymbolTable } from '#lib/engine/assembler/symbols/SymbolTable.js';
 import { ErrorList } from '#lib/engine/diagnostics/ErrorList.js';
 import { ProcessingException } from '#lib/engine/diagnostics/ProcessingException.js';
-import { AddressErrorException } from '#lib/engine/hardware/AddressErrorException.js';
+import { AddressErrorException } from '#lib/engine/hardware/memory/AddressErrorException.js';
 interface StatementRecord {
 	address: number;
 	binary: number;

@@ -3,7 +3,7 @@
  * Ports mars/ProcessingException.java. See MARSlicense.txt at the repository root.
  */
 import { Binary } from '../formatting/Binary.js';
-import { AddressErrorException } from '../hardware/AddressErrorException.js';
+import { AddressErrorException } from '../hardware/memory/AddressErrorException.js';
 import { ErrorList } from './ErrorList.js';
 import { ErrorMessage, type DiagnosticStatement } from './ErrorMessage.js';
 

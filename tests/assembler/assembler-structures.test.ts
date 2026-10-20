@@ -1,10 +1,10 @@
 import { readOracleJson, parseTabRows } from '../oracle/fixtures.js';
 import { describe, expect, it } from 'vitest';
-import { SourceLine } from '#lib/engine/assembler/SourceLine.js';
-import { Token } from '#lib/engine/assembler/Token.js';
-import { TokenTypes } from '#lib/engine/assembler/TokenTypes.js';
-import { TokenList } from '#lib/engine/assembler/TokenList.js';
-import { SymbolTable } from '#lib/engine/assembler/SymbolTable.js';
+import { SourceLine } from '#lib/engine/assembler/tokenization/SourceLine.js';
+import { Token } from '#lib/engine/assembler/tokenization/Token.js';
+import { TokenTypes } from '#lib/engine/assembler/tokenization/TokenTypes.js';
+import { TokenList } from '#lib/engine/assembler/tokenization/TokenList.js';
+import { SymbolTable } from '#lib/engine/assembler/symbols/SymbolTable.js';
 import { ErrorList } from '#lib/engine/diagnostics/ErrorList.js';
 import type { DiagnosticProgram } from '#lib/engine/diagnostics/ErrorMessage.js';
 

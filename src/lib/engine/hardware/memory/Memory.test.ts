@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import golden from '../../../../tests/oracle/memory-units/golden.json';
+import golden from '../../../../../tests/oracle/memory-units/golden.json';
 import { Memory, type MemoryHost, type MemoryStatement } from './Memory.js';
 import { MemoryConfigurations } from './MemoryConfigurations.js';
 

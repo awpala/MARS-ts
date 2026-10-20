@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import golden from '../../../../tests/oracle/units/foundation.json';
 import { Binary } from '../formatting/Binary.js';
-import { DataTypes } from '../assembler/DataTypes.js';
-import { Directives } from '../assembler/Directives.js';
-import { Register } from './Register.js';
-import { RegisterFile } from './RegisterFile.js';
-import { Coprocessor0 } from './Coprocessor0.js';
-import { Coprocessor1 } from './Coprocessor1.js';
-import { MemoryConfigurations } from './MemoryConfigurations.js';
-import { MemoryAccessNotice } from './MemoryAccessNotice.js';
-import { AddressErrorException } from './AddressErrorException.js';
+import { DataTypes } from '../assembler/directives/DataTypes.js';
+import { Directives } from '../assembler/directives/Directives.js';
+import { Register } from './registers/Register.js';
+import { RegisterFile } from './registers/RegisterFile.js';
+import { Coprocessor0 } from './registers/Coprocessor0.js';
+import { Coprocessor1 } from './registers/Coprocessor1.js';
+import { MemoryConfigurations } from './memory/MemoryConfigurations.js';
+import { MemoryAccessNotice } from './notices/MemoryAccessNotice.js';
+import { AddressErrorException } from './memory/AddressErrorException.js';
 import { Exceptions } from '../simulator/Exceptions.js';
 
 const expected = new Map(

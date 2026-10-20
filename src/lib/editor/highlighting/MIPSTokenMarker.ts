@@ -4,12 +4,12 @@
  * permitted, in both source and binary form, provided that this notice
  * remains intact in all source distributions of this package.
  * MARS data copyright Pete Sanderson and Kenneth Vollmar, MIT license. */
-import { Directives } from '#lib/engine/assembler/Directives.js';
-import { TokenTypes } from '#lib/engine/assembler/TokenTypes.js';
-import { RegisterFile } from '#lib/engine/hardware/RegisterFile.js';
-import { Coprocessor1 } from '#lib/engine/hardware/Coprocessor1.js';
+import { Directives } from '#lib/engine/assembler/directives/Directives.js';
+import { TokenTypes } from '#lib/engine/assembler/tokenization/TokenTypes.js';
+import { RegisterFile } from '#lib/engine/hardware/registers/RegisterFile.js';
+import { Coprocessor1 } from '#lib/engine/hardware/registers/Coprocessor1.js';
 import { KeywordMap } from './KeywordMap.js';
-import { JavaCharacter } from '#lib/engine/assembler/JavaCharacter.js';
+import { JavaCharacter } from '#lib/engine/assembler/tokenization/JavaCharacter.js';
 import { Token } from './Token.js';
 import { TokenMarker, type Segment } from './TokenMarker.js';
 import data from './lexical-data.json';

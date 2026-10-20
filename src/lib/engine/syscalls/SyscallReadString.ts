@@ -1,9 +1,9 @@
 /* Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license.
  * Ports mars/mips/instructions/syscalls/SyscallReadString.java; see MARSlicense.txt. */
 import { AbstractSyscall, type SyscallHost } from './AbstractSyscall.js';
-import type { ProgramStatement } from '../assembler/ProgramStatement.js';
+import type { ProgramStatement } from '../assembler/programs/ProgramStatement.js';
 import { ProcessingException } from '../diagnostics/ProcessingException.js';
-import { AddressErrorException } from '../hardware/AddressErrorException.js';
+import { AddressErrorException } from '../hardware/memory/AddressErrorException.js';
 /** Canonical ReadString service; hardware and I/O remain owned by the injected session. */
 export class SyscallReadString extends AbstractSyscall {
 	/** Construct service 8 (ReadString) for this session. */

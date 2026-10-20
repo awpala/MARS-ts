@@ -1,7 +1,7 @@
 /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt.
  * Ports mars/mips/hardware/Coprocessor1.java. */
-import { Binary } from '../formatting/Binary.js';
-import type { AccessOrigin } from './AccessNotice.js';
+import { Binary } from '../../formatting/Binary.js';
+import type { AccessOrigin } from '../notices/AccessNotice.js';
 import { InvalidRegisterAccessException } from './InvalidRegisterAccessException.js';
 import { Register, type RegisterObserver } from './Register.js';
 

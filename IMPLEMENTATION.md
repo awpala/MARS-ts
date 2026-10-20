@@ -138,6 +138,8 @@ The hardware module models the general registers, HI/LO, PC, exception coprocess
 
 Memory uses sparse block tables rather than allocating a browser array for the entire address space. User/kernel data, descending stack, memory-mapped I/O, and user/kernel instruction storage retain their distinct legacy responsibilities. Text storage holds real statement references; self-modifying-code paths obtain decoded statements through the session's actual instruction decoder. Default byte order is little-endian. Alignment, address-range failures, heap allocation, and observable access notices belong to memory, not the Data Segment view.
 
+The hardware boundary groups [register banks](src/lib/engine/hardware/registers/README.md), [memory and layouts](src/lib/engine/hardware/memory/README.md), and [access notices](src/lib/engine/hardware/notices/README.md) by their ownership. State publishers retain their distinct subscription algorithms; immutable notice records do not introduce a common event bus. Configuration selection stays with memory metadata while the session callback applies its register-reset effects.
+
 The engine retains the Default, CompactDataAtZero, and CompactTextAtZero configurations. In the default layout, user text begins at `0x00400000`, static `.data` at `0x10010000`, and the heap at `0x10040000`; `$gp` initializes to `0x10008000` and `$sp` to `0x7fffeffc`. Configuration changes clear storage and reset the relevant register defaults through the session owner. The configuration dialog remains unfinished. Having an MMIO address region likewise does not mean the deferred device Tools have been implemented.
 
 ## Assembly: source text to machine statements
@@ -166,6 +168,8 @@ flowchart TB
 ```
 
 The assembler follows the original multi-pass algorithms. Tokenization retains original and expanded positions, include processing, character literal handling, and recursive `.eqv` substitution. Program-owned macro pools retain overloads, parameter conventions, expansion counters, recursion detection, and local-label treatment. Local and session-global symbol tables remain distinct. Directives allocate and initialize data, enforce their canonical range checks, transfer global symbols, and resolve forward references.
+
+The assembler root retains pass orchestration and operand matching, with [tokenization](src/lib/engine/assembler/tokenization/README.md), [directive metadata](src/lib/engine/assembler/directives/README.md), [symbols](src/lib/engine/assembler/symbols/README.md), [macros](src/lib/engine/assembler/macros/README.md), and [program/statement representations](src/lib/engine/assembler/programs/README.md) grouped by responsibility. Consumers import their owners directly. The character-table capture runner targets the tokenization group's generated data; oracle formats and expected values remain unchanged.
 
 ### Instruction and statement contracts
 

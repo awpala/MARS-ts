@@ -1,16 +1,16 @@
 /* Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license.
  * Ports mars/ProgramStatement.java; see MARSlicense.txt. */
-import { ErrorList } from '../diagnostics/ErrorList.js';
-import { ErrorMessage, type DiagnosticProgram } from '../diagnostics/ErrorMessage.js';
-import { Binary } from '../formatting/Binary.js';
-import type { Coprocessor1 } from '../hardware/Coprocessor1.js';
-import type { RegisterFile } from '../hardware/RegisterFile.js';
-import { BasicInstruction } from '../instructions/BasicInstruction.js';
-import { BasicInstructionFormat } from '../instructions/BasicInstructionFormat.js';
-import { Instruction } from '../instructions/Instruction.js';
-import { SymbolTable } from './SymbolTable.js';
-import type { TokenList } from './TokenList.js';
-import { TokenTypes } from './TokenTypes.js';
+import { ErrorList } from '../../diagnostics/ErrorList.js';
+import { ErrorMessage, type DiagnosticProgram } from '../../diagnostics/ErrorMessage.js';
+import { Binary } from '../../formatting/Binary.js';
+import type { Coprocessor1 } from '../../hardware/registers/Coprocessor1.js';
+import type { RegisterFile } from '../../hardware/registers/RegisterFile.js';
+import { BasicInstruction } from '../../instructions/BasicInstruction.js';
+import { BasicInstructionFormat } from '../../instructions/BasicInstructionFormat.js';
+import { Instruction } from '../../instructions/Instruction.js';
+import { SymbolTable } from '../symbols/SymbolTable.js';
+import type { TokenList } from '../tokenization/TokenList.js';
+import { TokenTypes } from '../tokenization/TokenTypes.js';
 
 /** Program services needed for source mapping and resolving statement symbols. */
 export interface StatementProgram extends DiagnosticProgram {

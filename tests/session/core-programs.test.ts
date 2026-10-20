@@ -6,7 +6,7 @@ import manifest from '../oracle/cases.json';
 import { Globals } from '#lib/engine/Globals.js';
 import { Settings } from '#lib/engine/Settings.js';
 import { ProcessingException } from '#lib/engine/diagnostics/ProcessingException.js';
-import { AccessNotice } from '#lib/engine/hardware/AccessNotice.js';
+import { AccessNotice } from '#lib/engine/hardware/notices/AccessNotice.js';
 import { Simulator } from '#lib/engine/simulator/Simulator.js';
 import { RunController } from '#lib/venus/RunController.js';
 

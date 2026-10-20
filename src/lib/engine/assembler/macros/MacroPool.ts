@@ -26,8 +26,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // MARS copyright Pete Sanderson and Kenneth Vollmar; macro implementation by M.H. Sekhavat.
 
 import { Macro, type MacroProgram, type MacroRegisters } from './Macro.js';
-import { Token } from './Token.js';
-import { TokenList } from './TokenList.js';
+import { Token } from '../tokenization/Token.js';
+import { TokenList } from '../tokenization/TokenList.js';
 
 /** One program's macro definitions, expansion counter, and recursion-detection stack. */
 export class MacroPool {

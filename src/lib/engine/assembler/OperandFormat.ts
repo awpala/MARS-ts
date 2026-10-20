@@ -1,9 +1,9 @@
 /* Copyright (c) 2003-2008, Pete Sanderson and Kenneth Vollmar. MIT license.
  * Ports mars/assembler/OperandFormat.java; see MARSlicense.txt. */
-import { Token } from './Token.js';
-import { TokenList } from './TokenList.js';
-import { TokenTypes } from './TokenTypes.js';
-import { DataTypes } from './DataTypes.js';
+import { Token } from './tokenization/Token.js';
+import { TokenList } from './tokenization/TokenList.js';
+import { TokenTypes } from './tokenization/TokenTypes.js';
+import { DataTypes } from './directives/DataTypes.js';
 import { Binary } from '../formatting/Binary.js';
 import { ErrorList } from '../diagnostics/ErrorList.js';
 import { ErrorMessage } from '../diagnostics/ErrorMessage.js';

@@ -2,9 +2,9 @@ import { readOracleJson, parseJsonRows } from '../oracle/fixtures.js';
 import { describe, expect, it } from 'vitest';
 import { Instruction } from '#lib/engine/instructions/Instruction.js';
 import { OperandFormat } from '#lib/engine/assembler/OperandFormat.js';
-import { Token } from '#lib/engine/assembler/Token.js';
-import { TokenList } from '#lib/engine/assembler/TokenList.js';
-import { TokenTypes } from '#lib/engine/assembler/TokenTypes.js';
+import { Token } from '#lib/engine/assembler/tokenization/Token.js';
+import { TokenList } from '#lib/engine/assembler/tokenization/TokenList.js';
+import { TokenTypes } from '#lib/engine/assembler/tokenization/TokenTypes.js';
 import { ErrorList } from '#lib/engine/diagnostics/ErrorList.js';
 import { NumberFormatException } from '#lib/engine/formatting/Binary.js';
 interface TokenRecord {

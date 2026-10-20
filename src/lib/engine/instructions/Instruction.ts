@@ -1,6 +1,6 @@
 /* Copyright (c) 2003–2006 Pete Sanderson and Kenneth Vollmar. MIT license.
  * Ports mars/mips/instructions/Instruction.java; see MARSlicense.txt. */
-import { TokenList } from '../assembler/TokenList.js';
+import { TokenList } from '../assembler/tokenization/TokenList.js';
 import { ProcessingException } from '../diagnostics/ProcessingException.js';
 
 /** Tokenizer and configuration-output services owned by the instruction set's session. */

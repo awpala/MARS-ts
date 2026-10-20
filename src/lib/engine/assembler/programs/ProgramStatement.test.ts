@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import golden from '../../../../tests/oracle/statement-units/golden.json';
+import golden from '../../../../../tests/oracle/statement-units/golden.json';
 import {
 	ProgramStatement,
 	type ProgramStatementHost,
 	type StatementProgram
 } from './ProgramStatement.js';
-import { Token } from './Token.js';
-import { TokenList } from './TokenList.js';
-import { TokenTypes } from './TokenTypes.js';
-import { BasicInstruction } from '../instructions/BasicInstruction.js';
-import { ExtendedInstruction } from '../instructions/ExtendedInstruction.js';
-import { BasicInstructionFormat } from '../instructions/BasicInstructionFormat.js';
-import { ErrorList } from '../diagnostics/ErrorList.js';
-import { RegisterFile } from '../hardware/RegisterFile.js';
-import { Coprocessor1 } from '../hardware/Coprocessor1.js';
+import { Token } from '../tokenization/Token.js';
+import { TokenList } from '../tokenization/TokenList.js';
+import { TokenTypes } from '../tokenization/TokenTypes.js';
+import { BasicInstruction } from '../../instructions/BasicInstruction.js';
+import { ExtendedInstruction } from '../../instructions/ExtendedInstruction.js';
+import { BasicInstructionFormat } from '../../instructions/BasicInstructionFormat.js';
+import { ErrorList } from '../../diagnostics/ErrorList.js';
+import { RegisterFile } from '../../hardware/registers/RegisterFile.js';
+import { Coprocessor1 } from '../../hardware/registers/Coprocessor1.js';
 
 type TokenData = [string, string, number, number];
 interface State {

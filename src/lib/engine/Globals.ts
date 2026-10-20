@@ -2,17 +2,20 @@
  * Ports mars/Globals.java machine ownership and initialization; see MARSlicense.txt. */
 import { Settings, type SettingsHost } from './Settings.js';
 import { Assembler, type AssemblerHost } from './assembler/Assembler.js';
-import { MIPSprogram, type MIPSprogramHost } from './assembler/MIPSprogram.js';
-import { ProgramStatement, type ProgramStatementHost } from './assembler/ProgramStatement.js';
-import { SymbolTable } from './assembler/SymbolTable.js';
-import { Tokenizer, type TokenizerSourceHost } from './assembler/Tokenizer.js';
-import type { TokenClassificationContext } from './assembler/TokenTypes.js';
-import type { AccessOrigin } from './hardware/AccessNotice.js';
-import { Memory } from './hardware/Memory.js';
-import { MemoryConfigurations } from './hardware/MemoryConfigurations.js';
-import { RegisterFile } from './hardware/RegisterFile.js';
-import { Coprocessor0 } from './hardware/Coprocessor0.js';
-import { Coprocessor1 } from './hardware/Coprocessor1.js';
+import { MIPSprogram, type MIPSprogramHost } from './assembler/programs/MIPSprogram.js';
+import {
+	ProgramStatement,
+	type ProgramStatementHost
+} from './assembler/programs/ProgramStatement.js';
+import { SymbolTable } from './assembler/symbols/SymbolTable.js';
+import { Tokenizer, type TokenizerSourceHost } from './assembler/tokenization/Tokenizer.js';
+import type { TokenClassificationContext } from './assembler/tokenization/TokenTypes.js';
+import type { AccessOrigin } from './hardware/notices/AccessNotice.js';
+import { Memory } from './hardware/memory/Memory.js';
+import { MemoryConfigurations } from './hardware/memory/MemoryConfigurations.js';
+import { RegisterFile } from './hardware/registers/RegisterFile.js';
+import { Coprocessor0 } from './hardware/registers/Coprocessor0.js';
+import { Coprocessor1 } from './hardware/registers/Coprocessor1.js';
 import { InstructionSet } from './instructions/InstructionSet.js';
 import { SystemIO, type InputRequest } from './io/SystemIO.js';
 import { JavaFloatingPoint } from './formatting/JavaFloatingPoint.js';

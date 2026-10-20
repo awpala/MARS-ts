@@ -27,11 +27,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 // Ports mars/assembler/SymbolTable.java.
 
-import { ErrorList } from '../diagnostics/ErrorList.js';
-import { ErrorMessage } from '../diagnostics/ErrorMessage.js';
-import { Binary, NumberFormatException } from '../formatting/Binary.js';
+import { ErrorList } from '../../diagnostics/ErrorList.js';
+import { ErrorMessage } from '../../diagnostics/ErrorMessage.js';
+import { Binary, NumberFormatException } from '../../formatting/Binary.js';
 import { Symbol } from './Symbol.js';
-import { Token } from './Token.js';
+import { Token } from '../tokenization/Token.js';
 
 /** A program's ordered labels with access to its session's global symbol table. */
 export class SymbolTable {

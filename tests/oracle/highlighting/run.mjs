@@ -23,6 +23,6 @@ if (check) {
 } else writeFileSync(characterTarget, characterData);
 
 if (check) {
-  const engineTarget = new URL('../../../src/lib/engine/assembler/character-data.json', import.meta.url);
+  const engineTarget = new URL('../../../src/lib/engine/assembler/tokenization/character-data.json', import.meta.url);
   if (JSON.stringify(JSON.parse(readFileSync(engineTarget, 'utf8'))) !== JSON.stringify(JSON.parse(characterData))) throw new Error('Engine Java character tables differ');
 }

@@ -1,10 +1,10 @@
 /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license.
  * Ports mars/mips/instructions/ExtendedInstruction.java; see MARSlicense.txt. */
 import { Instruction, type InstructionHost } from './Instruction.js';
-import type { TokenList } from '../assembler/TokenList.js';
-import type { SymbolTable } from '../assembler/SymbolTable.js';
-import type { RegisterFile } from '../hardware/RegisterFile.js';
-import type { Coprocessor1 } from '../hardware/Coprocessor1.js';
+import type { TokenList } from '../assembler/tokenization/TokenList.js';
+import type { SymbolTable } from '../assembler/symbols/SymbolTable.js';
+import type { RegisterFile } from '../hardware/registers/RegisterFile.js';
+import type { Coprocessor1 } from '../hardware/registers/Coprocessor1.js';
 import { Binary, NumberFormatException } from '../formatting/Binary.js';
 
 /** Session-owned settings and example tokenizer used by pseudo-instruction descriptors. */

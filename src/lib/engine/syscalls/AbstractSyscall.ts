@@ -1,10 +1,10 @@
 /* Copyright (c) 2003–2006 Pete Sanderson and Kenneth Vollmar. MIT license.
  * Ports mars/mips/instructions/syscalls/AbstractSyscall.java; see MARSlicense.txt. */
-import type { ProgramStatement } from '../assembler/ProgramStatement.js';
+import type { ProgramStatement } from '../assembler/programs/ProgramStatement.js';
 import type { ProcessingExceptionHost } from '../diagnostics/ProcessingException.js';
-import type { Coprocessor1 } from '../hardware/Coprocessor1.js';
-import type { Memory } from '../hardware/Memory.js';
-import type { RegisterFile } from '../hardware/RegisterFile.js';
+import type { Coprocessor1 } from '../hardware/registers/Coprocessor1.js';
+import type { Memory } from '../hardware/memory/Memory.js';
+import type { RegisterFile } from '../hardware/registers/RegisterFile.js';
 import type { SystemIO } from '../io/SystemIO.js';
 import type { Syscall } from './Syscall.js';
 /** Hardware and GUI console services owned by the machine running this service. */

@@ -25,14 +25,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // Ports mars/assembler/Macro.java.
 // MARS copyright Pete Sanderson and Kenneth Vollmar; macro implementation by M.H. Sekhavat.
 
-import type { DiagnosticProgram } from '../diagnostics/ErrorMessage.js';
-import { ErrorMessage } from '../diagnostics/ErrorMessage.js';
-import { ErrorList } from '../diagnostics/ErrorList.js';
-import type { RegisterFile } from '../hardware/RegisterFile.js';
-import type { Coprocessor0 } from '../hardware/Coprocessor0.js';
-import type { Coprocessor1 } from '../hardware/Coprocessor1.js';
-import { Token } from './Token.js';
-import { TokenList } from './TokenList.js';
+import type { DiagnosticProgram } from '../../diagnostics/ErrorMessage.js';
+import { ErrorMessage } from '../../diagnostics/ErrorMessage.js';
+import { ErrorList } from '../../diagnostics/ErrorList.js';
+import type { RegisterFile } from '../../hardware/registers/RegisterFile.js';
+import type { Coprocessor0 } from '../../hardware/registers/Coprocessor0.js';
+import type { Coprocessor1 } from '../../hardware/registers/Coprocessor1.js';
+import { Token } from '../tokenization/Token.js';
+import { TokenList } from '../tokenization/TokenList.js';
 
 /** Register lookup dependencies owned by the enclosing simulator session. */
 export interface MacroRegisters {
