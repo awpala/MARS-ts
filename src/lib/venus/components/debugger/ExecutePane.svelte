@@ -6,6 +6,7 @@
 	/** Ports the views in mars/venus/TextSegmentWindow.java, DataSegmentWindow.java, and LabelsWindow.java.
 	 * Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license. */
 	import ToolbarIcon from '../shell/ToolbarIcon.svelte';
+	import PaneDivider from '../layout/PaneDivider.svelte';
 	import Tooltip from '../feedback/Tooltip.svelte';
 	import type { Globals } from '#lib/engine/Globals.js';
 	import { Settings } from '#lib/engine/Settings.js';
@@ -42,6 +43,10 @@
 		hexValues: boolean;
 		/** Parent-owned persisted ASCII display setting, shared by checkbox and toolbar toggle. */
 		ascii: boolean;
+		/** Parent-owned requested Data Segment height in pixels; null keeps its natural height. */
+		dataHeight: number | null;
+		/** Required callback persists the Data Segment height after a completed resize. */
+		onresizecommit: () => void;
 	};
 	let {
 		machine,
@@ -56,7 +61,9 @@
 		labelSortState = $bindable(),
 		hexAddresses = $bindable(),
 		hexValues = $bindable(),
-		ascii = $bindable()
+		ascii = $bindable(),
+		dataHeight = $bindable(),
+		onresizecommit
 	}: Props = $props();
 	let segment = $state('data');
 	let pageOffset = $state(0);
@@ -64,6 +71,24 @@
 	let editedAddress = $state<number | null>(null);
 	const memoryRows = 16;
 	const memoryPageBytes = memoryRows * 32;
+	// The text row keeps its 100px minimum beside the 7px divider.
+	const minTextHeight = 107;
+	const minDataHeight = 60;
+	let executeHeight = $state(0);
+	let dataPaneHeight = $state(0);
+	let dataScrollHeight = $state(0);
+	let dataTableHeight = $state(0);
+	let segmentSelect = $state<HTMLSelectElement>();
+	// Compression changes only the scroll viewport, so this stays constant while resizing.
+	const naturalDataHeight = $derived(dataPaneHeight - dataScrollHeight + dataTableHeight);
+	const maxDataHeight = $derived(
+		Math.max(minDataHeight, Math.min(naturalDataHeight, executeHeight - minTextHeight))
+	);
+	const displayedDataHeight = $derived(
+		dataHeight === null
+			? Math.min(dataPaneHeight, maxDataHeight)
+			: Math.max(minDataHeight, Math.min(maxDataHeight, dataHeight))
+	);
 	// LabelsWindow remembers the direction of each column when switching sort columns.
 	const sortTransitions = [
 		[4, 1],
@@ -159,6 +184,16 @@
 		};
 		return bases;
 	});
+	const segmentOptions = $derived([
+		{ value: 'extern', label: `${Binary.intToHexString(memoryBases.extern)} (.extern)` },
+		{ value: 'data', label: `${Binary.intToHexString(memoryBases.data)} (.data)` },
+		{ value: 'heap', label: `${Binary.intToHexString(memoryBases.heap)} (heap)` },
+		{ value: 'gp', label: 'current $gp' },
+		{ value: 'sp', label: 'current $sp' },
+		{ value: 'text', label: `${Binary.intToHexString(memoryBases.text)} (.text)` },
+		{ value: 'kernel', label: `${Binary.intToHexString(memoryBases.kernel)} (.kdata)` },
+		{ value: 'mmio', label: `${Binary.intToHexString(memoryBases.mmio)} (MMIO)` }
+	]);
 	const memoryBase = $derived(((memoryBases[segment] & ~3) + pageOffset) | 0);
 	const dataRows = $derived.by(() => {
 		void snapshot.revision;
@@ -219,6 +254,31 @@
 		}
 		input.value = code ? Binary.intToHexString(readWord(address)) : formatWord(readWord(address));
 	}
+	const dataHeightRestorable = $derived(
+		dataHeight !== null && displayedDataHeight < naturalDataHeight
+	);
+	function restoreDataHeight() {
+		dataHeight = null;
+		onresizecommit();
+	}
+	function setDataHeight(height: number) {
+		// Restoring the full table returns to natural sizing, which follows later content changes.
+		dataHeight = height >= naturalDataHeight ? null : Math.round(height);
+	}
+	// Native selects fire no change when an option is reselected. Opening the list selects a
+	// hidden placeholder bearing the current label, so choosing the current range resets it.
+	function armSegment() {
+		if (segmentSelect && !running) segmentSelect.selectedIndex = 0;
+	}
+	function restoreSegment() {
+		if (segmentSelect?.selectedIndex === 0) segmentSelect.value = segment;
+	}
+	function segmentKey(event: KeyboardEvent) {
+		if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+			if (event.altKey) armSegment();
+			else restoreSegment();
+		} else if (event.key === 'Enter' || event.key === ' ' || event.key === 'F4') armSegment();
+	}
 	function navigateLabel(address: number) {
 		if (machine.memory.inTextSegment(address) || machine.memory.inKernelTextSegment(address)) {
 			document
@@ -247,6 +307,7 @@
 <!-- @component Actual assembled statements, breakpoints, symbol navigation, and editable paged memory for the session. -->
 <div
 	class="execute-pane"
+	bind:clientHeight={executeHeight}
 	style:--pane-border-color="var(--theme-border, #a2aab1)"
 	style:--table-font={preset.fontFamily}
 	style:--table-font-size={preset.fontSize}
@@ -392,76 +453,104 @@
 				</table>
 			</Pane>{/if}
 	</div>
-	<Pane
-		class="segment data-segment"
-		label="Data Segment"
-		flex="0 0 auto"
-		height="auto"
-		minHeight="0"
-		overflow="auto"
+	<PaneDivider
+		label="Data Segment height"
+		controls={`${id}-data`}
+		orientation="horizontal"
+		min={minDataHeight}
+		max={maxDataHeight}
+		value={displayedDataHeight}
+		reverse
+		onchange={setDataHeight}
+		oncommit={onresizecommit}
+	/>
+	<div
+		class="data-area"
+		id={`${id}-data`}
+		bind:offsetHeight={dataPaneHeight}
+		style:height={dataHeight === null ? undefined : `${displayedDataHeight}px`}
 	>
-		<h2>Data Segment</h2>
-		<div class="data-scroll">
-			<table>
-				<thead
-					><tr
-						><th>Address</th
-						>{#each Array.from({ length: 8 }, (_, i) => i * 4) as offset (offset)}<th
-								>Value (+{offset})</th
-							>{/each}</tr
-					></thead
-				><tbody
-					>{#each dataRows as row (row.address)}<tr
-							><td>{formatAddress(row.address)}</td>{#each row.words as word (word.address)}<td
-									class={{ changed: preset.data.enabled && word.address === editedAddress }}
-									><input
-										aria-label={`Memory ${Binary.intToHexString(word.address)}`}
-										value={formatWord(word.value)}
-										readonly={running || ascii}
-										onchange={(event) => changeWord(word.address, event.currentTarget)}
-										onkeydown={commitOnEnter}
-									/></td
-								>{/each}</tr
-						>{/each}</tbody
+		<Pane
+			class="segment data-segment"
+			label="Data Segment"
+			flex="1 1 auto"
+			height="auto"
+			minHeight="0"
+			overflow="hidden"
+		>
+			<h2 class="data-heading shrink-0">
+				Data Segment<Button
+					class="grid size-4.5 shrink-0 place-items-center"
+					tooltip="Restore full Data Segment height"
+					aria-label="Restore full Data Segment height"
+					disabled={!dataHeightRestorable}
+					onclick={restoreDataHeight}><ToolbarIcon name="expandDataSegment" /></Button
 				>
-			</table>
-		</div>
-		<div class="data-controls">
-			<Button
-				class="grid size-5.5 shrink-0 place-items-center"
-				tooltip="Previous memory page"
-				aria-label="Previous memory page"
-				onclick={() => (pageOffset -= memoryPageBytes)}
-				><ToolbarIcon name="previousMemoryPage" /></Button
-			><select
-				aria-label="Data segment base"
-				bind:value={segment}
-				onchange={() => {
-					pageOffset = 0;
-				}}
-				><option value="extern">{Binary.intToHexString(memoryBases.extern)} (.extern)</option>
-				<option value="data">{Binary.intToHexString(memoryBases.data)} (.data)</option>
-				<option value="heap">{Binary.intToHexString(memoryBases.heap)} (heap)</option>
-				<option value="gp">current $gp</option><option value="sp">current $sp</option>
-				<option value="text">{Binary.intToHexString(memoryBases.text)} (.text)</option>
-				<option value="kernel">{Binary.intToHexString(memoryBases.kernel)} (.kdata)</option>
-				<option value="mmio">{Binary.intToHexString(memoryBases.mmio)} (MMIO)</option></select
-			><Button
-				class="grid size-5.5 shrink-0 place-items-center"
-				tooltip="Next memory page"
-				aria-label="Next memory page"
-				onclick={() => (pageOffset += memoryPageBytes)}
-				><ToolbarIcon name="nextMemoryPage" /></Button
-			>
-			<div class="control-separator" role="separator" aria-orientation="vertical"></div>
-			<div class="display-options">
-				<SelectorToggle bind:checked={hexAddresses} label="Hexadecimal Addresses" />
-				<SelectorToggle bind:checked={hexValues} label="Hexadecimal Values" />
-				<SelectorToggle bind:checked={ascii} label="ASCII" />
+			</h2>
+			<div class="data-scroll" bind:clientHeight={dataScrollHeight}>
+				<table bind:offsetHeight={dataTableHeight}>
+					<thead
+						><tr
+							><th>Address</th
+							>{#each Array.from({ length: 8 }, (_, i) => i * 4) as offset (offset)}<th
+									>Value (+{offset})</th
+								>{/each}</tr
+						></thead
+					><tbody
+						>{#each dataRows as row (row.address)}<tr
+								><td>{formatAddress(row.address)}</td>{#each row.words as word (word.address)}<td
+										class={{ changed: preset.data.enabled && word.address === editedAddress }}
+										><input
+											aria-label={`Memory ${Binary.intToHexString(word.address)}`}
+											value={formatWord(word.value)}
+											readonly={running || ascii}
+											onchange={(event) => changeWord(word.address, event.currentTarget)}
+											onkeydown={commitOnEnter}
+										/></td
+									>{/each}</tr
+							>{/each}</tbody
+					>
+				</table>
 			</div>
-		</div>
-		{#if memoryError}<p role="alert">{memoryError}</p>{/if}
-	</Pane>
+			<div class="data-controls">
+				<Button
+					class="grid size-5.5 shrink-0 place-items-center"
+					tooltip="Previous memory page"
+					aria-label="Previous memory page"
+					onclick={() => (pageOffset -= memoryPageBytes)}
+					><ToolbarIcon name="previousMemoryPage" /></Button
+				><select
+					aria-label="Data segment base"
+					bind:this={segmentSelect}
+					bind:value={segment}
+					onpointerdown={armSegment}
+					onkeydown={segmentKey}
+					onblur={restoreSegment}
+					onchange={() => {
+						pageOffset = 0;
+					}}
+					><option value="" hidden disabled
+						>{segmentOptions.find((option) => option.value === segment)?.label}</option
+					>{#each segmentOptions as option (option.value)}<option value={option.value}
+							>{option.label}</option
+						>{/each}</select
+				><Button
+					class="grid size-5.5 shrink-0 place-items-center"
+					tooltip="Next memory page"
+					aria-label="Next memory page"
+					onclick={() => (pageOffset += memoryPageBytes)}
+					><ToolbarIcon name="nextMemoryPage" /></Button
+				>
+				<div class="control-separator" role="separator" aria-orientation="vertical"></div>
+				<div class="display-options">
+					<SelectorToggle bind:checked={hexAddresses} label="Hexadecimal Addresses" />
+					<SelectorToggle bind:checked={hexValues} label="Hexadecimal Values" />
+					<SelectorToggle bind:checked={ascii} label="ASCII" />
+				</div>
+			</div>
+			{#if memoryError}<p role="alert">{memoryError}</p>{/if}
+		</Pane>
+	</div>
 </div>
 
 <style>
@@ -482,6 +571,16 @@
 		border-bottom: 1px solid var(--theme-border, #a2aab1);
 		padding: 3px 6px;
 		font-weight: 600;
+	}
+	.data-heading {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 6px;
+	}
+	.data-heading :global(svg) {
+		width: 16px;
+		height: 16px;
 	}
 	.text-scroll {
 		flex: 1;
@@ -534,7 +633,15 @@
 		background: var(--delay-background);
 		color: var(--delay-foreground);
 	}
+	.data-area {
+		display: flex;
+		flex: 0 0 auto;
+		flex-direction: column;
+		min-height: 0;
+	}
 	.data-scroll {
+		flex: 1 1 auto;
+		min-height: 0;
 		overflow: auto;
 	}
 	.code-value,
@@ -585,6 +692,7 @@
 		gap: 15px;
 	}
 	p {
+		flex-shrink: 0;
 		color: var(--theme-error, #a11);
 		padding: 4px;
 	}

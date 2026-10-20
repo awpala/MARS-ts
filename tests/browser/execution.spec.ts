@@ -262,7 +262,7 @@ test('data pages show sixteen rows and ASCII follows hexadecimal values inline',
 	await action(page, 'Previous memory page').click();
 	await expect(data.locator('tbody tr').first()).toContainText('0x10010000');
 	const range = page.getByRole('combobox', { name: 'Data segment base' });
-	await expect(range.locator('option')).toHaveText([
+	await expect(range.locator('option:not([hidden])')).toHaveText([
 		'0x10000000 (.extern)',
 		'0x10010000 (.data)',
 		'0x10040000 (heap)',
@@ -503,6 +503,62 @@ test('cliff and exception outcomes preserve messages and select the faulting ins
 		/Go: execution terminated with errors/
 	);
 	await expect(page.locator('tr[aria-current="step"]')).toContainText('teq');
+});
+
+test('Data Segment resizes from above and reselecting its range returns to the start', async ({
+	page
+}) => {
+	await openDesktop(page);
+	await source(page, '.data\n.word 1\n.text\nnop\n');
+	await action(page, 'Assemble').click();
+	const data = page.getByRole('region', { name: 'Data Segment', exact: true });
+	const scroll = data.locator('.data-scroll');
+	const divider = page.getByRole('separator', { name: 'Data Segment height' });
+	const natural = Number(await divider.getAttribute('aria-valuenow'));
+	expect(await scroll.evaluate((node) => node.scrollHeight > node.clientHeight)).toBe(false);
+	const box = (await divider.boundingBox())!;
+	await page.mouse.move(box.x + 100, box.y + box.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(box.x + 100, box.y + box.height / 2 + 150);
+	await page.mouse.up();
+	await expect(divider).toHaveAttribute('aria-valuenow', String(natural - 150));
+	expect(await scroll.evaluate((node) => node.scrollHeight > node.clientHeight)).toBe(true);
+	await expect(data.getByRole('heading', { name: 'Data Segment' })).toBeInViewport();
+	await expect(action(page, 'Next memory page')).toBeInViewport();
+	await scroll.evaluate((node) => (node.scrollTop = node.scrollHeight));
+	await expect(data.locator('tbody tr').last()).toBeInViewport();
+	await expect(data.locator('th').first()).toBeInViewport();
+	await page.getByRole('button', { name: 'Edit', exact: true }).click();
+	await page.getByRole('button', { name: 'Execute', exact: true }).click();
+	await expect(divider).toHaveAttribute('aria-valuenow', String(natural - 150));
+	page.once('dialog', (dialog) => dialog.accept());
+	await page.reload();
+	await waitForDesktop(page);
+	await action(page, 'Assemble').click();
+	await expect(divider).toHaveAttribute('aria-valuenow', String(natural - 150));
+	const restore = action(page, 'Restore full Data Segment height');
+	await expect(restore).toBeEnabled();
+	await restore.click();
+	await expect(divider).toHaveAttribute('aria-valuenow', String(natural));
+	await expect(restore).toBeDisabled();
+	await divider.press('ArrowDown');
+	await expect(restore).toBeEnabled();
+	await divider.press('End');
+	await expect(divider).toHaveAttribute('aria-valuenow', String(natural));
+	await expect(restore).toBeDisabled();
+	const range = page.getByRole('combobox', { name: 'Data segment base' });
+	await action(page, 'Next memory page').click();
+	await expect(data.locator('tbody tr').first()).toContainText('0x10010200');
+	await range.focus();
+	await range.dispatchEvent('pointerdown');
+	await expect(range.locator('option:checked')).toHaveText('0x10010000 (.data)');
+	await range.blur();
+	await expect(range).toHaveValue('data');
+	await expect(data.locator('tbody tr').first()).toContainText('0x10010200');
+	await range.dispatchEvent('pointerdown');
+	await range.selectOption('data');
+	await expect(range).toHaveValue('data');
+	await expect(data.locator('tbody tr').first()).toContainText('0x10010000');
 });
 
 test('text memory is readable without SMC and editable code executes then resets to the original', async ({

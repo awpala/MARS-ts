@@ -30,6 +30,8 @@ export class DisplayPreferences {
 	registerWidth = $state(310);
 	/** Measured height of the left pane container. */
 	leftPaneHeight = $state(700);
+	/** Requested Data Segment height in pixels; null keeps its natural height. */
+	dataSegmentHeight = $state<number | null>(null);
 	/** Requested editor fraction of the left pane height. */
 	editorFraction = $state(0.75);
 	/** Largest editor height retaining usable messages. */
@@ -51,6 +53,7 @@ export class DisplayPreferences {
 		if (layout) {
 			this.registerWidth = layout.registerWidth;
 			this.editorFraction = layout.editorFraction;
+			this.dataSegmentHeight = layout.dataSegmentHeight;
 		}
 		const settings = loadDisplaySettings();
 		if (!settings) return false;
@@ -84,7 +87,8 @@ export class DisplayPreferences {
 	persistLayout = (): void => {
 		savePaneLayout({
 			registerWidth: this.displayedRegisterWidth,
-			editorFraction: this.editorFraction
+			editorFraction: this.editorFraction,
+			dataSegmentHeight: this.dataSegmentHeight
 		});
 	};
 	/** Update the editor fraction from an interactive pixel size. */

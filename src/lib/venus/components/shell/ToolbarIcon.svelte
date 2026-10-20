@@ -1,7 +1,7 @@
 <script module lang="ts">
 	/** Memory paging glyphs adapt static/icons/Previous.svg and Next.svg.
 	 * Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license. */
-	/** SVG glyph names for file actions, debugger actions, view toggles, and memory paging. */
+	/** SVG glyph names for file actions, debugger actions, view toggles, and memory paging or sizing. */
 	export type ToolbarIconName =
 		| 'autoSave'
 		| 'import'
@@ -13,6 +13,7 @@
 		| 'backstep'
 		| 'previousMemoryPage'
 		| 'nextMemoryPage'
+		| 'expandDataSegment'
 		| 'pause'
 		| 'stop'
 		| 'reset'
@@ -51,6 +52,7 @@
 		backstep: backstepGlyph,
 		previousMemoryPage: previousMemoryPageIcon,
 		nextMemoryPage: nextMemoryPageIcon,
+		expandDataSegment: expandDataSegmentGlyph,
 		assemble: assembleGlyph,
 		labels: labelsGlyph,
 		addresses: addressesGlyph,
@@ -162,6 +164,10 @@
 
 {#snippet nextMemoryPageIcon()}
 	{@render previousMemoryPageGlyph(false)}
+{/snippet}
+
+{#snippet expandDataSegmentGlyph()}
+	<path d="M12 20V5M5 12l7-7 7 7" />
 {/snippet}
 
 {#snippet assembleGlyph()}

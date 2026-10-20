@@ -130,6 +130,8 @@
 								bind:ascii={display.ascii}
 								bind:hexAddresses={display.hexAddresses}
 								bind:hexValues={display.hexValues}
+								bind:dataHeight={display.dataSegmentHeight}
+								onresizecommit={display.persistLayout}
 							/>{/if}
 					{/if}
 				</TabbedPane>

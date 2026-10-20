@@ -1,4 +1,4 @@
-/** Browser persistence key for the first version of the two desktop pane dividers. */
+/** Browser persistence key for the first version of the desktop pane dividers. */
 export const PANE_LAYOUT_STORAGE_KEY = 'mars-ts:panes:v1';
 
 /** View-only pane preferences; they never belong to engine sessions. */
@@ -7,6 +7,8 @@ export interface PaneLayout {
 	registerWidth: number;
 	/** Editor share of the left pane height, before minimum pane sizes are applied. */
 	editorFraction: number;
+	/** Requested Data Segment height in CSS pixels, or null for its natural height; absent in older records. */
+	dataSegmentHeight: number | null;
 }
 
 type StorageAccess = () => Pick<Storage, 'getItem' | 'setItem'>;
@@ -21,9 +23,14 @@ function validate(value: unknown): PaneLayout | undefined {
 		!Number.isFinite(data.editorFraction)
 	)
 		return;
+	const dataSegmentHeight = data.dataSegmentHeight;
 	return {
 		registerWidth: Math.max(260, Math.round(data.registerWidth)),
-		editorFraction: Math.max(0, Math.min(1, data.editorFraction))
+		editorFraction: Math.max(0, Math.min(1, data.editorFraction)),
+		dataSegmentHeight:
+			typeof dataSegmentHeight === 'number' && Number.isFinite(dataSegmentHeight)
+				? Math.max(60, Math.round(dataSegmentHeight))
+				: null
 	};
 }
 
