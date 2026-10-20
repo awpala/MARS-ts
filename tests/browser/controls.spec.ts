@@ -119,3 +119,63 @@ test('keyboard commands share breakpoint policy and leave text inputs and dialog
 	await expect(breakpoint).not.toBeChecked();
 	await expect(clear).toBeDisabled();
 });
+
+test('file multiselect supports label clicks, keyboard deselection, and native submit buttons', async ({
+	page
+}) => {
+	await openDesktop(page);
+	await page.evaluate(() =>
+		localStorage.setItem(
+			'mars-ts:sources:v1',
+			JSON.stringify([
+				{ name: 'beta.asm', source: '.text\nnop\n' },
+				{ name: 'alpha.asm', source: '.text\nnop\n' }
+			])
+		)
+	);
+	await page
+		.locator('.menubar summary')
+		.filter({ hasText: /^File$/ })
+		.click();
+	await page.locator('details[open]').getByRole('button', { name: /^Open/ }).click();
+	const dialog = page.getByRole('dialog', { name: 'Open', exact: true });
+	const group = dialog.getByRole('group', { name: 'Source files stored in this browser' });
+	const submit = dialog.getByRole('button', { name: 'Open', exact: true });
+	await expect(submit).toBeDisabled();
+	await group.getByText('beta.asm', { exact: true }).click();
+	await group.getByText('alpha.asm', { exact: true }).click();
+	await group.getByRole('checkbox', { name: 'beta.asm' }).press('Space');
+	await expect(group.getByRole('checkbox', { name: 'alpha.asm' })).toBeChecked();
+	await expect(group.getByRole('checkbox', { name: 'beta.asm' })).not.toBeChecked();
+	await submit.click();
+	await expect(dialog).toHaveCount(0);
+	await expect(page.getByRole('textbox', { name: 'Source alpha.asm' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Close beta.asm', exact: true })).toHaveCount(0);
+});
+
+test('shared clear buttons retain independent and combined console clearing', async ({ page }) => {
+	await openDesktop(page);
+	await page.getByRole('button', { name: 'New', exact: true }).click();
+	await page
+		.getByRole('textbox', { name: /^Source / })
+		.fill('.text\nli $a0,7\nli $v0,1\nsyscall\nli $v0,10\nsyscall\n');
+	await page.getByRole('button', { name: 'Assemble', exact: true }).click();
+	await page.getByRole('button', { name: 'Go', exact: true }).click();
+	const output = page.getByRole('textbox', { name: 'Run I/O', exact: true });
+	await expect(output).toHaveValue(/7\n-- program is finished running --/);
+	await page.getByRole('button', { name: 'Mars Messages', exact: true }).click();
+	const messages = page.getByRole('textbox', { name: 'Mars Messages', exact: true });
+	await expect(messages).not.toHaveValue('');
+	await page.getByRole('button', { name: 'Clear', exact: true }).press('Space');
+	await expect(messages).toHaveValue('');
+	await page.getByRole('button', { name: 'Run I/O', exact: true }).click();
+	await expect(output).toHaveValue(/7\n-- program is finished running --/);
+	const clearAll = page.getByRole('button', { name: 'Clear All', exact: true });
+	await clearAll.press('Shift+Tab');
+	await page.keyboard.press('Tab');
+	await expect(clearAll).toHaveAccessibleDescription('Clear Mars Messages and Run I/O');
+	await clearAll.press('Enter');
+	await expect(output).toHaveValue('');
+	await page.getByRole('button', { name: 'Mars Messages', exact: true }).click();
+	await expect(messages).toHaveValue('');
+});

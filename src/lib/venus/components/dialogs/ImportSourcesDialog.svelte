@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '../controls/Button.svelte';
 	import { getDesktop } from '../../context/desktop.js';
 	import Modal from './Modal.svelte';
 	import DialogActions from './DialogActions.svelte';
@@ -13,8 +14,8 @@
 	</ul>
 	{#if workspace.fileError}<p class="my-2" role="alert">{workspace.fileError}</p>{/if}
 	<DialogActions>
-		<button disabled={!workspace.importSources.length} onclick={workspace.confirmImport}
-			>Replace</button
-		><button onclick={workspace.dismiss}>Cancel</button>
+		<Button disabled={!workspace.importSources.length} onclick={workspace.confirmImport}
+			>Replace</Button
+		><Button onclick={workspace.dismiss}>Cancel</Button>
 	</DialogActions>
 </Modal>

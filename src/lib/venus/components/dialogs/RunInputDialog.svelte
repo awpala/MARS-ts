@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '../controls/Button.svelte';
 	import { getDesktop } from '../../context/desktop.js';
 	import Modal from './Modal.svelte';
 	import DialogActions from './DialogActions.svelte';
@@ -21,9 +22,9 @@
 				><input aria-label="Syscall input" bind:value={simulation.inputText} /></DialogField
 			>
 			<DialogActions>
-				<button type="submit">OK</button><button
+				<Button type="submit">OK</Button><Button
 					type="button"
-					onclick={() => simulation.controller?.stop()}>Cancel</button
+					onclick={() => simulation.controller?.stop()}>Cancel</Button
 				>
 			</DialogActions>
 		</form></Modal

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '../controls/Button.svelte';
 	import { getDesktop } from '../../context/desktop.js';
 	import Modal from './Modal.svelte';
 	import DialogActions from './DialogActions.svelte';
@@ -10,6 +11,6 @@
 	<p class="my-2" role="alert">{workspace.fileError}</p>
 	<p class="my-2">The filename remains “{workspace.filename}”. Your source is unchanged.</p>
 	<DialogActions>
-		<button onclick={workspace.dismiss}>OK</button>
+		<Button onclick={workspace.dismiss}>OK</Button>
 	</DialogActions>
 </Modal>

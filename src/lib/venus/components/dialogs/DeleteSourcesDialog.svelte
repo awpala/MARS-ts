@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '../controls/Button.svelte';
 	import { getDesktop } from '../../context/desktop.js';
 	import Modal from './Modal.svelte';
 	import DialogActions from './DialogActions.svelte';
@@ -24,8 +25,8 @@
 	</ul>
 	{#if workspace.fileError}<p class="my-2" role="alert">{workspace.fileError}</p>{/if}
 	<DialogActions>
-		<button onclick={workspace.confirmDelete}>Delete</button><button
-			onclick={workspace.cancelDelete}>Cancel</button
+		<Button onclick={workspace.confirmDelete}>Delete</Button><Button
+			onclick={workspace.cancelDelete}>Cancel</Button
 		>
 	</DialogActions>
 </Modal>

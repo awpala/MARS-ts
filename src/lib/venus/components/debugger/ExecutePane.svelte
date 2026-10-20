@@ -1,4 +1,7 @@
 <script lang="ts">
+	import SelectorToggle from '../controls/SelectorToggle.svelte';
+	import Button from '../controls/Button.svelte';
+	import Pane from '../layout/Pane.svelte';
 	import { formatInteger, commitOnEnter } from '../../utils/tableCells.js';
 	/** Ports the views in mars/venus/TextSegmentWindow.java, DataSegmentWindow.java, and LabelsWindow.java.
 	 * Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license. */
@@ -244,6 +247,7 @@
 <!-- @component Actual assembled statements, breakpoints, symbol navigation, and editable paged memory for the session. -->
 <div
 	class="execute-pane"
+	style:--pane-border-color="var(--theme-border, #a2aab1)"
 	style:--table-font={preset.fontFamily}
 	style:--table-font-size={preset.fontSize}
 	style:--pc-background={`var(--theme-pc, ${preset.text.background})`}
@@ -257,8 +261,15 @@
 	style:--odd-foreground={`var(--theme-text, ${preset.oddRow.foreground})`}
 >
 	<div class="text-row">
-		<section class="segment text-segment" aria-label="Text Segment">
-			<h2>Text Segment</h2>
+		<Pane
+			class="segment text-segment"
+			label="Text Segment"
+			flex="1"
+			height="auto"
+			minHeight="0"
+			overflow="hidden"
+		>
+			<h2 class="shrink-0">Text Segment</h2>
 			<div class="text-scroll">
 				<table>
 					<thead
@@ -294,46 +305,47 @@
 									/></td
 								><td>{row.basic}</td>
 								<td
-									>{#if row.modified}<span> ------ </span>{:else}<Tooltip text={row.filename}>
-											{#snippet children(trigger, description)}
-												<button
-													{@attach trigger}
-													aria-describedby={description}
-													class="source-link"
-													onclick={() => onsource(row.filename, row.line)}
-													>{row.line}: {row.source}</button
-												>
-											{/snippet}
-										</Tooltip>{/if}</td
+									>{#if row.modified}<span> ------ </span>{:else}<Button
+											tooltip={row.filename}
+											class="source-link text-left whitespace-pre"
+											onclick={() => onsource(row.filename, row.line)}
+											>{row.line}: {row.source}</Button
+										>{/if}</td
 								>
 							</tr>{/each}
 					</tbody>
 				</table>
 			</div>
-		</section>
-		{#if showLabels}<section class="labels segment" aria-label="Labels">
+		</Pane>
+		{#if showLabels}<Pane
+				class="labels segment"
+				label="Labels"
+				layout="block"
+				flex="0 0 25%"
+				height="auto"
+				minHeight="0"
+				overflow="auto"
+			>
 				<h2>Labels</h2>
 				<div class="label-controls">
 					<Tooltip text="Show labels defined in the data segment">
 						{#snippet children(trigger, description)}
-							<label {@attach trigger}
-								><input
-									aria-describedby={description}
-									type="checkbox"
-									bind:checked={showDataLabels}
-								/> Data</label
-							>
+							<SelectorToggle
+								attachment={trigger}
+								aria-describedby={description}
+								bind:checked={showDataLabels}
+								label="Data"
+							/>
 						{/snippet}
 					</Tooltip>
 					<Tooltip text="Show labels defined in the text segment">
 						{#snippet children(trigger, description)}
-							<label {@attach trigger}
-								><input
-									aria-describedby={description}
-									type="checkbox"
-									bind:checked={showTextLabels}
-								/> Text</label
-							>
+							<SelectorToggle
+								attachment={trigger}
+								aria-describedby={description}
+								bind:checked={showTextLabels}
+								label="Text"
+							/>
 						{/snippet}
 					</Tooltip>
 				</div>
@@ -348,20 +360,16 @@
 											: 'ascending'
 										: 'none'}
 								>
-									<Tooltip text={`Sort by ${heading}`}>
-										{#snippet children(trigger, description)}
-											<button
-												{@attach trigger}
-												aria-describedby={description}
-												aria-label={`Sort by ${heading}`}
-												onclick={() => (labelSortState = sortTransitions[labelSortState][column])}
-											>
-												{heading}{#if sortColumn === column}<span aria-hidden="true"
-														>{sortDescending ? ' ▼' : ' ▲'}</span
-													>{/if}
-											</button>
-										{/snippet}
-									</Tooltip>
+									<Button
+										class="w-full text-left"
+										tooltip={`Sort by ${heading}`}
+										aria-label={`Sort by ${heading}`}
+										onclick={() => (labelSortState = sortTransitions[labelSortState][column])}
+									>
+										{heading}{#if sortColumn === column}<span aria-hidden="true"
+												>{sortDescending ? ' ▼' : ' ▲'}</span
+											>{/if}
+									</Button>
 								</th>
 							{/each}</tr
 						></thead
@@ -372,16 +380,9 @@
 							{#each group.symbols as symbol (symbol.getName())}
 								<tr>
 									<td>
-										<Tooltip text={group.file}>
-											{#snippet children(trigger, description)}
-												<button
-													{@attach trigger}
-													aria-describedby={description}
-													onclick={() => navigateLabel(symbol.getAddress())}
-													>{symbol.getName()}</button
-												>
-											{/snippet}
-										</Tooltip>
+										<Button tooltip={group.file} onclick={() => navigateLabel(symbol.getAddress())}
+											>{symbol.getName()}</Button
+										>
 									</td>
 									<td>{formatAddress(symbol.getAddress())}</td>
 								</tr>
@@ -389,9 +390,16 @@
 						</tbody>
 					{/each}
 				</table>
-			</section>{/if}
+			</Pane>{/if}
 	</div>
-	<section class="segment data-segment" aria-label="Data Segment">
+	<Pane
+		class="segment data-segment"
+		label="Data Segment"
+		flex="0 0 auto"
+		height="auto"
+		minHeight="0"
+		overflow="auto"
+	>
 		<h2>Data Segment</h2>
 		<div class="data-scroll">
 			<table>
@@ -419,17 +427,13 @@
 			</table>
 		</div>
 		<div class="data-controls">
-			<Tooltip text="Previous memory page">
-				{#snippet children(trigger, description)}
-					<button
-						{@attach trigger}
-						aria-describedby={description}
-						aria-label="Previous memory page"
-						onclick={() => (pageOffset -= memoryPageBytes)}
-						><ToolbarIcon name="previousMemoryPage" /></button
-					>
-				{/snippet}
-			</Tooltip><select
+			<Button
+				class="grid size-5.5 shrink-0 place-items-center"
+				tooltip="Previous memory page"
+				aria-label="Previous memory page"
+				onclick={() => (pageOffset -= memoryPageBytes)}
+				><ToolbarIcon name="previousMemoryPage" /></Button
+			><select
 				aria-label="Data segment base"
 				bind:value={segment}
 				onchange={() => {
@@ -442,26 +446,22 @@
 				<option value="text">{Binary.intToHexString(memoryBases.text)} (.text)</option>
 				<option value="kernel">{Binary.intToHexString(memoryBases.kernel)} (.kdata)</option>
 				<option value="mmio">{Binary.intToHexString(memoryBases.mmio)} (MMIO)</option></select
-			><Tooltip text="Next memory page">
-				{#snippet children(trigger, description)}
-					<button
-						{@attach trigger}
-						aria-describedby={description}
-						aria-label="Next memory page"
-						onclick={() => (pageOffset += memoryPageBytes)}
-						><ToolbarIcon name="nextMemoryPage" /></button
-					>
-				{/snippet}
-			</Tooltip>
+			><Button
+				class="grid size-5.5 shrink-0 place-items-center"
+				tooltip="Next memory page"
+				aria-label="Next memory page"
+				onclick={() => (pageOffset += memoryPageBytes)}
+				><ToolbarIcon name="nextMemoryPage" /></Button
+			>
 			<div class="control-separator" role="separator" aria-orientation="vertical"></div>
 			<div class="display-options">
-				<label><input type="checkbox" bind:checked={hexAddresses} /> Hexadecimal Addresses</label>
-				<label><input type="checkbox" bind:checked={hexValues} /> Hexadecimal Values</label>
-				<label><input type="checkbox" bind:checked={ascii} /> ASCII</label>
+				<SelectorToggle bind:checked={hexAddresses} label="Hexadecimal Addresses" />
+				<SelectorToggle bind:checked={hexValues} label="Hexadecimal Values" />
+				<SelectorToggle bind:checked={ascii} label="ASCII" />
 			</div>
 		</div>
 		{#if memoryError}<p role="alert">{memoryError}</p>{/if}
-	</section>
+	</Pane>
 </div>
 
 <style>
@@ -477,29 +477,11 @@
 		flex: 1 0 100px;
 		min-height: 100px;
 	}
-	.segment {
-		flex: 1;
-		overflow: auto;
-		border: 1px solid var(--theme-border, #a2aab1);
-		min-height: 0;
-		min-width: 0;
-	}
 	h2 {
 		background: var(--theme-heading, #dde4eb);
 		border-bottom: 1px solid var(--theme-border, #a2aab1);
 		padding: 3px 6px;
 		font-weight: 600;
-	}
-	.labels {
-		flex: 0 0 25%;
-	}
-	.text-segment {
-		display: flex;
-		flex-direction: column;
-		overflow: hidden;
-	}
-	.text-segment h2 {
-		flex-shrink: 0;
 	}
 	.text-scroll {
 		flex: 1;
@@ -512,11 +494,7 @@
 		padding: 3px 6px;
 		background: var(--theme-chrome, #eee);
 	}
-	.labels th button {
-		width: 100%;
-		text-align: left;
-	}
-	.labels .label-group {
+	.label-group {
 		position: static;
 		background: var(--theme-heading, #dde4eb);
 		color: var(--theme-text, #17202b);
@@ -556,15 +534,6 @@
 		background: var(--delay-background);
 		color: var(--delay-foreground);
 	}
-	.source-link {
-		text-align: left;
-		white-space: pre;
-	}
-	.data-segment {
-		flex: 0 0 auto;
-		display: flex;
-		flex-direction: column;
-	}
 	.data-scroll {
 		overflow: auto;
 	}
@@ -592,7 +561,6 @@
 		flex-shrink: 0;
 		padding: 2px 5px;
 	}
-	.data-controls > button,
 	.data-controls > select {
 		flex-shrink: 0;
 	}
@@ -609,12 +577,6 @@
 		align-self: stretch;
 		margin: 2px 0;
 		background: var(--theme-divider, #b3b3b3);
-	}
-	.data-controls > button {
-		display: grid;
-		place-items: center;
-		width: 22px;
-		height: 22px;
 	}
 	.display-options {
 		display: flex;

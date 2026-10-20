@@ -1,5 +1,6 @@
 <script lang="ts">
-	import PaneTabs from '../layout/PaneTabs.svelte';
+	import PaneTabs from '../controls/PaneTabs.svelte';
+	import Button from '../controls/Button.svelte';
 	/** Open-document navigation; buffers, dirty state, and close confirmation belong to the owner. */
 	type Props = {
 		/** Required ordered document summaries with unique IDs. */
@@ -67,10 +68,10 @@
 				spellcheck="false"
 			/>
 		{:else}
-			<button
-				class="source-name"
+			<Button
+				class="source-name px-[7px] py-1 whitespace-nowrap"
 				aria-pressed={selected === tab.id}
-				{@attach (button) => {
+				attachment={(button) => {
 					if (focusAfterRename === tab.id) {
 						focusAfterRename = undefined;
 						button.focus();
@@ -83,25 +84,20 @@
 						event.preventDefault();
 						beginRename(tab.id);
 					}
-				}}>{tab.label}</button
+				}}>{tab.label}</Button
 			>
 		{/if}
 	{/snippet}
 	{#snippet tabActions(id)}
-		<button
-			class="close-source"
+		<Button
+			class="close-source px-[7px] py-1 whitespace-nowrap"
 			aria-label={`Close ${tabs.find((tab) => tab.id === id)?.name}`}
-			onclick={() => onclose(id)}>×</button
+			onclick={() => onclose(id)}>×</Button
 		>
 	{/snippet}
 </PaneTabs>
 
 <style>
-	.close-source,
-	.source-name {
-		padding: 4px 7px;
-		white-space: nowrap;
-	}
 	.source-name-input {
 		min-width: 10ch;
 		max-width: 40ch;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '../controls/Button.svelte';
 	import type { Snippet } from 'svelte';
 	/** Contract for a same-tab modal. The caller owns its open state and content. */
 	type Props = {
@@ -63,7 +64,7 @@
 >
 	<header>
 		<h2 {id}>{title}</h2>
-		<button aria-label="Close dialog" onclick={onclose}>×</button>
+		<Button aria-label="Close dialog" onclick={onclose}>×</Button>
 	</header>
 	<div class="dialog-body">{@render children()}</div>
 </dialog>

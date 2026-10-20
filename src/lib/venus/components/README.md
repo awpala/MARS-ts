@@ -4,23 +4,30 @@ This directory owns browser presentation and element lifetimes for the Venus des
 
 Components are grouped by their presentation responsibility and imported directly from that group. The root contains this guide, not a barrel or compatibility wrappers.
 
-| Group                            | Responsibility                                                                                |
-| -------------------------------- | --------------------------------------------------------------------------------------------- |
-| [shell](shell/README.md)         | Application menus, grouped toolbar commands, run speed, appearance, and repository navigation |
-| [layout](layout/README.md)       | Reusable pane shells, nested tab strips, and adjustable dividers                              |
-| [editor](editor/README.md)       | Source rendering, editing interactions, highlighting, and document tabs                       |
-| [debugger](debugger/README.md)   | Execution, register, memory, label, and console presentation                                  |
-| [feedback](feedback/README.md)   | Shared loading status, tooltip interactions, and keyboard hints                               |
-| [transfers](transfers/README.md) | Clipboard and browser file-transfer behaviors                                                 |
-| [dialogs](dialogs/README.md)     | Modal rendering, shared form layouts, and focused workflow variants                           |
+| Group                            | Responsibility                                                                               |
+| -------------------------------- | -------------------------------------------------------------------------------------------- |
+| [shell](shell/README.md)         | Application menus, grouped toolbar commands, embedded preferences, and repository navigation |
+| [controls](controls/README.md)   | Native buttons, checkbox selections/groups, tab strips, sliders, and binary switches         |
+| [layout](layout/README.md)       | Reusable pane shells and adjustable dividers                                                 |
+| [editor](editor/README.md)       | Source rendering, editing interactions, highlighting, and document tabs                      |
+| [debugger](debugger/README.md)   | Execution, register, memory, label, and console presentation                                 |
+| [feedback](feedback/README.md)   | Shared loading status, tooltip interactions, and keyboard hints                              |
+| [transfers](transfers/README.md) | Clipboard and browser file-transfer behaviors                                                |
+| [dialogs](dialogs/README.md)     | Modal rendering, shared form layouts, and focused workflow variants                          |
 
-Layout and feedback remain independent of desktop context and feature views. Feature components may compose those primitives, the shell's leaf glyphs, and transfer controls; they leave source and machine policy with their state owners. Dialog variants consume context, while the Modal shell and its field/action layouts remain snippet-driven.
+Controls, layout, and feedback remain independent of desktop context and feature views. Feature components may compose those primitives, the shell's leaf glyphs, and transfer controls; they leave source and machine policy with their state owners. Dialog variants consume context, while the Modal shell and its field/action layouts remain snippet-driven.
 
-Pane composition uses a generic tabbed shell with a body snippet and optional tab-strip actions. Its body snippet receives the selected tab; the caller decides which content stays mounted. CSS custom properties control pane dimensions without reaching through component-scoped styles. The generic tab strip supports both pane tabs and scrollable nested document tabs, with stable keys and per-document action snippets. Selecting a document or closing it delegates to the editor owner; the tab strip does not create or dispose buffers.
+Pane provides the generic sized region and content renderer, used directly by execution segments and specialized by TabbedPane for tabbed editor, register, and message regions. TabbedPane supplies a body snippet and optional tab-strip actions. Its body snippet receives the selected tab; the caller decides which content stays mounted. CSS custom properties control pane dimensions without reaching through component-scoped styles. The controls group's generic tab strip supports both pane tabs and scrollable nested document tabs, with stable keys and per-document action snippets. Selecting a document or closing it delegates to the editor owner; the tab strip does not create or dispose buffers.
 
 Dropdowns render ordered groups of command or checkbox records, with separators between nonempty groups. Menu bars own native-details dismissal within their own element and use an instance-specific details group name. Toolbar groups accept content snippets, reusable buttons own labeling and pressed/disabled presentation, and glyph snippets share SVG variants. The menu and toolbar adapters resolve their command records through the same desktop capability, so reusable controls do not know how to save files or execute a machine.
 
-The run-speed slider owns its label and range input, while its bindable position remains in the desktop for persistence and engine assignment. Both the slider and the desktop use the same presentation utility for the legacy speed mapping.
+Generic Button preserves native events, accessible attributes, explicit form submission, and optional tooltip descriptions. ToolbarButton specializes it with toolbar visuals; menus, dialog actions, console Clear/Clear All, transfers, debugger actions, and tab triggers reuse the base control.
+
+Selection controls share a native checkbox and clickable label through [SelectorToggle](controls/SelectorToggle.svelte). Panes, dropdown selections, and source dialogs retain their state through bindings or change callbacks; accessible descriptions, disabled states, and label spacing stay consistent.
+
+The controls group owns generic Slider and Toggle primitives. Shell specializations supply MARS run-speed formatting and theme content. The desktop retains the speed position for persistence and engine assignment; ThemeToggle owns its document theme and separate browser preference, restoring the pre-paint choice on mount. Generic controls do not access engine or browser persistence state.
+
+MultiSelect composes labeled checkboxes for editable and read-only groups. The Open dialog binds filenames to its vertical group, while the register pane presents condition bits as a disabled horizontal group. The shared control owns membership updates and ordering; file workflows and bit interpretation stay with their consumers.
 
 Source rendering owns its hover and scroll state while delegating edits and selection updates. Its bindable textarea handle lets the desktop focus and select source for find/replace and source navigation. Execution and register panes read parent-owned hardware through public APIs and release their existing subscriptions. The message pane renders output and inline input while simulation state retains the pending resolver and syscall completion rules. Adjustable separators own pointer gesture state and emit size/commit callbacks; their owner clamps viewport geometry and persists the result.
 

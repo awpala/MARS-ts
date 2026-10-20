@@ -10,6 +10,7 @@
 
 <script lang="ts" generics="T extends string | number">
 	import type { Snippet } from 'svelte';
+	import Button from './Button.svelte';
 	/** Stateless navigation strip; the parent owns selection and tab resources. */
 	type Props = {
 		/** Required ordered tabs with unique IDs. */
@@ -43,10 +44,17 @@
 	{#if tabControl}
 		{@render tabControl(tab)}
 	{:else}
-		<button
-			class={{ active: selected === tab.id }}
+		<Button
+			class={[
+				'whitespace-nowrap',
+				variant === 'documents'
+					? 'px-[7px] py-1'
+					: 'rounded-t-[3px] border border-b-0 border-[var(--theme-border,#a6aeb5)] p-[var(--tab-padding,4px_12px)]',
+				{ active: selected === tab.id },
+				variant === 'pane' && selected === tab.id && 'bg-[var(--theme-canvas,white)] font-semibold'
+			]}
 			aria-pressed={selected === tab.id}
-			onclick={() => onselect(tab.id)}>{tab.label}</button
+			onclick={() => onselect(tab.id)}>{tab.label}</Button
 		>
 	{/if}
 {/snippet}
@@ -73,17 +81,6 @@
 		padding: 2px 3px 0;
 		gap: 2px;
 	}
-	.tabs button {
-		padding: var(--tab-padding, 4px 12px);
-		white-space: nowrap;
-		border: 1px solid var(--theme-border, #a6aeb5);
-		border-bottom: 0;
-		border-radius: 3px 3px 0 0;
-	}
-	.tabs button.active {
-		background: var(--theme-canvas, white);
-		font-weight: 600;
-	}
 	.source-tabs {
 		display: flex;
 		min-height: 28px;
@@ -94,10 +91,6 @@
 	.source-tabs > div {
 		display: flex;
 		border-right: 1px solid var(--theme-border, #aaa);
-	}
-	.source-tabs button {
-		padding: 4px 7px;
-		white-space: nowrap;
 	}
 	.source-tabs .active {
 		background: var(--theme-canvas, white);

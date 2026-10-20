@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '../controls/Button.svelte';
 	import { getDesktop } from '../../context/desktop.js';
 	import Modal from './Modal.svelte';
 	import DialogActions from './DialogActions.svelte';
@@ -10,8 +11,8 @@
 	><p class="my-2">Save changes to {workspace.current?.name} before closing?</p>
 	{#if workspace.fileError}<p class="my-2" role="alert">{workspace.fileError}</p>{/if}
 	<DialogActions>
-		<button onclick={workspace.saveAndClose}>Save</button><button onclick={workspace.discard}
-			>Discard</button
-		><button onclick={workspace.dismiss}>Cancel</button>
+		<Button onclick={workspace.saveAndClose}>Save</Button><Button onclick={workspace.discard}
+			>Discard</Button
+		><Button onclick={workspace.dismiss}>Cancel</Button>
 	</DialogActions></Modal
 >

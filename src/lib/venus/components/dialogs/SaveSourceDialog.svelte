@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Button from '../controls/Button.svelte';
+	import SelectorToggle from '../controls/SelectorToggle.svelte';
 	import { getDesktop } from '../../context/desktop.js';
 	import Modal from './Modal.svelte';
 	import DialogActions from './DialogActions.svelte';
@@ -25,9 +27,7 @@
 				/></DialogField
 			>
 			{#if workspace.saveTarget && !workspace.saveTarget.isNew}
-				<label
-					><input type="checkbox" bind:checked={workspace.renameSource} /> Rename existing file</label
-				>
+				<SelectorToggle bind:checked={workspace.renameSource} label="Rename existing file" />
 				{#if workspace.renameSource}<DialogField label="Old filename"
 						><input value={workspace.saveTarget.name} readonly /></DialogField
 					>{/if}
@@ -37,10 +37,10 @@
 			{#if workspace.replaceSave}<p class="my-2">
 					A saved source named “{workspace.filename}” already exists.
 				</p>
-				<button type="button" onclick={() => workspace.confirmSave(true)}>Replace</button>{/if}
+				<Button type="button" onclick={() => workspace.confirmSave(true)}>Replace</Button>{/if}
 			<DialogActions>
-				<button type="submit">Save</button><button type="button" onclick={workspace.dismiss}
-					>Cancel</button
+				<Button type="submit">Save</Button><Button type="button" onclick={workspace.dismiss}
+					>Cancel</Button
 				>
 			</DialogActions>
 		</form></Modal

@@ -17,7 +17,7 @@ flowchart TB
     subgraph BrowserRuntime["Browser"]
         subgraph Presentation["Presentation"]
             Root["VenusUI<br/>desktop renderer and lifetime"]
-            Root --> Components["Venus component groups<br/>shell, layout, editor, debugger,<br/>feedback, transfers, dialogs"]
+            Root --> Components["Venus component groups<br/>shell, controls, layout, editor,<br/>debugger, feedback, transfers, dialogs"]
             Components --> Help["Help<br/>catalog and article rendering"]
             Components --> Context["Typed desktop and command contexts"]
             Hooks["Keyboard bindings"] --> Context
@@ -84,12 +84,13 @@ The [system implementation guide](../../IMPLEMENTATION.md) describes current fea
 
 | Presentation boundary     | Responsibility                                                                                        |
 | ------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Shell and layout          | Application commands and appearance; reusable pane geometry, tabs, and resize interactions            |
+| Shell and layout          | Application commands and appearance; reusable pane geometry and resize interactions                   |
+| Controls                  | Native buttons, checkbox selections, tab strips, sliders, and switches with caller-owned values       |
 | Editor and debugger views | Source editing and inspection of actual machine statements, registers, memory, labels, and output     |
 | Feedback and transfers    | Loading, tooltips/keycaps, clipboard feedback, native file selection, and single/all export mechanics |
 | Dialogs                   | Shared native modal rendering and focused workflow variants composed through snippets                 |
 
-The generic pane, tab, menu, and toolbar contracts use records, callbacks, and snippets. A reusable layout component does not need the full desktop context. A workflow-specific dialog or file-transfer behavior can read its nearest owner through context without passing unrelated state through every ancestor. The modal shell remains independent of workflow names; the dialog coordinator selects focused variants.
+The generic controls, pane, tab, menu, and toolbar contracts use records, callbacks, and snippets. Controls own native input semantics and presentation; shell specializations supply toolbar styling, run-speed conversion, and browser theme selection. Pane renders a sized region, while TabbedPane composes it with the control group's tab strip. These reusable controls and layout components have no desktop context dependency. A workflow-specific dialog or file-transfer behavior can read its nearest owner through context without passing unrelated state through every ancestor. The modal shell remains independent of workflow names; the dialog coordinator selects focused variants.
 
 ### Commands and shared rules
 

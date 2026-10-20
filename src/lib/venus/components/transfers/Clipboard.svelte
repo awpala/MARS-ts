@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { asset } from '$app/paths';
-	import Tooltip from '../feedback/Tooltip.svelte';
+	import Button from '../controls/Button.svelte';
 
 	/** Exact-text transfer control; file creation remains with the caller. */
 	type Props = {
@@ -60,36 +60,29 @@
 <!-- @component Copies exact code or delegates transfer to a file owner. Owns feedback and ignores asynchronous completion after unmount. -->
 <span class={['clipboard', variant]}>
 	{#if variant === 'copy-code' || status}<span role="status">{status}</span>{/if}
-	<Tooltip
-		text={variant === 'transfer-to-file' && disabled
+	<Button
+		class="border border-[var(--theme-border,#94a3b8)] bg-[var(--theme-surface,#f0f0f0)] p-1 hover:enabled:bg-[var(--theme-hover,#c6dcef)] disabled:opacity-50"
+		tooltip={variant === 'transfer-to-file' && disabled
 			? 'Stop execution to open as a new file'
 			: actionLabel}
+		aria-label={label ?? actionLabel}
+		disabled={disabled || busy}
+		onclick={activate}
 	>
-		{#snippet children(trigger, description)}
-			<button
-				type="button"
-				{@attach trigger}
-				aria-label={label ?? actionLabel}
-				aria-describedby={description}
-				disabled={disabled || busy}
-				onclick={activate}
-			>
-				{#if variant === 'copy-code'}
-					<img src={asset('icons/Copy.svg')} width="18" height="18" alt="" />
-				{:else}
-					<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-						<path
-							d="M13 3h5l4 4v14H8v-5M18 3v5h4M2 11h12m-4-4 4 4-4 4"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.5"
-							stroke-linejoin="round"
-						/>
-					</svg>
-				{/if}
-			</button>
-		{/snippet}
-	</Tooltip>
+		{#if variant === 'copy-code'}
+			<img src={asset('icons/Copy.svg')} width="18" height="18" alt="" />
+		{:else}
+			<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+				<path
+					d="M13 3h5l4 4v14H8v-5M18 3v5h4M2 11h12m-4-4 4 4-4 4"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.5"
+					stroke-linejoin="round"
+				/>
+			</svg>
+		{/if}
+	</Button>
 </span>
 
 <style>
@@ -104,16 +97,5 @@
 	[role='status'] {
 		margin-right: auto;
 		font-size: 12px;
-	}
-	button {
-		padding: 4px;
-		border: 1px solid var(--theme-border, #94a3b8);
-		background: var(--theme-surface, #f0f0f0);
-	}
-	button:hover:enabled {
-		background: var(--theme-hover, #c6dcef);
-	}
-	button:disabled {
-		opacity: 0.5;
 	}
 </style>

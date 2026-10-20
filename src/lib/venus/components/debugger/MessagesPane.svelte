@@ -1,6 +1,6 @@
 <script lang="ts">
 	import TabbedPane from '../layout/TabbedPane.svelte';
-	import Tooltip from '../feedback/Tooltip.svelte';
+	import Button from '../controls/Button.svelte';
 	/** Console view; host output and pending syscall input remain owned by the desktop. */
 	type Props = {
 		/** Required selected output tab, bindable for host-triggered selection changes. */
@@ -44,26 +44,22 @@
 	--pane-min-height="80px"
 >
 	{#snippet actions()}
-		<button
-			class="clear"
+		<Button
+			class="clear mb-0.5 ml-auto rounded-none border border-[var(--theme-border,#aaa)] px-3 py-px"
 			onclick={() => {
 				if (messageTab === 'Mars Messages') messages = '';
 				else runIO = '';
-			}}>Clear</button
+			}}>Clear</Button
 		>
-		<Tooltip text="Clear Mars Messages and Run I/O">
-			{#snippet children(trigger, description)}
-				<button
-					{@attach trigger}
-					aria-describedby={description}
-					class="clear-all"
-					onclick={() => {
-						messages = '';
-						runIO = '';
-					}}>Clear All</button
-				>
-			{/snippet}
-		</Tooltip>
+
+		<Button
+			tooltip="Clear Mars Messages and Run I/O"
+			class="clear-all mb-0.5 rounded-none border border-[var(--theme-border,#aaa)] px-3 py-px"
+			onclick={() => {
+				messages = '';
+				runIO = '';
+			}}>Clear All</Button
+		>
 	{/snippet}
 	<textarea
 		readonly
@@ -83,8 +79,10 @@
 					rows="1"
 					value={inputText}
 					{oninput}></textarea></label
-			><button type="submit">Submit</button><button type="button" onclick={() => onstop()}
-				>Stop</button
+			><Button class="border border-[var(--theme-border,#aaa)] px-2 py-0.5" type="submit"
+				>Submit</Button
+			><Button class="border border-[var(--theme-border,#aaa)] px-2 py-0.5" onclick={() => onstop()}
+				>Stop</Button
 			>
 		</form>{/if}
 </TabbedPane>
@@ -97,16 +95,6 @@
 		padding: 6px;
 		resize: none;
 		font: 13px/1.4 monospace;
-	}
-	.clear {
-		margin-left: auto;
-	}
-	.clear,
-	.clear-all {
-		border: 1px solid var(--theme-border, #aaa);
-		padding: 1px 12px;
-		margin-bottom: 2px;
-		border-radius: 0;
 	}
 	.console-input {
 		display: flex;
@@ -127,9 +115,5 @@
 		border: 1px solid var(--theme-border, #aaa);
 		background: var(--theme-canvas, white);
 		resize: none;
-	}
-	.console-input button {
-		padding: 2px 8px;
-		border: 1px solid var(--theme-border, #aaa);
 	}
 </style>

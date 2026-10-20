@@ -223,7 +223,9 @@ test('working display settings and run speed survive reload', async ({ page }) =
 	await expect(page.locator('.line-numbers')).toHaveCount(0);
 	await page.getByRole('button', { name: 'Execute', exact: true }).click();
 	const slider = page.getByRole('slider');
+	await expect(page.locator('.speed')).toHaveText('Run speed unlimited');
 	await slider.fill('20');
+	await expect(page.locator('.speed')).toHaveText('Run speed 15 inst/sec');
 	await page.reload();
 	await waitForDesktop(page);
 	await expect(page.getByRole('button', { name: 'New', exact: true })).toBeEnabled({

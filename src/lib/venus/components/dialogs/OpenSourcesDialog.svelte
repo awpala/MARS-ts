@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Button from '../controls/Button.svelte';
+	import MultiSelect from '../controls/MultiSelect.svelte';
 	import { getDesktop } from '../../context/desktop.js';
 	import Modal from './Modal.svelte';
 	import DialogActions from './DialogActions.svelte';
@@ -21,40 +23,28 @@
 			workspace.confirmOpen();
 		}}
 	>
-		<p class="my-2">Source files stored in this browser</p>
-		<div class="source-files">
-			{#each files as file (file.name)}
-				<label
-					><input type="checkbox" bind:group={workspace.selectedSources} value={file.name} />
-					{file.name}</label
-				>
-			{:else}<p class="my-2">No saved files yet. Create a source or import .asm files.</p>{/each}
-		</div>
+		<MultiSelect
+			label="Source files stored in this browser"
+			options={files.map((file) => ({ value: file.name, label: file.name }))}
+			bind:value={workspace.selectedSources}
+			orientation="vertical"
+			class="my-2"
+			optionsClass="source-files my-2.5 min-h-[120px] max-h-[300px] overflow-auto border border-[var(--theme-border,#94a3b8)] bg-[var(--theme-canvas,white)] p-2 [--multi-select-gap:6px]"
+		>
+			{#snippet empty()}<p class="my-2">
+					No saved files yet. Create a source or import .asm files.
+				</p>{/snippet}
+		</MultiSelect>
 		{#if workspace.fileError}<p class="my-2" role="alert">{workspace.fileError}</p>{/if}
 		<DialogActions>
-			<button type="submit" disabled={!workspace.selectedSources.length || !!workspace.fileError}
-				>Open</button
+			<Button type="submit" disabled={!workspace.selectedSources.length || !!workspace.fileError}
+				>Open</Button
 			>
-			<button
+			<Button
 				type="button"
 				disabled={!workspace.selectedSources.length || !!workspace.fileError}
-				onclick={workspace.requestDelete}>Delete</button
-			><button type="button" onclick={workspace.dismiss}>Cancel</button>
+				onclick={workspace.requestDelete}>Delete</Button
+			><Button type="button" onclick={workspace.dismiss}>Cancel</Button>
 		</DialogActions>
 	</form>
 </Modal>
-
-<style>
-	.source-files {
-		display: flex;
-		flex-direction: column;
-		gap: 6px;
-		min-height: 120px;
-		max-height: 300px;
-		overflow: auto;
-		margin-block: 10px;
-		padding: 8px;
-		border: 1px solid var(--theme-border, #94a3b8);
-		background: var(--theme-canvas, white);
-	}
-</style>

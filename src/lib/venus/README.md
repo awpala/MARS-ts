@@ -20,7 +20,7 @@ flowchart TB
     Context -->|references| State
     Root --> Views["Browser components<br/>shell, editor, debugger, dialogs"]
     Views -->|commands and workflow access| Context
-    Views --> Primitives["Layout, feedback, and transfer composition"]
+    Views --> Primitives["Controls, layout, feedback, and transfer composition"]
     Root --> Hooks["Keyboard and unload bindings"]
     Hooks --> Context
     Views --> Utilities["Stateless presentation rules"]
@@ -64,21 +64,22 @@ Context has two scopes. Menus and toolbars need only dispatch, current enablemen
 
 The [component guide](components/README.md) defines these boundaries in detail. Grouping follows MARS presentation responsibilities and resource ownership, rather than component size or a one-to-one translation of Swing classes.
 
-| Group                                       | Presentation boundary                                                         | State and dependencies                                                                               |
-| ------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| [Shell](components/shell/README.md)         | Menus, grouped toolbar commands, run speed, appearance, repository navigation | Command capability and caller-owned preferences; local menu dismissal and separate theme persistence |
-| [Layout](components/layout/README.md)       | Pane geometry, nested tab strips, dividers                                    | Props, snippets, selected values, and gesture callbacks; no machine or desktop context               |
-| [Editor](components/editor/README.md)       | Source text, document tabs, syntax painting, instruction hover                | Workspace-owned buffers and selection; local textarea and scroll/hover state                         |
-| [Debugger](components/debugger/README.md)   | Statements, memory, labels, register banks, messages, console input           | Public hardware APIs and simulation snapshots; component-scoped subscriptions                        |
-| [Feedback](components/feedback/README.md)   | Loading status, descriptions, keyboard hints                                  | Caller labels and trigger snippets; owned timers/listeners and themed presentation                   |
-| [Transfers](components/transfers/README.md) | Clipboard copying, new-source transfer, file picking, single/all downloads    | Exact caller text or workspace snapshots; mounted command registrations and browser-resource cleanup |
-| [Dialogs](components/dialogs/README.md)     | Modal shell, shared fields/actions, focused workflow views                    | Native dialog lifetime in the shell; workflow state remains with its existing owner                  |
+| Group                                       | Presentation boundary                                                        | State and dependencies                                                                               |
+| ------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| [Shell](components/shell/README.md)         | Menus, grouped toolbar commands, embedded preferences, repository navigation | Command capability, local menu dismissal, speed mapping, and theme persistence                       |
+| [Controls](components/controls/README.md)   | Native buttons, single/grouped selections, tabs, sliders, and switches       | Caller-owned values and callbacks; no domain, storage, engine, or desktop context                    |
+| [Layout](components/layout/README.md)       | Pane geometry, content shells, dividers                                      | Props, snippets, selected values, and gesture callbacks; no machine or desktop context               |
+| [Editor](components/editor/README.md)       | Source text, document tabs, syntax painting, instruction hover               | Workspace-owned buffers and selection; local textarea and scroll/hover state                         |
+| [Debugger](components/debugger/README.md)   | Statements, memory, labels, register banks, messages, console input          | Public hardware APIs and simulation snapshots; component-scoped subscriptions                        |
+| [Feedback](components/feedback/README.md)   | Loading status, descriptions, keyboard hints                                 | Caller labels and trigger snippets; owned timers/listeners and themed presentation                   |
+| [Transfers](components/transfers/README.md) | Clipboard copying, new-source transfer, file picking, single/all downloads   | Exact caller text or workspace snapshots; mounted command registrations and browser-resource cleanup |
+| [Dialogs](components/dialogs/README.md)     | Modal shell, shared fields/actions, focused workflow views                   | Native dialog lifetime in the shell; workflow state remains with its existing owner                  |
 
 ### Snippets, records, and focused variants
 
-Pane shells render a body snippet and optional tab-strip actions. Tab strips render keyed records for both top-level panes and nested source documents; document-specific close actions are supplied as snippets. The caller controls selection and whether a body remains mounted, so selecting a pane never implicitly transfers ownership of its source or machine state. CSS custom properties carry geometry across scoped styling boundaries.
+Pane renders a sized section or sidebar from a content snippet. Execution segments use it directly; TabbedPane combines it with the generic tab strip, body snippet, and optional tab-strip actions. Tab strips render keyed records for both top-level panes and nested source documents; document-specific close actions are supplied as snippets. The caller controls selection and whether a body remains mounted, so selecting a pane never implicitly transfers ownership of its source or machine state. CSS custom properties carry geometry across scoped styling boundaries.
 
-Menus and toolbars render ordered command groups from shared definitions. Reusable dropdowns distinguish actions from checkbox records, and toolbar buttons share labeling, enablement, pressed presentation, and icon rendering. Glyph snippets reuse related SVG shapes. These rendering contracts avoid repeating file/run command enumerations across separate menu, toolbar, and keyboard implementations.
+Menus and toolbars render ordered command groups from shared definitions. Reusable dropdowns distinguish actions from checkbox records, and toolbar buttons specialize the generic native Button with compact icon layout and toolbar styling. The same Button supports menu commands, dialog actions, console Clear/Clear All and input actions, transfers, debugger navigation, and tab triggers, preserving caller-owned state and optional tooltips. Glyph snippets reuse related SVG shapes. These rendering contracts avoid repeating file/run command enumerations across separate menu, toolbar, and keyboard implementations.
 
 Modal is a renderer for the native dialog shell, heading, content snippet, focus containment, Escape/backdrop dismissal, and focus restoration. It does not branch on source operations or Help content. A typed registry selects the workspace's dialog variant; Help and prompted syscall input observe their separate owners. Each variant renders one workflow, using shared field and action snippets while retaining native labels, input bindings, and form submission. A save-target change remounts the save shell so queued Save All prompts receive the expected initial focus.
 

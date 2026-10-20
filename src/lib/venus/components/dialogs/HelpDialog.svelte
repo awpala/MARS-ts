@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '../controls/Button.svelte';
 	import { getDesktop } from '../../context/desktop.js';
 	import Modal from './Modal.svelte';
 	import DialogActions from './DialogActions.svelte';
@@ -20,6 +21,6 @@
 			canOpen={!simulation.running}
 			onopen={(source) => void desktop.openHelpSource(source)}
 		/>
-		<DialogActions><button onclick={desktop.closeHelp}>Close</button></DialogActions>
+		<DialogActions><Button onclick={desktop.closeHelp}>Close</Button></DialogActions>
 	</Modal>
 {/if}

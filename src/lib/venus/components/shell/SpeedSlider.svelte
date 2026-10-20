@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Slider from '../controls/Slider.svelte';
 	import { runSpeedLabel } from '../../utils/runSpeed.js';
 	/** Legacy run-speed selection; the parent applies and persists the value. */
 	type Props = {
@@ -8,28 +9,13 @@
 	let { value = $bindable() }: Props = $props();
 </script>
 
-<!-- @component Run-speed slider and label sharing the same conversion as machine execution. -->
-<label class="speed"
-	>Run speed {runSpeedLabel(value)}<input
-		type="range"
-		min="0"
-		max="40"
-		step="1"
-		bind:value
-		aria-label="Run speed"
-	/></label
->
-
-<style>
-	.speed {
-		margin-left: auto;
-		min-width: 170px;
-		text-align: center;
-		font-size: 11px;
-	}
-	.speed input {
-		display: block;
-		width: 100%;
-		height: 14px;
-	}
-</style>
+<!-- @component MARS run-speed specialization of Slider; shares execution's conversion while the desktop owns application and persistence. -->
+<Slider
+	class="speed ml-auto min-w-42.5 text-center text-[11px]"
+	label="Run speed"
+	valueText={runSpeedLabel(value)}
+	min={0}
+	max={40}
+	step={1}
+	bind:value
+/>

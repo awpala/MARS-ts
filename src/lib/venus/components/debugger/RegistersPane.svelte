@@ -1,4 +1,5 @@
 <script lang="ts">
+	import MultiSelect from '../controls/MultiSelect.svelte';
 	import TabbedPane from '../layout/TabbedPane.svelte';
 	import { formatInteger, commitOnEnter } from '../../utils/tableCells.js';
 	/**
@@ -143,6 +144,13 @@
 		}
 		input.value = pair ? doubleValue(number) : floatValue(number);
 	}
+	const conditionFlagOptions = $derived(
+		Array.from({ length: coprocessor1.getConditionFlagCount() }, (_, flag) => ({
+			value: flag,
+			label: String(flag),
+			accessibleLabel: `Condition flag ${flag}`
+		}))
+	);
 	const conditionFlags = $derived.by(() => {
 		void machineRevision;
 		return coprocessor1.getConditionFlagsNoNotify();
@@ -213,19 +221,17 @@
 			</tbody>
 		</table>
 	</div>
-	{#if selected === 'Coproc 1'}<div class="flags">
-			<div class="flags-caption">Condition flags</div>
-			<div class="flag-controls">
-				{#each Array.from({ length: coprocessor1.getConditionFlagCount() }, (_, i) => i) as flag (flag)}<label
-						><input
-							type="checkbox"
-							aria-label={`Condition flag ${flag}`}
-							disabled
-							checked={Binary.bitValue(conditionFlags, flag) === 1}
-						/><span>{flag}</span></label
-					>{/each}
-			</div>
-		</div>{/if}
+	{#if selected === 'Coproc 1'}
+		<MultiSelect
+			class="flags p-[5px] [--selector-gap:3px]"
+			label="Condition flags"
+			options={conditionFlagOptions}
+			value={conditionFlagOptions
+				.filter((option) => Binary.bitValue(conditionFlags, option.value) === 1)
+				.map((option) => option.value)}
+			disabled
+		/>
+	{/if}
 	{#if error}<p role="alert">{error}</p>{/if}
 </TabbedPane>
 
@@ -278,26 +284,6 @@
 	input:focus {
 		outline: 1px solid var(--theme-focus, #467ca8);
 		background: var(--theme-canvas, #fff);
-	}
-	.flags {
-		padding: 5px;
-	}
-	.flags-caption {
-		margin-bottom: 5px;
-	}
-	.flag-controls {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-	}
-	.flags label {
-		display: flex;
-		align-items: center;
-		gap: 3px;
-	}
-	.flags input {
-		min-width: 0;
-		width: auto;
 	}
 	p {
 		color: var(--theme-error, #a11);

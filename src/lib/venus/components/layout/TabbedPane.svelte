@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import PaneTabs from './PaneTabs.svelte';
+	import PaneTabs from '../controls/PaneTabs.svelte';
+	import Pane from './Pane.svelte';
 	/** Layout and tab contract; the caller owns selection, body state, and all resources. */
 	type Props = {
 		/** Required accessible region name. */
@@ -32,8 +33,8 @@
 	}: Props = $props();
 </script>
 
-<!-- @component Composable pane shell. CSS custom properties control geometry; snippets supply tab content and actions. -->
-<svelte:element this={element} {id} aria-label={label} class={['pane', className]}>
+<!-- @component Tabbed specialization of Pane. Composes the generic tab strip with caller-owned selection and body content; geometry remains with the container. -->
+<Pane {element} {id} {label} class={className}>
 	<PaneTabs
 		tabs={tabs.map((label) => ({ id: label, label }))}
 		{selected}
@@ -41,19 +42,4 @@
 		{actions}
 	/>
 	{@render children(selected)}
-</svelte:element>
-
-<style>
-	.pane {
-		display: flex;
-		flex-direction: column;
-		flex: var(--pane-flex, 1);
-		min-width: var(--pane-min-width, 0);
-		width: var(--pane-width, auto);
-		min-height: var(--pane-min-height, 0);
-		height: var(--pane-height, auto);
-		overflow: var(--pane-overflow, visible);
-		border: 1px solid var(--theme-border, #8d969e);
-		background: var(--pane-background, var(--theme-canvas, white));
-	}
-</style>
+</Pane>

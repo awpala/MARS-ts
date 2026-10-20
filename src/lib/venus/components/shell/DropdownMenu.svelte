@@ -24,6 +24,8 @@
 </script>
 
 <script lang="ts">
+	import Button from '../controls/Button.svelte';
+	import SelectorToggle from '../controls/SelectorToggle.svelte';
 	import KeyboardShortcut from '../feedback/KeyboardShortcut.svelte';
 	/** Caller-owned menu presentation; native details owns the open state. */
 	type Props = {
@@ -48,21 +50,23 @@
 			{#if index > 0}<hr />{/if}
 			{#each group.items as item (item.id)}
 				{#if item.checked !== undefined}
-					<label>
-						<input
-							type="checkbox"
-							checked={item.checked}
-							disabled={item.disabled}
-							onchange={item.onselect}
-						/>
-						{item.label}
-					</label>
+					<SelectorToggle
+						label={item.label}
+						checked={item.checked}
+						disabled={item.disabled}
+						onchange={item.onselect}
+						class="w-full px-3 py-[5px] text-left whitespace-nowrap hover:bg-[var(--theme-hover,#c6dcef)]"
+					/>
 				{:else}
-					<button disabled={item.disabled} onclick={item.onselect}>
+					<Button
+						class="flex w-full items-center justify-between gap-2 px-3 py-[5px] text-left whitespace-nowrap hover:enabled:bg-[var(--theme-hover,#c6dcef)]"
+						disabled={item.disabled}
+						onclick={item.onselect}
+					>
 						<span>{item.label}</span>{#if item.shortcut}<KeyboardShortcut
 								shortcut={item.shortcut}
 							/>{/if}
-					</button>
+					</Button>
 				{/if}
 			{/each}
 		{/each}
@@ -82,6 +86,7 @@
 		background: var(--theme-hover, #c6dcef);
 	}
 	.menu {
+		--selector-gap: 8px;
 		position: absolute;
 		top: 100%;
 		left: 0;
@@ -92,26 +97,9 @@
 		border: 1px solid var(--theme-border, #919191);
 		box-shadow: 2px 3px 5px #0003;
 	}
-	.menu button,
-	.menu label {
-		width: 100%;
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		text-align: left;
-		padding: 5px 12px;
-		white-space: nowrap;
-	}
-	.menu button {
-		justify-content: space-between;
-	}
 	.menu hr {
 		margin: 3px 4px;
 		border: 0;
 		border-top: 1px solid var(--theme-border, #919191);
-	}
-	.menu button:hover:enabled,
-	.menu label:hover {
-		background: var(--theme-hover, #c6dcef);
 	}
 </style>
