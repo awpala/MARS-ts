@@ -15,7 +15,7 @@ Milestones P0, P1, and P2 are complete. The root [package](../../package.json), 
 | Target release | `1.0` | TypeScript port release target; does not claim implementation completion |
 | Repository | `awpala/MARS-ts` | GitHub owner `awpala` |
 | Local dev/preview port | `6277` | Phoneword "MARS"; Vite `server.port` and `preview.port`, devcontainer publish/forward, `kill-app` |
-| Production port and origin | Not decided | An [open decision](../adrs/0000-port-plan.md#8-open-decisions) |
+| Production port and origin | Internal `80`; `https://mars-ide.portfolio-projects.dev` | Coolify static hosting through the corresponding GitHub App; [ADR 0005](../adrs/0005-coolify-deployment.md) |
 
 Keep display names out of machine identifiers, and update related configuration together when a value changes. The port number appears in `devcontainer.json`, `kill-app.sh`, `setup-env.sh`'s handoff text, these guides, and (from P1) `vite.config.ts`.
 
@@ -29,7 +29,7 @@ MARS is copyright 2003–2013 Pete Sanderson and Kenneth Vollmar, under the MIT 
 | --- | --- | --- |
 | `Mars.java`, `mars/`, root `*.properties`, `*.xml`, `PseudoOps.txt`, `help/`, `images/` | Legacy reference | Read-only; see the [legacy guide](legacy.md) |
 | `docs/*.html`, `docs/mars/`, `docs/resources/` | Legacy Javadoc | Read-only, generated, removed at P5 |
-| `docs/README.md`, `docs/adrs/`, `docs/agents/` | Port documentation | Authored |
+| `docs/README.md`, `docs/adrs/`, `docs/runbooks/`, `docs/agents/` | Port documentation | Authored |
 | `.devcontainer/`, `cleanup.sh`, `.github/` | Development operations | See [operations](operations.md) |
 | `AGENTS.md`, `.agents/`, `.claude/`, `.codex/`, `.mcp.json` | Agent harness | See [harness](harness.md) |
 | `tests/oracle/` | Parity evidence | Inputs, captured Java outputs, and dependency-free regeneration/check runner |

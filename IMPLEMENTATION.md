@@ -329,7 +329,7 @@ The root [package manifest](package.json) and lockfile own dependency resolution
 
 Exact versions belong to executable configuration and the lockfile. The [development-container decision](docs/adrs/0001-local-development-environment.md) and [operations guide](docs/agents/operations.md) explain provisioning and helper behavior, including `build-legacy`, `run-legacy`, `run-app`, `build-app`, and validation tiers. `build-app` performs a clean dependency installation; ordinary `npm run build` uses installed dependencies.
 
-Normal development and preview use port 6277 with strict binding. Browser tests use 6278 with separate SvelteKit output, Vite cache, and static build paths. The production output is static; the eventual production origin/hosting arrangement remains an open decision. LocalStorage belongs to that origin, so changing the hosting origin is also a source-persistence boundary. A static build does not by itself provide offline caching, cloud synchronization, or a packaged desktop executable.
+Normal development and preview use port 6277 with strict binding. Browser tests use 6278 with separate SvelteKit output, Vite cache, and static build paths. The production output is static. [ADR 0005](docs/adrs/0005-coolify-deployment.md) selects Coolify hosting at `https://mars-ide.portfolio-projects.dev` through the corresponding GitHub App: Nixpacks builds with Node 24 and Coolify serves `build/` through Nginx on internal port 80. The [deployment runbook](docs/runbooks/prod-deployment.md) describes configuration and the remote verification still required for a live release. LocalStorage belongs to that origin, so changing the hosting origin is also a source-persistence boundary. A static build does not by itself provide offline caching, cloud synchronization, or a packaged desktop executable.
 
 ## Remaining scope and extension rules
 
@@ -343,7 +343,7 @@ The core is usable for the supported instruction and console-service workflows, 
 | Editor | Hover descriptions and lexical highlighting exist; instruction popup completion and full legacy editor behavior remain incomplete; appearance dialogs are deliberately replaced by presets |
 | CLI and OS integration | Command-line launcher, program arguments, native directory assembly, and native linked-file saving are intentionally excluded |
 | Persistence | Source and preferences persist locally; machine checkpoints, undo-history recovery, cross-device sync, and collaborative editing are not implemented |
-| Delivery | Static build exists; production origin and final legacy offboarding remain governed by the port plan |
+| Delivery | Static build exists; Coolify deployment is documented but remote release verification remains pending; final legacy offboarding remains governed by the port plan |
 
 When adding a capability, preserve the owning Java class responsibility and algorithm, supply platform behavior through an injected interface, and keep mutable state per session. Add oracle observations for the translated behavior and browser tests for its presentation or storage adaptation. Extend the existing module boundary instead of duplicating engine logic in a component. Changes to observable semantics need a decision record; changes to module contracts need their README updated. Update this guide's architecture, tables, and limitations in the same change so a newly implemented feature does not remain labeled deferred.
 
