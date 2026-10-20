@@ -1,4 +1,6 @@
 <script lang="ts">
+	import TabbedPane from '../layout/TabbedPane.svelte';
+	import { formatInteger, commitOnEnter } from '../../utils/tableCells.js';
 	/**
 	 * Ports mars/venus/RegistersPane.java, RegistersWindow.java,
 	 * Coprocessor0Window.java, and Coprocessor1Window.java.
@@ -10,7 +12,7 @@
 	import { AccessNotice } from '#lib/engine/hardware/AccessNotice.js';
 	import { Binary } from '#lib/engine/formatting/Binary.js';
 	import { JavaFloatingPoint } from '#lib/engine/formatting/JavaFloatingPoint.js';
-	import highlightingPreset from './highlighting-preset.json';
+	import highlightingPreset from '../../highlighting-preset.json';
 	/** Register display contract; the parent session owns all hardware instances. */
 	type Props = {
 		/** Optional parent-owned pane ID, used by the resize separator to identify its controlled region. */
@@ -83,7 +85,7 @@
 		return () => releases.forEach((release) => release());
 	});
 	function format(value: number, unsigned = false) {
-		return hexValues ? Binary.intToHexString(value) : String(unsigned ? value >>> 0 : value);
+		return formatInteger(value, hexValues, unsigned);
 	}
 	function update(number: number, input: HTMLInputElement) {
 		try {
@@ -148,26 +150,28 @@
 </script>
 
 <!-- @component Persistent registers sidebar, reading engine-owned hardware and releasing subscriptions on teardown. -->
-<aside
+<TabbedPane
+	element="aside"
+	label="Registers"
+	tabs={['Registers', 'Coproc 1', 'Coproc 0']}
+	bind:selected
+	--pane-flex="0 0 auto"
+	--pane-min-width="260px"
+	--pane-width="var(--register-width, 310px)"
+	--pane-overflow="auto"
+	--pane-background="var(--theme-surface, #fafafa)"
+	--tab-padding="4px 9px"
 	{id}
-	aria-label="Registers"
 	class="register-pane"
-	style:--table-font={highlightingPreset.fontFamily}
-	style:--table-font-size={highlightingPreset.fontSize}
-	style:--even-background={`var(--theme-row-even, ${highlightingPreset.evenRow.background})`}
-	style:--even-foreground={`var(--theme-text, ${highlightingPreset.evenRow.foreground})`}
-	style:--odd-background={`var(--theme-canvas, ${highlightingPreset.oddRow.background})`}
-	style:--odd-foreground={`var(--theme-text, ${highlightingPreset.oddRow.foreground})`}
-	style:--changed-background={`var(--theme-register-changed, ${highlightingPreset.registers.background})`}
-	style:--changed-foreground={`var(--theme-text, ${highlightingPreset.registers.foreground})`}
+	--table-font={highlightingPreset.fontFamily}
+	--table-font-size={highlightingPreset.fontSize}
+	--even-background={`var(--theme-row-even, ${highlightingPreset.evenRow.background})`}
+	--even-foreground={`var(--theme-text, ${highlightingPreset.evenRow.foreground})`}
+	--odd-background={`var(--theme-canvas, ${highlightingPreset.oddRow.background})`}
+	--odd-foreground={`var(--theme-text, ${highlightingPreset.oddRow.foreground})`}
+	--changed-background={`var(--theme-register-changed, ${highlightingPreset.registers.background})`}
+	--changed-foreground={`var(--theme-text, ${highlightingPreset.registers.foreground})`}
 >
-	<div class="tabs">
-		{#each ['Registers', 'Coproc 1', 'Coproc 0'] as tab (tab)}<button
-				class:active={selected === tab}
-				aria-pressed={selected === tab}
-				onclick={() => (selected = tab)}>{tab}</button
-			>{/each}
-	</div>
 	<div class="register-scroll">
 		<table>
 			<thead
@@ -178,16 +182,14 @@
 				></thead
 			><tbody>
 				{#each rows as row (row.number)}<tr
-						class:changed={highlightingPreset.registers.enabled && changed === row.name}
+						class={{ changed: highlightingPreset.registers.enabled && changed === row.name }}
 						><td>{row.name}</td>{#if selected === 'Coproc 1'}<td
 								><input
 									aria-label={`${row.name} float value`}
 									value={floatValue(row.number)}
 									readonly={running}
 									onchange={(event) => updateFloat(row.number, false, event.currentTarget)}
-									onkeydown={(event) => {
-										if (event.key === 'Enter') event.currentTarget.blur();
-									}}
+									onkeydown={commitOnEnter}
 								/></td
 							><td
 								>{#if row.number % 2 === 0}<input
@@ -195,9 +197,7 @@
 										value={doubleValue(row.number)}
 										readonly={running}
 										onchange={(event) => updateFloat(row.number, true, event.currentTarget)}
-										onkeydown={(event) => {
-											if (event.key === 'Enter') event.currentTarget.blur();
-										}}
+										onkeydown={commitOnEnter}
 									/>{/if}</td
 							>{:else}<td>{row.number < 32 ? row.number : ''}</td><td
 								><input
@@ -206,9 +206,7 @@
 									readonly={running ||
 										(selected === 'Registers' && [0, 31, 32].includes(row.number))}
 									onchange={(event) => update(row.number, event.currentTarget)}
-									onkeydown={(event) => {
-										if (event.key === 'Enter') event.currentTarget.blur();
-									}}
+									onkeydown={commitOnEnter}
 								/></td
 							>{/if}</tr
 					>{/each}
@@ -229,38 +227,9 @@
 			</div>
 		</div>{/if}
 	{#if error}<p role="alert">{error}</p>{/if}
-</aside>
+</TabbedPane>
 
 <style>
-	.register-pane {
-		display: flex;
-		flex-direction: column;
-		flex: 0 0 auto;
-		min-width: 260px;
-		width: var(--register-width, 310px);
-		overflow: auto;
-		border: 1px solid var(--theme-border, #8d969e);
-		background: var(--theme-surface, #fafafa);
-	}
-	.tabs {
-		display: flex;
-		gap: 2px;
-		padding: 2px 3px 0;
-		background: var(--theme-chrome, #e4e4e4);
-		border-bottom: 1px solid var(--theme-border, #9ca7b0);
-		flex-shrink: 0;
-	}
-	.tabs button {
-		white-space: nowrap;
-		padding: 4px 9px;
-		border: 1px solid var(--theme-border, #a6aeb5);
-		border-bottom: 0;
-		border-radius: 3px 3px 0 0;
-	}
-	.tabs button.active {
-		background: var(--theme-canvas, white);
-		font-weight: 600;
-	}
 	.register-scroll {
 		flex: 1;
 		min-height: 0;
@@ -333,10 +302,5 @@
 	p {
 		color: var(--theme-error, #a11);
 		padding: 5px;
-	}
-	@media print {
-		.register-pane {
-			display: none;
-		}
 	}
 </style>

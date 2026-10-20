@@ -2,34 +2,235 @@
 
 This module presents the MARS desktop arrangement in Svelte: menus and toolbar, Edit/Execute panes above Messages/Run I/O, and the persistent register sidebar. It adapts `_legacy-app/mars/venus/VenusUI.java`, `MainPane.java`, `MessagesPane.java`, `ExecutePane.java`, `RunSpeedPanel.java`, and the register-window classes. The root route mounts the desktop directly without a launch screen.
 
+## Composition and module boundaries
+
+[VenusUI.svelte](VenusUI.svelte) is the top-level renderer and component-lifetime owner. It creates one context-owned desktop coordinator, mounts its browser lifecycle, and composes the layout. The [state module](state/README.md) separates source workspaces and file workflows, simulation and pending input, display preferences and pane geometry, and source search. Those owners retain their resources and cleanup; the root contains no file workflow or machine-host implementation. Browser rendering lives in [components](components/README.md): reusable pane shells and nested tab strips accept snippets, menu dropdowns render grouped choices, and toolbar groups render shared command definitions through reusable buttons and glyph snippets. Source-editor scrolling and hover state, menu dismissal, and divider gestures stay with their components. This split follows browser composition and lifecycle needs rather than treating each Swing class as a required component boundary.
+
+The [desktop context](context/README.md) shares those per-instance owners with dialog and file-transfer adapters. Its narrower command capability exposes dispatch, enablement, and pressed state to menus and toolbars through typed Svelte accessors. It contains no global session state. Explicit props and callbacks carry pane data, preferences, selection, and engine refresh requests. [Presentation utilities](utils/README.md) share command metadata, run-speed conversion, and numeric table-cell conventions; the framework-free [RunController](RunController.ts), editor model, browser persistence adapters, and engine retain their own responsibilities.
+
+### Desktop architecture
+
+The root constructs the owners once during component initialization and publishes references through context. A view changing tabs, opening Help, or switching appearance does not create another editor or machine. The diagram shows composition and collaboration; the engine's use of injected host callbacks is distinct from importing browser code.
+
+```mermaid
+flowchart TB
+    Route["Root route"] --> Root["VenusUI<br/>layout and component lifetime"]
+    Root --> State["Per-desktop state<br/>coordination and workflow owners"]
+    Root --> Context["Typed contexts<br/>desktop and command capabilities"]
+    Context -->|references| State
+    Root --> Views["Browser components<br/>shell, editor, debugger, dialogs"]
+    Views -->|commands and workflow access| Context
+    Views --> Primitives["Layout, feedback, and transfer composition"]
+    Root --> Hooks["Keyboard and unload bindings"]
+    Hooks --> Context
+    Views --> Utilities["Stateless presentation rules"]
+    Hooks --> Utilities
+    State --> Editor["Editor<br/>buffers and history"]
+    State --> Browser["Browser adapters<br/>source library and preferences"]
+    State --> Controller["RunController<br/>execution coordination"]
+    Controller --> Engine["Globals and engine<br/>assembly, hardware, simulation"]
+    State -.->|supplies host callbacks| Engine
+```
+
+| Boundary                           | Owns                                                                                                  | Collaboration contract                                                                            |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| [Desktop root](VenusUI.svelte)     | Layout composition, context installation, mounting and releasing one desktop                          | Supplies pane props and callbacks; does not implement source workflows or machine hosting         |
+| [State](state/README.md)           | Cross-view reactive state, source and execution workflows, preferences, search, and session resources | Operates on editor, browser, and engine APIs; publishes live state and owner methods              |
+| [Context](context/README.md)       | Typed access to the existing desktop and its narrow command capability                                | Shares references within the component tree; creates no global session or duplicate model         |
+| [Components](components/README.md) | Presentation, native element interactions, local UI state, and component-scoped resources             | Compose snippets and callbacks; reach workflow owners through context where necessary             |
+| [Hooks](hooks/README.md)           | Explicit keyboard delivery and the dirty-source unload binding                                        | Register during component initialization, read live owner state, and release listeners on unmount |
+| [Utilities](utils/README.md)       | Shared command metadata, speed conversion, numeric display, and Enter-to-commit conventions           | Pure rules shared by actual consumers; no machine, storage writer, or reactive singleton          |
+| [RunController](RunController.ts)  | Framework-free assembly/run/debug coordination and published execution snapshots                      | Calls engine public APIs and owns an active run until it settles                                  |
+
+### State ownership and reactivity
+
+The desktop coordinator connects capabilities; it does not absorb the individual workflows. Source operations receive explicit invalidation, reporting, running-state, and assemble-on-open callbacks. Simulation resolves source through the workspace's read contract. This keeps the workspace independent of machine construction while allowing source edits, assembly, diagnostics, and view navigation to cooperate.
+
+| State responsibility | Authoritative data and behavior                                                                                              | Principal consumers                                                             |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Desktop coordination | Command routing and availability, shared display toggles, Help selection, transfer registrations, initialization             | Root, shell, keyboard bindings, Help and transfer adapters                      |
+| Source workspace     | Editor instance, source snapshots, selection, save/close queues, import confirmation, Auto Save, recovery, file errors       | Source views, source dialogs, transfer adapters, search, assembly source lookup |
+| Simulation           | Machine and controller, execution snapshots, breakpoints, output, pending syscall input, host scheduling, engine preferences | Debugger, console, run actions, prompted-input dialogs                          |
+| Display preferences  | Pane selection, label filters/sorting, display bases, run speed, measured and persisted geometry                             | Root layout, shell controls, editor and debugger panes                          |
+| Source search        | Query, replacement, case sensitivity, result status, selection and replacement through the workspace                         | Find/Replace presentation and the active source buffer                          |
+
+Svelte rune state belongs to these per-component class instances. Mutable framework-free objects are not turned into competing UI models: workspace revisions publish editor snapshots, and controller revisions plus hardware subscriptions refresh machine presentation. Whole machine/snapshot payloads use raw reactive references where appropriate. Consumers retain the owner and read its live fields; they do not cache primitive copies of preferences or execution status.
+
+Context has two scopes. Menus and toolbars need only dispatch, current enablement, and pressed state. Dialogs, browser transfer behaviors, and desktop keyboard coordination need the corresponding workflow owners. Generic pane shells, tab strips, dropdowns, buttons, and feedback remain usable through props and snippets without a desktop provider. Context lookup during component initialization always selects the nearest desktop, including when more than one tree is constructed.
+
+## Browser component composition
+
+### Responsibility groups
+
+The [component guide](components/README.md) defines these boundaries in detail. Grouping follows MARS presentation responsibilities and resource ownership, rather than component size or a one-to-one translation of Swing classes.
+
+| Group                                       | Presentation boundary                                                         | State and dependencies                                                                               |
+| ------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| [Shell](components/shell/README.md)         | Menus, grouped toolbar commands, run speed, appearance, repository navigation | Command capability and caller-owned preferences; local menu dismissal and separate theme persistence |
+| [Layout](components/layout/README.md)       | Pane geometry, nested tab strips, dividers                                    | Props, snippets, selected values, and gesture callbacks; no machine or desktop context               |
+| [Editor](components/editor/README.md)       | Source text, document tabs, syntax painting, instruction hover                | Workspace-owned buffers and selection; local textarea and scroll/hover state                         |
+| [Debugger](components/debugger/README.md)   | Statements, memory, labels, register banks, messages, console input           | Public hardware APIs and simulation snapshots; component-scoped subscriptions                        |
+| [Feedback](components/feedback/README.md)   | Loading status, descriptions, keyboard hints                                  | Caller labels and trigger snippets; owned timers/listeners and themed presentation                   |
+| [Transfers](components/transfers/README.md) | Clipboard copying, new-source transfer, file picking, single/all downloads    | Exact caller text or workspace snapshots; mounted command registrations and browser-resource cleanup |
+| [Dialogs](components/dialogs/README.md)     | Modal shell, shared fields/actions, focused workflow views                    | Native dialog lifetime in the shell; workflow state remains with its existing owner                  |
+
+### Snippets, records, and focused variants
+
+Pane shells render a body snippet and optional tab-strip actions. Tab strips render keyed records for both top-level panes and nested source documents; document-specific close actions are supplied as snippets. The caller controls selection and whether a body remains mounted, so selecting a pane never implicitly transfers ownership of its source or machine state. CSS custom properties carry geometry across scoped styling boundaries.
+
+Menus and toolbars render ordered command groups from shared definitions. Reusable dropdowns distinguish actions from checkbox records, and toolbar buttons share labeling, enablement, pressed presentation, and icon rendering. Glyph snippets reuse related SVG shapes. These rendering contracts avoid repeating file/run command enumerations across separate menu, toolbar, and keyboard implementations.
+
+Modal is a renderer for the native dialog shell, heading, content snippet, focus containment, Escape/backdrop dismissal, and focus restoration. It does not branch on source operations or Help content. A typed registry selects the workspace's dialog variant; Help and prompted syscall input observe their separate owners. Each variant renders one workflow, using shared field and action snippets while retaining native labels, input bindings, and form submission. A save-target change remounts the save shell so queued Save All prompts receive the expected initial focus.
+
+Source tabs use the generic tab strip's control snippet for inline filename editing. Double-click or F2 begins editing, Enter or moving focus submits, and Escape cancels. The workspace applies the same Save As Rename rules and publishes the new tab label immediately after a successful write. Renames require a nonempty basename with a `.asm` or `.s` extension; invalid names and names owned by another open tab display a warning while retaining the latest valid filename and source. Replacing a closed-library name still requires confirmation, and storage errors preserve the original record and draft. The component owns only temporary input and focus behavior; the workspace owns validation, persistence, and recovery.
+
+### Feedback and text transfer
+
+Theme-aware tooltips replace native title hints on toolbar, execution, appearance, and code-transfer controls. They appear on hover or keyboard focus, remain hoverable, clamp to the viewport, and dismiss on Escape, activation, scrolling, resizing, or loss of window focus. Mouse activation does not keep the tooltip open after the pointer leaves. The GitHub icon beside the theme toggle opens the repository in a new tab.
+
+Clipboard controls own exact-text copying and inline feedback, or delegate code transfer to the workspace. FileImporter owns native file selection and reads; FileExporter registers single/all download behaviors. The workspace owns collision checks, committed-source snapshots, and dirty-buffer safeguards.
+
+## Command and keyboard flow
+
+### One command capability, several input surfaces
+
+Menus and toolbar buttons read current availability from the same command capability used by the desktop keyboard binding. The coordinator dismisses menus and routes an accepted command to the workspace, simulation owner, Help selection, or a registered browser-transfer behavior. Enablement remains a live query: a running machine, missing source, empty undo history, or absent breakpoints immediately changes the relevant controls. Workflow owners retain their own consistency checks, such as import protection for dirty buffers.
+
+The following assembly path illustrates the division. The input surface chooses a command; source preparation, execution ownership, and translated engine work remain below the renderer.
+
+```mermaid
+sequenceDiagram
+    participant Input as Menu / toolbar / keyboard
+    participant Desktop as Desktop command capability
+    participant Simulation as Simulation owner
+    participant Run as RunController
+    participant Engine as MIPS engine
+    participant View as Debugger and messages
+    Input->>Desktop: Read enablement and execute Assemble
+    Desktop->>Simulation: Route assembly action
+    Simulation->>Run: Active source and include resolution
+    Run->>Engine: Assemble through public APIs
+    Engine-->>Run: Statements, symbols, memory, diagnostics
+    Run-->>Simulation: Publish snapshot and revision
+    Simulation-->>View: Reactive state and pane props
+```
+
+Command metadata also supplies labels, icons, and shortcut hints. It describes presentation and matching; it does not execute a machine. The utilities therefore have no mutable desktop state, and adding a hint alone does not implement a command.
+
+### Keyboard policy
+
+The lifecycle-owned [keyboard hooks](hooks/README.md) resolve explicit commands from the same shortcut metadata displayed as menu and tooltip keycaps. Ctrl+T toggles all breakpoints and Ctrl+K clears them, using the same execution restrictions as the toolbar; Meta is accepted as the platform equivalent of Ctrl. Browser-reserved combinations work only when the browser delivers them to the page. Source editing accepts IDE commands, while other text-entry fields and active dialogs keep their input.
+
+Alt+N (Option+N on macOS) creates a new file from focused controls, including register inputs, and focuses its source editor while preserving existing buffers. The shortcut matches the physical N key so macOS dead-key events are canceled before accent composition. Key repeats and active dialogs do not create additional files.
+
+The generic useKeyboard hook filters already-handled events, composition, AltGraph, and repeats according to its options, then delegates matching and cancellation. The desktop binding owns editable-surface and modal policy. Alt/Option+N uses capture so its physical-key match can cancel the macOS dead key before a focused input starts composition. Menu and tooltip keycaps use the same shortcut strings rather than maintaining separate labels.
+
+## Initialization, resource lifetimes, and isolation
+
+### Browser startup
+
 An accessible, continuously rotating loading spinner covers initialization. The desktop is hidden while storage and engine state initialize and its restored layout is measured, then appears automatically. Teardown cancels pending reveal frames.
+
+Component initialization constructs the state graph and context without reading browser storage or starting a machine. On mount, the coordinator allows the loading indicator to paint, restores preferences and source recovery, creates the simulation host and controller, enables workspace persistence, and then reveals the measured layout. Browser transfer components register their actions within this same component tree. The root keeps controls unavailable until initialization and reveal complete.
+
+### Teardown follows the owner
+
+Changing a child view does not dispose the desktop; removing the desktop does. Every listener, timer, engine subscription, pending input resolver, and browser registration has an owner with corresponding cleanup. Asynchronous reads and clipboard feedback check disposal before updating their former owner. Svelte's synchronous unmount initiates controller disposal; it does not await that promise before removing the DOM. The controller retains the old machine until its run settles and completes resource release asynchronously.
+
+| Owner                     | Resources or retained interaction                                                         | Release behavior                                                                                                                    |
+| ------------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Desktop coordinator       | Initialization/reveal animation frames and component-owned effects                        | Cancel queued frames; stop workspace persistence; invoke simulation teardown; Svelte releases effects                               |
+| Simulation                | Controller subscription, active run, pending syscall input, scheduler waits               | Unsubscribe, request Stop, release input and timed waits; controller awaits its run asynchronously before releasing the old machine |
+| Workspace                 | Persistence readiness, source textarea reference, pending clipboard reads                 | Disable persistence, clear the element reference, ignore late clipboard completion                                                  |
+| Keyboard bindings         | Window key handlers and dirty-source beforeunload handler                                 | Return listener cleanup from the component's mount lifetime                                                                         |
+| Debugger and editor views | Hardware subscriptions, scroll/hover interaction, native element references               | Release view subscriptions and element-local work when the view is removed                                                          |
+| Feedback and dialogs      | Tooltip listeners/timers, native modal state and previous focus                           | Cancel and remove listeners/timers; close the dialog and restore connected prior focus                                              |
+| Transfer behaviors        | Registered import/export capabilities, file reads, clipboard feedback, download resources | Release only their own registration; ignore late completions; browser adapter cleans temporary anchors and object URLs              |
+
+The engine remains framework-free. Browser scheduling, source resolution, console I/O, and preference services are injected through host interfaces. Typed contexts hold references to per-desktop owners, not process-wide state, so SSR cannot share a machine or editor between renders.
+
+This runtime isolation does not imply separate browser persistence or appearance for multiple desktops. Source/recovery and preference records use origin-wide localStorage keys, and the theme applies to the current document. Independent machine ownership does not provide cross-tab editing transactions or independent recovery libraries.
+
+[ADR 0006](../../../docs/adrs/0006-object-lifetime-management.md) records the lifetime audit and its corrections: superseded imports, deferred clipboard edits, Help source creation, and late execution diagnostics. Its ownership tables and teardown sequence connect these rules to the corresponding regression tests.
+
+## Source workflows and persistence
+
+### Buffers, commits, and recovery
 
 The desktop owns an Editor and interaction state per component instance. Source open, new, local save, import/export, unsaved close, undo/redo, clipboard, and find/replace actions operate on source buffers. Modals use the current document's native dialog element for focus containment and restore focus on teardown. [Browser file adaptations](../../../docs/adrs/0003-browser-file-workflows.md) describe the local working filesystem, recovery backups, manual/automatic commits, import/export, and Exit.
 
-The bottom panel's Clear button clears only the selected output. Clear All immediately to its right clears both Mars Messages and Run I/O without changing the selected tab, machine state, or pending input.
+Working display preferences and engine settings persist in localStorage, with in-memory operation when storage is unavailable. Full source text and open buffers are persisted through the browser source adapter; machine state is not. Auto Save commits changed open buffers when enabled, while synchronous recovery backups protect uncommitted edits in either mode. Storage failures are visible and do not clear dirty state.
 
-The Text Segment follows the highlighted instruction at the top below its sticky column headings, clamping at the bottom when too few rows remain. Tracking changes only that pane's vertical scroll position and does not steal keyboard focus.
+The workspace distinguishes committed library sources from full recovery buffers and their saved baselines. Restoration preserves conflicting committed and dirty versions and suspends Auto Save when needed; it does not silently choose one version. Include resolution prefers current open-buffer text over committed sources. Undo history, breakpoints, assembled programs, register/memory contents, and pending input are session state rather than reload recovery.
+
+### Import, export, and confirmation
+
+Native file selection and reading belong to the transfer components. A new nonempty selection supersedes earlier pending reads and their errors. The workspace receives exact imported source records, checks collisions and dirty-buffer restrictions, and commits through the browser source library. File-dialog variants display the pending batch, error, or confirmation choices; they do not perform another storage workflow.
+
+Single-source export snapshots the current buffer. The all variant merges committed sources with current open edits, then the transfer behavior chooses unique downloadable filenames and invokes the browser adapter. Export does not update saved baselines or clear dirty state. Help's transfer-to-file action likewise delegates creation to the existing workspace, preserving other open sources and normal Auto Save behavior. Creation and initial text assignment complete synchronously; deferred focus applies only if that same buffer is still current. Delayed Cut/Paste operations recheck source identity and execution state before mutating an editor.
+
+## Execution and debugging
+
+### One machine and its published views
 
 The browser mounts one `Globals` machine and one `RunController` per desktop. The register pane consumes that machine's integer and coprocessor registers rather than maintaining independent hardware. It refreshes from controller revisions and register subscriptions, using nonnotifying reads. Integer cells retain the original edit restrictions; floating cells accept decimal values through the Java floating-point compatibility adapter or exact hexadecimal bit patterns. Editing is suspended during execution. Condition flags display the real coprocessor state.
 
 Assemble supplies the canonical assembler with the active editor buffer and its explicit includes. The assemble-all UI is removed, and its saved preference is reset on desktop initialization; unrelated open buffers are not assembled. Include lookup uses current open buffers first, then committed library sources; missing includes produce diagnostics rather than searching a directory. Unsaved source is assembled directly. Source edits invalidate execution until reassembly. The Execute pane displays actual machine statements, source locations, global/local symbols, and paged memory. Source links return to the matching editor line; labels navigate to text or data addresses. Breakpoint checkboxes feed the controller's simulator call, with Run actions to clear or suspend them. Memory words can be inspected in decimal, hexadecimal, or ASCII and edited while execution is stopped.
 
-Go, Step, Backstep, Pause, Stop, and Reset call the translated Venus action coordinator. Register, memory, PC, and delayed-slot highlights use the bundled editorial presets. Reset reassembles the retained tokenized programs, restoring initialized memory and registers. Run speed preserves the legacy 41 slider positions, including unlimited positions 36–40. The browser supplies cooperative scheduling; stopping releases pending input and wakes timed execution. Console input supports Enter, submission, or automatic completion at a syscall's character limit. Optional input dialogs stay in the same tab. Cancel/backdrop closure requests Stop and returns the current typed buffer, preserving the canonical numeric parse-error behavior for empty input. Popup input is echoed with the original user-input prefix. On teardown the desktop unsubscribes, requests Stop, awaits execution through controller disposal, and releases scheduling resources.
+### Run control and input
 
-Working display preferences and engine settings persist in localStorage, with in-memory operation when storage is unavailable. Full source text and open buffers are persisted through the browser source adapter; machine state is not. Auto Save commits changed open buffers when enabled, while synchronous recovery backups protect uncommitted edits in either mode. Storage failures are visible and do not clear dirty state. A keyboard-accessible vertical divider changes the register panel width; an analogous horizontal divider changes the source/messages split. Both support pointer dragging, keyboard arrows, Home, and End. The layout adapter restores saved dimensions with viewport limits. Menus close on outside clicks or Escape. Settings begins with Show Labels Window, popup syscall input, hexadecimal addresses, and hexadecimal values, sharing the toolbar state and callbacks. Separators follow Values displayed in hexadecimal, Initialize Program Counter, and Self-modifying code; Help retains Help and About MARS first, followed by a separator before the additional articles. Controls remain disabled until hydration attaches handlers. Tools, File → Dump Memory, exception-handler configuration, and memory-configuration dialogs remain disabled; no complete desktop parity is claimed. Core browser scenarios exercise assembly, step/backstep, breakpoints, console/modal input, pause/stop, reset, active-source assembly with unsaved and saved includes, and floating-register edits; results are reported by the validation run rather than inferred from component compilation.
+Go, Step, Backstep, Pause, Stop, and Reset call the translated Venus action coordinator. Register, memory, PC, and delayed-slot highlights use the bundled editorial presets. Reset reassembles the retained tokenized programs, restoring initialized memory and registers. Run speed preserves the legacy 41 slider positions, including unlimited positions 36–40. The browser supplies cooperative scheduling; stopping releases pending input and wakes timed execution. Console input supports Enter, submission, or automatic completion at a syscall's character limit. Optional input dialogs stay in the same tab. Cancel/backdrop closure requests Stop and returns the current typed buffer, preserving the canonical numeric parse-error behavior for empty input. Popup input is echoed with the original user-input prefix. On teardown the desktop unsubscribes and initiates controller disposal. The controller requests Stop, waits asynchronously for execution to settle, and releases the old machine; the browser host clears its scheduling resources.
 
-SVG toolbar controls use [prepared assets](../../../static/README.md); the favicon remains the original MARS ICO. Derived from MARS, copyright 2003–2013 Pete Sanderson and Kenneth Vollmar, under the [MIT license](../../../MARSlicense.txt).
+The bottom panel's Clear button clears only the selected output. Clear All immediately to its right clears both Mars Messages and Run I/O without changing the selected tab, machine state, or pending input.
+
+### Inspection, navigation, and display controls
+
+Labels retains the symbol-table grouping shown by the legacy Labels window: `(global)` appears first, followed by each assembled file's local symbols under that file's basename. Centered, full-width heading rows distinguish ownership while label buttons retain address navigation and full-source tooltips. Data/Text filtering and sorting operate within each group; tables without symbols are omitted, while headings for existing tables remain when filters hide their rows. Reassembly replaces the groups from the current machine and program tables.
+
+The Text Segment follows the highlighted instruction at the top below its sticky column headings, clamping at the bottom when too few rows remain. Tracking changes only that pane's vertical scroll position and does not steal keyboard focus.
+
+The source Line/Column status appears only for the active source buffer in Edit. Execute omits that editor-only annotation. The ASCII toolbar toggle shares its persisted state with the Data Segment checkbox.
 
 Assemble uses a filled hammer glyph. The debug controls use original compact SVG glyphs with familiar play, step, backstep, pause, stop, and restart shapes; their execution behavior and shortcuts are unchanged. Toggle all breakpoints followed by Clear all breakpoints appear immediately after Reset in the same toolbar group, replacing their Run menu entries. The breakpoint toggle indicates whether configured breakpoints are enabled; suspension retains their addresses, while clearing removes them. The line-number toggle ends the editing toolbar group after the undo/redo and clipboard actions. A separate toolbar group immediately before Help contains the label-window, hexadecimal-address, hexadecimal-value, ASCII data display, and popup-input toggles. Label visibility, popup input, and hexadecimal address/value display also appear at the top of Settings. The toolbar tooltips retain their descriptive labels, pressed backgrounds indicate active preferences, and the original persistence adapters remain responsible for storage. Labels supports Data/Text filtering and clickable Label/Address headings with direction indicators. Its eight-state sorting follows `LabelsWindow.java`, retaining each column's direction when switching columns; sorting uses case-insensitive names and unsigned addresses. Label filters and sort selection persist with the display preferences.
+
+## Layout, settings, and appearance
+
+### Persisted geometry and shared controls
+
+A keyboard-accessible vertical divider changes the register panel width; an analogous horizontal divider changes the source/messages split. Both support pointer dragging, keyboard arrows, Home, and End. The layout adapter restores saved dimensions with viewport limits. Menus close on outside clicks or Escape. Settings begins with Show Labels Window, popup syscall input, hexadecimal addresses, and hexadecimal values, sharing the toolbar state and callbacks. Separators follow Values displayed in hexadecimal, Initialize Program Counter, and Self-modifying code; Help retains Help and About MARS first, followed by a separator before the additional articles.
+
+Enabled buttons, tabs, menu choices, sliders, selectors, and toggles share a pointer cursor, including checkbox and slider labels. Editor instructions and directives show a pointer while their parsed hover help is available; other source text and selection dragging retain the text cursor. Disabled controls show an unavailable cursor, while pane dividers retain their directional resize cursors.
+
+### Theme and navigation
+
+The menu-bar appearance toggle retains the original palette as the default light theme and offers a complementary dark theme across all panes, syntax, highlights, and dialogs. Shared semantic color overrides live in [layout.css](../../routes/layout.css), with existing colors and JSON presets as light fallbacks. The selection is stored separately as `mars-ts:theme:v1` and applied before first paint; storage failures retain in-memory switching. Appearance changes do not recreate the editor or machine.
+
+The theme control remains at the right of the menu bar as an accessible sun/moon switch. Its thumb slides horizontally between light and dark over 300 ms, including under reduced-motion preferences as explicitly requested. Space or Enter toggles the focused switch.
+
+## Help and attribution
+
+### Articles and source examples
 
 The [Help module](../help/README.md) owns the Help menu catalog, overview/About content, and ten adapted legacy articles. Venus owns selection and opens them in the shared Modal; the modal remains an application-wide primitive outside Help. Articles receive initial focus at their beginning and scroll independently below the dialog heading. Historical credits and dates remain intact, with current browser adaptations and unavailable features identified.
 
 About MARS links to the unchanged license bundled under `static/MARSlicense.txt`. The license opens in a new tab, leaving the About modal and current IDE session open.
 
-Alt+N (Option+N on macOS) creates a new file from focused controls, including register inputs, and focuses its source editor while preserving existing buffers. The shortcut matches the physical N key so macOS dead-key events are canceled before accent composition. Key repeats and active dialogs do not create additional files.
+### Legacy provenance
 
-The source Line/Column status appears only for the active source buffer in Edit. Execute omits that editor-only annotation. The ASCII toolbar toggle shares its persisted state with the Data Segment checkbox.
+SVG toolbar controls use [prepared assets](../../../static/README.md); the favicon remains the original MARS ICO. Derived from MARS, copyright 2003–2013 Pete Sanderson and Kenneth Vollmar, under the [MIT license](../../../MARSlicense.txt).
 
-The menu-bar appearance toggle retains the original palette as the default light theme and offers a complementary dark theme across all panes, syntax, highlights, and dialogs. Shared semantic color overrides live in [layout.css](../../routes/layout.css), with existing colors and JSON presets as light fallbacks. The selection is stored separately as `mars-ts:theme:v1` and applied before first paint; storage failures retain in-memory switching. Appearance changes do not recreate the editor or machine.
+## Validation, limits, and extension
 
-The theme control remains at the right of the menu bar as an accessible sun/moon switch. Its thumb slides horizontally between light and dark over 300 ms, including under reduced-motion preferences as explicitly requested. Space or Enter toggles the focused switch.
+### Current scope and evidence
+
+Controls remain disabled until hydration attaches handlers. Tools, File → Dump Memory, exception-handler configuration, and memory-configuration dialogs remain disabled; no complete desktop parity is claimed. Core browser scenarios exercise assembly, step/backstep, breakpoints, console/modal input, pause/stop, reset, active-source assembly with unsaved and saved includes, and floating-register edits; results are reported by the validation run rather than inferred from component compilation.
+
+The [browser scenarios](../../../tests/browser/) cover source persistence and failure recovery, dialog cancellation and focus, menu/toolbar consistency, keyboard restrictions, themed tooltips, exact code/file transfer, real engine execution, and appearance changes. The [oracle fixtures](../../../tests/oracle/README.md) and engine tests establish translated behavior independently of UI composition. A successful Svelte compilation validates neither unsaved-source preservation nor Java parity.
+
+The application checks are type checking, lint, formatting, unit/parity tests, and the static build. Browser checks run through `npm run test:browser` on the isolated test server. Results belong to the validation run; this guide describes the contracts and exercised scenarios rather than recording an evergreen test-count guarantee.
+
+### Extending the architecture
+
+Add a view to the component group whose responsibility it extends, with documented props or an existing context capability. Keep local hover, selection presentation, or gesture state with the element that needs it. Add cross-view state only to the responsible owner, and add a utility only when callers share the same rule. A new dialog gets a focused variant and, where appropriate, a registry entry; Modal remains independent of workflow names. A new engine behavior belongs behind the existing public API and injected host boundary, with oracle evidence where translated semantics are involved.
+
+The [library architecture](../README.md) places Venus beside the editor, Help, browser adapters, and engine. The [system implementation guide](../../../IMPLEMENTATION.md) connects these boundaries to current port coverage and remaining milestones.

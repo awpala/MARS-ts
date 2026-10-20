@@ -60,29 +60,46 @@ export interface GlobalsHost {
 
 /** Former Java globals become one instance per IDE session; GUI workflows are owned by RunController. */
 export class Globals {
-	/** MARS-ts target release. */ static readonly version = '1.0';
-	/** Canonical source-file extensions from Config.properties. */ static readonly fileExtensions =
-		Object.freeze(['asm', 's']);
-	/** Canonical message-buffer limit from Config.properties. */ static readonly maximumMessageCharacters = 1000000;
-	/** Canonical assembler diagnostic limit from Config.properties. */ static readonly maximumErrorMessages = 200;
-	/** Canonical undo-history limit from Config.properties. */ static readonly maximumBacksteps = 2000;
-	/** Original attribution. */ static readonly copyrightHolders =
-		'Pete Sanderson and Kenneth Vollmar';
-	/** Current GUI program, replaced when the controller begins a new assembly. */ program: MIPSprogram | null =
-		null;
-	/** Internal diagnostic toggle, isolated to this session. */ debug = false;
-	/** Legacy run-speed value: 40 denotes unlimited execution. */ runSpeed = 40;
-	/** Actual instruction registry and simulation callbacks. */ readonly instructionSet: InstructionSet;
-	/** Global symbols shared by programs in this machine. */ readonly symbolTable: SymbolTable;
-	/** Session memory and its observers. */ readonly memory: Memory<ProgramStatement>;
-	/** Session's three canonical address layouts. */ readonly memoryConfigurations: MemoryConfigurations;
-	/** Integer registers, HI/LO, and PC. */ readonly registerFile: RegisterFile;
-	/** Exception registers. */ readonly coprocessor0: Coprocessor0;
-	/** Floating registers and condition flags. */ readonly coprocessor1: Coprocessor1;
-	/** Delayed-branch state. */ readonly delayedBranch: DelayedBranch;
-	/** Actual execution loop. */ readonly simulator: Simulator;
-	/** Session-owned platform console. */ readonly systemIO: SystemIO;
-	/** Session-owned service registry. */ readonly syscallLoader: SyscallLoader;
+	/** MARS-ts target release. */
+	static readonly version = '1.0';
+	/** Canonical source-file extensions from Config.properties. */
+	static readonly fileExtensions = Object.freeze(['asm', 's']);
+	/** Canonical message-buffer limit from Config.properties. */
+	static readonly maximumMessageCharacters = 1000000;
+	/** Canonical assembler diagnostic limit from Config.properties. */
+	static readonly maximumErrorMessages = 200;
+	/** Canonical undo-history limit from Config.properties. */
+	static readonly maximumBacksteps = 2000;
+	/** Original attribution. */
+	static readonly copyrightHolders = 'Pete Sanderson and Kenneth Vollmar';
+	/** Current GUI program, replaced when the controller begins a new assembly. */
+	program: MIPSprogram | null = null;
+	/** Internal diagnostic toggle, isolated to this session. */
+	debug = false;
+	/** Legacy run-speed value: 40 denotes unlimited execution. */
+	runSpeed = 40;
+	/** Actual instruction registry and simulation callbacks. */
+	readonly instructionSet: InstructionSet;
+	/** Global symbols shared by programs in this machine. */
+	readonly symbolTable: SymbolTable;
+	/** Session memory and its observers. */
+	readonly memory: Memory<ProgramStatement>;
+	/** Session's three canonical address layouts. */
+	readonly memoryConfigurations: MemoryConfigurations;
+	/** Integer registers, HI/LO, and PC. */
+	readonly registerFile: RegisterFile;
+	/** Exception registers. */
+	readonly coprocessor0: Coprocessor0;
+	/** Floating registers and condition flags. */
+	readonly coprocessor1: Coprocessor1;
+	/** Delayed-branch state. */
+	readonly delayedBranch: DelayedBranch;
+	/** Actual execution loop. */
+	readonly simulator: Simulator;
+	/** Session-owned platform console. */
+	readonly systemIO: SystemIO;
+	/** Session-owned service registry. */
+	readonly syscallLoader: SyscallLoader;
 	private readonly settings: Settings;
 	private readonly programHost: MIPSprogramHost;
 	private readonly assemblerHost: AssemblerHost;

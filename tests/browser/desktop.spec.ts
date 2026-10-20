@@ -1,4 +1,4 @@
-import { openDesktop, openStoredSources } from './openDesktop.js';
+import { openDesktop, openStoredSources, waitForDesktop } from './openDesktop.js';
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
@@ -193,7 +193,9 @@ test('working display settings and run speed survive reload', async ({ page }) =
 	});
 	const lines = editing.getByRole('button', { name: 'Show line numbers', exact: true });
 	await expect(editing.getByRole('button').last()).toHaveAccessibleName('Show line numbers');
-	await expect(lines).toHaveAttribute('title', 'Show line numbers');
+	await lines.press('Shift+Tab');
+	await page.keyboard.press('Tab');
+	await expect(lines).toHaveAccessibleDescription('Show line numbers');
 	await lines.click();
 	for (const label of [
 		'Show Labels Window',
@@ -202,7 +204,9 @@ test('working display settings and run speed survive reload', async ({ page }) =
 		'Popup dialog for input syscalls'
 	]) {
 		const button = toggles.getByRole('button', { name: label, exact: true });
-		await expect(button).toHaveAttribute('title', label);
+		await button.press('Shift+Tab');
+		await page.keyboard.press('Tab');
+		await expect(button).toHaveAccessibleDescription(label);
 		await button.click();
 	}
 	await settings.click();
@@ -221,6 +225,7 @@ test('working display settings and run speed survive reload', async ({ page }) =
 	const slider = page.getByRole('slider');
 	await slider.fill('20');
 	await page.reload();
+	await waitForDesktop(page);
 	await expect(page.getByRole('button', { name: 'New', exact: true })).toBeEnabled({
 		timeout: 30000
 	});
@@ -264,6 +269,7 @@ test('pane sizes persist after reload and the editor divider adjusts height', as
 	const width = await vertical.getAttribute('aria-valuenow');
 	const height = await horizontal.getAttribute('aria-valuenow');
 	await page.reload();
+	await waitForDesktop(page);
 	await expect(page.getByRole('button', { name: 'New', exact: true })).toBeEnabled();
 	await expect(vertical).toHaveAttribute('aria-valuenow', width!);
 	await expect(horizontal).toHaveAttribute('aria-valuenow', height!);
@@ -313,6 +319,7 @@ test('launches the desktop directly, renders original assets, and edits real ses
 	await page.screenshot({ path: '__build/desktop.png', fullPage: true });
 	expect(errors).toEqual([]);
 	await page.reload();
+	await waitForDesktop(page);
 	await expect(page.getByLabel('$t0 value', { exact: true })).toHaveValue('0x00000000');
 });
 
@@ -492,6 +499,7 @@ test('working source text, dirty tabs, and selected buffer survive an immediate 
 	await page.getByRole('textbox', { name: /^Source mips\d+\.asm$/ }).fill(draft);
 	page.once('dialog', (dialog) => dialog.accept());
 	await page.reload();
+	await waitForDesktop(page);
 	await expect(page.getByRole('button', { name: 'New', exact: true })).toBeEnabled();
 	await expect(page.getByRole('textbox', { name: /^Source mips\d+\.asm$/ })).toHaveValue(draft);
 	await expect(page).toHaveTitle(/^\* mips/);
@@ -519,13 +527,33 @@ test('working source text, dirty tabs, and selected buffer survive an immediate 
 	);
 });
 
-test('Open cancel and reopening an existing tab preserve in-progress source', async ({ page }) => {
+test('Open sorts filenames case-insensitively while cancel and reopening preserve in-progress source', async ({
+	page
+}) => {
 	await openDesktop(page);
-	await openStoredSources(page, [{ name: 'working.asm', source: 'original\n' }]);
+	const sources = [
+		{ name: 'Zulu.asm', source: '# uppercase first letter\n' },
+		{ name: 'working.asm', source: 'original\n' },
+		{ name: 'alpha.asm', source: '# lowercase first letter\n' },
+		{ name: 'program2.asm', source: '# lexical order, not numeric\n' },
+		{ name: 'Beta.asm', source: '# uppercase middle name\n' },
+		{ name: 'program10.asm', source: '# lexical order\n' },
+		{ name: 'Alpha.asm', source: '# same folded name\n' }
+	];
+	await openStoredSources(page, sources, ['working.asm']);
 	const source = page.getByRole('textbox', { name: 'Source working.asm', exact: true });
 	await source.fill('modified in progress\n');
 	await page.getByRole('button', { name: 'Open ...', exact: true }).click();
 	const open = page.getByRole('dialog', { name: 'Open', exact: true });
+	await expect(open.locator('.source-files label')).toHaveText([
+		'Alpha.asm',
+		'alpha.asm',
+		'Beta.asm',
+		'program10.asm',
+		'program2.asm',
+		'working.asm',
+		'Zulu.asm'
+	]);
 	await open.getByRole('checkbox', { name: 'working.asm', exact: true }).check();
 	await open.getByRole('button', { name: 'Cancel', exact: true }).click();
 	await expect(source).toHaveValue('modified in progress\n');
@@ -535,6 +563,9 @@ test('Open cancel and reopening an existing tab preserve in-progress source', as
 	await expect(source).toHaveValue('modified in progress\n');
 	await expect(page.getByRole('button', { name: 'Close working.asm', exact: true })).toHaveCount(1);
 	await expect(page).toHaveTitle('* working.asm - MARS');
+	expect(
+		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+	).toEqual(sources);
 });
 
 test('Save As cancel preserves edits and a new name retains the original local source', async ({
@@ -559,6 +590,7 @@ test('Save As cancel preserves edits and a new name retains the original local s
 	expect(records).toContainEqual({ name: 'original.asm', source: 'original source\n' });
 	expect(records).toContainEqual({ name: 'copy.asm', source: changed });
 	await page.reload();
+	await waitForDesktop(page);
 	await expect(page.getByRole('textbox', { name: 'Source copy.asm', exact: true })).toHaveValue(
 		changed
 	);
@@ -676,6 +708,7 @@ test('Import reads multiple assembly files into local sources and confirms clean
 		'.data\n.word 99\n'
 	);
 	await page.reload();
+	await waitForDesktop(page);
 	await expect(page.getByRole('textbox', { name: 'Source two.asm', exact: true })).toHaveValue(
 		'.data\n.word 99\n'
 	);
@@ -733,6 +766,7 @@ test('Import refuses to overwrite a dirty open source and retains its full recov
 	).toContainEqual({ name: 'working.asm', source: 'saved source\n' });
 	page.once('dialog', (dialog) => dialog.accept());
 	await page.reload();
+	await waitForDesktop(page);
 	await expect(source).toHaveValue('irreplaceable in-progress source\n');
 	await expect(page).toHaveTitle('* working.asm - MARS');
 });
@@ -764,6 +798,7 @@ test('Auto Save commits all working buffers, persists its setting, and disabling
 		.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!)))
 		.toEqual(expect.arrayContaining([{ name: 'mips2.asm', source: 'second automatic save\n' }]));
 	await page.reload();
+	await waitForDesktop(page);
 	await expect(autoSave).toHaveAttribute('aria-pressed', 'true');
 	await expect(second).toHaveValue('second automatic save\n');
 	await second.fill('automatic save after reload\n');
@@ -780,6 +815,7 @@ test('Auto Save commits all working buffers, persists its setting, and disabling
 	).toContainEqual({ name: 'mips2.asm', source: 'automatic save after reload\n' });
 	page.once('dialog', (dialog) => dialog.accept());
 	await page.reload();
+	await waitForDesktop(page);
 	await expect(autoSave).toHaveAttribute('aria-pressed', 'false');
 	await expect(second).toHaveValue('protected draft with auto save off\n');
 	await expect(page).toHaveTitle('* mips2.asm - MARS');
@@ -818,6 +854,7 @@ test('a source-library quota failure preserves the saved version and recovers th
 	await save.getByRole('button', { name: 'Cancel', exact: true }).click();
 	page.once('dialog', (dialog) => dialog.accept());
 	await page.reload();
+	await waitForDesktop(page);
 	await expect(source).toHaveValue(draft);
 	await expect(page).toHaveTitle('* quota.asm - MARS');
 });
@@ -845,6 +882,7 @@ test('Auto Save retains the latest committed source when workspace backup fails 
 		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
 	).toContainEqual({ name: 'saved.asm', source: latest });
 	await page.reload();
+	await waitForDesktop(page);
 	await expect(page.getByRole('button', { name: 'Auto Save', exact: true })).toHaveAttribute(
 		'aria-pressed',
 		'true'
@@ -882,6 +920,7 @@ test('conflicting dirty recovery preserves both versions and suspends Auto Save 
 		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
 	).toContainEqual({ name: 'conflict.asm', source: '# latest committed C\n' });
 	await page.reload();
+	await waitForDesktop(page);
 	await expect(source).toHaveValue('# recovered draft B\n');
 	await expect(page).toHaveTitle('* conflict.asm - MARS');
 	await expect(autoSave).toHaveAttribute('aria-pressed', 'false');
@@ -939,6 +978,7 @@ test('Delete confirms selected local sources, protects canceled drafts, and reta
 		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
 	).toEqual([{ name: 'keep.asm', source: '# unrelated source\n' }]);
 	await page.reload();
+	await waitForDesktop(page);
 	await expect(page.getByRole('textbox', { name: 'Source keep.asm', exact: true })).toHaveValue(
 		'# unrelated source\n'
 	);
@@ -980,6 +1020,7 @@ test('Save As Rename cancellation preserves both name and draft while confirmed 
 		await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
 	).toEqual([{ name: 'renamed.asm', source: draft }]);
 	await page.reload();
+	await waitForDesktop(page);
 	await expect(page.getByRole('textbox', { name: 'Source renamed.asm', exact: true })).toHaveValue(
 		draft
 	);

@@ -33,6 +33,7 @@ Delegated roles are defined vendor-neutrally in [.agents/agents/](.agents/agents
 - **Keep project configuration consistent.** `MARS`, `mars-ts`, `awpala`, and the local dev/preview port `6277` (phoneword "MARS") are established values. Do not change them merely to make a check pass.
 - **Do not implement ahead of the plan.** Add only the technologies and milestones the [port plan](docs/adrs/0000-port-plan.md) selects; record consequential choices as ADRs under `docs/adrs/`.
 - **Validate within the authorized environment and report the evidence accurately.** Run the affected gates when available; do not claim deferred or skipped checks passed.
+- **Keep documentation comments above their declarations on separate lines.** Never append code after their closing `*/`. Use project indentation for class, interface, and type members, and format generated or extracted code immediately after writing it ([shared workflow](docs/agents/workflow.md)).
 - Use American English and repository-relative Markdown links. Keep semantic paragraphs on one line; preserve meaningful code and diagram line structure.
 
 ## Maintaining this directory

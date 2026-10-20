@@ -3,7 +3,7 @@ import { defineConfig } from 'vitest/config';
 import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
 
-// Port 6277 belongs to human review. Browser tests isolate their server and generated files.
+// Port 6277 belongs to ad hoc developer usage and review. Browser tests isolate their server and generated files.
 export default defineConfig(({ mode }) => {
 	const browserTest =
 		mode === 'browser-test' || mode === 'test' || process.env.MARS_VALIDATION === '1';

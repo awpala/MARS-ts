@@ -203,9 +203,12 @@ export class MIPSTokenMarker extends TokenMarker {
 
 /** Stable painting snapshot detached from the marker's reused linked nodes. */
 export interface HighlightSpan {
-	/** UTF-16 start offset in the full source, unique within a snapshot. */ readonly start: number;
-	/** Original source substring; renderer must escape it as text, never inject HTML. */ readonly text: string;
-	/** Canonical syntax style ID. */ readonly id: number;
+	/** UTF-16 start offset in the full source, unique within a snapshot. */
+	readonly start: number;
+	/** Original source substring; renderer must escape it as text, never inject HTML. */
+	readonly text: string;
+	/** Canonical syntax style ID. */
+	readonly id: number;
 }
 
 /** Highlights all lines through a fresh document-owned marker and preserves every original code unit. */

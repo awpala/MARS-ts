@@ -1,4 +1,4 @@
-import { openDesktop, openStoredSources } from './openDesktop.js';
+import { openDesktop, openStoredSources, waitForDesktop } from './openDesktop.js';
 import { test, expect, type Page } from '@playwright/test';
 
 async function source(page: Page, text: string) {
@@ -93,22 +93,25 @@ test('Labels filters data and text and sorts names or unsigned addresses in both
 	await action(page, 'Assemble').click();
 	const labels = page.getByRole('region', { name: 'Labels', exact: true });
 	const names = labels.locator('tbody tr td:first-child');
-	await expect(names).toHaveText(['zText', 'alphaText', 'zData', 'AlphaData', 'Kernel']);
+	const headings = labels.getByRole('rowheader');
+	await expect(headings).toHaveText(['(global)', 'mips1.asm']);
+	await expect(names).toHaveText(['AlphaData', 'zText', 'alphaText', 'zData', 'Kernel']);
 	await labels.getByRole('button', { name: 'Sort by Label', exact: true }).click();
 	await expect(names).toHaveText(['AlphaData', 'alphaText', 'Kernel', 'zData', 'zText']);
 	await labels.getByRole('button', { name: 'Sort by Label', exact: true }).click();
-	await expect(names).toHaveText(['zText', 'zData', 'Kernel', 'alphaText', 'AlphaData']);
+	await expect(names).toHaveText(['AlphaData', 'zText', 'zData', 'Kernel', 'alphaText']);
 	await labels.getByRole('checkbox', { name: 'Data', exact: true }).uncheck();
 	await expect(names).toHaveText(['zText', 'alphaText']);
 	await labels.getByRole('checkbox', { name: 'Text', exact: true }).uncheck();
 	await expect(names).toHaveCount(0);
+	await expect(headings).toHaveText(['(global)', 'mips1.asm']);
 	await labels.getByRole('checkbox', { name: 'Data', exact: true }).check();
 	await labels.getByRole('button', { name: 'Sort by Address', exact: true }).click();
-	await expect(names).toHaveText(['zData', 'AlphaData', 'Kernel']);
+	await expect(names).toHaveText(['AlphaData', 'zData', 'Kernel']);
 	await labels.getByRole('button', { name: 'Sort by Address', exact: true }).click();
-	await expect(names).toHaveText(['Kernel', 'AlphaData', 'zData']);
+	await expect(names).toHaveText(['AlphaData', 'Kernel', 'zData']);
 	await action(page, 'Addresses displayed in hexadecimal').click();
-	await expect(names).toHaveText(['Kernel', 'AlphaData', 'zData']);
+	await expect(names).toHaveText(['AlphaData', 'Kernel', 'zData']);
 	await expect(labels.getByRole('columnheader', { name: /Address/ })).toHaveAttribute(
 		'aria-sort',
 		'descending'
@@ -117,10 +120,11 @@ test('Labels filters data and text and sorts names or unsigned addresses in both
 	await expect(page.getByLabel('Memory 0x10010004', { exact: true })).toHaveValue('0x00000002');
 	await action(page, 'Show Labels Window').click();
 	await action(page, 'Show Labels Window').click();
-	await expect(names).toHaveText(['Kernel', 'AlphaData', 'zData']);
+	await expect(names).toHaveText(['AlphaData', 'Kernel', 'zData']);
 	await page.screenshot({ path: '__build/labels-toolbar.png', fullPage: true });
 	page.once('dialog', (dialog) => dialog.accept());
 	await page.reload();
+	await waitForDesktop(page);
 	await expect(action(page, 'New')).toBeEnabled();
 	await action(page, 'Execute').click();
 	await expect(labels.getByRole('checkbox', { name: 'Text', exact: true })).not.toBeChecked();
@@ -129,6 +133,86 @@ test('Labels filters data and text and sorts names or unsigned addresses in both
 		'aria-sort',
 		'descending'
 	);
+});
+
+test('Labels separates exported temperature strings from file-local branches and updates after reassembly', async ({
+	page
+}) => {
+	await openDesktop(page);
+	await openStoredSources(
+		page,
+		[
+			{
+				name: 'temperature.asm',
+				source: `.globl welcome
+.globl selection
+.globl promptC
+.globl promptF
+.globl sumTextC
+.globl sumTextF
+.data
+welcome: .asciiz "Temperature converter"
+selection: .asciiz "Select 0 for C->F, or 1 for F->C: "
+promptC: .asciiz "Celsius: "
+promptF: .asciiz "Fahrenheit: "
+sumTextC: .asciiz "F = "
+sumTextF: .asciiz "C = "
+.text
+main: nop
+if: bnez $s0, else
+j endif
+else: nop
+endif: li $v0, 10
+syscall
+`
+			},
+			{ name: 'local-only.asm', source: '.text\nonlyLocal: nop\n' }
+		],
+		['temperature.asm']
+	);
+	await action(page, 'Show Labels Window').click();
+	await action(page, 'Assemble').click();
+	const labels = page.getByRole('region', { name: 'Labels', exact: true });
+	const headings = labels.getByRole('rowheader');
+	const globals = labels.getByRole('rowgroup', { name: '(global)', exact: true });
+	const locals = labels.getByRole('rowgroup', { name: 'temperature.asm', exact: true });
+	await expect(headings).toHaveText(['(global)', 'temperature.asm']);
+	await expect(headings.nth(0)).toHaveCSS('text-align', 'center');
+	await expect(headings.nth(1)).toHaveCSS('text-align', 'center');
+	await expect(labels.getByRole('button', { name: 'Sort by Address', exact: true })).toHaveText(
+		'Address ▲'
+	);
+	await expect(globals.locator('td:first-child')).toHaveText([
+		'welcome',
+		'selection',
+		'promptC',
+		'promptF',
+		'sumTextC',
+		'sumTextF'
+	]);
+	await expect(locals.locator('td:first-child')).toHaveText(['main', 'if', 'else', 'endif']);
+	await labels.getByRole('button', { name: 'Sort by Label', exact: true }).click();
+	await expect(labels.getByRole('button', { name: 'Sort by Label', exact: true })).toHaveText(
+		'Label ▲'
+	);
+	await expect(headings).toHaveText(['(global)', 'temperature.asm']);
+	await expect(globals.locator('td:first-child')).toHaveText([
+		'promptC',
+		'promptF',
+		'selection',
+		'sumTextC',
+		'sumTextF',
+		'welcome'
+	]);
+	await expect(locals.locator('td:first-child')).toHaveText(['else', 'endif', 'if', 'main']);
+	await page.screenshot({ path: '__build/labels-symbol-groups.png', fullPage: true });
+	await action(page, 'Open ...').click();
+	const open = page.getByRole('dialog', { name: 'Open', exact: true });
+	await open.getByRole('checkbox', { name: 'local-only.asm', exact: true }).check();
+	await open.getByRole('button', { name: 'Open', exact: true }).click();
+	await action(page, 'Assemble').click();
+	await expect(headings).toHaveText(['local-only.asm']);
+	await expect(labels.locator('tbody td:first-child')).toHaveText(['onlyLocal']);
 });
 
 test('data pages show sixteen rows and ASCII follows hexadecimal values inline', async ({
@@ -196,6 +280,7 @@ test('data pages show sixteen rows and ASCII follows hexadecimal values inline',
 	await expect(asciiToolbar).toHaveAttribute('aria-pressed', 'true');
 	page.once('dialog', (dialog) => dialog.accept());
 	await page.reload();
+	await waitForDesktop(page);
 	await expect(action(page, 'New')).toBeEnabled();
 	await expect(asciiToolbar).toHaveAttribute('aria-pressed', 'true');
 	await action(page, 'Assemble').click();
@@ -343,6 +428,7 @@ test('active-source assembly uses explicit unsaved includes and retires saved as
 	await expect(page.getByLabel('Run I/O', { exact: true })).toHaveValue('73' + finished);
 	page.once('dialog', (dialog) => dialog.accept());
 	await page.reload();
+	await waitForDesktop(page);
 	await expect(action(page, 'New')).toBeEnabled({ timeout: 30000 });
 	await page
 		.locator('.menubar summary')

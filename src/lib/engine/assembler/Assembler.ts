@@ -38,9 +38,8 @@ export type AssemblerHost = ProgramStatementHost &
 		symbolTable: SymbolTable;
 		/** Real instruction lookup, preserving overload order. */
 		instructionSet: {
-			/** Match a mnemonic or return null. */ matchOperator(
-				name: string
-			): readonly Instruction[] | null;
+			/** Match a mnemonic or return null. */
+			matchOperator(name: string): readonly Instruction[] | null;
 		};
 		/** Reset platform file descriptors after code generation, as SystemIO.resetFiles does. */
 		resetFiles(): void;

@@ -9,7 +9,7 @@ test('Help menu opens all ten attributed articles and restores keyboard focus', 
 	const helpMenu = page.locator('.menubar summary').filter({ hasText: /^Help$/ });
 	await helpMenu.click();
 	const menu = page.locator('details[open] .menu');
-	await expect(menu.getByRole('button').nth(0)).toHaveText('Help');
+	await expect(menu.getByRole('button').nth(0)).toHaveAccessibleName('Help F1');
 	await expect(menu.getByRole('button').nth(1)).toHaveText('About MARS');
 	await expect(menu.locator('button:nth-child(2) + hr')).toHaveCount(1);
 	await helpMenu.click();

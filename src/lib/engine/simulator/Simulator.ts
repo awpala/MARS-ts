@@ -21,24 +21,34 @@ import type { SimulatorAction } from './SimulatorAction.js';
 
 /** Program lifecycle operations consumed by the loop; the caller owns the assembled program. */
 export interface SimulatorProgram {
-	/** Whether the current history is present and enabled. */ backSteppingEnabled(): boolean;
-	/** Return the current program's history, or null before successful assembly. */ getBackStepper(): BackStepper<ProgramStatement> | null;
+	/** Whether the current history is present and enabled. */
+	backSteppingEnabled(): boolean;
+	/** Return the current program's history, or null before successful assembly. */
+	getBackStepper(): BackStepper<ProgramStatement> | null;
 }
 
 /** Injected session hardware and scheduling replace Java globals, threads, and GUI calls. */
 export interface SimulatorHost {
-	/** Actual memory holding assembled/decoded statements. */ memory: Memory<ProgramStatement>;
-	/** Actual integer registers and PC. */ registerFile: RegisterFile;
-	/** Actual exception registers. */ coprocessor0: Coprocessor0;
-	/** Session-owned pending branch state. */ delayedBranch: DelayedBranch;
-	/** Runtime diagnostic/exception register services. */ exceptionHost: ProcessingExceptionHost;
-	/** Close/reset program-owned I/O handles when execution terminates. */ resetFiles(): void;
-	/** Current legacy run-speed value, with 40 denoting unlimited. */ getRunSpeed(): number;
-	/** Yield to the host event loop, optionally waiting the requested milliseconds. No timer lives in the engine. */ yieldControl(
-		delayMilliseconds: number
-	): Promise<void>;
-	/** Refresh visible registers/memory/instruction state during timed Go execution. */ refresh?(): void;
-	/** Maximum synchronous instructions between host yields during unlimited Go; default 1000. */ instructionsPerYield?: number;
+	/** Actual memory holding assembled/decoded statements. */
+	memory: Memory<ProgramStatement>;
+	/** Actual integer registers and PC. */
+	registerFile: RegisterFile;
+	/** Actual exception registers. */
+	coprocessor0: Coprocessor0;
+	/** Session-owned pending branch state. */
+	delayedBranch: DelayedBranch;
+	/** Runtime diagnostic/exception register services. */
+	exceptionHost: ProcessingExceptionHost;
+	/** Close/reset program-owned I/O handles when execution terminates. */
+	resetFiles(): void;
+	/** Current legacy run-speed value, with 40 denoting unlimited. */
+	getRunSpeed(): number;
+	/** Yield to the host event loop, optionally waiting the requested milliseconds. No timer lives in the engine. */
+	yieldControl(delayMilliseconds: number): Promise<void>;
+	/** Refresh visible registers/memory/instruction state during timed Go execution. */
+	refresh?(): void;
+	/** Maximum synchronous instructions between host yields during unlimited Go; default 1000. */
+	instructionsPerYield?: number;
 }
 
 /** Consumer of an execution notice; owner must call the returned unsubscribe function. */
@@ -61,15 +71,22 @@ interface SimulationRun {
 
 /** Canonical execution loop with per-session state and bounded, injected cooperative yields. */
 export class Simulator {
-	/** No pending external device interrupt. */ static readonly NO_DEVICE = 0;
-	/** Paused before a breakpoint instruction. */ static readonly BREAKPOINT = 1;
-	/** Ended on an unhandled runtime exception. */ static readonly EXCEPTION = 2;
-	/** Reached the requested instruction limit, including a single step. */ static readonly MAX_STEPS = 3;
-	/** Exited via the normal syscall sentinel. */ static readonly NORMAL_TERMINATION = 4;
-	/** Fetched an empty instruction slot. */ static readonly CLIFF_TERMINATION = 5;
-	/** Left the loop following pause/stop. */ static readonly PAUSE_OR_STOP = 6;
-	/** Pending external interrupt cause, consumed once at the next instruction boundary. */ externalInterruptingDevice =
-		Simulator.NO_DEVICE;
+	/** No pending external device interrupt. */
+	static readonly NO_DEVICE = 0;
+	/** Paused before a breakpoint instruction. */
+	static readonly BREAKPOINT = 1;
+	/** Ended on an unhandled runtime exception. */
+	static readonly EXCEPTION = 2;
+	/** Reached the requested instruction limit, including a single step. */
+	static readonly MAX_STEPS = 3;
+	/** Exited via the normal syscall sentinel. */
+	static readonly NORMAL_TERMINATION = 4;
+	/** Fetched an empty instruction slot. */
+	static readonly CLIFF_TERMINATION = 5;
+	/** Left the loop following pause/stop. */
+	static readonly PAUSE_OR_STOP = 6;
+	/** Pending external interrupt cause, consumed once at the next instruction boundary. */
+	externalInterruptingDevice = Simulator.NO_DEVICE;
 	private active: SimulationRun | null = null;
 	private readonly observers = new Set<SimulatorObserver>();
 	private readonly stopListeners: SimulatorStopListener[] = [];

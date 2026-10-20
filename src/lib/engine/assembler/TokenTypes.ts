@@ -37,7 +37,8 @@ import { Macro, type MacroRegisters } from './Macro.js';
 export interface TokenClassificationContext extends MacroRegisters {
 	/** The real instruction set's matching operation; null denotes no matching operator. */
 	instructionSet: {
-		/** Return matching definitions, or null. */ matchOperator(value: string): object | null;
+		/** Return matching definitions, or null. */
+		matchOperator(value: string): object | null;
 	};
 }
 

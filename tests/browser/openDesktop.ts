@@ -3,6 +3,11 @@ import { expect, type Page } from '@playwright/test';
 /** Wait for the desktop's actual hydration/session readiness before testing working controls. */
 export async function openDesktop(page: Page): Promise<void> {
 	await page.goto('/');
+	await waitForDesktop(page);
+}
+
+/** Wait for restoration and machine initialization after initial navigation or reload. */
+export async function waitForDesktop(page: Page): Promise<void> {
 	await expect(page.getByRole('button', { name: 'New', exact: true })).toBeEnabled({
 		timeout: 30000
 	});

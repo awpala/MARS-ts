@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openDesktop } from './openDesktop.js';
+import { openDesktop, waitForDesktop } from './openDesktop.js';
 
 test('theme toggle preserves editor and execution state, recolors panes, and persists both choices', async ({
 	page
@@ -50,10 +50,12 @@ test('theme toggle preserves editor and execution state, recolors panes, and per
 	await expect(page.getByRole('dialog')).toHaveCSS('background-color', 'rgb(37, 47, 60)');
 	await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
 	await page.reload();
+	await waitForDesktop(page);
 	await expect(toggle).toBeEnabled({ timeout: 30_000 });
 	await expect(toggle).toHaveAttribute('aria-checked', 'true');
 	await toggle.click();
 	await page.reload();
+	await waitForDesktop(page);
 	await expect(toggle).toBeEnabled({ timeout: 30_000 });
 	await expect(toggle).toHaveAttribute('aria-checked', 'false');
 });

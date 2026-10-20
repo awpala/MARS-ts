@@ -1,14 +1,19 @@
 # MARS-ts
 
-A TypeScript/SvelteKit port of **MARS**, the educational MIPS Assembler and Runtime Simulator, targeting **MARS-ts 1.0**. Core assembly, execution, and desktop debugging are implemented; the full port remains in progress.
+A TypeScript/SvelteKit web application porting of **MARS**, the educational MIPS Assembler and Runtime Simulator, targeting **MARS-ts 1.0** (with version 1.0 targeting feature and behavioral parity with legacy Java/Swing-based desktop MARS app's final-release version 4.5, distributed as corresponding JAR file). Core assembly, execution, and desktop debugging are implemented; the full port remains in progress.
 
 Read the [implementation guide](IMPLEMENTATION.md) for the current architecture, module responsibilities, browser working filesystem, supported behavior, validation evidence, and remaining limitations. The original Java app and generated Javadoc are isolated under [_legacy-app/](_legacy-app/README.md). The [port plan](docs/adrs/0000-port-plan.md) and [decision records](docs/README.md) describe scope and design choices.
+
+> [!IMPORTANT]
+> This is a good faith feature-parity attempt/interpretation **only** (via corresponding TypeScript porting of equivalent Java implementation). The repo owner makes **no** guarantee of 100% fidelity to the original Java-based implementation; user discretion/discernment is therefore advised accordingly!
+>
+> ***Disclosure***: Porting performed with assistance of LLM-based tooling (primarily, Claude Code and Codex).
 
 ## Development
 
 Open the [development container](.devcontainer/devcontainer.json), then use `run-app` to start the IDE on **port 6277**. The environment provides Node 24 and a provisional JDK 21 for the unchanged Java reference. See [development operations](docs/agents/operations.md) for setup, build, test, and cleanup commands.
 
-For automated validation, use `MARS_VALIDATION=1 run-checks app` and `npm run test:browser`; browser tests use **6278**, leaving 6277 available for human review. Other checks are documented in the [implementation guide](IMPLEMENTATION.md#reproducing-checks). Coding assistants start at [AGENTS.md](AGENTS.md).
+For automated validation, use `MARS_VALIDATION=1 run-checks app` and `npm run test:browser`; browser tests use **6278**, leaving 6277 available for ad hoc development review and smoke testing. Other checks are documented in the [implementation guide](IMPLEMENTATION.md#reproducing-checks). Coding assistants start at [AGENTS.md](AGENTS.md).
 
 ## License
 

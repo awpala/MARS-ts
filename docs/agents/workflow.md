@@ -30,8 +30,8 @@ Subfolders name a responsibility (`assembler/`, `hardware/`, `instructions/`, `s
 ## Working in this repository
 
 - **Edit, don't recreate.** Prefer modifying existing files over scaffolding new ones. Before adding a helper, search for one that already exists.
-- **Match the file's style.** Once the app is scaffolded, Prettier and ESLint configuration own formatting. Never argue with a formatter, and never run one over the legacy tree.
-- **Comments preserve contracts and reasoning.** Prefer clear names to comments that repeat statements. Public API documentation stays mandatory, and provisioning/configuration files keep comprehensive inline explanations.
+- **Match the file's style.** Prettier and ESLint configuration own formatting. Use normal project indentation for class, interface, and type members. Format generated or extracted code immediately after writing it; do not leave generated source unformatted. Never argue with a formatter, and never run one over the legacy tree.
+- **Comments preserve contracts and reasoning.** Put documentation comments on their own lines immediately above the declarations or members they document. Never put a declaration or other code on the same line as a documentation comment's closing `*/`, including the closing line of a multiline comment. Prefer clear names to comments that repeat statements. Public API documentation stays mandatory, and provisioning/configuration files keep comprehensive inline explanations.
 - **Do not leave vestigial comments on code removal.** A removal is net-reductive; history lives in Git, not in commentary.
 - **Do not add backwards-compatibility shims** for retired internal paths. Update callers together.
 - **Exercise UI changes** with `npm run test:browser` on port `6278` before reporting them done. Port `6277` is reserved for human review; agents must not start, stop, or test against that listener. Set `MARS_VALIDATION=1` for aggregate app gates to keep generated output separate.

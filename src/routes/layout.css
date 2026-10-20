@@ -70,8 +70,26 @@ select,
 textarea {
 	font: inherit;
 }
-button {
-	cursor: default;
+:where(
+	button,
+	summary,
+	select,
+	input:is(
+		[type='button'],
+		[type='submit'],
+		[type='reset'],
+		[type='range'],
+		[type='checkbox'],
+		[type='radio']
+	),
+	label:has(input:is([type='range'], [type='checkbox'], [type='radio']))
+) {
+	cursor: pointer;
+}
+:where(button, input, select):disabled,
+[aria-disabled='true'],
+label:has(input:disabled) {
+	cursor: not-allowed;
 }
 button:disabled {
 	color: var(--theme-disabled, #858585);

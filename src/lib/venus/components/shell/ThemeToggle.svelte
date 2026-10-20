@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import Tooltip from '../feedback/Tooltip.svelte';
 	let dark = $state(false);
 
 	onMount(() => {
@@ -22,42 +23,47 @@
 <!-- @component Browser-owned appearance toggle. Restores the pre-paint theme on mount; persists explicit choices independently of machine and editor state. -->
 <div class="theme-control">
 	<span>Theme:</span>
-	<button
-		type="button"
-		class="theme-toggle"
-		role="switch"
-		aria-label="Dark theme"
-		aria-checked={dark}
-		title={dark ? 'Switch to light theme' : 'Switch to dark theme'}
-		onclick={toggle}
-	>
-		<span class="thumb" aria-hidden="true"></span>
-		<svg
-			class="sun"
-			width="12"
-			height="12"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="1.8"
-			aria-hidden="true"
-		>
-			<circle cx="12" cy="12" r="4" />
-			<path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" />
-		</svg>
-		<svg
-			class="moon"
-			width="12"
-			height="12"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="1.8"
-			aria-hidden="true"
-		>
-			<path d="M20 15.5A9 9 0 0 1 8.5 4 9 9 0 1 0 20 15.5Z" />
-		</svg>
-	</button>
+	<Tooltip text={dark ? 'Switch to light theme' : 'Switch to dark theme'}>
+		{#snippet children(trigger, description)}
+			<button
+				{@attach trigger}
+				aria-describedby={description}
+				type="button"
+				class="theme-toggle"
+				role="switch"
+				aria-label="Dark theme"
+				aria-checked={dark}
+				onclick={toggle}
+			>
+				<span class="thumb" aria-hidden="true"></span>
+				<svg
+					class="sun"
+					width="12"
+					height="12"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.8"
+					aria-hidden="true"
+				>
+					<circle cx="12" cy="12" r="4" />
+					<path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" />
+				</svg>
+				<svg
+					class="moon"
+					width="12"
+					height="12"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.8"
+					aria-hidden="true"
+				>
+					<path d="M20 15.5A9 9 0 0 1 8.5 4 9 9 0 1 0 20 15.5Z" />
+				</svg>
+			</button>
+		{/snippet}
+	</Tooltip>
 </div>
 
 <style>
@@ -76,7 +82,6 @@
 		border: 1px solid var(--theme-accent-border, #849eb5);
 		border-radius: 999px;
 		background: var(--theme-selected, #d6e1ea);
-		cursor: pointer;
 		transition: background-color 180ms ease;
 	}
 	.theme-toggle:hover {

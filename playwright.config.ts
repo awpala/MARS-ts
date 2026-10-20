@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test';
 
-/** Browser tests exclusively own port 6278; port 6277 remains available for human review. */
+/** Browser tests exclusively own port 6278; port 6277 remains available for ad hoc usage and review. */
 export default defineConfig({
 	testDir: './tests/browser',
 	outputDir: './__build/browser-results',

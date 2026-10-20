@@ -15,16 +15,20 @@ export class SimulatorNotice {
 		private readonly runSpeed: number,
 		private readonly programCounter: number
 	) {}
-	/** Start or stop constant. */ getAction(): number {
+	/** Start or stop constant. */
+	getAction(): number {
 		return this.action;
 	}
-	/** Requested maximum number of instructions; nonpositive means unlimited. */ getMaxSteps(): number {
+	/** Requested maximum number of instructions; nonpositive means unlimited. */
+	getMaxSteps(): number {
 		return this.maxSteps;
 	}
-	/** Instructions per second; the canonical unlimited sentinel is 40. */ getRunSpeed(): number {
+	/** Instructions per second; the canonical unlimited sentinel is 40. */
+	getRunSpeed(): number {
 		return this.runSpeed;
 	}
-	/** Instruction address supplied by the loop (not necessarily the next architectural PC). */ getProgramCounter(): number {
+	/** Instruction address supplied by the loop (not necessarily the next architectural PC). */
+	getProgramCounter(): number {
 		return this.programCounter;
 	}
 	/** Canonical diagnostic text, including its spacing and integer-valued double suffix. */

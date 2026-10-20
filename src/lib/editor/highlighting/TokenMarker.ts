@@ -7,9 +7,12 @@ import { Token } from './Token.js';
 
 /** String-backed equivalent of Swing Segment, indexed by UTF-16 code units. */
 export interface Segment {
-	/** Full backing string, including any text outside this segment. */ readonly array: string;
-	/** First included code-unit index in array. */ readonly offset: number;
-	/** Included code-unit count. */ readonly count: number;
+	/** Full backing string, including any text outside this segment. */
+	readonly array: string;
+	/** First included code-unit index in array. */
+	readonly offset: number;
+	/** Included code-unit count. */
+	readonly count: number;
 }
 
 /** One document's incremental line states and reusable linked token nodes. */

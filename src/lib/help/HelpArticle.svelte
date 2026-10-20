@@ -5,6 +5,8 @@
 	 * Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt.
 	 */
 	import { asset } from '$app/paths';
+	import { mount, unmount } from 'svelte';
+	import Clipboard from '#lib/venus/components/transfers/Clipboard.svelte';
 	import type { HelpArticle } from './articles.js';
 
 	/** Presentation contract; the desktop owns dialog state and dismissal. */
@@ -18,67 +20,36 @@
 	};
 	let { article, onopen, canOpen }: Props = $props();
 
-	// Attach controls to pre elements without splitting valid HTML across nested lists/paragraphs.
+	// Preserve valid article HTML; each injected control is a Svelte component with explicit teardown.
 	function enhanceExamples(element: HTMLElement) {
 		const enabled = canOpen;
-		let disposed = false;
 		const cleanup: (() => void)[] = [];
 		for (const [index, pre] of [...element.querySelectorAll('pre')].entries()) {
 			const source = pre.textContent ?? '';
 			const controls = document.createElement('div');
 			controls.className = 'snippet-controls';
-			const status = document.createElement('span');
-			status.setAttribute('role', 'status');
-			const copy = document.createElement('button');
-			copy.type = 'button';
-			copy.title = 'Copy code';
-			copy.setAttribute('aria-label', `Copy code example ${index + 1}`);
-			const icon = document.createElement('img');
-			icon.src = asset('icons/Copy.svg');
-			icon.alt = '';
-			icon.width = icon.height = 18;
-			copy.append(icon);
-			const open = document.createElement('button');
-			open.type = 'button';
-			open.title = enabled ? 'Open as new file' : 'Stop execution to open as a new file';
-			open.setAttribute('aria-label', `Open code example ${index + 1} as new file`);
-			open.disabled = !enabled;
-			const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-			svg.setAttribute('viewBox', '0 0 24 24');
-			svg.setAttribute('width', '18');
-			svg.setAttribute('height', '18');
-			svg.setAttribute('aria-hidden', 'true');
-			const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-			path.setAttribute('d', 'M13 3h5l4 4v14H8v-5M18 3v5h4M2 11h12m-4-4 4 4-4 4');
-			path.setAttribute('fill', 'none');
-			path.setAttribute('stroke', 'currentColor');
-			path.setAttribute('stroke-width', '1.5');
-			path.setAttribute('stroke-linejoin', 'round');
-			svg.append(path);
-			open.append(svg);
-			const copyCode = async () => {
-				try {
-					await navigator.clipboard.writeText(source);
-					if (!disposed) status.textContent = 'Copied';
-				} catch {
-					if (!disposed) status.textContent = 'Copy failed. Select the code and copy it manually.';
-				}
-			};
-			const openCode = () => onopen(source);
-			copy.addEventListener('click', copyCode);
-			open.addEventListener('click', openCode);
-			controls.append(status, copy, open);
 			pre.before(controls);
+			const copy = mount(Clipboard, {
+				target: controls,
+				props: { variant: 'copy-code', source, label: `Copy code example ${index + 1}` }
+			});
+			const transfer = mount(Clipboard, {
+				target: controls,
+				props: {
+					variant: 'transfer-to-file',
+					source,
+					label: `Open code example ${index + 1} as new file`,
+					disabled: !enabled,
+					ontransfer: (source) => onopen(source)
+				}
+			});
 			cleanup.push(() => {
-				copy.removeEventListener('click', copyCode);
-				open.removeEventListener('click', openCode);
+				void unmount(copy);
+				void unmount(transfer);
 				controls.remove();
 			});
 		}
-		return () => {
-			disposed = true;
-			cleanup.forEach((release) => release());
-		};
+		return () => cleanup.forEach((release) => release());
 	}
 </script>
 
@@ -187,18 +158,6 @@
 	}
 	.help-article :global(.snippet-controls + pre) {
 		margin-top: 0;
-	}
-	.help-article :global(.snippet-controls button) {
-		padding: 4px;
-		border: 1px solid var(--theme-border, #94a3b8);
-		background: var(--theme-surface, #f0f0f0);
-	}
-	.help-article :global(.snippet-controls span) {
-		font-size: 12px;
-		margin-right: auto;
-	}
-	.help-article :global(.snippet-controls button:disabled) {
-		opacity: 0.5;
 	}
 	.help-article :global(code),
 	.help-article :global(pre) {

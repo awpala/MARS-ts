@@ -9,9 +9,12 @@ import data from './lexical-data.json';
 export class SyntaxStyle {
 	/** Constructs an immutable style; color is a CSS RGB hexadecimal value. */
 	constructor(
-		/** CSS foreground color corresponding to the Java Color. */ readonly color: string,
-		/** Whether this token uses italic text. */ readonly italic: boolean,
-		/** Whether this token uses bold text. */ readonly bold: boolean
+		/** CSS foreground color corresponding to the Java Color. */
+		readonly color: string,
+		/** Whether this token uses italic text. */
+		readonly italic: boolean,
+		/** Whether this token uses bold text. */
+		readonly bold: boolean
 	) {}
 	/** Returns whether neither italic nor bold is enabled. */
 	isPlain(): boolean {

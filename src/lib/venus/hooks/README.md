@@ -1,0 +1,7 @@
+# Venus keyboard lifetimes
+
+This directory owns reusable component-lifetime event bindings. `useKeyboard` registers a window keydown handler on mount and removes it on unmount through Svelte's event helper. It ignores composition, AltGraph, already-handled events, and repeats unless the caller opts in. Callers explicitly match accepted inputs and decide when to prevent their default behavior. An enabled getter reads current state without retaining an initialization-time snapshot.
+
+The desktop binding reads the nearest [desktop context](../context/README.md), resolves commands using the shared [command metadata](../utils/README.md), and applies the same availability rules as menus and toolbars. Source textareas accept IDE commands; other typing surfaces and active dialogs retain their own input. Alt/Option+N uses capture and the physical N key to cancel dead-key composition even when repetition or desktop state prevents creating another file. The desktop binding also releases its dirty-source unload guard on unmount. Source hover help uses the generic hook only for Escape dismissal.
+
+This is a browser integration boundary. It owns neither editor nor machine state, and imports no process-wide mutable state. Element-specific interactions such as divider arrows and textarea Tab insertion stay with their components rather than installing global shortcuts. Browser-reserved combinations can be handled only when the browser delivers their events to the document.

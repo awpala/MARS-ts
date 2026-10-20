@@ -1,14 +1,16 @@
 <script lang="ts">
+	import { formatInteger, commitOnEnter } from '../../utils/tableCells.js';
 	/** Ports the views in mars/venus/TextSegmentWindow.java, DataSegmentWindow.java, and LabelsWindow.java.
 	 * Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license. */
-	import ToolbarIcon from './ToolbarIcon.svelte';
+	import ToolbarIcon from '../shell/ToolbarIcon.svelte';
+	import Tooltip from '../feedback/Tooltip.svelte';
 	import type { Globals } from '#lib/engine/Globals.js';
 	import { Settings } from '#lib/engine/Settings.js';
 	import { AddressErrorException } from '#lib/engine/hardware/AddressErrorException.js';
 	import { AccessNotice } from '#lib/engine/hardware/AccessNotice.js';
 	import { Binary, NumberFormatException } from '#lib/engine/formatting/Binary.js';
-	import type { RunController } from './RunController.js';
-	import preset from './highlighting-preset.json';
+	import type { RunController } from '../../RunController.js';
+	import preset from '../../highlighting-preset.json';
 	/** Execution tables render the parent-owned machine without owning simulation snapshot. */
 	type Props = {
 		/** Required initialized machine; all reads use its public, nonnotifying interfaces. */
@@ -109,26 +111,35 @@
 			};
 		});
 	});
-	const labels = $derived.by(() => {
+	const labelGroups = $derived.by(() => {
 		void snapshot.revision;
 		return [
-			...machine.symbolTable.getAllSymbols().map((symbol) => ({ symbol, file: 'Global' })),
-			...snapshot.programs.flatMap((program) =>
-				(program.getLocalSymbolTable()?.getAllSymbols() ?? []).map((symbol) => ({
-					symbol,
-					file: program.getFilename() ?? ''
-				}))
-			)
+			{
+				owner: machine.symbolTable,
+				file: '(global)',
+				symbols: machine.symbolTable.getAllSymbols()
+			},
+			...snapshot.programs.map((program) => ({
+				owner: program,
+				file: program.getFilename() ?? '',
+				symbols: program.getLocalSymbolTable()?.getAllSymbols() ?? []
+			}))
 		]
-			.filter(({ symbol }) => (symbol.getType() ? showDataLabels : showTextLabels))
-			.sort((left, right) => {
-				const a = sortDescending ? right.symbol : left.symbol;
-				const b = sortDescending ? left.symbol : right.symbol;
-				if (sortColumn === 1) return (a.getAddress() >>> 0) - (b.getAddress() >>> 0);
-				const nameA = a.getName().toLowerCase(),
-					nameB = b.getName().toLowerCase();
-				return nameA < nameB ? -1 : nameA > nameB ? 1 : 0;
-			});
+			.filter((group) => group.symbols.length > 0)
+			.map((group) => ({
+				...group,
+				name: group.file.split(/[/\\]/).at(-1) ?? group.file,
+				symbols: group.symbols
+					.filter((symbol) => (symbol.getType() ? showDataLabels : showTextLabels))
+					.sort((left, right) => {
+						const a = sortDescending ? right : left;
+						const b = sortDescending ? left : right;
+						if (sortColumn === 1) return (a.getAddress() >>> 0) - (b.getAddress() >>> 0);
+						const nameA = a.getName().toLowerCase(),
+							nameB = b.getName().toLowerCase();
+						return nameA < nameB ? -1 : nameA > nameB ? 1 : 0;
+					})
+			}));
 	});
 	const memoryBases = $derived.by(() => {
 		void snapshot.revision;
@@ -160,7 +171,7 @@
 		});
 	});
 	function formatAddress(address: number) {
-		return hexAddresses ? Binary.intToHexString(address) : String(address >>> 0);
+		return formatInteger(address, hexAddresses, true);
 	}
 	function readWord(address: number): number {
 		return machine.withGuiAccess(() => {
@@ -186,11 +197,7 @@
 		});
 	}
 	function formatWord(value: number) {
-		return ascii
-			? Binary.intToAscii(value)
-			: hexValues
-				? Binary.intToHexString(value)
-				: String(value);
+		return ascii ? Binary.intToAscii(value) : formatInteger(value, hexValues);
 	}
 	function changeWord(address: number, input: HTMLInputElement, code = false) {
 		try {
@@ -283,18 +290,21 @@
 										value={Binary.intToHexString(row.code)}
 										readonly={running || !selfModifying}
 										onchange={(event) => changeWord(row.address, event.currentTarget, true)}
-										onkeydown={(event) => {
-											if (event.key === 'Enter') event.currentTarget.blur();
-										}}
+										onkeydown={commitOnEnter}
 									/></td
 								><td>{row.basic}</td>
 								<td
-									>{#if row.modified}<span> ------ </span>{:else}<button
-											class="source-link"
-											title={row.filename}
-											onclick={() => onsource(row.filename, row.line)}
-											>{row.line}: {row.source}</button
-										>{/if}</td
+									>{#if row.modified}<span> ------ </span>{:else}<Tooltip text={row.filename}>
+											{#snippet children(trigger, description)}
+												<button
+													{@attach trigger}
+													aria-describedby={description}
+													class="source-link"
+													onclick={() => onsource(row.filename, row.line)}
+													>{row.line}: {row.source}</button
+												>
+											{/snippet}
+										</Tooltip>{/if}</td
 								>
 							</tr>{/each}
 					</tbody>
@@ -304,12 +314,28 @@
 		{#if showLabels}<section class="labels segment" aria-label="Labels">
 				<h2>Labels</h2>
 				<div class="label-controls">
-					<label title="Show labels defined in the data segment"
-						><input type="checkbox" bind:checked={showDataLabels} /> Data</label
-					>
-					<label title="Show labels defined in the text segment"
-						><input type="checkbox" bind:checked={showTextLabels} /> Text</label
-					>
+					<Tooltip text="Show labels defined in the data segment">
+						{#snippet children(trigger, description)}
+							<label {@attach trigger}
+								><input
+									aria-describedby={description}
+									type="checkbox"
+									bind:checked={showDataLabels}
+								/> Data</label
+							>
+						{/snippet}
+					</Tooltip>
+					<Tooltip text="Show labels defined in the text segment">
+						{#snippet children(trigger, description)}
+							<label {@attach trigger}
+								><input
+									aria-describedby={description}
+									type="checkbox"
+									bind:checked={showTextLabels}
+								/> Text</label
+							>
+						{/snippet}
+					</Tooltip>
 				</div>
 				<table>
 					<thead
@@ -322,29 +348,46 @@
 											: 'ascending'
 										: 'none'}
 								>
-									<button
-										aria-label={`Sort by ${heading}`}
-										title={`Sort by ${heading}`}
-										onclick={() => (labelSortState = sortTransitions[labelSortState][column])}
-									>
-										{heading}{#if sortColumn === column}<span aria-hidden="true">
-												{sortDescending ? '▼' : '▲'}</span
-											>{/if}
-									</button>
+									<Tooltip text={`Sort by ${heading}`}>
+										{#snippet children(trigger, description)}
+											<button
+												{@attach trigger}
+												aria-describedby={description}
+												aria-label={`Sort by ${heading}`}
+												onclick={() => (labelSortState = sortTransitions[labelSortState][column])}
+											>
+												{heading}{#if sortColumn === column}<span aria-hidden="true"
+														>{sortDescending ? ' ▼' : ' ▲'}</span
+													>{/if}
+											</button>
+										{/snippet}
+									</Tooltip>
 								</th>
 							{/each}</tr
 						></thead
-					><tbody
-						>{#each labels as label (`${label.file}:${label.symbol.getName()}`)}<tr
-								><td
-									><button
-										title={label.file}
-										onclick={() => navigateLabel(label.symbol.getAddress())}
-										>{label.symbol.getName()}</button
-									></td
-								><td>{formatAddress(label.symbol.getAddress())}</td></tr
-							>{/each}</tbody
 					>
+					{#each labelGroups as group (group.owner)}
+						<tbody aria-label={group.file}>
+							<tr><th class="label-group" scope="rowgroup" colspan="2">{group.name}</th></tr>
+							{#each group.symbols as symbol (symbol.getName())}
+								<tr>
+									<td>
+										<Tooltip text={group.file}>
+											{#snippet children(trigger, description)}
+												<button
+													{@attach trigger}
+													aria-describedby={description}
+													onclick={() => navigateLabel(symbol.getAddress())}
+													>{symbol.getName()}</button
+												>
+											{/snippet}
+										</Tooltip>
+									</td>
+									<td>{formatAddress(symbol.getAddress())}</td>
+								</tr>
+							{/each}
+						</tbody>
+					{/each}
 				</table>
 			</section>{/if}
 	</div>
@@ -368,9 +411,7 @@
 										value={formatWord(word.value)}
 										readonly={running || ascii}
 										onchange={(event) => changeWord(word.address, event.currentTarget)}
-										onkeydown={(event) => {
-											if (event.key === 'Enter') event.currentTarget.blur();
-										}}
+										onkeydown={commitOnEnter}
 									/></td
 								>{/each}</tr
 						>{/each}</tbody
@@ -378,9 +419,17 @@
 			</table>
 		</div>
 		<div class="data-controls">
-			<button aria-label="Previous memory page" onclick={() => (pageOffset -= memoryPageBytes)}
-				><ToolbarIcon name="previousMemoryPage" /></button
-			><select
+			<Tooltip text="Previous memory page">
+				{#snippet children(trigger, description)}
+					<button
+						{@attach trigger}
+						aria-describedby={description}
+						aria-label="Previous memory page"
+						onclick={() => (pageOffset -= memoryPageBytes)}
+						><ToolbarIcon name="previousMemoryPage" /></button
+					>
+				{/snippet}
+			</Tooltip><select
 				aria-label="Data segment base"
 				bind:value={segment}
 				onchange={() => {
@@ -393,9 +442,17 @@
 				<option value="text">{Binary.intToHexString(memoryBases.text)} (.text)</option>
 				<option value="kernel">{Binary.intToHexString(memoryBases.kernel)} (.kdata)</option>
 				<option value="mmio">{Binary.intToHexString(memoryBases.mmio)} (MMIO)</option></select
-			><button aria-label="Next memory page" onclick={() => (pageOffset += memoryPageBytes)}
-				><ToolbarIcon name="nextMemoryPage" /></button
-			>
+			><Tooltip text="Next memory page">
+				{#snippet children(trigger, description)}
+					<button
+						{@attach trigger}
+						aria-describedby={description}
+						aria-label="Next memory page"
+						onclick={() => (pageOffset += memoryPageBytes)}
+						><ToolbarIcon name="nextMemoryPage" /></button
+					>
+				{/snippet}
+			</Tooltip>
 			<div class="control-separator" role="separator" aria-orientation="vertical"></div>
 			<div class="display-options">
 				<label><input type="checkbox" bind:checked={hexAddresses} /> Hexadecimal Addresses</label>
@@ -458,6 +515,13 @@
 	.labels th button {
 		width: 100%;
 		text-align: left;
+	}
+	.labels .label-group {
+		position: static;
+		background: var(--theme-heading, #dde4eb);
+		color: var(--theme-text, #17202b);
+		font-weight: 600;
+		text-align: center;
 	}
 	table {
 		border-collapse: collapse;
