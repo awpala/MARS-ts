@@ -9,6 +9,9 @@ The [implementation guide](../IMPLEMENTATION.md) describes the current MARS-ts s
 | [Browser file workflows](adrs/0003-browser-file-workflows.md) | Accepted | Local source library, recovery, save/import/export, same-tab dialogs, browser validation |
 | [Port fidelity](adrs/0002-port-fidelity.md) | Accepted | Like-for-like classes and algorithms, desktop layout, browser adaptations, assets, and fixture layout |
 | [Cooperative simulation](adrs/0004-cooperative-simulation.md) | Accepted | Browser scheduling, asynchronous input, execution ownership, and callback contracts |
+| [Coolify deployment](adrs/0005-coolify-deployment.md) | Accepted | Static build, production origin, GitHub App deployment, and release ownership |
+
+The [Coolify deployment runbook](runbooks/prod-deployment.md) covers configuration, publication, verification, and rollback at `mars-ide.portfolio-projects.dev`.
 
 The [agent directory](../AGENTS.md) carries coding conventions for assistants; the guides under [agents/](agents/) are routed from it.
 
