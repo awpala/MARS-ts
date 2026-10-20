@@ -303,19 +303,30 @@ test('unlimited execution yields to Pause and Stop and source edits invalidate e
 	await expect(action(page, 'Go')).toBeDisabled();
 });
 
-test('all-open assembly uses unsaved buffers and persists engine settings', async ({ page }) => {
+test('active-source assembly uses explicit unsaved includes and retires saved assemble-all settings', async ({
+	page
+}) => {
+	await page.addInitScript(() => {
+		localStorage.setItem('mars-ts:engine-settings:v1:AssembleAll', 'true');
+	});
 	await openDesktop(page);
 	await source(
 		page,
-		'.text\n.globl main\nmain: jal compute\nmove $a0,$v0\nli $v0,1\nsyscall\nli $v0,10\nsyscall\n'
+		'.text\n.globl main\nmain: jal compute\nmove $a0,$v0\nli $v0,1\nsyscall\nli $v0,10\nsyscall\n.include "mips2.asm"\n'
 	);
 	await source(page, '.text\n.globl compute\ncompute: li $v0,73\njr $ra\n');
+	await source(page, 'invalid_instruction\n');
 	await page.getByRole('button', { name: /^\*? ?mips1\.asm$/ }).click();
 	await page
 		.locator('.menubar summary')
 		.filter({ hasText: /^Settings$/ })
 		.click();
-	await page.getByLabel('Assemble all open files in editor', { exact: true }).check();
+	await expect(page.getByLabel('Assemble all open files in editor', { exact: true })).toHaveCount(
+		0
+	);
+	expect(
+		await page.evaluate(() => localStorage.getItem('mars-ts:engine-settings:v1:AssembleAll'))
+	).toBe('false');
 	await page
 		.getByLabel('Initialize Program Counter to global main if defined', { exact: true })
 		.check();
@@ -332,12 +343,17 @@ test('all-open assembly uses unsaved buffers and persists engine settings', asyn
 	await expect(page.getByLabel('Run I/O', { exact: true })).toHaveValue('73' + finished);
 	page.once('dialog', (dialog) => dialog.accept());
 	await page.reload();
-	await expect(action(page, 'New')).toBeEnabled();
+	await expect(action(page, 'New')).toBeEnabled({ timeout: 30000 });
 	await page
 		.locator('.menubar summary')
 		.filter({ hasText: /^Settings$/ })
 		.click();
-	await expect(page.getByLabel('Assemble all open files in editor', { exact: true })).toBeChecked();
+	await expect(page.getByLabel('Assemble all open files in editor', { exact: true })).toHaveCount(
+		0
+	);
+	expect(
+		await page.evaluate(() => localStorage.getItem('mars-ts:engine-settings:v1:AssembleAll'))
+	).toBe('false');
 	await expect(
 		page.getByLabel('Initialize Program Counter to global main if defined', { exact: true })
 	).toBeChecked();

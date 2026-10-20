@@ -1,0 +1,75 @@
+<!-- Derived from help/MarsHelpLimits.html.
+Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt. -->
+<header>
+	<h3>Operating Requirements and Limitations</h3>
+	<p>Original article: Release 4.5 · August 2014</p>
+</header>
+<h3>Browser requirements</h3>
+<p>
+	MARS-ts runs its TypeScript assembler and simulator in a modern browser with JavaScript enabled.
+	No Java runtime, Swing installation, or JAR is required. Browser storage retains sources, recovery
+	text, and preferences when available. Storage failures are reported; export files for copies
+	outside the browser.
+</p>
+<h3>Current limits</h3>
+<ul>
+	<li>
+		The default layout retains the legacy memory-segment limits: text, data, stack, kernel text, and
+		kernel data each have a maximum 4 MB backing range from their respective bases. Memory is
+		allocated sparsely as used.
+	</li>
+	<li>There is no pipelined mode. Delayed branching is supported.</li>
+	<li>
+		The desktop uses the MARS assembler and simulator; it is not a front end for other compilers or
+		simulators.
+	</li>
+	<li>
+		Open and Save operate on the browser source library. Import and Export move .asm files between
+		the library and your computer. Includes use virtual source paths, not arbitrary OS paths;
+		assembly starts with the active source and follows its explicit includes. Other open tabs are
+		not automatically assembled.
+	</li>
+	<li>
+		File, time, sleep, MIDI, random, and dialog syscalls remain unfinished. See Syscalls for exact
+		service availability. Tools and File → Dump Memory are disabled.
+	</li>
+	<li>
+		The Exception Handler and Memory Configuration dialogs are unfinished. Include handler code
+		explicitly; the browser currently uses the default memory layout.
+	</li>
+	<li>
+		Editor and highlighting customization use bundled presets, not the original dialogs.
+		Command-line operation and program arguments are excluded.
+	</li>
+	<li>
+		Backstep history is bounded to 2000 recent steps and does not reverse output or external I/O.
+		Machine state is not persisted across reloads. Machine edits require execution to be stopped.
+	</li>
+	<li>
+		Execution yields cooperatively to the browser. Limited-speed timing is approximate, and large
+		workloads still consume browser CPU and memory.
+	</li>
+</ul>
+<h3>Branch offsets</h3>
+<p>
+	The original guide documents a change in Java Release 3.4: a branch encodes the relative number of
+	words from the next instruction, whether delayed branching is enabled or disabled. Thus
+	<code>label: beq $0,$0,label</code> encodes as <code>0x1000FFFF</code> in both modes. Earlier
+	releases encoded <code>0x10000000</code> when delayed branching was disabled. The simulator
+	accounts for the selected branch mode.
+</p>
+<h3>Historical Java limitations</h3>
+<p>
+	The Release 4.5 article described a Java/Swing application requiring J2SE Release 1.5, tested on
+	Windows XP, Vista and 7 and Mac OS X, and also used on Linux. Its JFileChooser did not follow
+	links or shortcuts. It noted limited preference persistence, an assembly-error highlighter that
+	could miss a source not already open, a Screen Magnifier capture issue on Windows Vista, and
+	reported editor slowdown during long sessions that disappeared after restarting. These are
+	retained as historical observations, not claims about the browser implementation.
+</p>
+<p>
+	The original instruction-set reference was
+	<cite>Computer Organization and Design, Fourth Edition</cite>, Patterson and Hennessy, Elsevier –
+	Morgan Kaufmann, 2009. Browser feature availability is described above rather than inferred from
+	the original article’s Appendix B coverage claim.
+</p>

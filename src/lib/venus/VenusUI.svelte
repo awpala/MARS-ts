@@ -16,6 +16,8 @@
 	import { downloadSource } from '#lib/browser/download.js';
 	import { SourceLibrary, sourceName, type SavedSource } from '#lib/browser/SourceLibrary.js';
 	import Modal from './Modal.svelte';
+	import HelpArticle from '#lib/help/HelpArticle.svelte';
+	import { helpArticles } from '#lib/help/articles.js';
 	import ThemeToggle from './ThemeToggle.svelte';
 	import RegistersPane from './RegistersPane.svelte';
 	import ExecutePane from './ExecutePane.svelte';
@@ -169,6 +171,8 @@
 				}
 			}
 		});
+		// Assembly uses the active source and explicit includes; retire any saved assemble-all preference.
+		session.getSettings().setBooleanSetting(Settings.ASSEMBLE_ALL_ENABLED, false);
 		machine = session;
 		const controls = new RunController(session);
 		controller = controls;
@@ -279,9 +283,10 @@
 	let workspaceWritable = false;
 	let replaceSave = $state(false);
 	let renameSource = $state(false);
-	let modal = $state<
-		'open' | 'delete' | 'import' | 'save' | 'close' | 'find' | 'help' | 'about' | null
-	>(null);
+	let modal = $state<'open' | 'delete' | 'import' | 'save' | 'close' | 'find' | 'help' | null>(
+		null
+	);
+	let selectedHelp = $state.raw(helpArticles[0]);
 	let filename = $state('');
 	let saveTarget = $state.raw<EditPane>();
 	let closeQueue: number[] = [];
@@ -377,10 +382,11 @@
 		{ label: 'Toggle all breakpoints', debugIcon: 'breakpoints', command: 'toggleBreakpoints' },
 		{ label: 'Clear all breakpoints', debugIcon: 'clearBreakpoints', command: 'clearBreakpoints' }
 	];
-	const helpActions: Action[] = [
-		{ label: 'Help', icon: 'Help', command: 'help', shortcut: 'F1' },
-		{ label: 'About MARS', command: 'about' }
-	];
+	const helpActions: Action[] = helpArticles.map((article) => ({
+		label: article.label,
+		command: article.id,
+		...(article.id === 'help' ? { icon: 'Help', shortcut: 'F1' } : {})
+	}));
 	const menus = [
 		{ name: 'File', actions: fileActions },
 		{ name: 'Edit', actions: editActions },
@@ -393,7 +399,6 @@
 	const engineOptions = [
 		popupInputOption,
 		{ id: Settings.ASSEMBLE_ON_OPEN_ENABLED, label: 'Assemble file on open' },
-		{ id: Settings.ASSEMBLE_ALL_ENABLED, label: 'Assemble all open files in editor' },
 		{ id: Settings.WARNINGS_ARE_ERRORS, label: 'Assembler warnings are considered errors' },
 		{ id: Settings.START_AT_MAIN, label: 'Initialize Program Counter to global main if defined' },
 		{
@@ -434,13 +439,6 @@
 			disabled: false
 		},
 		{
-			icon: 'lines' as const,
-			label: 'Show line numbers',
-			active: showLines,
-			toggle: () => (showLines = !showLines),
-			disabled: false
-		},
-		{
 			icon: 'input' as const,
 			label: popupInputOption.label,
 			active: engineSettings[Settings.POPUP_SYSCALL_INPUT] ?? false,
@@ -452,6 +450,11 @@
 			disabled: running
 		}
 	]);
+	const settingsDisplayToggles = $derived(
+		['labels', 'input', 'addresses', 'values'].flatMap((icon) =>
+			displayToggles.filter((toggle) => toggle.icon === icon)
+		)
+	);
 	$effect(() => {
 		if (machine) {
 			machine.runSpeed = speed > 35 ? 40 : speedTable[speed];
@@ -539,10 +542,7 @@
 	function assemble() {
 		if (!controller || !current) return;
 		try {
-			const diagnostics = controller.assemble(
-				tabs.map((tab) => tab.name),
-				current.name
-			);
+			const diagnostics = controller.assemble([current.name], current.name);
 			if (diagnostics) messages += diagnostics.generateErrorAndWarningReport();
 			if (controller.getState().status === 'assembled') {
 				messages += `Assemble: operation completed successfully.\n\n`;
@@ -665,9 +665,9 @@
 		if (action.command === 'reset') return !!execution?.statements.length && !running;
 		if (['clearBreakpoints', 'toggleBreakpoints'].includes(action.command))
 			return breakpoints.length > 0 && !running;
-		if (running && !['help', 'about', 'copy'].includes(action.command)) return false;
-		if (['new', 'open', 'import', 'autoSave', 'help', 'about', 'exit'].includes(action.command))
-			return true;
+		if (helpArticles.some((article) => article.id === action.command)) return true;
+		if (running && action.command !== 'copy') return false;
+		if (['new', 'open', 'import', 'autoSave', 'exit'].includes(action.command)) return true;
 		if (action.command === 'exportAll') return tabs.length >= 2;
 		if (!current) return false;
 		if (action.command === 'undo') return current.undo.length > 0;
@@ -717,6 +717,14 @@
 		editor.setText(text);
 		controller?.invalidate();
 		refresh(true);
+	}
+	async function openHelpSource(source: string) {
+		if (running) return;
+		dismiss();
+		await action('new');
+		edit(source);
+		await tick();
+		sourceInput?.focus();
 	}
 	function sourceKeydown(event: KeyboardEvent) {
 		sourceHelp = null;
@@ -1061,9 +1069,16 @@
 		}
 	}
 	async function action(command: string) {
+		const article = helpArticles.find((entry) => entry.id === command);
 		document.querySelectorAll<HTMLDetailsElement>('details[open]').forEach((menu) => {
+			if (article && menu.contains(document.activeElement)) menu.querySelector('summary')?.focus();
 			menu.open = false;
 		});
+		if (article) {
+			selectedHelp = article;
+			modal = 'help';
+			return;
+		}
 		if ([...runActions, ...breakpointActions].some((entry) => entry.command === command)) {
 			await runCommand(command);
 			return;
@@ -1138,12 +1153,6 @@
 			case 'find':
 				findStatus = '';
 				modal = 'find';
-				break;
-			case 'help':
-				modal = 'help';
-				break;
-			case 'about':
-				modal = 'about';
 				break;
 		}
 	}
@@ -1377,6 +1386,18 @@
 			<details name="menus">
 				<summary>Settings</summary>
 				<div class="menu settings-menu">
+					{#each settingsDisplayToggles as toggle (toggle.icon)}
+						<label>
+							<input
+								type="checkbox"
+								checked={toggle.active}
+								disabled={toggle.disabled}
+								onchange={toggle.toggle}
+							/>
+							{toggle.label}{toggle.icon === 'input' ? ' (5,6,7,8,12)' : ''}
+						</label>
+					{/each}
+					<hr />
 					{#each engineOptions.filter((option) => option !== popupInputOption) as option (option.id)}<label
 							><input
 								type="checkbox"
@@ -1385,7 +1406,11 @@
 								onchange={(event) => updateEngineSetting(option.id, event.currentTarget.checked)}
 							/>
 							{option.label}</label
-						>{/each}
+						>
+						{#if option.id === Settings.START_AT_MAIN || option.id === Settings.SELF_MODIFYING_CODE_ENABLED}
+							<hr />
+						{/if}
+					{/each}
 					{#each pendingSettings as setting (setting)}<button disabled>{setting}</button>{/each}
 				</div>
 			</details>
@@ -1398,9 +1423,10 @@
 			<details name="menus">
 				<summary>Help</summary>
 				<div class="menu">
-					{#each helpActions as item (item.command)}<button onclick={() => action(item.command)}
-							>{item.label}</button
-						>{/each}
+					{#each helpActions as item (item.command)}
+						<button onclick={() => action(item.command)}>{item.label}</button>
+						{#if item.command === 'about'}<hr />{/if}
+					{/each}
 				</div>
 			</details>
 			<ThemeToggle />
@@ -1431,6 +1457,14 @@
 									height="22"
 								/>{/if}</button
 						>{/each}
+					{#if groupIndex === 1}
+						<button
+							title="Show line numbers"
+							aria-label="Show line numbers"
+							aria-pressed={showLines}
+							onclick={() => (showLines = !showLines)}><ToolbarIcon name="lines" /></button
+						>
+					{/if}
 				</div>
 			{/each}
 			<div class="toolgroup view-toggles" role="group" aria-label="Display settings">
@@ -1820,39 +1854,21 @@
 		</div>
 		<p role="status">{findStatus}</p></Modal
 	>
-{:else if modal === 'help'}<Modal title="MARS Help" onclose={dismiss}
-		><p>
-			New creates a source file; Open selects saved files in this browser. Save commits your source
-			locally, and Auto Save commits edits automatically when enabled. Open tabs and in-progress
-			text are recovered after reload. Import reads .asm files from your computer; Export downloads
-			copies.
-		</p>
-		<p>
-			Registers remain visible beside Edit and Execute. Use the toolbar toggles to change value
-			display and label visibility.
-		</p>
-		<p>
-			Assemble (F3) translates the current source. Go (F5), Step (F7), Backstep (F8), Pause (F9),
-			Stop (F11), and Reset (F12) control execution. Select breakpoints in Text Segment. Tools and
-			memory export are deferred.
-		</p>
-		<div class="dialog-buttons"><button onclick={dismiss}>Close</button></div></Modal
+{:else if modal === 'help'}
+	<Modal
+		title={selectedHelp.title}
+		onclose={dismiss}
+		initialFocus=".help-article"
+		--modal-width={selectedHelp.html ? 'min(900px, 94vw)' : 'min(560px, 90vw)'}
 	>
-{:else if modal === 'about'}<Modal title="About MARS" onclose={dismiss}
-		><h3>MARS — MIPS Assembler and Runtime Simulator</h3>
-		<p>MARS-ts 1.0 development</p>
-		<p>
-			Original MARS: copyright © 2003–2013 Pete Sanderson and Kenneth Vollmar. Distributed under the
-			MIT license.
-		</p>
-		<p>Mars imagery credit: NASA/JPL.</p>
-		<p>
-			<a href={asset('MARSlicense.txt')} target="_blank" rel="noopener noreferrer"
-				>Read the MIT license (opens in a new tab)</a
-			>
-		</p>
-		<div class="dialog-buttons"><button onclick={dismiss}>Close</button></div></Modal
-	>{/if}
+		<HelpArticle
+			article={selectedHelp}
+			canOpen={!running}
+			onopen={(source) => void openHelpSource(source)}
+		/>
+		<div class="dialog-buttons"><button onclick={dismiss}>Close</button></div>
+	</Modal>
+{/if}
 
 <style>
 	.desktop {
@@ -2040,6 +2056,11 @@
 	}
 	.menu button {
 		justify-content: space-between;
+	}
+	.menu hr {
+		margin: 3px 4px;
+		border: 0;
+		border-top: 1px solid var(--theme-border, #919191);
 	}
 	.menu button:hover:enabled,
 	.menu label:hover {
@@ -2275,13 +2296,6 @@
 	}
 	p {
 		margin: 8px 0;
-	}
-	h3 {
-		font-weight: 600;
-	}
-	a {
-		text-decoration: underline;
-		color: var(--theme-accent-text, #225888);
 	}
 	.print-source {
 		display: none;

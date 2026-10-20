@@ -20,12 +20,14 @@ During initialization, an accessible, continuously rotating loading spinner appe
 | Unsaved editor buffers | A separate persistent recovery workspace, including full text and saved baselines |
 | Native Open | A same-tab picker over the local source library |
 | Moving source between the IDE and OS | Explicit Import of `.asm` files and Export downloads; no retained OS file handles |
-| Assemble a directory | Assemble the active source or all currently open editor sources; includes resolve through the virtual source host |
+| Assemble a directory | Assemble the active source and its explicit includes through the virtual source host |
 | SwingWorker and blocking input | Cooperative asynchronous simulation through injected scheduling and input services |
 | Editor/Highlighting configuration dialogs | Bundled JSON presets selected by the application's editors; user display toggles remain available |
 | Command-line launcher and program arguments | Excluded from the web application; Java command-line execution remains development-only oracle infrastructure |
 | Application Print and Exit | Printing uses the browser; Exit closes documents through the dirty-buffer workflow and leaves the IDE open |
 | Raster toolbar imagery | SVG icons with retained attribution; the favicon remains the original MARS ICO |
+
+The Help dropdown opens individual articles for Introduction, Debugging, Settings, Syscalls, Exception Handlers, Macros, Tools, Limitations, Release History, and Acknowledgements, alongside the F1 overview and About MARS. The [Help module](src/lib/help/README.md) owns their catalog and content. Current-use articles describe implemented browser behavior; historical acknowledgements, release history, and Java extension instructions retain original credits and dates with explicit legacy context. The syscall reference marks each service’s availability and uses a bounded, independently scrollable table with fixed column headers. Long articles scroll inside the shared dialog, keeping its title and dismissal control visible. Code snippets offer clipboard copying with feedback and an action to open the exact snippet in a new editor source without replacing existing buffers; opening code is disabled during execution.
 
 These adaptations are specified in [ADR 0002](docs/adrs/0002-port-fidelity.md), [ADR 0003](docs/adrs/0003-browser-file-workflows.md), and [ADR 0004](docs/adrs/0004-cooperative-simulation.md). They do not authorize replacement assembly or simulation algorithms in the GUI.
 
@@ -55,6 +57,7 @@ Arrows describe use or ownership relationships, not a complete import graph. In 
 | --- | --- |
 | [Routes](src/routes/) | Prerender the application shell and mount the main desktop directly |
 | [Venus](src/lib/venus/README.md) | Present desktop workflows, build browser host callbacks, own component lifetimes, and coordinate the real engine through `RunController` |
+| [Help](src/lib/help/README.md) | Own the Help menu catalog, overview/About content, and attributed articles adapted to current browser workflows; Venus opens them in the shared modal |
 | [Editor](src/lib/editor/README.md) | Own source buffers, names, selected tab, dirty state, saved baselines, and per-buffer undo/redo |
 | [Editor highlighting](src/lib/editor/highlighting/README.md) | Translate the legacy lexical token marker and paint source; consume instruction/directive metadata for presentation without assembling code |
 | [Browser](src/lib/browser/README.md) | Validate and persist sources/preferences, normalize virtual filenames, and initiate downloads with resource cleanup |
@@ -93,7 +96,7 @@ The engine retains the Default, CompactDataAtZero, and CompactTextAtZero configu
 
 ## Assembly: source text to machine statements
 
-Assemble reads the current source text, including unsaved edits. By default it assembles the active source; the “Assemble all open files in editor” setting supplies the explicit list of open buffers. Source resolution prefers open buffers and then committed local-library records. A library source can satisfy an include without being an open tab. There is no native directory scan or network source discovery.
+Assemble reads the current source text, including unsaved edits. It assembles the active source and its explicit `.include` directives. Other open tabs are not automatically assembled; the assemble-all UI has been removed and its saved preference is reset on desktop initialization. Source resolution prefers open buffers and then committed local-library records. A library source can satisfy an include without being an open tab. There is no native directory scan or network source discovery.
 
 ```mermaid
 flowchart TB
@@ -246,7 +249,7 @@ The highlighting module translates the legacy token marker, including keyword bo
 
 The source/messages split has a horizontal resize bar; the register sidebar has a vertical width divider. Both support pointer and keyboard adjustment and persist their dimensions. Menus dismiss on outside click or Escape. Same-tab dialogs contain focus, dismiss through their supported actions or backdrop, and restore focus afterward. The source Line/Column indicator appears only in Edit with an open source buffer.
 
-The toolbar groups file workflows, editing, execution/debugging, and display toggles. Debugging uses recognizable play, step, backstep, pause, stop, reset, and filled-hammer assembly shapes. Toggle all breakpoints precedes Clear all breakpoints immediately after Reset. The display group before Help orders label visibility, hexadecimal addresses, hexadecimal values, ASCII, line numbers, and popup syscall input. Active toggles show a pressed background and expose their labels as hover text.
+The toolbar groups file workflows, editing, execution/debugging, and display toggles. Debugging uses recognizable play, step, backstep, pause, stop, reset, and filled-hammer assembly shapes. Toggle all breakpoints precedes Clear all breakpoints immediately after Reset. The line-number toggle ends the editing group. The display group before Help orders label visibility, hexadecimal addresses, hexadecimal values, ASCII, and popup syscall input. Active toggles show a pressed background and expose their labels as hover text. Settings also exposes label visibility, popup syscall input, hexadecimal addresses, and hexadecimal values, in that order at the top of the dropdown. These checkboxes share state, callbacks, and enablement with their toolbar counterparts.
 
 Data Segment navigation, address-range selection, hexadecimal controls, and ASCII share one row with a separator between groups. Previous/next memory-page buttons render fixed-size, theme-aware inline SVG arrows, avoiding a separate image request for these controls. Fixed ranges use address-first captions such as `0x10040000 (heap)`; the dynamic stack/global-pointer choices retain `current $sp` and `current $gp`. The ASCII toolbar button and Data Segment checkbox control the same persisted state. Labels filters and sort direction persist independently of assembled program data.
 
@@ -254,7 +257,7 @@ Keyboard commands route to the same actions as menus and buttons. New uses Alt+N
 
 ## Configuration and persistence
 
-Engine settings and presentation preferences have separate owners. Settings such as extended assembly, warning-as-error policy, delayed branching, start-at-main, self-modifying code, assemble-on-open, and all-open assembly are wired into the real engine. Changes that invalidate assembly require reassembly through the controller. Popup input selects the host presentation of console reads. Display-base preferences also inform engine statement rendering without changing stored machine bits.
+Engine settings and presentation preferences have separate owners. Settings such as extended assembly, warning-as-error policy, delayed branching, start-at-main, self-modifying code, and assemble-on-open are wired into the real engine. Changes that invalidate assembly require reassembly through the controller. The Settings menu has separators immediately after Values displayed in hexadecimal, Initialize Program Counter, and Self-modifying code. Popup input selects the host presentation of console reads. Display-base preferences also inform engine statement rendering without changing stored machine bits.
 
 | Persistence record | Owner and contents | Restore/write behavior |
 | --- | --- | --- |

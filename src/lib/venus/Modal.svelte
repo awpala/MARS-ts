@@ -8,8 +8,10 @@
 		children: Snippet;
 		/** Required dismissal callback; removes the modal from its parent. */
 		onclose: () => void;
+		/** Optional selector for initial focus inside the dialog; defaults to the first body control. */
+		initialFocus?: string;
 	};
-	let { title, children, onclose }: Props = $props();
+	let { title, children, onclose, initialFocus }: Props = $props();
 	const id = $props.id();
 	let backdropPointer: number | null = null;
 	function outsideDialog(event: PointerEvent, dialog: HTMLDialogElement): boolean {
@@ -26,9 +28,10 @@
 		dialog.showModal();
 		dialog
 			.querySelector<HTMLElement>(
-				'.dialog-body input:not([disabled]), .dialog-body button:not([disabled]), .dialog-body textarea:not([disabled])'
+				initialFocus ??
+					'.dialog-body input:not([disabled]), .dialog-body button:not([disabled]), .dialog-body textarea:not([disabled])'
 			)
-			?.focus();
+			?.focus({ preventScroll: !!initialFocus });
 		return () => {
 			dialog.close();
 			if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
@@ -68,17 +71,23 @@
 <style>
 	dialog {
 		margin: auto;
-		width: min(560px, 90vw);
+		width: var(--modal-width, min(560px, 90vw));
+		max-height: 90dvh;
 		border: 1px solid var(--theme-border, #6a7786);
 		padding: 0;
 		color: var(--theme-text, #17202b);
 		background: var(--theme-surface, #f0f0f0);
 		box-shadow: 0 8px 32px #0005;
 	}
+	dialog[open] {
+		display: flex;
+		flex-direction: column;
+	}
 	dialog::backdrop {
 		background: #0005;
 	}
 	header {
+		flex-shrink: 0;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -91,5 +100,6 @@
 	}
 	.dialog-body {
 		padding: 16px;
+		overflow: auto;
 	}
 </style>

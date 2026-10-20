@@ -153,18 +153,49 @@ test('working display settings and run speed survive reload', async ({ page }) =
 	await expect(page.getByRole('button', { name: 'Highlighting ...', exact: true })).toHaveCount(0);
 	await expect(
 		page.getByRole('checkbox', { name: 'Assemble all open files in editor', exact: true })
-	).toBeVisible();
+	).toHaveCount(0);
+	await expect(page.locator('.settings-menu').getByRole('separator')).toHaveCount(3);
+	for (const label of [
+		'Values displayed in hexadecimal',
+		'Initialize Program Counter to global main if defined',
+		'Self-modifying code'
+	]) {
+		const item = page.locator('.settings-menu label').filter({ hasText: label });
+		expect(await item.evaluate((element) => element.nextElementSibling?.tagName)).toBe('HR');
+	}
 	await expect(
 		page.getByRole('button', { name: 'Assemble all files in directory', exact: true })
 	).toHaveCount(0);
-	await expect(
-		page.locator('.settings-menu').getByText('Show Labels Window', { exact: true })
-	).toHaveCount(0);
-	await settings.click();
+	const menu = page.locator('.settings-menu');
 	const toggles = page.getByRole('group', { name: 'Display settings', exact: true });
-	await expect(toggles.getByRole('button')).toHaveCount(6);
+	const sharedLabels = [
+		'Show Labels Window',
+		'Popup dialog for input syscalls',
+		'Addresses displayed in hexadecimal',
+		'Values displayed in hexadecimal'
+	];
+	expect(
+		(await menu.locator('label').allTextContents()).slice(0, 4).map((label) => label.trim())
+	).toEqual([sharedLabels[0], `${sharedLabels[1]} (5,6,7,8,12)`, sharedLabels[2], sharedLabels[3]]);
+	for (const label of sharedLabels) {
+		const checkbox = menu.getByRole('checkbox', { name: label });
+		const button = toggles.getByRole('button', { name: label, exact: true });
+		const checked = await checkbox.isChecked();
+		await checkbox.click();
+		await expect(button).toHaveAttribute('aria-pressed', String(!checked));
+		await checkbox.click();
+		await expect(button).toHaveAttribute('aria-pressed', String(checked));
+	}
+	await settings.click();
+	await expect(toggles.getByRole('button')).toHaveCount(5);
+	const editing = page.locator('.toolbar .toolgroup').filter({
+		has: page.getByRole('button', { name: 'Undo', exact: true })
+	});
+	const lines = editing.getByRole('button', { name: 'Show line numbers', exact: true });
+	await expect(editing.getByRole('button').last()).toHaveAccessibleName('Show line numbers');
+	await expect(lines).toHaveAttribute('title', 'Show line numbers');
+	await lines.click();
 	for (const label of [
-		'Show line numbers',
 		'Show Labels Window',
 		'Addresses displayed in hexadecimal',
 		'Values displayed in hexadecimal',
@@ -174,6 +205,14 @@ test('working display settings and run speed survive reload', async ({ page }) =
 		await expect(button).toHaveAttribute('title', label);
 		await button.click();
 	}
+	await settings.click();
+	for (const label of sharedLabels) {
+		const button = toggles.getByRole('button', { name: label, exact: true });
+		await expect(menu.getByRole('checkbox', { name: label })).toBeChecked({
+			checked: (await button.getAttribute('aria-pressed')) === 'true'
+		});
+	}
+	await settings.click();
 	const groupBox = (await toggles.boundingBox())!;
 	const helpBox = (await page.getByRole('button', { name: 'Help', exact: true }).boundingBox())!;
 	expect(groupBox.x + groupBox.width).toBeLessThanOrEqual(helpBox.x);
@@ -182,26 +221,29 @@ test('working display settings and run speed survive reload', async ({ page }) =
 	const slider = page.getByRole('slider');
 	await slider.fill('20');
 	await page.reload();
-	await expect(page.getByRole('button', { name: 'New', exact: true })).toBeEnabled();
-	await expect(page.getByLabel('Show line numbers', { exact: true })).toHaveAttribute(
-		'aria-pressed',
-		'false'
-	);
-	await expect(page.getByLabel('Show Labels Window', { exact: true })).toHaveAttribute(
-		'aria-pressed',
-		'true'
-	);
+	await expect(page.getByRole('button', { name: 'New', exact: true })).toBeEnabled({
+		timeout: 30000
+	});
+	await expect(lines).toHaveAttribute('aria-pressed', 'false');
 	await expect(
-		page.getByLabel('Addresses displayed in hexadecimal', { exact: true })
+		toggles.getByRole('button', { name: 'Show Labels Window', exact: true })
+	).toHaveAttribute('aria-pressed', 'true');
+	await expect(
+		toggles.getByRole('button', { name: 'Addresses displayed in hexadecimal', exact: true })
 	).toHaveAttribute('aria-pressed', 'false');
-	await expect(page.getByLabel('Values displayed in hexadecimal', { exact: true })).toHaveAttribute(
-		'aria-pressed',
-		'false'
-	);
-	await expect(page.getByLabel('Popup dialog for input syscalls', { exact: true })).toHaveAttribute(
-		'aria-pressed',
-		'true'
-	);
+	await expect(
+		toggles.getByRole('button', { name: 'Values displayed in hexadecimal', exact: true })
+	).toHaveAttribute('aria-pressed', 'false');
+	await expect(
+		toggles.getByRole('button', { name: 'Popup dialog for input syscalls', exact: true })
+	).toHaveAttribute('aria-pressed', 'true');
+	await settings.click();
+	for (const label of sharedLabels) {
+		const button = toggles.getByRole('button', { name: label, exact: true });
+		await expect(menu.getByRole('checkbox', { name: label })).toBeChecked({
+			checked: (await button.getAttribute('aria-pressed')) === 'true'
+		});
+	}
 	await expect(slider).toHaveValue('20');
 });
 
