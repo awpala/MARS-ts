@@ -40,7 +40,7 @@ Open **Settings → General** and maintain the **Build pipeline** and **Networki
 | Build Command | `npm run build` |
 | Start Command | Empty; the static server owns startup |
 | Static server | Nginx |
-| Custom Nginx configuration | Generated configuration with the static asset cache rules below; verify it in step 6 |
+| Custom Nginx configuration | Complete `server { ... }` configuration below; replaces `/etc/nginx/conf.d/default.conf` |
 | Ports Exposes | `80` |
 | Port Mappings | Empty |
 | HTTP Basic Authentication / Authentication | Disabled / `None` |
@@ -53,19 +53,37 @@ Leave `MARS_VALIDATION` unset in Coolify. [Vite configuration](../../vite.config
 
 ### Static asset caching
 
-The desktop Lighthouse report captured on October 20, 2026 identified hashed-asset caching as a maintenance improvement for the live site. When updating this policy, use **Settings → General → Build pipeline** (card/section) → **Custom Nginx configuration** (input field) and merge the following into the existing `server` block. Keep its listen port, document root, MIME types, compression, security headers, and genuine-404 routing. Replace any competing cache directives rather than appending conflicting headers.
+The desktop Lighthouse report captured on October 20, 2026 identified hashed-asset caching as a maintenance improvement for the live site. Use **Settings → General → Build pipeline** (card/section) → **Custom Nginx configuration** (input field). This field replaces the complete `/etc/nginx/conf.d/default.conf` file; it does not append directives inside a generated `server` block. Coolify's [static-image build implementation](https://github.com/coollabsio/coolify/blob/main/app/Jobs/ApplicationDeploymentJob.php) copies the field into that file and publishes the site at `/usr/share/nginx/html`.
+
+Replace the field's contents with this complete configuration. The outer `server { ... }` is required. Do not wrap it in `http { ... }` or paste only the inner cache directives: the image already includes `conf.d` inside its `http` context, where a bare `location` is invalid. If adapting an existing complete server configuration, keep its site-specific headers and other required settings while merging these locations and cache rules.
 
 ```nginx
-# Unversioned documents and assets must revalidate after a release.
-expires off;
-add_header Cache-Control "no-cache";
+server {
+    listen 80;
+    server_name _;
 
-# SvelteKit content hashes change whenever these files change.
-location ^~ /_app/immutable/ {
-    try_files $uri =404;
-    add_header Cache-Control "public, max-age=31536000, immutable";
+    # Both locations inherit Coolify's published asset directory.
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Unversioned documents and assets revalidate after a release.
+    expires off;
+    add_header Cache-Control "no-cache";
+
+    # Content hashes change whenever these files change.
+    location ^~ /_app/immutable/ {
+        try_files $uri =404;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
+
+    # Serve real files and directory indexes; unknown paths return 404.
+    location / {
+        try_files $uri $uri/ =404;
+    }
 }
 ```
+
+Keep `root` at server scope so the immutable-assets location inherits it too. The container listens on HTTP port `80`; Coolify's proxy continues to own public HTTPS. MIME types and other image-wide settings remain in the image's parent Nginx configuration. Validate the complete candidate with `nginx -t` using the configured static image before publishing a configuration change.
 
 Only `/_app/immutable/` receives the year-long immutable policy. HTML, `/_app/version.json`, `/llms.txt`, the license, favicon, and unversioned icons retain revalidation. Do not use `always` for the immutable header: missing chunks must return a real `404` without a long-lived cache policy. Nginx inherits `add_header` directives only when the current level defines none, so repeat any existing higher-level security headers in the new location and ensure other locations do not override the intended revalidation policy. See the [Nginx header module](https://nginx.org/en/docs/http/ngx_http_headers_module.html).
 
@@ -233,6 +251,7 @@ Coolify's [rollback documentation](https://coolify.io/docs/applications/deployme
 | Wrong Node version or unavailable Node package | Inspect the Nixpacks plan and install log; check the manifest and build-time version override. Resolve builder/archive support for Node 24. |
 | Missing SvelteKit, Vite, or Tailwind during build | Confirm `npm ci --include=dev`, the root Base Directory, and the committed lockfile. Do not replace `npm ci` with `npm install`. |
 | Missing `build/` | Confirm `npm run build`, Publish Directory `/build`, and absence of `MARS_VALIDATION=1`. Read the first build error. |
+| Nginx reports `"location" directive is not allowed here` in `default.conf` | Replace Custom Nginx configuration with the complete `server { ... }` example in step 2, save, and rebuild/redeploy. The field replaces the entire file; cache fragments pasted at its top level are invalid. |
 | Default page or proxy `502` | Confirm static output, publish directory, domain target port `80`, runtime logs, and health. Local port `6277` is not the production target. |
 | Unhealthy container or proxy `404` | Test `/` inside the container with `curl` or `wget`; check health configuration, published `index.html`, and domain routing. |
 | Certificate error or wrong site | Check A/AAAA, effective CAA policy, server ingress, exact hostname, duplicate domain assignments, and proxy certificate logs. |
