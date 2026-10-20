@@ -4,9 +4,12 @@ A TypeScript/SvelteKit web application porting of **MARS**, the educational MIPS
 
 Read the [implementation guide](IMPLEMENTATION.md) for the current architecture, module responsibilities, browser working filesystem, supported behavior, validation evidence, and remaining limitations. The original Java app and generated Javadoc are isolated under [_legacy-app/](_legacy-app/README.md). The [port plan](docs/adrs/0000-port-plan.md) and [decision records](docs/README.md) describe scope and design choices.
 
+[*See `MARS-ts` deployed live here!*](https://mars-ide.portfolio-projects.dev)
+
 > [!IMPORTANT]
 > This is a good faith feature-parity attempt/interpretation **only** (via corresponding TypeScript porting of equivalent Java implementation). The repo owner makes **no** guarantee of 100% fidelity to the original Java-based implementation; user discretion/discernment is therefore advised accordingly!
->
+
+> [!WARNING]
 > ***Disclosure***: Porting performed with assistance of LLM-based tooling (primarily, Claude Code and Codex).
 
 ## Development
