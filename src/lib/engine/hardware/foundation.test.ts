@@ -66,6 +66,20 @@ describe('Java foundation method-probe parity', () => {
 			attempt('unicodeLong:' + value, () => Binary.stringToLong(value));
 		}
 	});
+	it('recognizes integer candidates using the oracle digit grammar without parsing nonnumeric tokens', () => {
+		for (const [key, value] of expected) {
+			if (key.startsWith('digit:')) {
+				const character = String.fromCharCode(Number(key.slice(6)));
+				expect(Binary.isIntegerCandidate(character + 'not-a-number'), key).toBe(Number(value) < 10);
+			}
+			if (key.startsWith('unicodeInt:') && !value.startsWith('!'))
+				expect(Binary.isIntegerCandidate(key.slice('unicodeInt:'.length)), key).toBe(true);
+		}
+		for (const value of ['', '+1', '-1', '#ff', '0x80000000', '4294967296'])
+			expect(Binary.isIntegerCandidate(value), JSON.stringify(value)).toBe(true);
+		for (const value of ['add', '.data', '$t0', '$f2', 'NaN', 'Infinity', '"text"', '𝟙'])
+			expect(Binary.isIntegerCandidate(value), value).toBe(false);
+	});
 	it('preserves exception register cause masks, PC wrap, write order, and address diagnostics', () => {
 		const cp0 = new Coprocessor0();
 		const registers = new RegisterFile();
@@ -220,6 +234,10 @@ describe('Java foundation method-probe parity', () => {
 		check('rf:unknown', registers.updateRegister(35, 99));
 		for (const name of ['$zero', '$0', '$08', '$0x1f', '$', '$32', 'zero', '$s8', ''])
 			attempt(`rf:lookup:${name}`, () => registers.getUserRegister(name)?.getName() ?? 'null');
+		for (const register of registers.getRegisters()) {
+			expect(registers.getUserRegister(register.getName())).toBe(register);
+			expect(registers.getUserRegister(`$${register.getNumber()}`)).toBe(register);
+		}
 		registers.initializeProgramCounter(0x7ffffffc);
 		registers.incrementPC();
 		check('rf:pc', registers.getProgramCounter());

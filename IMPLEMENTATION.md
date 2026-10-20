@@ -27,6 +27,8 @@ The application opens directly into the main MARS desktop. Source editing and ex
 
 During initialization, an accessible, continuously rotating loading spinner appears while saved sources, preferences, and the engine are restored. The desktop stays hidden until its restored pane layout has been measured, then appears automatically in its initialized form.
 
+Engine startup builds and tokenizes the canonical instruction registry. Register lookup and token classification share a conservative integer-prefix check, avoiding repeated caught numeric-parsing exceptions for ordinary register names, operators, and directives. Numeric candidates still pass through the original full parser, including its Unicode and legacy fallback behavior; registry ordering and initialization remain unchanged.
+
 ### Native-to-browser adaptations
 
 | Legacy responsibility                       | Current browser interpretation                                                                                |

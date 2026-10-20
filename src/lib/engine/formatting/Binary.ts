@@ -142,6 +142,18 @@ export class Binary {
 		if (BigInt.asIntN(width, result) !== result) throw new NumberFormatException();
 		return result;
 	}
+	/**
+	 * Whether the first code unit permits an integer parse attempt, including the legacy empty-string zero.
+	 * True does not validate the remaining characters; false lets callers skip an otherwise guaranteed exception.
+	 */
+	static isIntegerCandidate(value: string): boolean {
+		if (value.length === 0) return true;
+		const first = value.charAt(0);
+		if (first === '+' || first === '-' || first === '#') return true;
+		if (first.charCodeAt(0) < 128) return first >= '0' && first <= '9';
+		const digit = Binary.digit(first);
+		return digit >= 0 && digit < 10;
+	}
 	/** Parses Java decode syntax, two's-complement hex, and the legacy wrapping decimal fallback. */
 	static stringToInt(value: string): number {
 		try {

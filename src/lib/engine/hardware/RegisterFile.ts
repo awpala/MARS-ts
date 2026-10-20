@@ -127,11 +127,15 @@ export class RegisterFile {
 	getUserRegister(name: string): Register | null {
 		if (!name.length) throw new RangeError('StringIndexOutOfBoundsException');
 		if (name[0] !== '$') return null;
-		try {
-			const r = this.registers[Binary.stringToInt(name.slice(1))];
-			if (r) return r;
-		} catch {
-			/* Try the mnemonic. */
+		const number = name.slice(1);
+		// Named general and floating registers cannot parse as integers; avoid constructing caught errors.
+		if (Binary.isIntegerCandidate(number)) {
+			try {
+				const r = this.registers[Binary.stringToInt(number)];
+				if (r) return r;
+			} catch {
+				/* Try the mnemonic. */
+			}
 		}
 		return this.registers.find((r) => r.getName() === name) ?? null;
 	}

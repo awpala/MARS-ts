@@ -47,7 +47,10 @@ public final class AssemblerProbe {
     private static void lexical() {
         Globals.initialize(false);
         String[] values = {"", "'x'", "#comment", "(", ")", ":", "+", "-", ",", "%", "%arg", "$", "$arg", "$t0", "$8", "$08", "$fp", "$s8", "$32", "$f0", "$f31", "$f32", "$12 (status)", "0", "31", "32", "32767", "32768", "65535", "65536", "-1", "-32768", "-32769", "2147483647", "2147483648", "4294967295", "4294967296", "0x80000000", "0xffff", "-0x80000000", "0x1ffffffff", "08", "010", "+010", "1.0", ".5", "1.", "1e20", "-1E-4", "1f", "1D", "1e", "1e+", "0x1p2", "0X.8P-4f", "0x1.p10D", "0x1.0", "NaN", "+NaN", "-NaN", "nan", "Infinity", "+Infinity", "-Infinity", "infinity", "NaNf", "1e99999", " 1 ", "\t1.5\n", "\u00001.5\u0000", "\u00a01.5", "add", "ADD", "li", "syscall", "unknown", ".DATA", ".unknown", ".", "\"unterminated", "a$b._3", "_label", "9label", "\u03b1\u0661", "\u4e2d\u6587", "a\u0301", "\u2160", "\ud801\udc00", "a-b", "1_0", "0b101", "#0xff"};
-        for (String value : values) {
+        String[] numericPrefixes = {"١٢٣", "１２３", "०१२", "-١٢", "+१२", "0xＡＢ", "𝟙"};
+        for (String value : java.util.stream.Stream.concat(
+                java.util.Arrays.stream(values),
+                java.util.Arrays.stream(numericPrefixes)).toArray(String[]::new)) {
             String classification;
             String identifier;
             try { classification = TokenTypes.matchTokenType(value).toString(); } catch (Exception error) { classification = "error:" + error.getClass().getSimpleName(); }

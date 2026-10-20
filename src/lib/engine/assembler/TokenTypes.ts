@@ -121,16 +121,19 @@ export class TokenTypes {
 		if (register !== null)
 			return register.getName() === value ? this.REGISTER_NAME : this.REGISTER_NUMBER;
 		if (context.coprocessor1.getRegister(value) !== null) return this.FP_REGISTER_NAME;
-		try {
-			const number = Binary.stringToInt(value);
-			if (number >= 0 && number <= 31) return this.INTEGER_5;
-			if (number >= DataTypes.MIN_UHALF_VALUE && number <= DataTypes.MAX_UHALF_VALUE)
-				return this.INTEGER_16U;
-			if (number >= DataTypes.MIN_HALF_VALUE && number <= DataTypes.MAX_HALF_VALUE)
-				return this.INTEGER_16;
-			return this.INTEGER_32;
-		} catch (error) {
-			if (!(error instanceof NumberFormatException)) throw error;
+		// Most instruction examples contain words, not numbers. Preserve precedence without an exception per word.
+		if (Binary.isIntegerCandidate(value)) {
+			try {
+				const number = Binary.stringToInt(value);
+				if (number >= 0 && number <= 31) return this.INTEGER_5;
+				if (number >= DataTypes.MIN_UHALF_VALUE && number <= DataTypes.MAX_UHALF_VALUE)
+					return this.INTEGER_16U;
+				if (number >= DataTypes.MIN_HALF_VALUE && number <= DataTypes.MAX_HALF_VALUE)
+					return this.INTEGER_16;
+				return this.INTEGER_32;
+			} catch (error) {
+				if (!(error instanceof NumberFormatException)) throw error;
+			}
 		}
 		if (this.isJavaDouble(value)) return this.REAL_NUMBER;
 		if (context.instructionSet.matchOperator(value) !== null) return this.OPERATOR;
