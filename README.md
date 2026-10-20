@@ -12,6 +12,9 @@ Read the [implementation guide](IMPLEMENTATION.md) for the current architecture,
 > [!WARNING]
 > ***Disclosure***: Porting performed with assistance of LLM-based tooling (primarily, Claude Code and Codex).
 
+> [!NOTE]
+> For additional information, see original author documentation [here](https://dpetersanderson.github.io/Help/MarsHelpIntro.html), as of legacy/final version 4.5 (Java/Swing-based implementation). Modified versions are implemented in the `Help` menu/dropdown of the MARS-ts implementation (see [here](./src/lib/help/README.md)), with distinction between legacy vs. current/ported functionality, where appropriate.
+
 ## Development
 
 Open the [development container](.devcontainer/devcontainer.json), then use `run-app` to start the IDE on **port 6277**. The environment provides Node 24 and a provisional JDK 21 for the unchanged Java reference. See [development operations](docs/agents/operations.md) for setup, build, test, and cleanup commands.
