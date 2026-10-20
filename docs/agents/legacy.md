@@ -4,7 +4,7 @@ Read this guide when you need to know what MARS actually does: reading the Java 
 
 ## The legacy tree is read-only
 
-`Mars.java`, `mars/`, and the resource files beside them (`Config.properties`, `Settings.properties`, `Syscall.properties`, `PseudoOps.txt`, `MipsXRayOpcode.xml`, the `*Datapath.xml` files, `help/`, `images/`, `MARSlicense.txt`, `CreateMarsJar.bat`, `mainclass.txt`) are MARS 4.5 as released. Never edit, reformat, or modernize them, even to silence a warning. When the legacy code has a defect, record it (file, line, behavior, a reproducing program). The port either reproduces it or diverges through an ADR that names the fixture recording the new behavior.
+The [legacy application](../../_legacy-app/README.md) owns `Mars.java`, `mars/`, the properties and XML resources, `PseudoOps.txt`, `help/`, `images/`, generated `docs/`, `META-INF/`, `CreateMarsJar.bat`, and `mainclass.txt`. Java sources, runtime resources, and generated documentation retain their original contents. The packaging script resolves the shared [MARSlicense.txt](../../MARSlicense.txt) from the repository root. Never edit, reformat, or modernize them, even to silence a warning. When the legacy code has a defect, record it (file, line, behavior, a reproducing program). The port either reproduces it or diverges through an ADR that names the fixture recording the new behavior.
 
 ## Building and running the oracle
 
@@ -24,7 +24,7 @@ run-legacy h                       # MARS's full option reference
 
 The checked-in Java implementation is canonical regardless of historical release labels. The TypeScript port targets MARS-ts 1.0; its version is independent of the Java source's version strings.
 
-Useful options for fixtures (all from `mars/MarsLaunch.java`):
+Useful options for fixtures (all from `_legacy-app/mars/MarsLaunch.java`):
 
 | Option | Effect |
 | --- | --- |
@@ -45,20 +45,20 @@ Nondeterministic behavior must stay out of exact-match fixtures: the time syscal
 
 | Question | Start reading |
 | --- | --- |
-| How a source line is tokenized and assembled | `mars/assembler/Tokenizer.java`, `Assembler.java`, `Directives.java` |
-| What a basic instruction does | `mars/mips/instructions/InstructionSet.java` (each `BasicInstruction` carries its `SimulationCode`) |
+| How a source line is tokenized and assembled | `_legacy-app/mars/assembler/Tokenizer.java`, `Assembler.java`, `Directives.java` |
+| What a basic instruction does | `_legacy-app/mars/mips/instructions/InstructionSet.java` (each `BasicInstruction` carries its `SimulationCode`) |
 | How a pseudo-instruction expands | `PseudoOps.txt` and `ExtendedInstruction.java` |
-| Memory layout and segment bounds | `mars/mips/hardware/Memory.java`, `MemoryConfigurations.java` |
+| Memory layout and segment bounds | `_legacy-app/mars/mips/hardware/Memory.java`, `MemoryConfigurations.java` |
 | Registers and coprocessors | `RegisterFile.java`, `Coprocessor0.java`, `Coprocessor1.java` |
-| Run, step, backstep, exceptions | `mars/simulator/Simulator.java`, `BackStepper.java`, `Exceptions.java` |
-| A syscall | `mars/mips/instructions/syscalls/Syscall<Name>.java`; numbers in `Syscall.properties` |
-| Number formatting and conversion | `mars/util/Binary.java` |
-| Console and file I/O | `mars/util/SystemIO.java` |
-| Command-line behavior | `mars/MarsLaunch.java` |
-| A UI behavior | `mars/venus/` (the Swing IDE) |
-| User-facing explanations | `help/*.html` |
+| Run, step, backstep, exceptions | `_legacy-app/mars/simulator/Simulator.java`, `BackStepper.java`, `Exceptions.java` |
+| A syscall | `_legacy-app/mars/mips/instructions/syscalls/Syscall<Name>.java`; numbers in `Syscall.properties` |
+| Number formatting and conversion | `_legacy-app/mars/util/Binary.java` |
+| Console and file I/O | `_legacy-app/mars/util/SystemIO.java` |
+| Command-line behavior | `_legacy-app/mars/MarsLaunch.java` |
+| A UI behavior | `_legacy-app/mars/venus/` (the Swing IDE) |
+| User-facing explanations | `_legacy-app/help/*.html` |
 
-The legacy Javadoc under [docs-legacy/](../../docs-legacy/README.md) is generated from the same sources; read the source when the two disagree.
+The legacy Javadoc under [_legacy-app/docs/](../../_legacy-app/docs/README.md) is generated from the same sources; read the source when the two disagree.
 
 ## Java-to-TypeScript semantics
 

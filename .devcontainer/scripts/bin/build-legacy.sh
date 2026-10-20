@@ -17,8 +17,9 @@ set -euo pipefail
 
 SCRIPT_PATH=$(readlink -f -- "${BASH_SOURCE[0]}")
 WORKSPACE_DIR=$(cd -- "$(dirname -- "$SCRIPT_PATH")/../../.." && pwd -P)
-# The legacy sources currently live at the repository root (Mars.java, mars/).
-LEGACY_DIR="$WORKSPACE_DIR"
+# Java sources and runtime resources are isolated from the port. The original
+# license remains at the workspace root and is copied into the jar separately.
+LEGACY_DIR="${WORKSPACE_DIR}/_legacy-app"
 OUT_DIR="${WORKSPACE_DIR}/__build/legacy"
 CLASSES_DIR="${OUT_DIR}/classes"
 JAR_FILE="${OUT_DIR}/Mars.jar"
@@ -26,15 +27,14 @@ BUILD_INFO="${OUT_DIR}/BUILD_INFO"
 
 # Runtime resources MARS loads from the classpath (Globals, PropertiesFile,
 # InstructionSet, the Swing UI). This mirrors CreateMarsJar.bat minus the
-# sources, build scripts, and generated Javadoc (the batch file's historical
-# docs/ entry, now archived under docs-legacy/). The application never reads
-# Javadoc at runtime; docs/ now holds authored port documentation.
+# sources, build scripts, and generated Javadoc (_legacy-app/docs/).
+# The application never reads Javadoc at runtime; root docs/ holds authored
+# port documentation. The shared root license is also a runtime resource.
 RESOURCES=(
   PseudoOps.txt
   Config.properties
   Syscall.properties
   Settings.properties
-  MARSlicense.txt
   MipsXRayOpcode.xml
   registerDatapath.xml
   controlDatapath.xml
@@ -62,6 +62,11 @@ for resource in Mars.java mars "${RESOURCES[@]}"; do
   fi
 done
 
+if [ ! -f "${WORKSPACE_DIR}/MARSlicense.txt" ]; then
+  echo "Shared license missing: ${WORKSPACE_DIR}/MARSlicense.txt" >&2
+  exit 1
+fi
+
 rm -rf -- "$OUT_DIR"
 mkdir -p "$CLASSES_DIR"
 
@@ -81,6 +86,7 @@ javac -nowarn -encoding UTF-8 -d "$CLASSES_DIR" @"${OUT_DIR}/sources.txt"
 
 printf '\n=== Legacy: runtime resources ===\n' >&2
 cp -R -- "${RESOURCES[@]}" "$CLASSES_DIR/"
+cp -- "${WORKSPACE_DIR}/MARSlicense.txt" "$CLASSES_DIR/"
 
 printf '\n=== Legacy: jar ===\n' >&2
 jar --create --file "$JAR_FILE" --main-class Mars -C "$CLASSES_DIR" .

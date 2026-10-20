@@ -1,6 +1,6 @@
 # Memory method parity
 
-This suite exercises the canonical `mars/mips/hardware/Memory.java` storage algorithms through their public API. `MemoryProbe.java` compiles against the unchanged Java oracle jar; the [shared method-probe runner](../units/README.md) captures exact stdout, stderr, status, source hashes, and JDK provenance with fresh preferences and subprocess timeouts. It never changes legacy code or expected output by hand.
+This suite exercises the canonical `_legacy-app/mars/mips/hardware/Memory.java` storage algorithms through their public API. `MemoryProbe.java` compiles against the unchanged Java oracle jar; the [shared method-probe runner](../units/README.md) captures exact stdout, stderr, status, source hashes, and JDK provenance with fresh preferences and subprocess timeouts. It never changes legacy code or expected output by hand.
 
 ```sh
 build-legacy

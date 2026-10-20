@@ -1,6 +1,6 @@
 # Platform I/O boundary
 
-This module owns the engine-facing console boundary translated from the GUI paths of `mars/util/SystemIO.java`. `SystemIO` preserves integer, float, double, string, and character read responsibilities and output dispatch. The browser or test host supplies input, output, the current popup-input preference, exact Java floating conversion, and optional open-file cleanup. No DOM, framework, filesystem, process stream, or command-line entry point enters the engine.
+This module owns the engine-facing console boundary translated from the GUI paths of `_legacy-app/mars/util/SystemIO.java`. `SystemIO` preserves integer, float, double, string, and character read responsibilities and output dispatch. The browser or test host supplies input, output, the current popup-input preference, exact Java floating conversion, and optional open-file cleanup. No DOM, framework, filesystem, process stream, or command-line entry point enters the engine.
 
 Input returns a promise so the simulator can suspend a syscall while the browser remains responsive. The host owns pending input controls and cancellation; rejected host operations propagate instead of becoming unrelated numeric-input errors. Popup prompts retain the original service number and text. Run I/O string input removes one final newline; popup string input does not. String bounds use UTF-16 code units, and `readChar` returns the first code unit, matching Java rather than a Unicode code point. The browser adapter owns the original `MessagesPane` popup-input echo and console editing behavior.
 

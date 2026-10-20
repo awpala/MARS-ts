@@ -5,7 +5,7 @@ description: Implements Svelte components and SvelteKit routes for the MARS web 
 
 You are the UI engineer for MARS-ts. You own Svelte components, SvelteKit routes, and the browser host that connects them to the engine.
 
-Before changing anything, read [AGENTS.md](../../AGENTS.md), then [application engineering](../../docs/agents/app.md) and the [shared workflow](../../docs/agents/workflow.md). Load the [`svelte-core-bestpractices`](../../.agents/skills/svelte-core-bestpractices/SKILL.md) and [`svelte-code-writer`](../../.agents/skills/svelte-code-writer/SKILL.md) skills. When matching a legacy UI behavior, read the relevant `mars/venus/` class and `help/` page, read-only. Follow those documents; this file adds only your delegation boundary.
+Before changing anything, read [AGENTS.md](../../AGENTS.md), then [application engineering](../../docs/agents/app.md) and the [shared workflow](../../docs/agents/workflow.md). Load the [`svelte-core-bestpractices`](../../.agents/skills/svelte-core-bestpractices/SKILL.md) and [`svelte-code-writer`](../../.agents/skills/svelte-code-writer/SKILL.md) skills. When matching a legacy UI behavior, read the relevant `_legacy-app/mars/venus/` class and `_legacy-app/help/` page, read-only. Follow those documents; this file adds only your delegation boundary.
 
 - Use Svelte 5 runes, named documented `Props`, and snippets. Subscribe to engine sessions only through their public API and release every subscription and execution loop on teardown.
 - Do not edit engine modules; report the API change you need to the engine owner. Do not edit shared harness files or the port plan.

@@ -14,7 +14,7 @@ The port runs in one container described by [devcontainer.json](../../.devcontai
 | `format` | ESLint fixes, then Prettier (stops at the first failure) |
 | `build-app` | Clean generated output, `npm ci`, and build |
 | `kill-app` | Stop only the listener on `6277`, preserving PID identity through bounded escalation |
-| `cd "$app"`, `cd "$legacy"` | Both `/workspace` while the legacy tree lives at the root |
+| `cd "$app"`, `cd "$legacy"` | `/workspace` for the port; `/workspace/_legacy-app` for the Java reference |
 
 The root package is scaffolded and app commands are active. Noninteractive callers (agents, CI) can use `run-checks`, `tests`, `format`, `build-app`, `kill-app`, `build-legacy`, and `run-legacy` from `PATH`; `run-app` is an interactive alias, and noninteractive callers run `/scripts/bin/run-local-service.sh app`.
 
@@ -41,7 +41,7 @@ The setup script's `upsert_alias` and `upsert_export` calls are authoritative. P
 
 The app launcher keeps timestamped output with a latest symlink, records the source revision and lifecycle events, and forwards signals to its process group. `kill-app` targets only the configured port and verifies process identity before escalation. Neither helper starts unrelated services or kills processes by name.
 
-`run-legacy` must keep its isolation: headless AWT, a fresh preferences root per run with its store directories pre-created (so the JDK logs nothing to stderr), and MARS's own stdin, stdout, stderr, and exit status. `build-legacy` always deletes and rebuilds its output so stale classes cannot mask a source difference.
+`run-legacy` must keep its isolation: headless AWT, a fresh preferences root per run with its store directories pre-created (so the JDK logs nothing to stderr), and MARS's own stdin, stdout, stderr, and exit status. `build-legacy` compiles from `_legacy-app/`, copies runtime resources from that directory and the shared `MARSlicense.txt` from the repository root, and always deletes and rebuilds its output so stale classes cannot mask a source difference. `run-legacy` preserves the caller’s working directory so source arguments and includes keep their existing semantics. Rerun setup to refresh the `$legacy` shortcut in existing containers; the live build/run helpers need no reinstall.
 
 ## Provisioning rules
 

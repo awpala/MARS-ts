@@ -1,6 +1,6 @@
 # Runtime services
 
-This module owns the service abstraction, service-number registry, and individual system-call algorithms from `mars/mips/instructions/syscalls/` and `mars/mips/instructions/SyscallLoader.java`. Each syscall remains a separate class with its canonical name, default number, register/memory effects, and diagnostic behavior. A session injects its own general and floating registers, memory, exception updates, and `SystemIO` adapter; no process-wide state or browser UI is retained here.
+This module owns the service abstraction, service-number registry, and individual system-call algorithms from `_legacy-app/mars/mips/instructions/syscalls/` and `_legacy-app/mars/mips/instructions/SyscallLoader.java`. Each syscall remains a separate class with its canonical name, default number, register/memory effects, and diagnostic behavior. A session injects its own general and floating registers, memory, exception updates, and `SystemIO` adapter; no process-wide state or browser UI is retained here.
 
 The implemented core families are console reads and writes (services 1–8, 11–12, and 34–36), heap allocation (9), and normal termination (10 and 17). Floating services require exact Java numeric runtime callbacks from `SystemIO`; there is no JavaScript decimal-printing fallback. GUI `Exit2` ignores the `$a0` exit status, as the original Swing application does. No command-line integration or process exit is ported.
 

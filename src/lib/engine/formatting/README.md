@@ -1,6 +1,6 @@
 # Numeric representation
 
-This module owns binary, hexadecimal, decimal, and ASCII-display conversions used by the engine and views. `Binary` directly translates `mars/util/Binary.java`; its ASCII display uses `Config.properties` and `mars/Globals.java` padding behavior. It has no machine state or platform dependencies.
+This module owns binary, hexadecimal, decimal, and ASCII-display conversions used by the engine and views. `Binary` directly translates `_legacy-app/mars/util/Binary.java`; its ASCII display uses `Config.properties` and `_legacy-app/mars/Globals.java` padding behavior. It has no machine state or platform dependencies.
 
 Words are signed 32-bit `number` values. Long values are signed 64-bit `bigint` values. Bit shifts retain Java's masked distances; integer parsing reproduces `Integer.decode`/`Long.decode` syntax and MARS's additional two's-complement and decimal fallback paths. The fallback intentionally accepts empty input as zero, accepts decimal overflow with 32-bit wrap, and classifies negative hexadecimal as octal in the same cases as the legacy source. These quirks are preserved rather than silently corrected.
 

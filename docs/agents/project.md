@@ -27,8 +27,8 @@ MARS is copyright 2003–2013 Pete Sanderson and Kenneth Vollmar, under the MIT 
 
 | Path | Owner | Notes |
 | --- | --- | --- |
-| `Mars.java`, `mars/`, root `*.properties`, `*.xml`, `PseudoOps.txt`, `help/`, `images/` | Legacy reference | Read-only; see the [legacy guide](legacy.md) |
-| `docs-legacy/` | Legacy Javadoc | Generated files are read-only; removed at P5 |
+| `_legacy-app/` | Legacy application | Java sources, resources, packaging, and Javadoc; see the [legacy guide](legacy.md) |
+| `MARSlicense.txt` | Shared attribution | Original license retained at the root through offboarding; packaged into both applications |
 | `docs/` | Port documentation | Authored architecture, port mappings, ADRs, runbooks, and agent guidance |
 | `.devcontainer/`, `cleanup.sh`, `.github/` | Development operations | See [operations](operations.md) |
 | `AGENTS.md`, `.agents/`, `.claude/`, `.codex/`, `.mcp.json` | Agent harness | See [harness](harness.md) |

@@ -1,6 +1,6 @@
 # Diagnostics
 
-This module owns source locations and diagnostic report composition, translating `mars/ErrorMessage.java`, `mars/ErrorList.java`, and `mars/ProcessingException.java`. Assembler and simulator callers create diagnostics; the UI consumes their locations and reports without reconstructing messages. Each list owns its messages and counters. The session injects its error limit; the default is the canonical `Globals.maximumErrorMessages` value from `Config.properties`.
+This module owns source locations and diagnostic report composition, translating `_legacy-app/mars/ErrorMessage.java`, `_legacy-app/mars/ErrorList.java`, and `_legacy-app/mars/ProcessingException.java`. Assembler and simulator callers create diagnostics; the UI consumes their locations and reports without reconstructing messages. Each list owns its messages and counters. The session injects its error limit; the default is the canonical `Globals.maximumErrorMessages` value from `Config.properties`.
 
 The program and statement interfaces describe only the source-mapping methods diagnostics consume. They preserve include locations and macro history while allowing the corresponding program classes to be translated independently. They are contracts, not substitute program implementations. Line and column numbers use Java-compatible integer values; no machine-word arithmetic occurs here. Runtime macro prefixes use Java's ASCII trim and signed-int range, including its behavior for malformed or overflowing prefixes.
 

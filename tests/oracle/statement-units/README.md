@@ -1,6 +1,6 @@
 # Program statement oracle
 
-`StatementProbe.java` exercises the unchanged `mars/ProgramStatement.java` through the headless JDK 21 oracle. Run `node tests/oracle/statement-units/run.mjs` to capture or add `--check` to compare byte-for-byte. The shared [probe runner](../units/README.md) requires the existing fresh legacy build and records source hashes, stdout, stderr, and exit status.
+`StatementProbe.java` exercises the unchanged `_legacy-app/mars/ProgramStatement.java` through the headless JDK 21 oracle. Run `node tests/oracle/statement-units/run.mjs` to capture or add `--check` to compare byte-for-byte. The shared [probe runner](../units/README.md) requires the existing fresh legacy build and records source hashes, stdout, stderr, and exit status.
 
 The fixture contains metadata for all 155 canonical basic instruction descriptors, 931 decode cases across six operand bit patterns and five text addresses, 249 source-encoding cases, and five setter/fallback/error cases. Source cases include every canonical example, signed and unsigned immediate boundaries, branch offsets and signed address wraparound, valid and invalid jump regions, repeated builds, named and numeric registers, FPU registers, missing symbols, and operand-mask mismatch. Each state includes all four address/value display combinations, the full operand array, operand bounds, basic and machine representations, diagnostic output, and legacy diagnostic string rendering.
 

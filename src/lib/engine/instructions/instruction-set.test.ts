@@ -91,7 +91,7 @@ describe('complete canonical instruction set', () => {
 	it('contains all155 basic definitions and every unchanged pseudo specification', () => {
 		const m = machine();
 		expect(m.output).toEqual([]);
-		expect(pseudoOperations).toBe(readFileSync('PseudoOps.txt', 'utf8'));
+		expect(pseudoOperations).toBe(readFileSync('_legacy-app/PseudoOps.txt', 'utf8'));
 		const metadata = JSON.parse(
 			readFileSync('tests/oracle/instruction-units/golden.json', 'utf8')
 		) as { stdout: string };

@@ -100,13 +100,12 @@ fi
 
 # Directory shortcuts are paths, not shell startup `cd` commands. A terminal
 # stays where its caller opened it; `cd "$app"` is an explicit convenience.
-# The legacy Java sources currently live at the repository root (Mars.java and
-# mars/), so $legacy and $app are the same directory until the port decides a
-# layout; both names exist so commands read by intent.
+# The port lives at the repository root; the Java reference and its resources
+# live under _legacy-app/. Keep these exports aligned with build-legacy.sh.
 echo
 echo "--- Writing directory exports and helper aliases ---"
 upsert_export app "$WORKSPACE_DIR"
-upsert_export legacy "$WORKSPACE_DIR"
+upsert_export legacy "${WORKSPACE_DIR}/_legacy-app"
 
 # `pe` is an explicit operator diagnostic, never something setup invokes or
 # logs automatically: printenv exposes inherited configuration.
@@ -249,6 +248,6 @@ Setup log: /tmp/setup-env-debug.log
   run-legacy           Run legacy MARS headlessly (CLI mode), e.g. run-legacy nc prog.asm
 
 App commands report "not scaffolded" until package.json exists.
-Directory shortcuts: cd "$app" (/workspace), cd "$legacy" (/workspace).
+Directory shortcuts: cd "$app" (/workspace), cd "$legacy" (/workspace/_legacy-app).
 Port plan: docs/adrs/0000-port-plan.md.
 HELP

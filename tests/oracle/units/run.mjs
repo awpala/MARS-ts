@@ -16,8 +16,17 @@ import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 
+// Preserve fixture identifiers: Java inputs are app-relative; probes and the
+// shared license are repository-relative. Relocation must not change hashes.
+function inputPath(path) {
+	return resolve(
+		root,
+		path.startsWith('tests/') || path === 'MARSlicense.txt' ? path : `_legacy-app/${path}`
+	);
+}
+
 function files(path) {
-	return readdirSync(resolve(root, path), { withFileTypes: true }).flatMap((entry) =>
+	return readdirSync(inputPath(path), { withFileTypes: true }).flatMap((entry) =>
 		entry.isDirectory() ? files(`${path}/${entry.name}`) : [`${path}/${entry.name}`]
 	);
 }
@@ -61,7 +70,7 @@ export function captureProbe({ source, className, golden, check = false, legacyS
 		].sort();
 		const jarTime = statSync(join(root, '__build/legacy/Mars.jar')).mtimeMs;
 		for (const path of inputs)
-			if (statSync(resolve(root, path)).mtimeMs > jarTime)
+			if (statSync(inputPath(path)).mtimeMs > jarTime)
 				throw new Error(`Oracle jar is older than ${path}; run build-legacy first.`);
 		if (
 			!/^javac=javac 21(?:\D|$)/m.test(
@@ -73,7 +82,7 @@ export function captureProbe({ source, className, golden, check = false, legacyS
 		for (const path of inputs)
 			sourceDigest
 				.update(path + '\0')
-				.update(readFileSync(resolve(root, path)))
+				.update(readFileSync(inputPath(path)))
 				.update('\0');
 		const classes = join(temporary, 'classes');
 		const user = join(temporary, 'user');
@@ -104,7 +113,7 @@ export function captureProbe({ source, className, golden, check = false, legacyS
 			[source, ...legacySources].map((path) => [
 				path,
 				createHash('sha256')
-					.update(readFileSync(resolve(root, path)))
+					.update(readFileSync(inputPath(path)))
 					.digest('hex')
 			])
 		);

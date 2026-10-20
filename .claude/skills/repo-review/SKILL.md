@@ -14,7 +14,7 @@ Prioritize observable defects:
 - **Parity.** Ported behavior that differs from the legacy Java without an ADR; parity claims without an oracle fixture; hand-edited expected outputs; nondeterministic syscalls in exact-match fixtures. Probe disputed behavior with `run-legacy` in a temporary directory.
 - **Java semantics.** Missing 32-bit normalization, 64-bit values routed through `number`, float bit-pattern or float-printing shortcuts, a non-Java random generator ([semantics rules](../../../docs/agents/legacy.md#java-to-typescript-semantics)).
 - **Boundaries and lifetime.** Engine imports of Svelte, SvelteKit, or DOM; I/O bypassing host interfaces; module-level mutable simulator state; subscriptions, execution loops, Workers, or timers without teardown; SSR-shared module state.
-- **Legacy tree changes.** Any edit to `Mars.java`, `mars/`, legacy resources, `help/`, or the Javadoc is a blocking defect.
+- **Legacy tree changes.** Any edit to `_legacy-app/Mars.java`, `_legacy-app/mars/`, legacy resources, `_legacy-app/help/`, or the Javadoc is a blocking defect.
 
 Check public documentation against the actual contract, including defaults, teardown, and legacy provenance. Dependency changes require auditing duplicated pins and affected major-version prose. Harness changes require the skill mirror, both role adapters, and permission intent to stay aligned ([harness guide](../../../docs/agents/harness.md)). Use [module organization](../module-organization/SKILL.md) to assess cohesion rather than line counts.
 

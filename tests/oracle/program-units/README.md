@@ -1,6 +1,6 @@
 # Program lifecycle oracle
 
-`ProgramProbe.java` exercises the unchanged `mars/MIPSprogram.java` using the checked-in files under `sources/`. Run `node tests/oracle/program-units/run.mjs` to capture and add `--check` for byte-identical verification. The shared [probe runner](../units/README.md) requires a fresh legacy build and records all fixture/source hashes, stdout, stderr, exit status, and JDK major version.
+`ProgramProbe.java` exercises the unchanged `_legacy-app/mars/MIPSprogram.java` using the checked-in files under `sources/`. Run `node tests/oracle/program-units/run.mjs` to capture and add `--check` for byte-identical verification. The shared [probe runner](../units/README.md) requires a fresh legacy build and records all fixture/source hashes, stdout, stderr, exit status, and JDK major version.
 
 The probe records uninitialized fields, empty and mixed-newline input, Unicode text, one-based source bounds, real tokenization and include expansion, source mapping and mutable list aliases, parsed-list replacement, macro-pool ownership, source-read failure, lexical failure after previous successful tokenization, and ten preparation combinations with lead identity, duplicate paths, and optional exception handlers. Paths are stable repository-relative fixture paths; capture never edits the legacy source or loads arbitrary user files.
 

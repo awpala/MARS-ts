@@ -1,6 +1,6 @@
 # Source editor
 
-This module owns per-IDE source buffers, tab selection, filenames, dirty state, and edit history. Its controller adapts the responsibilities of `mars/venus/Editor.java`, `EditPane.java`, and `EditTabbedPane.java`; the Svelte view owns browser events and dialog decisions. It does not parse or assemble MIPS source.
+This module owns per-IDE source buffers, tab selection, filenames, dirty state, and edit history. Its controller adapts the responsibilities of `_legacy-app/mars/venus/Editor.java`, `EditPane.java`, and `EditTabbedPane.java`; the Svelte view owns browser events and dialog decisions. It does not parse or assemble MIPS source.
 
 Each mounted IDE constructs its own Editor. Changes are explicit controller calls followed by view snapshots; no controller state crosses SSR requests. The browser presenter restores full working buffers and their saved baselines from localStorage after mounting. Virtual filenames are unique in the source library; reopening a name selects its existing tab and preserves its edits. Closing requires the caller to resolve unsaved changes before invoking the controller. Undo history is per tab, and a new edit clears the redo branch. Default filename numbering advances for new files and skips names already open or reserved by the persisted library. Unmodified Tab replaces the selected text with one literal tab, following `jeditsyntax/InputHandler.insert_tab`; Shift+Tab retains focus traversal as in `JEditTextArea`.
 

@@ -1,6 +1,6 @@
 # Venus desktop interface
 
-This module presents the MARS desktop arrangement in Svelte: menus and toolbar, Edit/Execute panes above Messages/Run I/O, and the persistent register sidebar. It adapts `mars/venus/VenusUI.java`, `MainPane.java`, `MessagesPane.java`, `ExecutePane.java`, `RunSpeedPanel.java`, and the register-window classes. The root route mounts the desktop directly without a launch screen.
+This module presents the MARS desktop arrangement in Svelte: menus and toolbar, Edit/Execute panes above Messages/Run I/O, and the persistent register sidebar. It adapts `_legacy-app/mars/venus/VenusUI.java`, `MainPane.java`, `MessagesPane.java`, `ExecutePane.java`, `RunSpeedPanel.java`, and the register-window classes. The root route mounts the desktop directly without a launch screen.
 
 An accessible, continuously rotating loading spinner covers initialization. The desktop is hidden while storage and engine state initialize and its restored layout is measured, then appears automatically. Teardown cancels pending reveal frames.
 

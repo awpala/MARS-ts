@@ -88,7 +88,10 @@ try {
 					sources.map((path) => [
 						path,
 						createHash('sha256')
-							.update(readFileSync(join(root, path)))
+							// Keep stable fixture identifiers while resolving relocated Java sources.
+							.update(
+								readFileSync(join(root, path.startsWith('tests/') ? path : `_legacy-app/${path}`))
+							)
 							.digest('hex')
 					])
 				),

@@ -19,4 +19,4 @@ Keep decision records current when the port changes a boundary, and add an ADR w
 
 ## Legacy Javadoc
 
-The generated MARS 4.5 Javadoc and its supporting indexes, stylesheet, and images live in [docs-legacy/](../docs-legacy/README.md). They remain read-only legacy reference material until offboarding (milestone P5 of the [port plan](adrs/0000-port-plan.md#6-milestones)). This directory holds authored documentation for the TypeScript port, including the [backend translation plan](backend-port.md), [GUI port mapping](gui-port.md), and oracle guidance.
+The generated MARS 4.5 Javadoc and its supporting indexes, stylesheet, and images live in [_legacy-app/docs/](../_legacy-app/docs/README.md). They remain read-only legacy reference material until offboarding (milestone P5 of the [port plan](adrs/0000-port-plan.md#6-milestones)). This directory holds authored documentation for the TypeScript port, including the [backend translation plan](backend-port.md), [GUI port mapping](gui-port.md), and oracle guidance.

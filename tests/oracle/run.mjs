@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const directory = dirname(fileURLToPath(import.meta.url));
 const root = resolve(directory, '../..');
+const legacyRoot = join(root, '_legacy-app');
 const mode = process.argv[2];
 if (process.argv.length !== 3 || !['--update', '--check'].includes(mode)) {
   console.error('Usage: node tests/oracle/run.mjs --update|--check');
@@ -49,11 +50,12 @@ function javaFiles(path) {
     return entry.isDirectory() ? javaFiles(child) : entry.name.endsWith('.java') ? [child] : [];
   });
 }
-const sourceFiles = [join(root, 'Mars.java'), ...javaFiles(join(root, 'mars')),
-  ...['PseudoOps.txt', 'Config.properties', 'Settings.properties', 'Syscall.properties'].map(name => join(root, name))].sort();
+// Provenance paths are relative to the Java app, independent of its checkout location.
+const sourceFiles = [join(legacyRoot, 'Mars.java'), ...javaFiles(join(legacyRoot, 'mars')),
+  ...['PseudoOps.txt', 'Config.properties', 'Settings.properties', 'Syscall.properties'].map(name => join(legacyRoot, name))].sort();
 const digest = createHash('sha256');
 for (const path of sourceFiles) {
-  digest.update(relative(root, path)).update('\0').update(readFileSync(path)).update('\0');
+  digest.update(relative(legacyRoot, path)).update('\0').update(readFileSync(path)).update('\0');
 }
 const java = spawnSync('java', ['-version'], { encoding: 'utf8' });
 if (java.error || java.status !== 0) throw java.error ?? new Error('Cannot record Java version');
@@ -61,7 +63,7 @@ if (!/version "21[."]/.test(java.stderr)) throw new Error('Oracle requires the p
 const provenance = {
   schemaVersion: 1,
   sourceSha256: digest.digest('hex'),
-  sourceFiles: sourceFiles.map(path => relative(root, path)),
+  sourceFiles: sourceFiles.map(path => relative(legacyRoot, path)),
   javaVersion: java.stderr,
   normalization: 'Replace the absolute repository root followed by / with <repo>/ in stdout and stderr; preserve every other byte.',
 };

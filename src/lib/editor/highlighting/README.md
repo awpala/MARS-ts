@@ -1,6 +1,6 @@
 # MIPS editor highlighting
 
-This module translates the lexical highlighting behavior of `mars/venus/editors/jeditsyntax/tokenmarker/MIPSTokenMarker.java`, its Token and TokenMarker collaborators, KeywordMap, and the default styles from SyntaxUtilities. It paints source text; it does not assemble instructions, validate programs, or supply substitute simulator logic.
+This module translates the lexical highlighting behavior of `_legacy-app/mars/venus/editors/jeditsyntax/tokenmarker/MIPSTokenMarker.java`, its Token and TokenMarker collaborators, KeywordMap, and the default styles from SyntaxUtilities. It paints source text; it does not assemble instructions, validate programs, or supply substitute simulator logic.
 
 The scanner preserves the Java state machine, including alternating escape state, keyword boundaries, percent-prefixed macro parameters, the label heuristic (including instruction names used as labels), completed character literals receiving the string-literal token ID, and incomplete literals becoming INVALID at the end of their line. All offsets and token lengths use UTF-16 code units. Label validity comes from the engine's TokenTypes and character categories from its JDK-generated JavaCharacter helper. KeywordMap preserves Java's bucket lookup, newest-entry precedence, case sensitivity, and one-character uppercase conversion.
 

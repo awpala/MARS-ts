@@ -114,7 +114,7 @@ flowchart TB
 
 The assembler follows the original multi-pass algorithms. Tokenization retains original and expanded positions, include processing, character literal handling, and recursive `.eqv` substitution. Program-owned macro pools retain overloads, parameter conventions, expansion counters, recursion detection, and local-label treatment. Local and session-global symbol tables remain distinct. Directives allocate and initialize data, enforce their canonical range checks, transfer global symbols, and resolve forward references.
 
-The instruction registry contains the translated **155 basic registrations and 388 pseudo definitions** in canonical order. Basic instruction descriptors supply syntax, masks, formats, and simulation callbacks. Extended instructions use the original ordered template substitutions and compact/delayed-branch alternatives. The bundled pseudo-operation data is tested against the unchanged root `PseudoOps.txt`; it is not a second manually maintained instruction language.
+The instruction registry contains the translated **155 basic registrations and 388 pseudo definitions** in canonical order. Basic instruction descriptors supply syntax, masks, formats, and simulation callbacks. Extended instructions use the original ordered template substitutions and compact/delayed-branch alternatives. The bundled pseudo-operation data is tested against the unchanged `_legacy-app/PseudoOps.txt`; it is not a second manually maintained instruction language.
 
 `ProgramStatement` owns source/basic/machine representations, operand resolution, encoding, and decoding. Diagnostics retain source filenames, positions, include mappings, macro history, warning policy, and canonical text. The UI displays those diagnostics rather than generating its own interpretation of an assembly error. Failures retain the engine's tested mutation and lifecycle behavior; callers must not assume assembly is a transactional operation that leaves memory untouched on error.
 
@@ -317,7 +317,7 @@ Report the result of the actual run, including skipped tests and unavailable pre
 
 ## Build, development, and delivery
 
-The root [package manifest](package.json) and lockfile own dependency resolution; [Vite configuration](vite.config.ts) integrates SvelteKit, its static adapter, Tailwind, and Vitest. Application implementation stays under `src/`; browser-ready assets stay under `static/`. The original Java tree and resources remain alongside the port as read-only reference material during migration.
+The root [package manifest](package.json) and lockfile own dependency resolution; [Vite configuration](vite.config.ts) integrates SvelteKit, its static adapter, Tailwind, and Vitest. Application implementation stays under `src/`; browser-ready assets stay under `static/`. The original Java app is isolated under [_legacy-app/](_legacy-app/README.md), with its sources, resources, packaging files, and generated Javadoc. The oracle build reads that directory and copies the shared root license into `__build/legacy/Mars.jar`. Browser runtime assets remain under `static/`, and the TypeScript app does not load files from `_legacy-app/`.
 
 | Layer | Current stack |
 | --- | --- |
@@ -352,21 +352,4 @@ When adding a capability, preserve the owning Java class responsibility and algo
 
 MARS is copyright 2003–2013 Pete Sanderson and Kenneth Vollmar and is distributed under the [MIT license](MARSlicense.txt). Translated modules and copied data retain their notices and identify their Java source. The editor's inherited jEdit syntax package retains the additional Slava Pestov and Mike Dillon notices described in its [module documentation](src/lib/editor/highlighting/README.md). The [static asset documentation](static/README.md) records asset provenance; About MARS opens the unchanged [bundled license](static/MARSlicense.txt) in a new tab.
 
-The checked-in Java implementation is the behavioral authority regardless of its historical release labels. Legacy help under `help/` and generated Javadoc under [docs-legacy/](docs-legacy/README.md) remain read-only reference material; current product behavior is described here and in authored port documentation under [docs/](docs/README.md). The historical project introduction previously embedded in the root README is retained below for provenance, not as instructions for running this web application.
-
-<details>
-<summary>Original MARS README</summary>
-
-MARS (official) MIPS Assembler and Runtime Simulator
-
-MARS is a lightweight interactive development environment (IDE) for programming in MIPS assembly language, intended for educational-level use with Patterson and Hennessy's Computer Organization and Design.
-
-It is available for you to download as an executable JAR file. Click the MARS v.4.5 link at right, under Releases, to access the download.
-
-We have relocated the MARS website to https://dpetersanderson.github.io/ There are still a couple of display issues to work out but all website content is there. This includes all documentation and the JAR download. We are not experienced in github so if you know a way we can host the website in this MARS repository let us know.
-
-This is the original MARS, developed by Pete Sanderson and Ken Vollmar. Developed while Pete was professor at Otterbein University and Ken was professor at Missouri State University. Both are now retired. This is a legacy application but is very stable and continues to be used by universities throughout the world as of 2024. The last release was MARS 4.5 in August 2014.
-
-Until October 2024 the MARS website, including executable JAR file download, was hosted by Missouri State University. That is no longer the case. That's why it is here.
-
-</details>
+The checked-in Java implementation is the behavioral authority regardless of its historical release labels. Legacy help under `_legacy-app/help/` and generated Javadoc under [_legacy-app/docs/](_legacy-app/docs/README.md) remain read-only reference material; current product behavior is described here and in authored port documentation under [docs/](docs/README.md). The historical project introduction is retained in the [legacy application README](_legacy-app/README.md#original-mars-readme).
