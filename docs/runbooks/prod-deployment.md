@@ -85,7 +85,7 @@ server {
 
 Keep `root` at server scope so the immutable-assets location inherits it too. The container listens on HTTP port `80`; Coolify's proxy continues to own public HTTPS. MIME types and other image-wide settings remain in the image's parent Nginx configuration. Validate the complete candidate with `nginx -t` using the configured static image before publishing a configuration change.
 
-Only `/_app/immutable/` receives the year-long immutable policy. HTML, `/_app/version.json`, `/llms.txt`, the license, favicon, and unversioned icons retain revalidation. Do not use `always` for the immutable header: missing chunks must return a real `404` without a long-lived cache policy. Nginx inherits `add_header` directives only when the current level defines none, so repeat any existing higher-level security headers in the new location and ensure other locations do not override the intended revalidation policy. See the [Nginx header module](https://nginx.org/en/docs/http/ngx_http_headers_module.html).
+Only `/_app/immutable/` receives the year-long immutable policy. HTML, `/_app/version.json`, `/llms.txt`, `/robots.txt`, the license, favicon, and unversioned icons retain revalidation. Do not use `always` for the immutable header: missing chunks must return a real `404` without a long-lived cache policy. Nginx inherits `add_header` directives only when the current level defines none, so repeat any existing higher-level security headers in the new location and ensure other locations do not override the intended revalidation policy. See the [Nginx header module](https://nginx.org/en/docs/http/ngx_http_headers_module.html).
 
 Save and **redeploy/rebuild** after editing the Nginx configuration; restarting an existing image does not incorporate it. [Coolify's static-server guidance](https://coolify.io/docs/applications/builds/static#nginx-configuration) describes that image-build boundary. Include the header checks in step 6 when releasing cache-policy changes.
 
@@ -181,6 +181,7 @@ curl --connect-timeout 10 --max-time 30 -i https://mars-ide.portfolio-projects.d
 curl --connect-timeout 10 --max-time 30 -I http://mars-ide.portfolio-projects.dev/
 curl --connect-timeout 10 --max-time 30 -i https://mars-ide.portfolio-projects.dev/MARSlicense.txt
 curl --connect-timeout 10 --max-time 30 -i https://mars-ide.portfolio-projects.dev/llms.txt
+curl --connect-timeout 10 --max-time 30 -i https://mars-ide.portfolio-projects.dev/robots.txt
 curl --connect-timeout 10 --max-time 30 -I https://mars-ide.portfolio-projects.dev/_app/version.json
 curl --connect-timeout 10 --max-time 30 -I https://mars-ide.portfolio-projects.dev/_app/immutable/missing-chunk.js
 curl --connect-timeout 10 --max-time 30 -i https://mars-ide.portfolio-projects.dev/missing-page/
@@ -188,10 +189,11 @@ curl --connect-timeout 10 --max-time 30 -i https://mars-ide.portfolio-projects.d
 
 | Request | Required result |
 | --- | --- |
-| HTTPS `/` | HTTP `200`, MARS HTML, valid certificate for this hostname |
+| HTTPS `/` | HTTP `200`, MARS HTML with one canonical link to `https://mars-ide.portfolio-projects.dev/`, valid certificate for this hostname |
 | HTTP `/` | Redirect to the HTTPS origin, without an internal port or hostname |
 | `/MARSlicense.txt` | HTTP `200`, the bundled Pete Sanderson and Kenneth Vollmar license text |
 | `/llms.txt` | HTTP `200`, plain-text MARS agent guidance matching the shipped asset; cache revalidation |
+| `/robots.txt` | HTTP `200`, plain-text crawler policy allowing all paths and matching the shipped asset; cache revalidation |
 | `/_app/version.json` | HTTP `200`, JSON with cache revalidation |
 | `/_app/immutable/missing-chunk.js` | HTTP `404`, no year-long immutable cache policy, no HTML fallback |
 | `/missing-page/` | HTTP `404`; no successful SPA fallback to the IDE |
@@ -200,7 +202,7 @@ The current application has only the root route. Do not copy the calculator's ne
 
 In a clean **browser profile**, open the HTTPS site:
 
-1. Confirm the desktop becomes interactive, toolbar icons load, and developer tools show no failed `/_app/` JavaScript/CSS requests or uncaught startup errors. Refresh the root URL directly. In the page head, confirm the `rel="describedby"` link resolves to `/llms.txt`.
+1. Confirm the desktop becomes interactive, toolbar icons load, and developer tools show no failed `/_app/` JavaScript/CSS requests or uncaught startup errors. Refresh the root URL directly. In the page head, confirm one `rel="canonical"` link points to `https://mars-ide.portfolio-projects.dev/` and the `rel="describedby"` link resolves to `/llms.txt`.
 2. Create a new file, paste the following program, and save it as `deployment-smoke.asm` in the browser library:
 
    ```asm
@@ -216,7 +218,7 @@ In a clean **browser profile**, open the HTTPS site:
 
 3. Select **Assemble**, then run the program. Confirm the Run I/O output includes `42` and execution finishes. Reset, single-step, and confirm the execution display advances. This is a deployment smoke check, not additional oracle parity evidence.
 4. Reload and confirm the saved source remains available. Use **Export** to download it, then open **About MARS** and confirm its license link resolves. Test downloads in the actual browser used for the IDE.
-5. In developer tools, inspect HTML and asset cache headers. Copy an actual hashed JavaScript or CSS URL from this release and verify its response has `Cache-Control: public, max-age=31536000, immutable`; repeat with `curl -I` against that URL. Confirm HTML, `/_app/version.json`, and `/llms.txt` use `Cache-Control: no-cache`. With **Disable cache** unchecked, reload and confirm unchanged hashed assets are reused. Confirm a normal reload after a later release loads that release's assets; a forced refresh must not be the only way to see updated code.
+5. In developer tools, inspect HTML and asset cache headers. Copy an actual hashed JavaScript or CSS URL from this release and verify its response has `Cache-Control: public, max-age=31536000, immutable`; repeat with `curl -I` against that URL. Confirm HTML, `/_app/version.json`, `/llms.txt`, and `/robots.txt` use `Cache-Control: no-cache`. With **Disable cache** unchecked, reload and confirm unchanged hashed assets are reused. Confirm a normal reload after a later release loads that release's assets; a forced refresh must not be the only way to see updated code.
 6. With a fresh page load and the Network panel open, confirm the ten Help article chunks are absent from the initial requests. Open **Help → Introduction** and **Help → Syscalls**; each should request its corresponding hashed article chunk when first opened, display its content and snippet controls, and close with Escape. Loading or a failed request must leave the dialog dismissible. The F1 overview and About MARS remain immediately available.
 
 For desktop Lighthouse comparisons, use an extension-free browser profile and the same desktop settings, distinguishing a cold load from a warm-cache reload. Extension-injected scripts, styles, and layout work are outside the application measurement. Bundle-size comparisons alone do not establish an improved Lighthouse score; collect a new report after deploying the intended revision. Mobile layout and mobile audits are outside the current desktop performance scope.

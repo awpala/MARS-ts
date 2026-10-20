@@ -3,6 +3,7 @@
 </script>
 
 <svelte:head>
+	<link rel="canonical" href="https://mars-ide.portfolio-projects.dev/" />
 	<meta
 		name="description"
 		content="A browser-based MIPS IDE for writing, assembling, running, and debugging MIPS assembly programs."

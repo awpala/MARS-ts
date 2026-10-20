@@ -429,7 +429,7 @@ Report the result of the actual run, including skipped tests and unavailable pre
 
 The root [package manifest](package.json) and lockfile own dependency resolution; [Vite configuration](vite.config.ts) integrates SvelteKit, its static adapter, Tailwind, and Vitest. Application implementation stays under `src/`; browser-ready assets stay under `static/`. The original Java app is isolated under [_legacy-app/](_legacy-app/README.md), with its sources, resources, packaging files, and generated Javadoc. The oracle build reads that directory and copies the shared root license into `__build/legacy/Mars.jar`. Browser runtime assets remain under `static/`, and the TypeScript app does not load files from `_legacy-app/`.
 
-The shipped [llms.txt](static/llms.txt), advertised by the root layout, welcomes agent exploration and browser IDE use. It describes supported desktop workflows, browser-local source persistence, and deferred features without introducing a server-side API or access-control policy.
+The shipped [llms.txt](static/llms.txt), advertised by the root layout, welcomes agent exploration and browser IDE use. It describes supported desktop workflows, browser-local source persistence, and deferred features without introducing a server-side API or access-control policy. The companion [robots.txt](static/robots.txt) permits crawling of all paths.
 
 ### Toolchain and helper commands
 
@@ -450,7 +450,7 @@ Normal development and preview use port 6277 with strict binding. Browser tests 
 
 ### Static delivery and hosting
 
-The application is live and stable at `https://mars-ide.portfolio-projects.dev`. Its static Coolify deployment follows [ADR 0005](docs/adrs/0005-coolify-deployment.md) through the corresponding GitHub App: Nixpacks builds with Node 24 and Coolify serves `build/` through Nginx on internal port 80. The [deployment runbook](docs/runbooks/prod-deployment.md) maintains that existing service with configuration references, routine release smoke checks, cache-policy updates, and recovery procedures. LocalStorage belongs to that origin, so changing the hosting origin is also a source-persistence boundary. A static build does not by itself provide offline caching, cloud synchronization, or a packaged desktop executable.
+The application is live and stable at `https://mars-ide.portfolio-projects.dev`. The root page emits an absolute canonical link to `https://mars-ide.portfolio-projects.dev/` in its prerendered head. Its static Coolify deployment follows [ADR 0005](docs/adrs/0005-coolify-deployment.md) through the corresponding GitHub App: Nixpacks builds with Node 24 and Coolify serves `build/` through Nginx on internal port 80. The [deployment runbook](docs/runbooks/prod-deployment.md) maintains that existing service with configuration references, routine release smoke checks, cache-policy updates, and recovery procedures. LocalStorage belongs to that origin, so changing the hosting origin is also a source-persistence boundary. A static build does not by itself provide offline caching, cloud synchronization, or a packaged desktop executable.
 
 ## Remaining scope and extension rules
 
