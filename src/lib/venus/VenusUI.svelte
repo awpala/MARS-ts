@@ -31,13 +31,13 @@
 </script>
 
 <!-- @component Composes the Venus desktop and owns its context lifetime. Domain state, workflows, and browser resources belong to the per-desktop controllers. -->
-<svelte:head
-	><title
-		>{workspace.current
+<svelte:head>
+	<title>
+		{workspace.current
 			? `${workspace.editor.isDirty(workspace.current) ? '* ' : ''}${workspace.current.name} - `
-			: ''}MARS</title
-	><meta name="description" content="MARS MIPS assembler and runtime simulator" /></svelte:head
->
+			: ''}MARS
+	</title>
+</svelte:head>
 <pre class="print-source">{workspace.current?.text ?? ''}</pre>
 
 {#if !desktop.visible}
