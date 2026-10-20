@@ -1,2 +1,13 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+# Shell scripts run inside the Linux dev container and CI; a CRLF checkout
+# breaks the shebang and every line continuation.
+*.sh text eol=lf
+
+# Oracle streams are raw captured bytes: Git must never normalize them.
+tests/oracle/golden/*.stdout -text
+tests/oracle/golden/*.stderr -text
+# Fixture hashes include source bytes and golden metadata is compared exactly.
+tests/oracle/programs/*.asm text eol=lf
+tests/oracle/programs/*.inc text eol=lf
+tests/oracle/golden/*.json text eol=lf

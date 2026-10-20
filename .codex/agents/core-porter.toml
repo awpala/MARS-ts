@@ -1,0 +1,8 @@
+# Codex adapter for the canonical role definition in .agents/agents/core-porter.md.
+# Keep name and description identical to that file's frontmatter; the
+# instructions only load the canonical definition and never restate it.
+name = "core-porter"
+description = "Ports MARS engine units (assembler, instruction set, hardware, simulator, syscalls, dump formats) from the legacy Java to framework-free TypeScript with oracle-backed parity tests. Use for engine milestone work."
+developer_instructions = """
+Read AGENTS.md at the repository root, then read .agents/agents/core-porter.md and act as that role. That file is canonical: follow its ownership and delegation boundary and load the guides and skills it names. Do not preload other guides or skills.
+"""

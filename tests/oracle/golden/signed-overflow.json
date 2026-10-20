@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "command": [
+    "run-legacy",
+    "nc",
+    "ae2",
+    "se3",
+    "me",
+    "$t0",
+    "$t1",
+    "tests/oracle/programs/overflow.asm"
+  ],
+  "inputSha256": "ec3f6353c92746cbda39516ee3eb40184bfddaf8dddf35a85f0a3d9001f19e71",
+  "exitCode": 3
+}

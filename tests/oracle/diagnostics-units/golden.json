@@ -1,0 +1,25 @@
+{
+  "jdkMajor": 21,
+  "legacySourceSha256": "49c6b8ae0d9f66f355f741b86d812aef135b6fb915c7305874290d355c0938b6",
+  "command": [
+    "java",
+    "-Djava.awt.headless=true",
+    "-Djava.util.prefs.userRoot=<fresh-user>",
+    "-Djava.util.prefs.systemRoot=<fresh-system>",
+    "-cp",
+    "<probe-classes>:__build/legacy/Mars.jar",
+    "DiagnosticsProbe"
+  ],
+  "stdin": "",
+  "stdout": "basic\tZmFsc2V8ZmlsZS5hc218NHw4fGJhZCBvcGVyYW5kfA==\nwarning\tdHJ1ZXxpbmMuYXNtfDZ8Mnx3YXJuaW5nfDEyLT4yMC0+\nnull-program\tZmFsc2V8fC0xfDB8dW5rbm93bnw=\nnull-history\tZmFsc2V8bmFtZS5hc218MHwtMXxlbXB0eXw=\ndefault-program\tZmFsc2V8bnVsbHwyfDF8ZGVmYXVsdHw=\ninclude\tZmFsc2V8aW5jbHVkZWQuYXNtfDkxfDN8bWFwcGVkfA==\nruntime-0\tZmFsc2V8fDQwfDB8cnVudGltZXw=\nruntime-1\tZmFsc2V8fDEzfDB8cnVudGltZXw0MC0+\nruntime-2\tZmFsc2V8fDEzfDB8cnVudGltZXw0MC0+\nruntime-3\tZmFsc2V8fDQwfDB8cnVudGltZXw=\nruntime-4\tZmFsc2V8fDQwfDB8cnVudGltZXw=\nruntime-5\tZmFsc2V8fDEyfDB8cnVudGltZXw0MC0+\nruntime-6\tZmFsc2V8fDEzfDB8cnVudGltZXw0MC0+\nruntime-7\tZmFsc2V8fDQwfDB8cnVudGltZXw=\nreport\tV2FybmluZyBpbiBpbmMuYXNtIGxpbmUgMTItPjIwLT42IGNvbHVtbiAyOiB3YXJuaW5nCkVycm9yIGluIGZpbGUuYXNtIGxpbmUgNCBjb2x1bW4gODogYmFkIG9wZXJhbmQKRXJyb3IgaW4gYS9iOiBwYXRoCkVycm9yIGluIC8gY29sdW1uIDM6IHJvb3QKRXJyb3IgaW4gOiBubyBsb2NhdGlvbgo=\ncounts\tNHwxfHRydWV8dHJ1ZXxmYWxzZXwyMDA=\nlimit\tMjAxfDB8dHJ1ZXwyMDE=\nterminal\tZmFsc2V8fDk5OXwzfEVycm9yIExpbWl0IG9mIDIwMCBleGNlZWRlZC58\nempty\tfGZhbHNlfGZhbHNl\nprocessing-exit\tdHJ1ZQ==\nprocessing-list\tdHJ1ZQ==\nprocessing-report-0\tRXJyb3IgaW4gIGxpbmUgNDAtPjEzOiBSdW50aW1lIGV4Y2VwdGlvbiBhdCAweGZmZmZmZmZjOiBwcm9ibGVtCg==\nprocessing-registers-0\tMHw2NTI5N3wwfDA=\nprocessing-report-1\tRXJyb3IgaW4gIGxpbmUgNDAtPjEzOiBSdW50aW1lIGV4Y2VwdGlvbiBhdCAweGZmZmZmZmZjOiBwcm9ibGVtCg==\nprocessing-registers-1\tMHw2NTI5OXw0OHwtNA==\nprocessing-report-2\tRXJyb3IgaW4gIGxpbmUgNDAtPjEzOiBSdW50aW1lIGV4Y2VwdGlvbiBhdCAweGZmZmZmZmZjOiBiYWQgYWRkcmVzcyAweDgwMDAwMDAxCg==\nprocessing-registers-2\tLTIxNDc0ODM2NDd8NjUyOTl8MTZ8LTQ=\nprocessing-report-3\tV2FybmluZyBpbiBpbmMuYXNtIGxpbmUgMTItPjIwLT42IGNvbHVtbiAyOiB3YXJuaW5nCkVycm9yIGluIGZpbGUuYXNtIGxpbmUgNCBjb2x1bW4gODogYmFkIG9wZXJhbmQKRXJyb3IgaW4gYS9iOiBwYXRoCkVycm9yIGluIC8gY29sdW1uIDM6IHJvb3QKRXJyb3IgaW4gOiBubyBsb2NhdGlvbgo=\nprocessing-registers-3\tLTIxNDc0ODM2NDd8NjUyOTl8MTZ8LTQ=\n",
+  "stderr": "",
+  "status": 0,
+  "hashes": {
+    "tests/oracle/diagnostics-units/DiagnosticsProbe.java": "c66e701fdf73ada987931962d9796d7357c3b4142f09f0104c019548ca2bb773",
+    "mars/ErrorMessage.java": "2314e430e5886d5fde80f796a850c6848c244c2ff5f1e9ba584be770af7356e3",
+    "mars/ErrorList.java": "daa6ed23dfd431db65f50badbb86dbaa3216a44090bf439437e23fde7ed1215d",
+    "mars/ProcessingException.java": "8960a1dd94e40d64e0ed3930a6d013eff60db49134b039df158a74694c576881",
+    "mars/Globals.java": "1927b4de16a9590ab51e070062031164bb3b49e8607da2802825fc29f6666f40",
+    "Config.properties": "048bf5590ff0b52245c115e61bd51fffc26825c9432bf79998a8760094675715"
+  }
+}

@@ -1,0 +1,8 @@
+# Codex adapter for the canonical role definition in .agents/agents/code-reviewer.md.
+# Keep name and description identical to that file's frontmatter; the
+# instructions only load the canonical definition and never restate it.
+name = "code-reviewer"
+description = "Reviews port changes read-only for correctness, parity evidence, engine/UI boundaries, lifecycle, documentation, and validation defects."
+developer_instructions = """
+Read AGENTS.md at the repository root, then read .agents/agents/code-reviewer.md and act as that role. That file is canonical: follow its ownership and delegation boundary and load the guides and skills it names. Do not preload other guides or skills.
+"""

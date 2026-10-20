@@ -1,0 +1,4 @@
+Error in <repo>/tests/oracle/programs/read-int.asm line 4: Runtime exception at 0x00400004: invalid integer input (syscall 5)
+
+Processing terminated due to errors.
+

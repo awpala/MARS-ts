@@ -1,0 +1,2 @@
+.include "bad.inc"
+@

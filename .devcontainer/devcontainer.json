@@ -1,0 +1,140 @@
+{
+  "name": "MARS-ts - Development Environment",
+
+  "image": "mcr.microsoft.com/devcontainers/base:trixie",
+
+  // container configs
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  "containerUser": "root",
+  "remoteUser": "root",
+  "shutdownAction": "stopContainer",
+  "runArgs": [
+    // create named container
+    "--name", "mars-ts-dev-env",
+    // define container restart policy
+    "--restart", "unless-stopped",
+    // publish the SvelteKit dev/preview port on the host
+    "--publish", "6277:6277",  // phoneword "MARS"
+  ],
+
+  "containerEnv": {
+    // prevent launching a session bus; each plain `dbus-launch` call from the
+    // VS Code extension host (VSCODE_ESM_ENTRYPOINT=vs/workbench/api/node/
+    // extensionHostProcess) forks a bus that orphans to PID 1 and never exits,
+    // and each one holds an inotify instance until the per-user cap (128) is
+    // exhausted — which breaks `vite dev`/`svelte-kit sync` with EMFILE
+    "DBUS_SESSION_BUS_ADDRESS": "disabled",
+  },
+
+  "features": {
+    // web port toolchain: Node.js active LTS line for SvelteKit (npm only)
+    "ghcr.io/devcontainers/features/node:2.1.1": {
+      "version": "24",
+      "pnpmVersion": "none",
+    },
+    // global `tsc` for ad hoc use, pinned to the TypeScript major the planned
+    // SvelteKit stack supports; the app's own devDependency stays
+    // authoritative for its gates once the app is scaffolded
+    "ghcr.io/devcontainers-extra/features/typescript:2.0.16": {
+      "version": "6.0.3",
+    },
+    // PROVISIONAL legacy toolchain: a JDK (javac, jar, java) to build and run
+    // the original Java/Swing MARS headlessly as the behavioral reference
+    // oracle during the port. Compiles the MARS 4.5 sources unmodified.
+    // Maven/Gradle are deliberately absent: the legacy app has no build
+    // descriptor, only javac + jar. Remove this feature (and the legacy
+    // helpers) when the Java sources are offboarded; see docs/adrs/0000.
+    "ghcr.io/devcontainers/features/java:1.8.3": {
+      "version": "21",
+      "installMaven": false,
+      "installGradle": false,
+    },
+    "ghcr.io/devcontainers/features/github-cli:1.1.3": {},
+    "ghcr.io/devcontainers-extra/features/claude-code:2.0.3": {},
+    "ghcr.io/jsburckhardt/devcontainer-features/codex:1": {},
+    "ghcr.io/devcontainers/features/common-utils:2.7.1": {
+      "installZsh": true,
+      "installOhMyZsh": true,
+    },
+  },
+
+  "mounts": [
+    // Node caches (volumes)
+    // Do not persist /usr/local/bin or the Node/JDK installations: stale
+    // volumes hide updated tools.
+    "source=mars-ts_npm-cache,target=/root/.npm,type=volume",
+    // app dependencies (volume): container-native storage instead of the host
+    // bind mount; the host keeps only an empty mount point
+    "source=mars-ts_node-modules,target=/workspace/node_modules,type=volume",
+    // CLI auth/state persistence (volumes)
+    "source=mars-ts_gh-config,target=/root/.config/gh,type=volume",
+    "source=mars-ts_claude-config,target=/root/.claude,type=volume",
+    "source=mars-ts_codex-config,target=/root/.codex,type=volume",
+  ],
+
+  // link /scripts to the live checkout, then run setup-env.sh upon container
+  // creation. A bind mount pins the directory's inode at container start; a
+  // branch switch or pull that deletes and recreates .devcontainer/scripts then
+  // leaves /scripts attached to the deleted, empty directory until the
+  // container is recreated. The symlink resolves through the stable /workspace
+  // mount on every access, so recreated directories stay visible.
+  "postCreateCommand": "ln -sfn /workspace/.devcontainer/scripts /scripts && bash /scripts/setup-env.sh",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // web port (Svelte/TypeScript/Tailwind)
+        "svelte.svelte-vscode",
+        "bradlc.vscode-tailwindcss",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        // legacy Java sources (navigation and reading during the port)
+        "redhat.java",
+        // general
+        "redhat.vscode-yaml",
+        "mads-hartmann.bash-ide-vscode",
+        "rogalmic.bash-debug",
+        "timonwong.shellcheck",
+        "oderwat.indent-rainbow",
+        "gxl.git-graph-3",
+        "anthropic.claude-code",
+        "openai.chatgpt",
+        "docker.docker",
+        "tamasfe.even-better-toml",
+        "streetsidesoftware.code-spell-checker",
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "editor.tabSize": 2,
+        "editor.insertSpaces": true,
+        "editor.detectIndentation": false,
+        "files.insertFinalNewline": true,
+        // the legacy Java sources are an unmanaged folder (no Maven/Gradle);
+        // never let the Java extension generate build files into the checkout
+        "java.import.maven.enabled": false,
+        "java.import.gradle.enabled": false,
+        "java.configuration.updateBuildConfiguration": "disabled",
+        // the legacy sources use 3-space/tab indentation; keep the editor from
+        // reflowing them when a file is opened for reading
+        "[java]": {
+          "editor.detectIndentation": true,
+          "editor.formatOnSave": false,
+        },
+      },
+    },
+  },
+
+  // complement `--publish` with VS Code forwarding: a labeled Ports entry and
+  // editor-side access (including remote or tunneled VS Code sessions)
+  "forwardPorts": [6277], // phoneword "MARS"
+  "portsAttributes": {
+    "6277": {
+      "label": "SvelteKit Dev Server",
+      "onAutoForward": "notify",
+      // `--publish` already holds this host port; take another local port
+      // rather than failing the forward
+      "requireLocalPort": false,
+    },
+  },
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "command": [
+    "run-legacy",
+    "nc",
+    "ae2",
+    "se3",
+    "me",
+    "$s0",
+    "$f0",
+    "$f12",
+    "0x10010000-0x1001000c",
+    "tests/oracle/programs/float.asm"
+  ],
+  "inputSha256": "fc96892c4e6f6a2bf88257d00e506d0c88d46455781b6199001732d25bd58229",
+  "exitCode": 0
+}

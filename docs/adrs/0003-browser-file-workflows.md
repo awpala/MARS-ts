@@ -1,0 +1,30 @@
+# ADR 0003: Browser file workflows and local UI validation
+
+- **Status**: Accepted
+- **Date**: 2026-10-19
+
+## Context
+
+The [port fidelity decision](0002-port-fidelity.md) preserves Venus workflows while replacing native file selection and secondary windows. Browser pages cannot overwrite arbitrary selected files or close tabs they did not open. The initial editor must expose these differences honestly without introducing a launch screen or server-side file access.
+
+## Decision
+
+The browser's localStorage is the working filesystem. No source buffer retains an OS file handle. The committed source library is a JSON array under `mars-ts:sources:v1`, with records containing `name` and the complete `source` text. Open presents these files in a same-tab selection dialog, permits multiple selections, and focuses an already-open buffer without overwriting its edits. Delete requires a second same-tab confirmation listing the selected names and warning about unsaved open buffers; confirmation removes those library records and closes their matching tabs. Cancel retains the selection, text, and records. Includes resolve current open source first, then committed library files, without scanning a native directory.
+
+Save commits current text to the library. Save As obtains a virtual filename in a same-tab modal, retains the previously saved source under its original name, and commits the current text under the chosen name. Replacing another saved name requires confirmation; a name owned by another open tab is rejected to protect that buffer. The Rename toggle in Save As displays the old filename and removes that old name in the same library write as saving the new name; failed writes retain the original. Save All processes the open buffers. Closing dirty buffers presents Save, Discard, and Cancel; cancellation preserves content. Exit closes documents through this same workflow and leaves the main GUI open.
+
+The separate `mars-ts:workspace:v1` JSON array stores each open buffer's full current source, saved-text baseline, new-file state, and selected-tab flag. It is written synchronously after each source or tab change and restored on mount, including never-saved files and uncommitted edits. It is recovery data, not an implicit Save commit. Undo history and simulator state are not persisted. Recovery reconciles clean buffers with newer committed text. When a stale dirty recovery buffer conflicts with newer committed source, both versions remain intact and Auto Save is disabled with a visible notice; restoring or selecting a tab never commits its text. Auto Save is a persisted, initially disabled toolbar toggle: enabling it commits all changed open buffers, and subsequent source changes commit automatically using their current virtual names. Disabling Auto Save retains recovery backups while requiring explicit Save for commits.
+
+Import uses the system file selection dialog for one or more `.asm` files. It reads complete source text into the library in one batch and opens the imported sources. Existing library names require replacement confirmation; edited open buffers cannot be overwritten by import. Export downloads the current buffer as `.asm`; Export All downloads all library sources plus open buffers, preferring current open text and disambiguating flattened download names. Export All is enabled only when at least two editor files are open. Export does not change saved baselines or dirty state. Import follows the Auto Save toggle, then Export and Export All. Printing uses the browser command; there is no duplicate application Print action. The browser controls download destinations and may require permission for multiple downloads.
+
+Storage reads validate source record structure and virtual names. Corrupt data is not silently replaced, and denied storage or quota failures remain visible without marking unsaved text as saved. Storage is scoped to the browser origin/profile; clearing site data removes this working filesystem. Export provides an independent portable copy.
+
+Editor, settings, help, and syscall dialogs use same-tab modal presentation with focus entry, dismissal, and restoration. New windows, native Java dialogs, and a splash screen are not introduced. Browser-reserved shortcuts remain subject to the browser; corresponding menu/toolbar actions stay available.
+
+Playwright is a development-only dependency for reproducible browser workflow validation against an isolated test server on port 6278. Port 6277 remains reserved for human review. Test mode uses separate SvelteKit output and Vite caches so automated builds do not replace the review server’s generated files. Its Chromium download is a local validation prerequisite, not a shipped runtime dependency. Browser tests must check actual file content, dirty-state decisions, dialogs, and lifecycle behavior rather than treating a successful HTTP response as GUI validation.
+
+## Consequences and validation
+
+These are explicit browser adaptations requested by the human, replacing the earlier download-as-save behavior. File commits and recovery remain local, independent of the OS filesystem or a server. Browser tests cover exact stored text, recovery, manual/automatic commits, name collisions, imports, exports, dirty-state decisions, and quota failure; they do not establish legacy GUI parity.
+
+The [browser adapter](../../src/lib/browser/) owns downloads and the [editor](../../src/lib/editor/) owns buffers and saved snapshots. Engine code performs no DOM or filesystem operations. Browser tests under `tests/browser/` exercise these adaptations; engine oracle comparisons remain separate. This decision does not declare assembly, simulation, editor highlighting, tools, or settings complete.

@@ -1,0 +1,1 @@
+.asciiz "VALUE BASE # untouched"

@@ -1,0 +1,6 @@
+Error in <repo>/tests/oracle/programs/overflow.asm line 4: Runtime exception at 0x00400008: arithmetic overflow
+
+Processing terminated due to errors.
+
+$t0	0x7fffffff
+$t1	0x00000000

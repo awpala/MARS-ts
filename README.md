@@ -1,12 +1,15 @@
-# MARS
-MARS (official) MIPS Assembler and Runtime Simulator
+# MARS-ts
 
- MARS is a lightweight interactive development environment (IDE) for programming in MIPS assembly language, intended for educational-level use with Patterson and Hennessy's Computer Organization and Design.
+A TypeScript/SvelteKit port of **MARS**, the educational MIPS Assembler and Runtime Simulator, targeting **MARS-ts 1.0**. Core assembly, execution, and desktop debugging are implemented; the full port remains in progress.
 
- It is available for you to download as an executable JAR file.  Click the MARS v.4.5 link at right, under Releases, to access the download.
+Read the [implementation guide](IMPLEMENTATION.md) for the current architecture, module responsibilities, browser working filesystem, supported behavior, validation evidence, and remaining limitations. The [port plan](docs/adrs/0000-port-plan.md) and [decision records](docs/README.md) describe scope and design choices.
 
- We have relocated the MARS website to  https://dpetersanderson.github.io/    There are still a couple of display issues to work out but all website content is there.  This includes all documentation and the JAR download.  We are not experienced in github so if you know a way we can host the website in this MARS repository let us know.
+## Development
 
- This is the original MARS, developed by Pete Sanderson and Ken Vollmar.  Developed while Pete was professor at Otterbein University and Ken was professor at Missouri State University.  Both are now retired. This is a legacy application but is very stable and continues to be used by universities throughout the world as of 2024. The last release was MARS 4.5 in August 2014.  
- 
- Until October 2024 the MARS website, including executable JAR file download, was hosted by Missouri State University. That is no longer the case. That's why it is here.
+Open the [development container](.devcontainer/devcontainer.json), then use `run-app` to start the IDE on **port 6277**. The environment provides Node 24 and a provisional JDK 21 for the unchanged Java reference. See [development operations](docs/agents/operations.md) for setup, build, test, and cleanup commands.
+
+For automated validation, use `MARS_VALIDATION=1 run-checks app` and `npm run test:browser`; browser tests use **6278**, leaving 6277 available for human review. Other checks are documented in the [implementation guide](IMPLEMENTATION.md#reproducing-checks). Coding assistants start at [AGENTS.md](AGENTS.md).
+
+## License
+
+MARS is copyright 2003–2013 Pete Sanderson and Kenneth Vollmar, under the [MIT license](MARSlicense.txt). This port retains that attribution and license. The [implementation guide](IMPLEMENTATION.md#provenance-and-attribution) preserves the original project introduction and additional attribution.

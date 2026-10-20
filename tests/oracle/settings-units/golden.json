@@ -1,0 +1,24 @@
+{
+  "jdkMajor": 21,
+  "legacySourceSha256": "49c6b8ae0d9f66f355f741b86d812aef135b6fb915c7305874290d355c0938b6",
+  "command": [
+    "java",
+    "-Djava.awt.headless=true",
+    "-Djava.util.prefs.userRoot=<fresh-user>",
+    "-Djava.util.prefs.systemRoot=<fresh-system>",
+    "-cp",
+    "<probe-classes>:__build/legacy/Mars.jar",
+    "SettingsProbe"
+  ],
+  "stdin": "",
+  "stdout": "limits\t200\t1000000\t2000\nboolean\t0\ttrue\t0\t1\t1\nboolean\t1\tfalse\t1\t2\t2\nboolean\t2\tfalse\t2\t3\t3\nboolean\t3\tfalse\t3\t4\t4\nboolean\t4\tfalse\t4\t5\t5\nboolean\t5\ttrue\t5\t6\t6\nboolean\t6\ttrue\t6\t7\t7\nboolean\t7\tfalse\t7\t8\t8\nboolean\t8\tfalse\t8\t9\t9\nboolean\t9\ttrue\t9\t10\t10\nboolean\t10\tfalse\t10\t11\t11\nboolean\t11\tfalse\t11\t12\t12\nboolean\t12\ttrue\t12\t13\t13\nboolean\t13\ttrue\t13\t14\t14\nboolean\t14\tfalse\t14\t15\t15\nboolean\t15\ttrue\t15\t16\t16\nboolean\t16\ttrue\t16\t17\t17\nboolean\t17\tfalse\t17\t18\t18\nboolean\t18\tfalse\t18\t19\t19\nboolean\t19\ttrue\t19\t20\t20\nboolean\t20\tfalse\t20\t21\t21\nstrings\t\t\t0\nbackstep\tfalse\ninvalid\tInvalid boolean setting ID\ninvalid\tInvalid boolean setting ID\n",
+  "stderr": "",
+  "status": 0,
+  "hashes": {
+    "tests/oracle/settings-units/SettingsProbe.java": "8adc737816c91d66952945ea7a3eb50b6ec28d21b1b8bddb20c65d552462fd13",
+    "mars/Globals.java": "1927b4de16a9590ab51e070062031164bb3b49e8607da2802825fc29f6666f40",
+    "mars/Settings.java": "2cae07784f0fa934f98186817b90788b088e0f92c3e12f3caf3eea0a691df922",
+    "Settings.properties": "9f644070851889226e233e68886f95f45df705ee1ea6f44f54105737f5e2bbfd",
+    "Config.properties": "048bf5590ff0b52245c115e61bd51fffc26825c9432bf79998a8760094675715"
+  }
+}

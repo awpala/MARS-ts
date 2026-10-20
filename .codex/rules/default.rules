@@ -1,0 +1,134 @@
+# Codex command-execution policy for MARS-ts.
+#
+# Mirrors the intent of .claude/settings.json (docs/agents/harness.md). Git
+# writes require an explicit user request under AGENTS.md; prompt rules let
+# that request proceed through the runtime approval flow. Allow rules reduce
+# friction for routine tooling; they do not authorize unrelated remote,
+# infrastructure, or Git changes. Prefix rules are not complete enforcement:
+# alternate invocation forms and the command's contents still need review.
+#
+# Starlark rejects tab indentation. Validate after every edit with:
+#   codex execpolicy check --rules .codex/rules/default.rules <command>
+
+# --- Forbidden -------------------------------------------------------------
+
+prefix_rule(
+    pattern = ["rm", "-rf", "/"],
+    decision = "forbidden",
+    justification = "Recursive deletion at filesystem root is destructive.",
+)
+
+prefix_rule(
+    pattern = ["rm", "-rf", "/workspace"],
+    decision = "forbidden",
+    justification = "Recursive deletion of the repository root is destructive.",
+)
+
+# --- Prompt ----------------------------------------------------------------
+
+prefix_rule(
+    pattern = ["git", ["add", "branch", "switch", "checkout", "commit", "push", "merge", "rebase", "cherry-pick", "revert", "tag", "stash", "reset", "restore", "clean"]],
+    decision = "prompt",
+    justification = "Git writes require an explicit user request; confirm the requested operation.",
+    match = ["git commit -m example", "git reset --hard HEAD", "git switch main"],
+    not_match = ["git status", "git diff", "git log --oneline"],
+)
+
+prefix_rule(
+    pattern = ["rm", "-rf"],
+    decision = "prompt",
+    justification = "Recursive deletion can be destructive.",
+)
+
+prefix_rule(
+    pattern = ["npm", ["install", "i", "uninstall", "update"]],
+    decision = "allow",
+    justification = "Dependency changes need the human's approval; name the package and why.",
+    match = ["npm install vitest", "npm i -D svelte"],
+    not_match = ["npm ci", "npm run test"],
+)
+
+prefix_rule(
+    pattern = ["npx"],
+    decision = "prompt",
+    justification = "npx can fetch and run unpinned packages.",
+)
+
+prefix_rule(
+    pattern = ["sv", ["create", "add", "migrate"]],
+    decision = "allow",
+    justification = "Scaffolding and add-ons mutate the project; the scaffold is a port milestone.",
+    match = ["sv create .", "sv add tailwindcss"],
+    not_match = ["sv --version"],
+)
+
+prefix_rule(
+    pattern = ["docker"],
+    decision = "prompt",
+    justification = "Container lifecycle is owned by the developer on the host.",
+)
+
+# --- Allow: gates, legacy oracle, and app scripts --------------------------
+
+prefix_rule(
+    pattern = [["run-checks", "tests", "build-legacy", "run-legacy"]],
+    decision = "allow",
+    justification = "Repository gates and the read-only legacy oracle helpers.",
+    match = ["run-checks", "run-checks legacy", "run-legacy nc prog.asm"],
+)
+
+prefix_rule(
+    pattern = ["bash", ".devcontainer/scripts/bin/checks.sh"],
+    decision = "allow",
+    justification = "Repository gates invoked by path.",
+)
+
+prefix_rule(
+    pattern = [["java", "javac"], "-version"],
+    decision = "allow",
+    justification = "Toolchain version inspection.",
+)
+
+prefix_rule(
+    pattern = ["npm", ["ci", "run", "test"]],
+    decision = "allow",
+    justification = "Lockfile install and routine dev/test scripts.",
+)
+
+prefix_rule(
+    pattern = ["node"],
+    decision = "allow",
+    justification = "Project script execution, including the parity runner.",
+)
+
+prefix_rule(
+    pattern = ["sv", "--version"],
+    decision = "allow",
+    justification = "Svelte CLI version inspection.",
+)
+
+# --- Allow: repository inspection and HTTP tooling -------------------------
+
+prefix_rule(
+    pattern = ["git", ["status", "diff", "log", "show", "ls-files", "blame"]],
+    decision = "allow",
+    justification = "Read-only git inspection.",
+)
+
+prefix_rule(
+    pattern = ["curl"],
+    decision = "allow",
+    justification = "HTTP tooling within the authorized task; write methods and remote destinations still require authorization.",
+)
+
+prefix_rule(
+    pattern = [["rg", "ls", "cat", "head", "tail", "grep"]],
+    decision = "allow",
+    justification = "Repository search and file reading.",
+)
+
+prefix_rule(
+    pattern = ["find"],
+    decision = "allow",
+    justification = "Filesystem traversal within the authorized task; mutation flags are not read-only.",
+)

@@ -1,0 +1,6 @@
+Error in <repo>/tests/oracle/programs/unaligned.asm line 6: Runtime exception at 0x00400008: fetch address not aligned on word boundary 0x10010001
+
+Processing terminated due to errors.
+
+$t0	0x10010000
+$t1	0x00000000

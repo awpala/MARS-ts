@@ -1,0 +1,12 @@
+Warning in <repo>/tests/oracle/programs/data.asm line 3 column 14: "0x80" is out-of-range for a signed value and possibly truncated
+Warning in <repo>/tests/oracle/programs/data.asm line 3 column 20: "0xff" is out-of-range for a signed value and possibly truncated
+Warning in <repo>/tests/oracle/programs/data.asm line 4 column 15: "0x8000" is out-of-range for a signed value and possibly truncated
+
+
+$s0	0xffffff80
+$s1	0x00000080
+$s2	0xffff8000
+$s3	0x00008000
+$s4	0x12345678
+Mem[0x10010000]	0x007fff80	0x7fff8000	0x12345678	0xffffffff	
+Mem[0x10010010]	0x00090a41	0x12348078	0x00008000	0x00000000	

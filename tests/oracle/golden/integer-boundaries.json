@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "command": [
+    "run-legacy",
+    "nc",
+    "ae2",
+    "se3",
+    "ic",
+    "$zero",
+    "$t1",
+    "$t3",
+    "$t4",
+    "$t5",
+    "$t6",
+    "$t7",
+    "$s0",
+    "$s1",
+    "$s2",
+    "$s3",
+    "tests/oracle/programs/integer.asm"
+  ],
+  "inputSha256": "f7d5445a9a6ee5ca48a6405d1476a67645040231730bd9aec349357a933fea7e",
+  "exitCode": 0
+}

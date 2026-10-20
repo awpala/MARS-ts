@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "command": [
+    "run-legacy",
+    "nc",
+    "ae2",
+    "se3",
+    "ic",
+    "$s0",
+    "$s1",
+    "0x00400000-0x00400030",
+    "tests/oracle/programs/macro.asm"
+  ],
+  "inputSha256": "4dfc8e6e5e21de7a89deb04575445b8a205199d30d112ae695fed90fed7b1e5b",
+  "exitCode": 0
+}

@@ -1,0 +1,8 @@
+# Codex adapter for the canonical role definition in .agents/agents/svelte-file-editor.md.
+# Keep name and description identical to that file's frontmatter; the
+# instructions only load the canonical definition and never restate it.
+name = "svelte-file-editor"
+description = "Implements Svelte components and SvelteKit routes for the MARS web IDE (the Venus UI replacement) on top of the ported engine, following the repository's Svelte 5 conventions. Use for UI milestone work."
+developer_instructions = """
+Read AGENTS.md at the repository root, then read .agents/agents/svelte-file-editor.md and act as that role. That file is canonical: follow its ownership and delegation boundary and load the guides and skills it names. Do not preload other guides or skills.
+"""

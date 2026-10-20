@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "command": [
+    "run-legacy",
+    "nc",
+    "ae2",
+    "se3",
+    "me",
+    "tests/oracle/programs/read-int.asm"
+  ],
+  "inputSha256": "392b361fe77ddecb32f989d77fbc8cad2a7df68bb213999ea2e4e1bd858fd332",
+  "exitCode": 3
+}

@@ -1,0 +1,27 @@
+{
+  "jdkMajor": 21,
+  "legacySourceSha256": "49c6b8ae0d9f66f355f741b86d812aef135b6fb915c7305874290d355c0938b6",
+  "command": [
+    "java",
+    "-Djava.awt.headless=true",
+    "-Djava.util.prefs.userRoot=<fresh-user>",
+    "-Djava.util.prefs.systemRoot=<fresh-system>",
+    "-cp",
+    "<probe-classes>:__build/legacy/Mars.jar",
+    "mars.simulator.BackstepProbe"
+  ],
+  "stdin": "",
+  "stdout": "fresh\ttrue,true,false,4194304,0,0,0,0,0,0\ngroup-written\ttrue,false,false,4194308,11,22,-1,123,456,8\ngroup-restored\ttrue,true,false,4194304,0,0,0,0,0,0\ndisabled-undo\tfalse,false,false,4194312,20,0,0,0,0,0\nsecond-undone\ttrue,false,false,4194308,10,0,0,0,0,0\nfirst-undone\ttrue,true,false,4194304,0,0,0,0,0,0\ncondition-restored-set\ttrue,false,false,4194308,0,0,0,0,0,4\ncondition-restored-clear\ttrue,true,false,4194304,0,0,0,0,0,0\nbranch\ttrue,false,false,4194404,0,0,0,0,0,0\nbranch-undone\ttrue,true,false,4194304,0,0,0,0,0,0\ndelay-recorded\ttrue,false,true,4194304,0,0,0,0,0,0\ndelay-retained\ttrue,false,true,4194304,0,0,0,0,0,0\ndelay-undone\ttrue,true,false,4194308,0,0,0,0,0,0\ngui-before-program\ttrue,true,false,4194304,0,0,0,0,0,0\nnull-statement-group\ttrue,true,false,4234300,0,0,0,0,0,0\ndisabled-add\tfalse,false,false,4194304,0,0,0,0,0,0\ndisabled-add-undone\ttrue,true,false,4194304,99,0,0,0,0,0\ncapacity\t2000\ncapacity-state\ttrue,true,false,4194324,5,0,0,0,0,0\npc-return\t2147483644\npc-wrap\ttrue,true,false,2147483644,0,0,0,0,0,0\n",
+  "stderr": "",
+  "status": 0,
+  "hashes": {
+    "tests/oracle/backstep-units/BackstepProbe.java": "34f8c91246a67e29a8c19e54efded0a4e894527fe94b9adc80bdc04a30b3976a",
+    "mars/simulator/BackStepper.java": "3dcfce7f95a832fc1bb565813ab9d216cbe4dc0b5d75e68814a877fc9e3938cd",
+    "mars/simulator/DelayedBranch.java": "2453ae8066c54aefbaea387996bf12c33382ac5079f7b654a7c7b1fe26f5fa52",
+    "mars/mips/hardware/RegisterFile.java": "643f418f43de2132c6b45bd4d9ae58823497bb6281772efd92f484cfdaeaa6cd",
+    "mars/mips/hardware/Memory.java": "a63cda1737ab1a2061de540aa354bec49ca34722365d91fa2c70bfc57e9e0a5d",
+    "mars/mips/hardware/Coprocessor0.java": "bdc993dbb6e4e0e19cea034f5a73b52c8840b308eac5095b21224c3ba713fb10",
+    "mars/mips/hardware/Coprocessor1.java": "58162eaa5531c990d0998ffb23e8d8177805bcabcf7e5100bf659ddcefacb676",
+    "Config.properties": "048bf5590ff0b52245c115e61bd51fffc26825c9432bf79998a8760094675715"
+  }
+}

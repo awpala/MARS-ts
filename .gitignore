@@ -1,0 +1,29 @@
+# Local research, run logs, and generated build output
+__logs/
+__refs/
+__build/
+
+# Legacy Java build artifacts (build-legacy writes to __build/legacy/)
+*.class
+/Mars.jar
+
+# Node / SvelteKit
+node_modules
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+/coverage
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Env
+.env
+.env.*
+!.env.test
+
+# OS
+.DS_Store
+Thumbs.db
