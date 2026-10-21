@@ -8,59 +8,117 @@ The [root route](../routes/+page.svelte) opens the desktop directly. SvelteKit p
 
 ### Library relationships
 
-The diagram distinguishes browser composition from the engine's injected host boundary. Solid arrows show composition, API use, or data access, not an exhaustive import graph. The dashed arrow is an engine call through a host interface; the engine does not import the browser implementation.
+The subgraphs follow library modules and their responsibility-specific submodules. Solid arrows show composition, API use, or data access, not an exhaustive import graph. The dashed arrow is an engine call through an injected host interface; the engine does not import its Venus implementation. The route and browser APIs sit outside the library modules.
 
 ```mermaid
 flowchart TB
     Route["SvelteKit route"]
+    Platform["Browser APIs<br/>DOM, storage, clipboard, files, timers"]
 
-    subgraph BrowserRuntime["Browser"]
-        subgraph Presentation["Presentation"]
-            Root["VenusUI<br/>desktop renderer and lifetime"]
-            Root --> Components["Venus component groups<br/>shell, controls, layout, editor,<br/>debugger, feedback, transfers, dialogs"]
-            Components --> Help["Help<br/>catalog and article rendering"]
-            Components --> Context["Typed desktop and command contexts"]
-            Hooks["Keyboard bindings"] --> Context
-            Root --> Hooks
-            Components --> Utilities["Stateless presentation rules"]
-            Hooks --> Utilities
+    subgraph VenusModule["Venus · venus/"]
+        Root["VenusUI<br/>desktop renderer and lifetime"]
+        Controller["RunController<br/>framework-free run workflows"]
+        subgraph ComponentsModule["components/"]
+            Components["Component groups<br/>shell, controls, layout, editor,<br/>debugger, feedback, transfers, dialogs"]
         end
-
-        Root --> State["Venus state<br/>workspace, simulation, preferences, search"]
+        subgraph ContextModule["context/"]
+            Context["Typed desktop and command contexts"]
+        end
+        subgraph HooksModule["hooks/"]
+            Hooks["Keyboard bindings"]
+        end
+        subgraph UtilitiesModule["utils/"]
+            Utilities["Stateless presentation rules"]
+        end
+        subgraph StateModule["state/"]
+            State["Desktop state owners<br/>workspace, simulation, preferences, search"]
+            Host["Simulation host callbacks<br/>source lookup, console, input,<br/>scheduling, preferences"]
+            State --> Host
+        end
+        Root --> Components
+        Root --> Context
+        Root --> Hooks
+        Root --> State
+        Components --> Context
+        Hooks --> Context
+        Components --> Utilities
+        Hooks --> Utilities
         Context -->|references existing owners| State
-        State --> Editor["Editor<br/>buffers, history, highlighting"]
-        State --> Controller["RunController<br/>framework-free run workflows"]
-        State --> Browser["Browser adapters<br/>source library, preferences, downloads"]
-        Components -->|file and clipboard interactions| Platform["Browser APIs<br/>DOM, storage, clipboard, files"]
-        Browser --> Platform
-        State --> Host["Injected host services<br/>source lookup, console, input,<br/>scheduling, preferences"]
-        Host --> Platform
-        Host -->|source resolution| Editor
-        Host --> Browser
+        State --> Controller
     end
 
-    subgraph Machine["Session-local MIPS engine"]
-        Globals["Globals<br/>machine composition"]
-        Assembly["Assembler and instruction registry"]
-        Hardware["Registers, coprocessors, memory"]
-        Simulation["Simulator, backstepping, syscalls"]
-        Contracts["Diagnostics, numeric compatibility,<br/>and I/O interfaces"]
+    subgraph EditorModule["Editor · editor/"]
+        Editor["Editor<br/>buffers and history"]
+        subgraph HighlightingModule["highlighting/"]
+            Highlighting["Lexical highlighting"]
+        end
+    end
+
+    subgraph BrowserModule["Browser · browser/"]
+        Browser["Browser adapters<br/>source library, preferences, downloads"]
+    end
+
+    subgraph EngineModule["Engine · engine/"]
+        Globals["Globals and Settings<br/>session-local machine composition"]
+        subgraph AssemblerModule["assembler/"]
+            Assembly["Source preparation, tokens,<br/>directives, symbols, macros, assembly"]
+        end
+        subgraph InstructionsModule["instructions/"]
+            Instructions["Instruction registry<br/>definitions, decoding, execution callbacks"]
+        end
+        subgraph HardwareModule["hardware/"]
+            Hardware["Registers, coprocessors, memory,<br/>layouts, access notices"]
+        end
+        subgraph SimulatorModule["simulator/"]
+            Simulation["Simulator and backstepping"]
+        end
+        subgraph SyscallsModule["syscalls/"]
+            Syscalls["Runtime service algorithms and registry"]
+        end
+        subgraph IOModule["io/"]
+            IO["Console conversion and I/O interfaces"]
+        end
+        subgraph FormattingModule["formatting/"]
+            Formatting["Numeric compatibility and conversion"]
+        end
+        subgraph DiagnosticsModule["diagnostics/"]
+            Diagnostics["Source-mapped warnings and errors"]
+        end
         Globals --> Assembly
+        Globals --> Instructions
         Globals --> Hardware
         Globals --> Simulation
-        Assembly --> Contracts
+        Globals --> Syscalls
+        Globals --> IO
+        Assembly --> Instructions
+        Assembly --> Diagnostics
+        Assembly --> Formatting
+        Simulation --> Instructions
         Simulation --> Hardware
-        Simulation --> Contracts
+        Simulation --> Diagnostics
+        Instructions --> Syscalls
+        Syscalls --> Hardware
+        Syscalls --> IO
+        IO --> Formatting
     end
 
     Route --> Root
+    State --> Editor
+    State --> Browser
+    Components --> Highlighting
+    Components -->|file and clipboard interactions| Platform
+    Browser --> Platform
+    Host --> Platform
+    Host -->|source resolution through workspace| Editor
+    Host -->|committed source lookup through workspace| Browser
     Controller --> Globals
     Components -->|public inspection and edit APIs| Hardware
-    Editor -->|lexical instruction and directive metadata| Assembly
+    Components -->|instruction hover metadata| Instructions
+    Highlighting -->|directive and token metadata| Assembly
     Globals -.->|calls supplied interfaces| Host
 ```
 
-The Browser group shows the application's browser-side composition, including its editor and controller instances. Those framework-free models can also run outside a browser; their placement describes who uses them in this application. The engine is shown separately to emphasize its portable API and injected host boundary, although the deployed application executes it in the browser too.
+Venus composes the browser desktop and owns its session lifecycle. Editor and RunController remain framework-free models even though Venus uses them in the browser. Engine remains a separate portable module with an injected host boundary; the deployed application executes it in the browser too. Host callbacks belong to Venus simulation state and resolve source through the existing workspace, whose editor buffers take precedence over committed browser-library sources.
 
 Help is composed into Venus dialogs and uses the reusable clipboard/transfer controls for code examples. Its source-transfer callback delegates to the existing workspace; Help owns neither a machine nor an editor. The component-group node represents several independent responsibilities, not a single component implementing every browser interaction.
 
