@@ -25,9 +25,11 @@ export default defineConfig(({ mode }) => {
 					runes: ({ filename }) =>
 						filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 				},
-				adapter: adapter(
-					browserTest ? { pages: '__build/browser-site', assets: '__build/browser-site' } : {}
-				)
+				adapter: adapter({
+					// Static hosts serve this shell for unknown URLs; the router renders the global error page.
+					fallback: '404.html',
+					...(browserTest ? { pages: '__build/browser-site', assets: '__build/browser-site' } : {})
+				})
 			})
 		],
 		test: {

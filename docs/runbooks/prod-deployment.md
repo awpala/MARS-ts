@@ -70,6 +70,13 @@ server {
     expires off;
     add_header Cache-Control "no-cache";
 
+    # Keep the 404 status while the SvelteKit fallback renders the themed error view.
+    error_page 404 /404.html;
+
+    location = /404.html {
+        internal;
+    }
+
     # Content hashes change whenever these files change.
     location ^~ /_app/immutable/ {
         try_files $uri =404;
@@ -83,7 +90,7 @@ server {
 }
 ```
 
-Keep `root` at server scope so the immutable-assets location inherits it too. The container listens on HTTP port `80`; Coolify's proxy continues to own public HTTPS. MIME types and other image-wide settings remain in the image's parent Nginx configuration. Validate the complete candidate with `nginx -t` using the configured static image before publishing a configuration change.
+Keep `root` at server scope so the immutable-assets location inherits it too. The `error_page` directive serves the generated `404.html` for missing URLs while preserving HTTP 404; its client router renders the global themed fallback. Existing files such as `/llms.txt` and `/robots.txt` continue through `try_files` unchanged. Apply this configuration when releasing the fallback page; building the file alone does not configure the live host. The container listens on HTTP port `80`; Coolify's proxy continues to own public HTTPS. MIME types and other image-wide settings remain in the image's parent Nginx configuration. Validate the complete candidate with `nginx -t` using the configured static image before publishing a configuration change.
 
 Only `/_app/immutable/` receives the year-long immutable policy. HTML, `/_app/version.json`, `/llms.txt`, `/robots.txt`, the license, favicon, and unversioned icons retain revalidation. Do not use `always` for the immutable header: missing chunks must return a real `404` without a long-lived cache policy. Nginx inherits `add_header` directives only when the current level defines none, so repeat any existing higher-level security headers in the new location and ensure other locations do not override the intended revalidation policy. See the [Nginx header module](https://nginx.org/en/docs/http/ngx_http_headers_module.html).
 

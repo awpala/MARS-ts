@@ -435,6 +435,8 @@ The root [package manifest](package.json) and lockfile own dependency resolution
 
 The shipped [llms.txt](static/llms.txt), advertised by the root layout, welcomes agent exploration and browser IDE use. It describes supported desktop workflows, browser-local source persistence, and deferred features without introducing a server-side API or access-control policy. The companion [robots.txt](static/robots.txt) permits crawling of all paths.
 
+The global [route error view](src/routes/+error.svelte) displays a centered pane using the saved light or dark palette, with a button-styled link back to `/`. Unknown paths at any depth return a 404; other route errors use the same view. The static adapter emits `404.html` as a client-router fallback for hosts configured to serve it on missing URLs. Existing static files, including `/llms.txt` and `/robots.txt`, are served directly. The [deployment runbook](docs/runbooks/prod-deployment.md) describes the required host error-page setting; the static fallback needs JavaScript to render the route error view.
+
 ### Toolchain and helper commands
 
 | Layer                 | Current stack                                                             |
