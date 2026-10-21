@@ -143,6 +143,47 @@ test('Coproc 1 condition flags carry the legacy panel and checkbox descriptions'
   await expect(page.getByRole('tooltip')).toHaveText('checked == 1, unchecked == 0');
 });
 
+test('Coproc 1 flag group is centered, with Select all and Select none left-aligned below the flags', async ({
+  page
+}) => {
+  await openDesktop(page);
+  const pane = page.locator('.register-pane');
+  await pane.getByRole('button', { name: 'Coproc 1', exact: true }).click();
+  const flags = pane.getByRole('group', { name: 'Condition flags', exact: true });
+  const all = pane.getByRole('button', { name: 'Select all', exact: true });
+  const none = pane.getByRole('button', { name: 'Select none', exact: true });
+  const paneBox = (await pane.boundingBox())!;
+  const groupBox = (await flags.locator('..').boundingBox())!;
+  const caption = (await flags.getByText('Condition flags', { exact: true }).boundingBox())!;
+  const first = (await flags.getByRole('checkbox').first().boundingBox())!;
+  const allBox = (await all.boundingBox())!;
+  const noneBox = (await none.boundingBox())!;
+  const groupCenter = groupBox.x + groupBox.width / 2;
+  expect(Math.abs(groupCenter - (paneBox.x + paneBox.width / 2))).toBeLessThan(3);
+  expect(groupBox.x).toBeGreaterThan(paneBox.x + 20);
+  expect(Math.abs(caption.x - first.x)).toBeLessThan(2);
+  expect(allBox.y).toBeGreaterThanOrEqual(first.y + first.height);
+  expect(Math.abs(allBox.y - noneBox.y)).toBeLessThan(1);
+  expect(Math.abs(allBox.x - first.x)).toBeLessThan(2);
+  expect(noneBox.x).toBeGreaterThan(allBox.x + allBox.width);
+  const checkboxes = flags.getByRole('checkbox');
+  await expect(all).toBeEnabled();
+  await expect(none).toBeDisabled();
+  await checkboxes.nth(3).check();
+  await expect(all).toBeEnabled();
+  await expect(none).toBeEnabled();
+  await all.click();
+  for (const checkbox of await checkboxes.all()) await expect(checkbox).toBeChecked();
+  await expect(all).toBeDisabled();
+  await expect(none).toBeEnabled();
+  await checkboxes.nth(5).uncheck();
+  await expect(all).toBeEnabled();
+  await none.click();
+  for (const checkbox of await checkboxes.all()) await expect(checkbox).not.toBeChecked();
+  await expect(all).toBeEnabled();
+  await expect(none).toBeDisabled();
+});
+
 test('Coproc 1 condition flag edits drive branches and are undone by Backstep', async ({
   page
 }) => {

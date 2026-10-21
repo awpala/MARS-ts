@@ -1,5 +1,6 @@
 <script lang="ts">
   import Tooltip from '../feedback/Tooltip.svelte';
+  import Button from '../controls/Button.svelte';
   import MultiSelect from '../controls/MultiSelect.svelte';
   import TabbedPane from '../layout/TabbedPane.svelte';
   import { formatInteger } from '../../utils/tableCells.js';
@@ -268,6 +269,20 @@
     void machineRevision;
     return coprocessor1.getConditionFlagsNoNotify();
   });
+  const selectedConditionFlags = $derived(
+    conditionFlagOptions
+      .filter((option) => Binary.bitValue(conditionFlags, option.value) === 1)
+      .map((option) => option.value)
+  );
+  // Port-specific bulk edits; the legacy panel offers only individual checkboxes. Each disables once its selection holds.
+  const conditionFlagActions = $derived([
+    {
+      label: 'Select all',
+      selection: conditionFlagOptions.map((option) => option.value),
+      disabled: selectedConditionFlags.length === conditionFlagOptions.length
+    },
+    { label: 'Select none', selection: [], disabled: selectedConditionFlags.length === 0 }
+  ]);
   // Like the legacy checkbox listener, a click writes only its own flag, even during execution.
   function updateConditionFlags(selection: number[]) {
     for (const { value: flag } of conditionFlagOptions) {
@@ -344,16 +359,26 @@
     </MachineTable>
   </div>
   {#if selected === 'Coproc 1'}
-    <MultiSelect
-      class="flags p-1.25 [--selector-gap:3px]"
-      label="Condition flags"
-      tooltip="flags are used by certain floating point instructions, default flag is 0"
-      options={conditionFlagOptions}
-      value={conditionFlagOptions
-        .filter((option) => Binary.bitValue(conditionFlags, option.value) === 1)
-        .map((option) => option.value)}
-      onchange={updateConditionFlags}
-    />
+    <!-- Fit-width wrapper centers the caption, flags, and bulk actions as one left-aligned group. -->
+    <div class="mx-auto flex w-fit flex-col p-1.25">
+      <MultiSelect
+        class="flags [--selector-gap:3px]"
+        label="Condition flags"
+        tooltip="flags are used by certain floating point instructions, default flag is 0"
+        options={conditionFlagOptions}
+        value={selectedConditionFlags}
+        onchange={updateConditionFlags}
+      />
+      <div class="mt-1 flex gap-2">
+        {#each conditionFlagActions as action (action.label)}
+          <Button
+            class="border border-(--theme-border,#929eaa) bg-(--theme-surface,#f8f8f8) px-2 py-0.5"
+            disabled={action.disabled}
+            onclick={() => updateConditionFlags(action.selection)}>{action.label}</Button
+          >
+        {/each}
+      </div>
+    </div>
   {/if}
   {#if error}<p role="alert">{error}</p>{/if}
 </TabbedPane>
