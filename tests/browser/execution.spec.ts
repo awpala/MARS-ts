@@ -1092,7 +1092,9 @@ test('text labels select both segment tables and toggle their Labels row after p
   await expect(page.getByLabel('pc value', { exact: true })).toHaveValue('0x00400000');
 });
 
-test('Clear all outputs on Go defaults off, persists, and clears only on Go', async ({ page }) => {
+test('Clear all outputs on Go defaults off, persists, and clears only on a fresh Go', async ({
+  page
+}) => {
   await openDesktop(page);
   const settingsMenu = page.locator('.menubar summary').filter({ hasText: /^Settings$/ });
   const clearOnGo = page.getByLabel('Clear all outputs on Go', { exact: true });
@@ -1129,6 +1131,10 @@ test('Clear all outputs on Go defaults off, persists, and clears only on Go', as
   await expect(output).toHaveValue(before);
   await action(page, 'Go').click();
   await expect(page.getByLabel('Execution status')).toHaveText('Status: terminated');
+  await expect(output).toHaveValue(before + '73' + finished);
+  await action(page, 'Reset').click();
+  await action(page, 'Go').click();
+  await expect(page.getByLabel('Execution status')).toHaveText('Status: terminated');
   await expect(output).toHaveValue('73' + finished);
   await page.getByRole('button', { name: 'Mars Messages', exact: true }).click();
   await expect(page.getByLabel('Mars Messages', { exact: true })).toHaveValue(
@@ -1142,3 +1148,45 @@ test('Clear all outputs on Go defaults off, persists, and clears only on Go', as
   await settingsMenu.click();
   await expect(clearOnGo).not.toBeChecked();
 });
+
+for (const resume of ['step', 'backstep to start', 'breakpoint', 'recovered breakpoint']) {
+  test(`Clear all outputs on Go preserves output after ${resume}`, async ({ page }) => {
+    await openDesktop(page);
+    await source(page, '.text\nli $a0,73\nli $v0,1\nsyscall\nli $v0,10\nsyscall\n');
+    await action(page, 'Assemble').click();
+    const settingsMenu = page.locator('.menubar summary').filter({ hasText: /^Settings$/ });
+    await settingsMenu.click();
+    await page.getByLabel('Clear all outputs on Go', { exact: true }).check();
+    await settingsMenu.click();
+    if (resume.includes('breakpoint')) {
+      await page.getByLabel('Breakpoint 0x0040000c', { exact: true }).check();
+      await action(page, 'Go').click();
+    } else {
+      await action(page, 'Step').click();
+      if (resume === 'backstep to start') {
+        await action(page, 'Backstep').click();
+        await expect(page.getByLabel('pc value', { exact: true })).toHaveValue('0x00400000');
+      }
+    }
+    await expect(page.getByLabel('Execution status')).toHaveText('Status: paused');
+    if (resume === 'recovered breakpoint') {
+      await page.reload();
+      await waitForDesktop(page);
+    }
+    await page.getByRole('button', { name: 'Run I/O', exact: true }).click();
+    const output = page.getByLabel('Run I/O', { exact: true });
+    const beforeOutput = await output.inputValue();
+    await page.getByRole('button', { name: 'Mars Messages', exact: true }).click();
+    const beforeMessages = await page.getByLabel('Mars Messages', { exact: true }).inputValue();
+    expect(beforeMessages.length).toBeGreaterThan(0);
+    await action(page, 'Go').click();
+    await expect(page.getByLabel('Execution status')).toHaveText('Status: terminated');
+    await expect(output).toHaveValue(
+      beforeOutput + (resume.includes('breakpoint') ? '' : '73') + finished
+    );
+    await page.getByRole('button', { name: 'Mars Messages', exact: true }).click();
+    await expect(page.getByLabel('Mars Messages', { exact: true })).toHaveValue(
+      beforeMessages + 'Go: running mips1.asm\n\n\nGo: execution completed successfully.\n\n'
+    );
+  });
+}

@@ -181,7 +181,7 @@ test('every Settings item has a themed description, including disabled settings 
     await expect(tooltip).not.toHaveText('');
     if ((await item.textContent())?.includes('Clear all outputs on Go'))
       await expect(tooltip).toHaveText(
-        'If set, clear Mars Messages and Run I/O before each Go, including resume.'
+        'If set, clear Mars Messages and Run I/O when Go starts a fresh program run; resuming preserves output.'
       );
     if ((await item.textContent())?.includes('Delayed branching'))
       await expect(tooltip).toHaveText(

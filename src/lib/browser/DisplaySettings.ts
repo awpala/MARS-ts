@@ -5,7 +5,7 @@ export const DISPLAY_SETTINGS_STORAGE_KEY = 'mars-ts:display-settings:v1';
 export interface DisplaySettings {
   /** Commit all changed open sources automatically; defaults to false for older records. */
   autoSave: boolean;
-  /** Clear both console buffers before each Go; defaults to false for older records. */
+  /** Clear both console buffers when Go starts a fresh program run; defaults to false for older records. */
   clearAllOutputsOnGo: boolean;
   /** Render Data Segment bytes as ASCII; defaults to false for older records. */
   ascii: boolean;

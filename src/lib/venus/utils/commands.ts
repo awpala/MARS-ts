@@ -161,7 +161,8 @@ export const settingsTooltips: Readonly<Record<string, string>> = {
     'If set, delayed branching will occur during MIPS execution.',
   [Settings.SELF_MODIFYING_CODE_ENABLED]:
     'If set, the MIPS program can write and branch to both text and data segments.',
-  clearAllOutputsOnGo: 'If set, clear Mars Messages and Run I/O before each Go, including resume.',
+  clearAllOutputsOnGo:
+    'If set, clear Mars Messages and Run I/O when Go starts a fresh program run; resuming preserves output.',
   'Exception Handler ...':
     'If set, the specified exception handler file will be included in all Assemble operations.',
   memoryConfiguration: 'View and modify memory segment base addresses for simulated MIPS.'

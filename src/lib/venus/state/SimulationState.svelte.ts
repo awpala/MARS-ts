@@ -310,7 +310,8 @@ export class SimulationState {
       const filename = this.machine?.program?.getFilename() ?? '';
       if (command === 'step') await this.controller.step(this.programArguments);
       else {
-        if (this.display.clearAllOutputsOnGo) this.clearOutput(true);
+        if (this.display.clearAllOutputsOnGo && !this.controller.getState().started)
+          this.clearOutput(true);
         this.messages += `Go: running ${filename}\n\n`;
         await this.controller.run(
           this.breakpointsEnabled ? this.breakpoints : [],

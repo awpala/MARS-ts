@@ -5,7 +5,7 @@ import { clamp } from '../utils/clamp.js';
 export class DisplayPreferences {
   /** Selected main pane; Edit by default. */
   view = $state('Edit');
-  /** Browser-only preference to clear both consoles before each Go; unselected by default. */
+  /** Browser-only preference to clear both consoles when Go starts a fresh program run; unselected by default. */
   clearAllOutputsOnGo = $state(false);
   /** Selected Data Segment range, recovered with the desktop session. */
   dataSegment = $state('data');
