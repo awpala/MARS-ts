@@ -380,7 +380,9 @@ All defined keyboard shortcuts route through one app-wide capture handler to the
 
 ### Engine settings and presentation policy
 
-Engine settings and presentation preferences have separate owners. Settings such as extended assembly, warning-as-error policy, delayed branching, start-at-main, self-modifying code, and assemble-on-open are wired into the real engine. Changes that invalidate assembly require reassembly through the controller. The Settings menu has separators immediately after Values displayed in hexadecimal, Initialize Program Counter, and Self-modifying code. Popup input selects the host presentation of console reads. Display-base preferences also inform engine statement rendering without changing stored machine bits.
+Engine settings and presentation preferences have separate owners. Settings such as extended assembly, warning-as-error policy, delayed branching, start-at-main, self-modifying code, and assemble-on-open are wired into the real engine. Changes that invalidate assembly require reassembly through the controller. The Settings menu has separators immediately after Values displayed in hexadecimal, Clear all outputs on Go, and Self-modifying code. Popup input selects the host presentation of console reads. Display-base preferences also inform engine statement rendering without changing stored machine bits.
+
+The new **Clear all outputs on Go** checkbox follows Initialize Program Counter within the same subgroup. It defaults to unselected, persists in desktop display preferences, and clears both Mars Messages and Run I/O before each Go, including resume. Current Go diagnostics and output then accumulate normally; Step, Assemble, Reset, and Backstep do not trigger it. This is an explicit addition beyond the legacy/JAR Venus UI ([ADR 0008](docs/adrs/0008-clear-outputs-on-go.md)).
 
 ### Persistence records and schema boundaries
 

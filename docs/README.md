@@ -12,6 +12,7 @@ The [implementation guide](../IMPLEMENTATION.md) describes the current MARS-ts s
 | [Coolify deployment](adrs/0005-coolify-deployment.md)                             | Accepted                  | Static build, production origin, GitHub App deployment, and release ownership                                            |
 | [Object ownership and runtime lifetimes](adrs/0006-object-lifetime-management.md) | Accepted                  | Per-desktop state, scoped resources, asynchronous result validity, teardown ordering, and browser persistence boundaries |
 | [Desktop session recovery](adrs/0007-desktop-session-recovery.md) | Accepted | Browser-local IDE presentation, stable machine checkpoints, console buffers, and reload recovery |
+| [Optional output clearing on Go](adrs/0008-clear-outputs-on-go.md) | Accepted | Persisted browser preference to clear both consoles before Go |
 
 The [Coolify deployment runbook](runbooks/prod-deployment.md) covers ongoing configuration maintenance, releases, smoke checks, and rollback for the live, stable service at `mars-ide.portfolio-projects.dev`.
 

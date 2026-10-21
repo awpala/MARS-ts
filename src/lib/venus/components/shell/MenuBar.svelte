@@ -20,6 +20,8 @@
     displayToggles: readonly DisplayToggle[];
     /** Required parent-owned visibility of the registers sidebar; bindable and shown by default in its owner. */
     showRegisters: boolean;
+    /** Required parent-owned console-clearing preference; bindable and false by default in its owner. */
+    clearAllOutputsOnGo: boolean;
     /** Required current engine setting values. */
     engineSettings: Readonly<Record<number, boolean>>;
     /** Required execution state, used to disable engine setting changes. */
@@ -32,7 +34,8 @@
     engineSettings,
     running,
     onsetting,
-    showRegisters = $bindable()
+    showRegisters = $bindable(),
+    clearAllOutputsOnGo = $bindable()
   }: Props = $props();
   const commands = getDesktopCommands();
   const groupName = $props.id();
@@ -72,6 +75,14 @@
         disabled: running,
         onselect: () => onsetting(option.id, !engineSettings[option.id])
       });
+      if (option.id === Settings.START_AT_MAIN) {
+        items.push({
+          id: 'clearAllOutputsOnGo',
+          label: 'Clear all outputs on Go',
+          checked: clearAllOutputsOnGo,
+          onselect: () => (clearAllOutputsOnGo = !clearAllOutputsOnGo)
+        });
+      }
       if ([Settings.START_AT_MAIN, Settings.SELF_MODIFYING_CODE_ENABLED].includes(option.id)) {
         groups.push({ id: `engine-${option.id}`, items });
         items = [];

@@ -7,6 +7,7 @@ import {
 
 const settings = {
   autoSave: false,
+  clearAllOutputsOnGo: true,
   showRegisters: false,
   ascii: false,
   showLabels: true,
@@ -38,6 +39,7 @@ describe('working display preference persistence', () => {
       {},
       { ...settings, showLines: 'false' },
       { ...settings, autoSave: 'true' },
+      { ...settings, clearAllOutputsOnGo: 'true' },
       { ...settings, showRegisters: 'false' },
       { ...settings, ascii: 'true' },
       { ...settings, speed: -1 },
@@ -70,6 +72,13 @@ describe('working display preference persistence', () => {
     expect(
       loadDisplaySettings(() => ({ getItem: () => JSON.stringify(older), setItem: () => {} }))
     ).toEqual({ ...older, showRegisters: true });
+  });
+  it('defaults console clearing to unselected for older preferences', () => {
+    const { clearAllOutputsOnGo, ...older } = settings;
+    void clearAllOutputsOnGo;
+    expect(
+      loadDisplaySettings(() => ({ getItem: () => JSON.stringify(older), setItem: () => {} }))
+    ).toEqual({ ...older, clearAllOutputsOnGo: false });
   });
   it('tolerates denied storage access and quota failures', () => {
     const denied = () => {

@@ -5,6 +5,8 @@ export const DISPLAY_SETTINGS_STORAGE_KEY = 'mars-ts:display-settings:v1';
 export interface DisplaySettings {
   /** Commit all changed open sources automatically; defaults to false for older records. */
   autoSave: boolean;
+  /** Clear both console buffers before each Go; defaults to false for older records. */
+  clearAllOutputsOnGo: boolean;
   /** Render Data Segment bytes as ASCII; defaults to false for older records. */
   ascii: boolean;
   /** Whether the registers sidebar is shown; defaults to true for older records. */
@@ -45,6 +47,7 @@ function validate(value: unknown): DisplaySettings | undefined {
     return;
   if (
     (data.showRegisters !== undefined && typeof data.showRegisters !== 'boolean') ||
+    (data.clearAllOutputsOnGo !== undefined && typeof data.clearAllOutputsOnGo !== 'boolean') ||
     (data.autoSave !== undefined && typeof data.autoSave !== 'boolean') ||
     (data.ascii !== undefined && typeof data.ascii !== 'boolean') ||
     (data.showDataLabels !== undefined && typeof data.showDataLabels !== 'boolean') ||
@@ -58,6 +61,7 @@ function validate(value: unknown): DisplaySettings | undefined {
     return;
   return {
     autoSave: data.autoSave ?? false,
+    clearAllOutputsOnGo: data.clearAllOutputsOnGo ?? false,
     showRegisters: data.showRegisters ?? true,
     ascii: data.ascii ?? false,
     showLabels: data.showLabels,

@@ -5,6 +5,8 @@ import { clamp } from '../utils/clamp.js';
 export class DisplayPreferences {
   /** Selected main pane; Edit by default. */
   view = $state('Edit');
+  /** Browser-only preference to clear both consoles before each Go; unselected by default. */
+  clearAllOutputsOnGo = $state(false);
   /** Selected Data Segment range, recovered with the desktop session. */
   dataSegment = $state('data');
   /** Relative aligned Data Segment page offset, recovered with the desktop session. */
@@ -61,6 +63,7 @@ export class DisplayPreferences {
     }
     const settings = loadDisplaySettings();
     if (!settings) return false;
+    this.clearAllOutputsOnGo = settings.clearAllOutputsOnGo;
     this.ascii = settings.ascii;
     this.showRegisters = settings.showRegisters;
     this.showLabels = settings.showLabels;
@@ -77,6 +80,7 @@ export class DisplayPreferences {
   persist(autoSave: boolean): void {
     saveDisplaySettings({
       autoSave,
+      clearAllOutputsOnGo: this.clearAllOutputsOnGo,
       showRegisters: this.showRegisters,
       ascii: this.ascii,
       showLabels: this.showLabels,

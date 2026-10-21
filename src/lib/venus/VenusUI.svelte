@@ -75,6 +75,7 @@
     <MenuBar
       bind:this={menuBar}
       bind:showRegisters={display.showRegisters}
+      bind:clearAllOutputsOnGo={display.clearAllOutputsOnGo}
       displayToggles={desktop.displayToggles}
       engineSettings={simulation.engineSettings}
       running={simulation.running}
