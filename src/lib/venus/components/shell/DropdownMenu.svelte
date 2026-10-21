@@ -5,6 +5,8 @@
     id: string;
     /** Visible label. */
     label: string;
+    /** Optional hover/focus description; omitted by default. */
+    tooltip?: string;
     /** Optional keyboard hint; omitted by default. */
     shortcut?: string;
     /** Whether interaction is blocked; defaults to false. */
@@ -53,6 +55,7 @@
           <SelectorToggle
             label={item.label}
             checked={item.checked}
+            tooltip={item.tooltip}
             disabled={item.disabled}
             onchange={item.onselect}
             class="w-full px-3 py-[5px] text-left whitespace-nowrap hover:bg-[var(--theme-hover,#c6dcef)]"
@@ -60,6 +63,7 @@
         {:else}
           <Button
             class="flex w-full items-center justify-between gap-2 px-3 py-[5px] text-left whitespace-nowrap hover:enabled:bg-[var(--theme-hover,#c6dcef)]"
+            tooltip={item.tooltip}
             disabled={item.disabled}
             onclick={item.onselect}
           >

@@ -48,10 +48,10 @@ Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSl
 </ul>
 <h3>Assembly and execution</h3>
 <p>
-  The Settings menu has separators after Initialize Program Counter and Self-modifying code.
-  Assembly uses the active source and its explicit <code>.include</code> directives; there is no
-  assemble-all control. A previously saved assemble-all preference is reset when the desktop starts.
-  Included source resolves from current open buffers first, then saved library files.
+  The Settings menu has separators after Clear all outputs on Go and Self-modifying code. Assembly
+  uses the active source and its explicit <code>.include</code> directives; there is no assemble-all
+  control. A previously saved assemble-all preference is reset when the desktop starts. Included
+  source resolves from current open buffers first, then saved library files.
 </p>
 <ol>
   <li>
@@ -78,13 +78,23 @@ Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSl
     executes before the transfer. Account for the delay slot, often with an explicit
     <code>nop</code>; the assembler does not automatically add one after every source branch.
     Introduced in Java Release 3.3. Since Release 3.4, branch offsets are encoded relative to the
-    next instruction regardless of this setting, with simulation adjusted accordingly.
+    next instruction regardless of this setting, with simulation adjusted accordingly. Changing this
+    option automatically reassembles a loaded program.
   </li>
   <li>
     <strong>Self-modifying code:</strong> off by default; introduced in Java Release 4.4. Permits
     program writes to user text, execution from user data, and stopped-state editing of text words.
   </li>
 </ol>
+<h3>Memory Configuration</h3>
+<p>
+  Choose Default (the SPIM-derived layout), Compact, Data at Address 0, or Compact, Text at Address
+  0. Selecting a configuration previews its segment addresses without changing the machine. Apply
+  commits the selection and leaves the dialog open; Apply and Close also closes it. Cancel closes
+  without applying the current selection. Reset restores the selection from when the dialog opened
+  without applying it. Applying a different layout resets memory and registers and automatically
+  reassembles a loaded program. The selected layout persists in localStorage.
+</p>
 <h3>Legacy settings without a current browser control</h3>
 <ul>
   <li>
@@ -102,14 +112,9 @@ Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSl
     off): not yet available. Place the handler in the program or reference its source with an
     explicit <code>.include</code> directive.
   </li>
-  <li>
-    <strong>Memory Configuration dialog</strong> (Java Release 3.7): not yet available. The browser
-    uses the default SPIM-derived layout. The engine also retains CompactDataAtZero and
-    CompactTextAtZero configurations, but no UI selector is exposed.
-  </li>
 </ul>
 <p>
   Source saving has separate controls: File → Auto Save commits edits to the local source library.
-  Recovery backups retain open-buffer text independently of manual Save. Machine state and backstep
-  history are not restored after reload.
+  Recovery backups retain open-buffer text independently of manual Save. Stable machine state and
+  backstep history are recovered after reload; active execution and pending input are not resumed.
 </p>

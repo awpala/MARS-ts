@@ -38,6 +38,8 @@ export class DesktopState {
   visible = $state(false);
   /** Currently displayed help article; null leaves Help closed. */
   help = $state.raw<HelpArticle | null>(null);
+  /** Whether the memory-layout settings dialog owns interaction; closed by default. */
+  memoryConfigurationOpen = $state(false);
   private fileTransfers: Partial<Record<FileTransferCommand, () => void>> = {};
 
   /** Register a mounted file-transfer behavior and return teardown that removes only that registration. */
@@ -49,7 +51,12 @@ export class DesktopState {
   }
   /** Whether a desktop dialog currently owns interaction. */
   get hasModal(): boolean {
-    return !!(this.workspace.modal || this.help || this.simulation.inputRequest?.prompt);
+    return !!(
+      this.workspace.modal ||
+      this.help ||
+      this.memoryConfigurationOpen ||
+      this.simulation.inputRequest?.prompt
+    );
   }
   /** Shared preference controls consumed by menu and toolbar adapters. */
   displayToggles = $derived([
@@ -155,6 +162,8 @@ export class DesktopState {
     // History and program ownership mutate inside the raw engine; subscribe before short-circuiting.
     void this.simulation.execution?.revision;
     if (action.unavailable) return false;
+    if (action.command === 'memoryConfiguration')
+      return !!this.simulation.machine && !this.simulation.controller?.isBusy();
     if (['clearOutput', 'clearAllOutput'].includes(action.command)) return true;
     if (action.command === 'assemble') return !!this.workspace.current && !this.simulation.running;
     if (['pause', 'stop'].includes(action.command)) return this.simulation.running;
@@ -200,7 +209,12 @@ export class DesktopState {
       return;
     }
     const article = helpArticles.find((entry) => entry.id === command);
-    this.closeMenus(!!article);
+    this.closeMenus(!!article || command === 'memoryConfiguration');
+    if (command === 'memoryConfiguration') {
+      if (this.simulation.machine && !this.simulation.controller?.isBusy())
+        this.memoryConfigurationOpen = true;
+      return;
+    }
     if (article) {
       this.help = article;
       return;

@@ -1,3 +1,6 @@
+/* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license.
+ * Settings workflows derive from mars/venus/SettingsDelayedBranchingAction.java,
+ * SettingsSelfModifyingCodeAction.java, and SettingsMemoryConfigurationAction.java. */
 import type { SavedExecution, SavedLabelSelection } from '#lib/browser/DesktopSession.js';
 import { browserEnginePreferences } from '#lib/browser/EnginePreferences.js';
 import { Globals } from '#lib/engine/Globals.js';
@@ -141,10 +144,15 @@ export class SimulationState {
         });
     };
   }
-  /** Write a persisted engine setting and invalidate or refresh execution as required. */
+  /** Persist an idle-machine setting; delayed branching reassembles loaded code as in SettingsDelayedBranchingAction.java. */
   updateEngineSetting = (id: number, value: boolean) => {
-    this.machine?.getSettings().setBooleanSetting(id, value);
+    if (!this.machine || this.controller?.isBusy() || this.engineSettings[id] === value) return;
+    this.machine.getSettings().setBooleanSetting(id, value);
     this.engineSettings = { ...this.engineSettings, [id]: value };
+    if (id === Settings.DELAYED_BRANCHING_ENABLED && this.hasLoadedProgram()) {
+      this.assemble();
+      return;
+    }
     if (
       ![
         Settings.POPUP_SYSCALL_INPUT,
@@ -153,6 +161,18 @@ export class SimulationState {
       ].includes(id)
     )
       this.controller?.invalidate();
+    else this.controller?.refresh();
+  };
+  /** Apply a known layout while idle, persist its identifier, and rebuild loaded code as in SettingsMemoryConfigurationAction.java. */
+  updateMemoryConfiguration = (identifier: string): void => {
+    const machine = this.machine;
+    if (!machine || this.controller?.isBusy()) return;
+    const configuration = machine.memoryConfigurations.getConfigurationByName(identifier);
+    if (!machine.memoryConfigurations.setCurrentConfiguration(configuration)) return;
+    machine.getSettings().setMemoryConfiguration(identifier);
+    this.display.dataSegment = 'data';
+    this.display.dataPageOffset = 0;
+    if (this.hasLoadedProgram()) this.assemble();
     else this.controller?.refresh();
   };
   /** Resolve the pending syscall once, preserving echo, newline, and maximum-length rules. */
@@ -214,6 +234,10 @@ export class SimulationState {
     }
     this.messageTab = 'Mars Messages';
   };
+  private hasLoadedProgram(): boolean {
+    const state = this.execution;
+    return !!state && state.status !== 'idle' && (state.status !== 'error' || state.started);
+  }
   private readEngineSettings(machine: Globals): Record<number, boolean> {
     return Object.fromEntries(
       engineOptions.map((option) => [option.id, machine.getSettings().getBooleanSetting(option.id)])

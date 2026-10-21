@@ -6,6 +6,7 @@
     engineOptions,
     popupInputOption,
     pendingSettings,
+    settingsTooltips,
     helpActions,
     type Action,
     type DisplayToggle
@@ -59,6 +60,7 @@
             .map((toggle) => ({
               id: icon,
               label: toggle.label + (icon === 'input' ? ' (5,6,7,8,12)' : ''),
+              tooltip: settingsTooltips[icon],
               checked: toggle.active,
               disabled: toggle.disabled,
               onselect: toggle.toggle
@@ -71,6 +73,7 @@
       items.push({
         id: String(option.id),
         label: option.label,
+        tooltip: settingsTooltips[option.id],
         checked: engineSettings[option.id] ?? false,
         disabled: running,
         onselect: () => onsetting(option.id, !engineSettings[option.id])
@@ -79,6 +82,7 @@
         items.push({
           id: 'clearAllOutputsOnGo',
           label: 'Clear all outputs on Go',
+          tooltip: settingsTooltips.clearAllOutputsOnGo,
           checked: clearAllOutputsOnGo,
           onselect: () => (clearAllOutputsOnGo = !clearAllOutputsOnGo)
         });
@@ -90,7 +94,25 @@
     }
     groups.push({
       id: 'pending',
-      items: [...items, ...pendingSettings.map((label) => ({ id: label, label, disabled: true }))]
+      items: [
+        ...items,
+        ...pendingSettings.map((label) => ({
+          id: label,
+          label,
+          tooltip: settingsTooltips[label],
+          disabled: true
+        })),
+        {
+          id: 'memoryConfiguration',
+          label: 'Memory Configuration ...',
+          tooltip: settingsTooltips.memoryConfiguration,
+          disabled: !commands.isEnabled({
+            command: 'memoryConfiguration',
+            label: 'Memory Configuration ...'
+          }),
+          onselect: () => void commands.execute('memoryConfiguration')
+        }
+      ]
     });
     return groups;
   });

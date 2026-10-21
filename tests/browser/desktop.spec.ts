@@ -186,7 +186,7 @@ test('working display settings and run speed survive reload', async ({ page }) =
   await expect(page.locator('.settings-menu').getByRole('separator')).toHaveCount(3);
   for (const label of [
     'Values displayed in hexadecimal',
-    'Initialize Program Counter to global main if defined',
+    'Clear all outputs on Go',
     'Self-modifying code'
   ]) {
     const item = page.locator('.settings-menu label').filter({ hasText: label });

@@ -4,6 +4,8 @@ This directory owns Playwright scenarios for the production [Venus desktop](../.
 
 The user-supplied [Fibonacci program](fibonacci.asm) is a positive control for stepped/timed memory-write tracing: the first two stores highlight successive words, and the complete array ends in 55. A string-only summation scenario is the complementary negative control: assembly, console input, and string reads leave data memory unhighlighted. Execution scenarios also exercise reset highlighting, independent register banks, normal termination, address paging bounds, and the requested opening-page/center/final-page PC scrolling.
 
+Settings scenarios cover memory-layout preview/application, opening-selection Reset and Cancel, automatic reassembly, delayed slots and Backstep, self-modifying execution, idle and checkpoint persistence, execution-time guards, every menu tooltip, and the memory dialog’s column alignment and always-visible action footer.
+
 These scenarios complement the [TypeScript suites and Java oracle](../README.md). They establish browser integration behavior, while engine parity remains supported by the corresponding oracle comparisons.
 
 ## Server and browser ownership

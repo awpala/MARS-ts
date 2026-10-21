@@ -1,3 +1,5 @@
+/* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license.
+ * Settings descriptions derive from mars/venus/VenusUI.java. */
 import { Settings } from '#lib/engine/Settings.js';
 import { helpArticles } from '#lib/help/articles.js';
 import type { ToolbarIconName } from '../components/shell/ToolbarIcon.svelte';
@@ -131,7 +133,32 @@ export const engineOptions = [
   { id: Settings.SELF_MODIFYING_CODE_ENABLED, label: 'Self-modifying code' }
 ];
 /** Settings whose dialogs are not implemented. */
-export const pendingSettings = ['Exception Handler ...', 'Memory Configuration ...'];
+export const pendingSettings = ['Exception Handler ...'];
+
+/** Legacy Settings action descriptions; the console-clearing option is browser-specific. */
+export const settingsTooltips: Readonly<Record<string, string>> = {
+  labels: 'Toggle visibility of Labels window (symbol table) in the Execute tab',
+  input:
+    'If set, use popup dialog for input syscalls (5,6,7,8,12) instead of cursor in Run I/O window',
+  addresses: 'Toggle between hexadecimal and decimal display of memory addresses',
+  values: 'Toggle between hexadecimal and decimal display of memory/register values',
+  [Settings.ASSEMBLE_ON_OPEN_ENABLED]:
+    'If set, a file will be automatically assembled as soon as it is opened.  File Open dialog will show most recently opened file.',
+  [Settings.WARNINGS_ARE_ERRORS]:
+    'If set, assembler warnings will be interpreted as errors and prevent successful assembly.',
+  [Settings.START_AT_MAIN]:
+    "If set, assembler will initialize Program Counter to text address globally labeled 'main', if defined.",
+  [Settings.EXTENDED_ASSEMBLER_ENABLED]:
+    'If set, MIPS extended (pseudo) instructions are formats are permitted.',
+  [Settings.DELAYED_BRANCHING_ENABLED]:
+    'If set, delayed branching will occur during MIPS execution.',
+  [Settings.SELF_MODIFYING_CODE_ENABLED]:
+    'If set, the MIPS program can write and branch to both text and data segments.',
+  clearAllOutputsOnGo: 'If set, clear Mars Messages and Run I/O before each Go, including resume.',
+  'Exception Handler ...':
+    'If set, the specified exception handler file will be included in all Assemble operations.',
+  memoryConfiguration: 'View and modify memory segment base addresses for simulated MIPS.'
+};
 
 /** A live display preference shared by Settings and toolbar rendering. */
 export type DisplayToggle = {

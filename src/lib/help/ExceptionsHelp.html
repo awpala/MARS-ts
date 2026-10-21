@@ -47,8 +47,8 @@ Some essential facts about writing and using exception handlers include:
       <li>
         Execution flow jumps to the MIPS instruction at memory location <code>0x80000180</code>.
         This address in the kernel text segment (<code>.ktext</code> directive) is the standard
-        MIPS32 exception handler location. MARS-ts currently uses the default memory configuration;
-        the Memory Configuration dialog is not yet available.
+        MIPS32 exception handler location. Settings → Memory Configuration selects the layout; both
+        compact configurations use <code>0x00004180</code> as the exception handler address.
       </li>
     </ol>
   </li>

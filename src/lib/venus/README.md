@@ -198,6 +198,8 @@ Assemble uses a filled hammer glyph. The debug controls use original compact SVG
 
 ## Layout, settings, and appearance
 
+The Memory Configuration dialog adapts `mars/venus/SettingsMemoryConfigurationAction.java`: it previews Default, CompactDataAtZero, and CompactTextAtZero with address/name rows sorted by unsigned address and name. Apply commits the layout and rebuilds loaded code; Apply and Close also dismisses the dialog. Cancel discards only unapplied selection; Reset returns the preview to the opening selection without applying it. The existing engine preferences adapter persists the committed identifier, while checkpoints retain the exact layout of loaded execution. `SimulationState` owns setting application, and the mounted dialog owns its draft. Delayed branching also reassembles loaded code on change, following `SettingsDelayedBranchingAction.java`; self-modifying code updates access policy without a reset. Both boolean settings default to unchecked. Every Settings entry has a themed tooltip, with descriptions from `VenusUI.java` except the browser-specific Clear all outputs on Go option.
+
 ### Persisted geometry and shared controls
 
 A keyboard-accessible vertical divider changes the register panel width; an analogous horizontal divider changes the source/messages split, and another resizes the Execute Data Segment from above, scrolling its rows when compressed. All support pointer dragging, keyboard arrows, Home, and End. The layout adapter restores saved dimensions with viewport limits. Menus close on outside clicks or Escape. Settings begins with Show Labels Window, popup syscall input, hexadecimal addresses, and hexadecimal values, sharing the toolbar state and callbacks. The toolbar uses the same order, followed by ASCII display. Separators follow Values displayed in hexadecimal, Clear all outputs on Go, and Self-modifying code; Help retains Help and About MARS first, followed by a separator before the additional articles.
@@ -228,7 +230,7 @@ SVG toolbar controls use [prepared assets](../../../static/README.md); the favic
 
 ### Current scope and evidence
 
-Controls remain disabled until hydration attaches handlers. Tools, File → Dump Memory, exception-handler configuration, and memory-configuration dialogs remain disabled; no complete desktop parity is claimed. Core browser scenarios exercise assembly, step/backstep, breakpoints, console/modal input, pause/stop, reset, active-source assembly with unsaved and saved includes, and floating-register edits; results are reported by the validation run rather than inferred from component compilation.
+Controls remain disabled until hydration attaches handlers. Tools, File → Dump Memory, and exception-handler configuration remain disabled; no complete desktop parity is claimed. Core browser scenarios exercise assembly, step/backstep, breakpoints, console/modal input, pause/stop, reset, active-source assembly with unsaved and saved includes, and floating-register edits; results are reported by the validation run rather than inferred from component compilation.
 
 The [browser scenarios](../../../tests/browser/) cover source persistence and failure recovery, dialog cancellation and focus, menu/toolbar consistency, keyboard restrictions, themed tooltips, exact code/file transfer, real engine execution, and appearance changes. The [oracle fixtures](../../../tests/oracle/README.md) and engine tests establish translated behavior independently of UI composition. A successful Svelte compilation validates neither unsaved-source preservation nor Java parity.
 

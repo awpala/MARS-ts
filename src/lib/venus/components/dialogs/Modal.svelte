@@ -40,7 +40,7 @@
   }
 </script>
 
-<!-- @component Native same-tab dialog with focus containment, Escape/backdrop dismissal, and focus restoration. -->
+<!-- @component Native same-tab dialog with focus containment, Escape/backdrop dismissal, and focus restoration. --modal-body-display and --modal-body-overflow allow callers to keep actions outside their own scrolling content. -->
 <dialog
   {@attach attachDialog}
   aria-labelledby={id}
@@ -100,7 +100,9 @@
     font-weight: 600;
   }
   .dialog-body {
+    display: var(--modal-body-display, block);
+    min-height: 0;
     padding: 16px;
-    overflow: auto;
+    overflow: var(--modal-body-overflow, auto);
   }
 </style>

@@ -9,8 +9,10 @@
   import RenameWarningDialog from './RenameWarningDialog.svelte';
   import CloseSourceDialog from './CloseSourceDialog.svelte';
   import FindReplaceDialog from './FindReplaceDialog.svelte';
+  import MemoryConfigurationDialog from './MemoryConfigurationDialog.svelte';
   import HelpDialog from './HelpDialog.svelte';
-  const { workspace } = getDesktop();
+  const desktop = getDesktop();
+  const { workspace } = desktop;
   const dialogs = {
     open: OpenSourcesDialog,
     delete: DeleteSourcesDialog,
@@ -27,3 +29,5 @@
 <RunInputDialog />
 {#if WorkspaceDialog}<WorkspaceDialog />{/if}
 <HelpDialog />
+
+{#if desktop.memoryConfigurationOpen}<MemoryConfigurationDialog />{/if}
