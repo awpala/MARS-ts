@@ -101,6 +101,27 @@ describe('Settings Java oracle', () => {
 });
 
 describe('production Globals and Venus RunController', () => {
+  it('retains the executed address rather than the next PC after a branch falls off text', async () => {
+    const source = '.text\nj finish\nnop\nfinish:\n';
+    const { globals, controller } = session(source);
+    controller.assemble(['main.asm'], 'main.asm');
+    const base = globals.memory.textBaseAddress;
+    expect(controller.getLastExecutedAddress()).toBeNull();
+    await controller.run();
+    expect(controller.getState().status).toBe('terminated');
+    expect(globals.registerFile.getProgramCounter()).toBe(base + 8);
+    expect(controller.getLastExecutedAddress()).toBe(base);
+    const checkpoint = controller.captureCheckpoint()!;
+    const restored = session(source);
+    restored.controller.restoreCheckpoint(checkpoint);
+    expect(restored.controller.getLastExecutedAddress()).toBe(base);
+    expect(restored.controller.captureCheckpoint()).toEqual(checkpoint);
+    await restored.controller.dispose();
+    controller.reset();
+    expect(controller.getLastExecutedAddress()).toBeNull();
+    await controller.dispose();
+  });
+
   it('assembles, steps, undoes register and memory writes, resumes at breakpoints, and resets retained sources', async () => {
     const item = session('addiu $t0,$0,5\naddiu $t0,$t0,1\nsw $t0,0($gp)\nli $v0,10\nsyscall');
     const { controller, globals } = item;
@@ -356,6 +377,9 @@ describe('portable debugger checkpoints', () => {
     expect(() => running.controller.restoreCheckpoint({ ...checkpoint, registers: [] })).toThrow(
       'Invalid execution checkpoint'
     );
+    expect(() =>
+      running.controller.restoreCheckpoint({ ...checkpoint, lastExecutedAddress: 0.5 })
+    ).toThrow('Invalid execution checkpoint');
     expect(() =>
       running.controller.restoreCheckpoint({
         ...checkpoint,

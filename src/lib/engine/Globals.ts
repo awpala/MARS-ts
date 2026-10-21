@@ -45,7 +45,7 @@ export interface GlobalsHost {
   releaseInput?(): void;
   /** Close host-owned program files when assembly or simulation resets descriptors. */
   resetFiles?(): void;
-  /** Notify the GUI that timed execution should refresh its nonnotifying views. */
+  /** Notify the GUI that timed execution should refresh its non-notifying views. */
   refresh?(): void;
   /** Optional persistent preference operations. */
   preferences?: Omit<SettingsHost, 'backSteppingEnabled'>;

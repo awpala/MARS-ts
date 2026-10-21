@@ -2,6 +2,8 @@
 
 This directory owns Playwright scenarios for the production [Venus desktop](../../src/lib/venus/README.md). The suite exercises source editing and persistence, assembly and debugging, console input, Help, shared controls, appearance, and asynchronous component lifetimes through the rendered application. The desktop's existing editor, engine, and state owners perform the work; tests observe controls, output, stored records, and downloaded content.
 
+The user-supplied [Fibonacci program](fibonacci.asm) is a positive control for stepped/timed memory-write tracing: the first two stores highlight successive words, and the complete array ends in 55. A string-only summation scenario is the complementary negative control: assembly, console input, and string reads leave data memory unhighlighted. Execution scenarios also exercise reset highlighting, independent register banks, normal termination, address paging bounds, and the requested opening-page/center/final-page PC scrolling.
+
 These scenarios complement the [TypeScript suites and Java oracle](../README.md). They establish browser integration behavior, while engine parity remains supported by the corresponding oracle comparisons.
 
 ## Server and browser ownership

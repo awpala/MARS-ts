@@ -74,15 +74,18 @@ test('machine tables share one frame and paint stripes and every highlight in bo
   await page.getByRole('button', { name: 'New', exact: true }).click();
   await page
     .getByRole('textbox', { name: 'Source mips1.asm', exact: true })
-    .fill('.text\nmain: addi $t0, $zero, 5\nj next\nnop\nnext: nop\n');
+    .fill(
+      '.data\n.word 0\n.text\nmain: lui $t1,0x1001\naddi $t0, $zero, 5\nsw $t0,0($t1)\nj next\nnop\nnext: nop\n'
+    );
   await page.getByRole('button', { name: 'Show Labels Window', exact: true }).click();
   await page.getByRole('button', { name: 'Assemble', exact: true }).click();
   const step = page.getByRole('button', { name: 'Step', exact: true });
   await step.click();
   await step.click();
+  await step.click();
+  await step.click();
   const memory = page.getByLabel('Memory 0x10010000', { exact: true });
-  await memory.fill('7');
-  await memory.press('Enter');
+  await expect(memory).toHaveValue('0x00000005');
 
   const delaySlot = page.locator('.text-segment tbody tr[data-highlight="delay-slot"]');
   const memoryCell = page.locator('.data-segment td[data-highlight="memory"]');
@@ -152,6 +155,11 @@ test('machine tables share one frame and paint stripes and every highlight in bo
     await expect(registerRows.nth(0)).toHaveCSS('background-color', palette.stripes[0]);
     await expect(registerRows.nth(1)).toHaveCSS('background-color', palette.stripes[1]);
   }
+  await step.click();
+  await page.getByRole('button', { name: 'Backstep', exact: true }).click();
+  await expect(delaySlot).toHaveAttribute('aria-current', 'step');
+  await step.click();
+  await expect(delaySlot).toHaveCount(0);
   await page.getByRole('button', { name: 'Coproc 1', exact: true }).click();
   await expect(page.getByLabel('$f0 float value', { exact: true })).toHaveCSS(
     'text-align',

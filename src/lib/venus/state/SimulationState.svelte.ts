@@ -203,6 +203,9 @@ export class SimulationState {
         this.messages += `Assemble: operation completed successfully.\n\n`;
         this.breakpoints = [];
         this.breakpointsEnabled = true;
+        this.display.dataSegment = 'data';
+        this.display.dataPageOffset = 0;
+        this.display.registerTab = 'Registers';
         this.display.view = 'Execute';
       } else this.messages += 'Assemble: operation completed with errors.\n';
     } catch (error) {
@@ -265,6 +268,8 @@ export class SimulationState {
       this.display.view = 'Execute';
       if (command === 'reset') {
         this.controller.reset();
+        this.display.dataSegment = 'data';
+        this.display.dataPageOffset = 0;
         this.runIO += '\nReset: reset completed.\n\n';
         this.display.registerTab = 'Registers';
         return;

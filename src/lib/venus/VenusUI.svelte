@@ -140,6 +140,7 @@
           {:else}
             {#if simulation.machine && simulation.execution}<ExecutePane
                 machine={simulation.machine}
+                controller={simulation.controller!}
                 snapshot={simulation.execution}
                 bind:selectedLabel={simulation.labelSelection}
                 breakpoints={simulation.breakpoints}
@@ -208,6 +209,7 @@
               coprocessor0={simulation.machine.coprocessor0}
               coprocessor1={simulation.machine.coprocessor1}
               machineRevision={simulation.execution?.revision ?? 0}
+              controller={simulation.controller!}
               running={simulation.running}
               onedit={() => simulation.controller?.refresh()}
             />{/if}

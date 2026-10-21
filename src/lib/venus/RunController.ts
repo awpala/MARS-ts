@@ -12,6 +12,7 @@ import type { ProgramStatement } from '../engine/assembler/programs/ProgramState
 import type { ErrorList } from '../engine/diagnostics/ErrorList.js';
 import { ProcessingException } from '../engine/diagnostics/ProcessingException.js';
 import { Simulator } from '../engine/simulator/Simulator.js';
+import { SimulatorNotice } from '../engine/simulator/SimulatorNotice.js';
 import type { SimulatorAction } from '../engine/simulator/SimulatorAction.js';
 
 /** Desktop execution state; concrete registers/memory remain owned by the machine. */
@@ -56,12 +57,19 @@ export class RunController {
   private extended = true;
   private warnings = false;
   private pending: Promise<boolean> | null = null;
+  private backstepping = false;
+  private backstepDelaySlot: boolean | null = null;
+  private lastExecutedAddress: number | null = null;
   private disposed = false;
   private disposalPromise: Promise<void> | null = null;
   private readonly unsubscribeSimulator: () => void;
   /** Bind one GUI controller to one machine; constructor owns one simulator subscription. */
   constructor(readonly machine: Globals) {
-    this.unsubscribeSimulator = machine.simulator.subscribe(() => this.refresh());
+    this.unsubscribeSimulator = machine.simulator.subscribe((notice) => {
+      if (notice.getAction() === SimulatorNotice.SIMULATOR_STOP)
+        this.lastExecutedAddress = notice.getProgramCounter();
+      this.refresh();
+    });
   }
   /** Return the latest immutable state record; referenced program/statement objects remain engine-owned. */
   getState(): RunState {
@@ -100,7 +108,7 @@ export class RunController {
       this.machine.program.getMachineList() === null
     )
       return null;
-    return captureRunCheckpoint(this.machine, this.state);
+    return captureRunCheckpoint(this.machine, this.state, this.lastExecutedAddress);
   }
   /** Rebuild source metadata before restoring an exact stable machine, without executing instructions. */
   restoreCheckpoint(checkpoint: RunCheckpoint): void {
@@ -114,6 +122,7 @@ export class RunController {
     this.machine.memoryConfigurations.setCurrentConfiguration(configuration);
     this.assemble([checkpoint.filename], checkpoint.filename);
     this.machine.withGuiAccess(() => restoreRunHardware(this.machine, checkpoint));
+    this.lastExecutedAddress = checkpoint.lastExecutedAddress ?? null;
     this.publish({
       status: checkpoint.status,
       started: checkpoint.started,
@@ -125,6 +134,8 @@ export class RunController {
   /** Read current virtual buffers and assemble either the lead file or explicitly supplied open files. */
   assemble(openFilenames: readonly string[], leadFilename: string): ErrorList | null {
     this.requireIdle();
+    this.backstepDelaySlot = null;
+    this.lastExecutedAddress = null;
     const settings = this.machine.getSettings();
     this.extended = settings.getExtendedAssemblerEnabled();
     this.warnings = settings.getWarningsAreErrors();
@@ -193,13 +204,33 @@ export class RunController {
     this.requireIdle();
     this.requireProgram();
     if (this.machine.getSettings().getBackSteppingEnabled()) {
-      this.machine.withGuiAccess(() => this.machine.program!.getBackStepper()!.backStep());
+      this.backstepDelaySlot = this.machine.program!.getBackStepper()!.inDelaySlot();
+      this.backstepping = true;
+      try {
+        this.machine.withGuiAccess(() => this.machine.program!.getBackStepper()!.backStep());
+      } finally {
+        this.backstepping = false;
+      }
       this.publish({ status: 'paused', started: true, reset: false, error: null, reason: 0 });
     }
+  }
+  /** Whether synchronous undo writes are being delivered to debugger observers. */
+  isBackStepping(): boolean {
+    return this.backstepping;
+  }
+  /** Delay-slot display context captured before the latest undo, or null after a forward run/assembly/reset. */
+  getBackstepDelaySlot(): boolean | null {
+    return this.backstepDelaySlot;
+  }
+  /** Executed address reported by the latest simulator stop; null before execution or after rebuilding. */
+  getLastExecutedAddress(): number | null {
+    return this.lastExecutedAddress;
   }
   /** Reassemble retained tokenized programs with the previous assembly policy, then reset registers. */
   reset(): ErrorList | null {
     this.requireIdle();
+    this.backstepDelaySlot = null;
+    this.lastExecutedAddress = null;
     this.requireProgram();
     try {
       const diagnostics = this.machine.program!.assemble(
@@ -242,6 +273,7 @@ export class RunController {
     maxSteps: number
   ): Promise<boolean> {
     this.requireIdle();
+    this.backstepDelaySlot = null;
     this.requireProgram();
     if (this.state.status === 'terminated' || this.state.status === 'error')
       throw new Error('Reset or assemble the program before running it again.');

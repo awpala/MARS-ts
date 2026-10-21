@@ -43,6 +43,8 @@ export interface RunCheckpoint {
   reason: number;
   /** Whether error highlighting should point at the preceding instruction. */
   error: boolean;
+  /** Exact signed PC from the last simulator stop; older checkpoints omit this display metadata. */
+  lastExecutedAddress?: number | null;
   /** Retained history recording preference and restoration records. */
   history: {
     /** Whether recording and restoration are enabled. */
@@ -109,6 +111,9 @@ export function isRunCheckpoint(value: unknown): value is RunCheckpoint {
     typeof s.reset === 'boolean' &&
     word(s.reason) &&
     typeof s.error === 'boolean' &&
+    (s.lastExecutedAddress === undefined ||
+      s.lastExecutedAddress === null ||
+      word(s.lastExecutedAddress)) &&
     Array.isArray(s.historyStatements) &&
     s.historyStatements.length <= 2000 &&
     s.historyStatements.every(
@@ -147,8 +152,12 @@ function checkpointRegisters(machine: Globals) {
   ];
 }
 
-/** Capture the idle hardware and bounded history without notices or references to mutable engine objects. */
-export function captureRunCheckpoint(machine: Globals, state: RunState): RunCheckpoint {
+/** Capture idle hardware, bounded history, and the exact simulator stop address (default null) without notices or mutable engine references. */
+export function captureRunCheckpoint(
+  machine: Globals,
+  state: RunState,
+  lastExecutedAddress: number | null = null
+): RunCheckpoint {
   if (state.status === 'running' || machine.simulator.isRunning() || !machine.program)
     throw new Error('A checkpoint requires an idle loaded program');
   const historyStatements: RunCheckpoint['historyStatements'] = [];
@@ -196,6 +205,7 @@ export function captureRunCheckpoint(machine: Globals, state: RunState): RunChec
     reset: state.reset,
     reason: state.reason,
     error: state.error !== null,
+    lastExecutedAddress,
     history: { enabled: history?.enabled ?? true, records },
     historyStatements
   };

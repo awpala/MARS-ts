@@ -49,7 +49,7 @@ Context accessors are safe module-level infrastructure because Svelte stores the
 
 ### Reads and notifications have separate responsibilities
 
-Render-time getters and derived values remain synchronous and free of persistence, subscription installation, and model mutations. Register and memory tables use the nonnotifying read APIs so drawing a view does not generate simulated access events. Source updates publish workspace revisions, and controller updates replace the presentation snapshot with a new revision.
+Render-time getters and derived values remain synchronous and free of persistence, subscription installation, and model mutations. Register and memory tables use the non-notifying read APIs so drawing a view does not generate simulated access events. Source updates publish workspace revisions, and controller updates replace the presentation snapshot with a new revision.
 
 Machine/controller references and replaceable payloads use raw state where deep proxying would add no useful tracking. `RunState` is a read-only presentation record; its referenced programs and statements remain engine-owned objects, not deep immutable copies. The raw-state boundary does not make an in-place engine mutation reactive. Mutating actions must publish their revision or use an explicit hardware subscription, and each view returns the matching unsubscribe.
 

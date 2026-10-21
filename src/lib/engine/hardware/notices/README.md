@@ -16,6 +16,6 @@ Addresses and values are normalized `number` words. The memory constructor's thr
 
 The publisher owns dispatch. Registers use reverse-order snapshots and identity deduplication; memory uses ordered range records with its own duplicate/removal rules. Shared records do not unify those algorithms into an event bus. Subscribers release the teardown returned by the publisher API they used.
 
-The [hardware guide](../README.md) explains nonnotifying inspection and session context. [Foundation comparisons](../foundation.test.ts) cover payloads, origin queries, diagnostic text, and register notice order; [memory comparisons](../memory/Memory.test.ts) cover range dispatch and removal. Browser rendering should not generate simulated accesses.
+The [hardware guide](../README.md) explains non-notifying inspection and session context. [Foundation comparisons](../foundation.test.ts) cover payloads, origin queries, diagnostic text, and register notice order; [memory comparisons](../memory/Memory.test.ts) cover range dispatch and removal. Browser rendering should not generate simulated accesses.
 
 Add a notice here when it represents a hardware access contract. Keep subscriptions with the publisher and mutations with the state owner. Source retains Pete Sanderson and Kenneth Vollmar's [MIT attribution](../../../../../MARSlicense.txt); explicit origin is the browser-neutral adaptation described by the [engine guide](../../README.md).

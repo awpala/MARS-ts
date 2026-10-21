@@ -16,6 +16,8 @@
   import { AccessNotice } from '#lib/engine/hardware/notices/AccessNotice.js';
   import { Binary } from '#lib/engine/formatting/Binary.js';
   import { JavaFloatingPoint } from '#lib/engine/formatting/JavaFloatingPoint.js';
+  import { SimulatorNotice } from '#lib/engine/simulator/SimulatorNotice.js';
+  import type { RunController } from '../../RunController.js';
   /** Register-bank display contract; the parent session owns all hardware instances. */
   type Props = {
     /** Optional parent-owned pane ID, used by the resize separator to identify its controlled region. */
@@ -32,6 +34,8 @@
     coprocessor1: Coprocessor1;
     /** Required refresh sequence for silent resets and condition flag changes. */
     machineRevision: number;
+    /** Required session controller supplies assembly/reset identity and explicit backstep context for write highlighting. */
+    controller: RunController;
     /** True while executing; editing resumes at a paused or stepped boundary. */
     running: boolean;
     /** Notify the session after a manual register edit. */
@@ -45,6 +49,7 @@
     coprocessor0,
     coprocessor1,
     machineRevision,
+    controller,
     running,
     onedit
   }: Props = $props();
@@ -136,7 +141,7 @@
   };
   let revision = $state(0);
   let error = $state('');
-  let changed = $state('');
+  let changed = $state<Record<string, string>>({});
   const rows = $derived.by(() => {
     void revision;
     void machineRevision;
@@ -154,19 +159,43 @@
     }));
   });
   $effect(() => {
-    const releases = [
-      ...general,
-      ...coprocessor0.getRegisters(),
-      ...coprocessor1.getRegisters()
-    ].map((register) =>
-      register.subscribe((notice) => {
-        if (notice.getAccessType() === AccessNotice.WRITE) {
-          if (register !== registers.getProgramCounterRegister()) changed = register.getName();
-          revision++;
-        }
-      })
+    let trackWrites = false;
+    let statements = controller.getState().statements;
+    const releaseController = controller.subscribe((state) => {
+      if (state.statements !== statements) changed = {};
+      statements = state.statements;
+    });
+    const releaseSimulator = controller.machine.simulator.subscribe((notice) => {
+      trackWrites =
+        notice.getAction() === SimulatorNotice.SIMULATOR_START &&
+        (notice.getRunSpeed() !== 40 || notice.getMaxSteps() === 1);
+    });
+    const banks = [
+      { name: 'Registers', registers: general },
+      { name: 'Coproc 0', registers: coprocessor0.getRegisters() },
+      { name: 'Coproc 1', registers: coprocessor1.getRegisters() }
+    ];
+    const releases = banks.flatMap((bank) =>
+      bank.registers.map((register) =>
+        register.subscribe((notice) => {
+          if (notice.getAccessType() === AccessNotice.WRITE) {
+            if (
+              register !== registers.getProgramCounterRegister() &&
+              (trackWrites || controller.isBackStepping())
+            ) {
+              changed[bank.name] = register.getName();
+              selected = bank.name;
+            }
+            revision++;
+          }
+        })
+      )
     );
-    return () => releases.forEach((release) => release());
+    return () => {
+      releases.forEach((release) => release());
+      releaseSimulator();
+      releaseController();
+    };
   });
   function format(value: number, unsigned = false) {
     return formatInteger(value, hexValues, unsigned);
@@ -264,7 +293,7 @@
       {/snippet}
       <tbody>
         {#each rows as row (row.number)}<tr
-            data-highlight={changed === row.name ? 'register' : undefined}
+            data-highlight={changed[selected] === row.name ? 'register' : undefined}
             ><td class="identifier">
               <Tooltip text={row.tooltip}>
                 {#snippet children(trigger, description)}

@@ -49,7 +49,7 @@ The even floating register stores a double's low word and the odd register its h
 
 ## Register banks and reset behavior
 
-`RegisterFile`, `Coprocessor0`, and `Coprocessor1` construct their own `Register` objects. A register normalizes writes with `| 0`, retains its reset value separately, and offers notifying and nonnotifying reads. General-register update methods protect register zero. HI/LO and PC retain their distinct access and recording paths.
+`RegisterFile`, `Coprocessor0`, and `Coprocessor1` construct their own `Register` objects. A register normalizes writes with `| 0`, retains its reset value separately, and offers notifying and non-notifying reads. General-register update methods protect register zero. HI/LO and PC retain their distinct access and recording paths.
 
 General-register lookup tries numeric dollar-prefixed aliases before exact mnemonic matching. It uses the conservative integer-prefix check to skip guaranteed parse failures for ordinary names while retaining the complete `Binary` parser for candidates. Unicode digits, overflow behavior, and the legacy bare-`$` alias for register zero remain observable.
 
@@ -109,7 +109,7 @@ Java `Observable` becomes synchronous subscriptions, but register and memory dis
 | Unsubscribe                 | Remove callback identity from the register                    | Null the callback while retaining the range record                                       |
 | Count after removal         | No inactive register subscription remains                     | `countObservers()` still counts inactive records until `deleteObservers()` discards them |
 
-Every subscriber owns the returned teardown. The [notice guide](notices/README.md) explains payload and origin; the [memory guide](memory/README.md) explains signed ranges and dispatch edge cases. Rendering should use nonnotifying APIs where available. `getStatementNoNotify()` can still generate data-read notices when self-modifying-code execution fetches from data; its name does not promise silence on every path.
+Every subscriber owns the returned teardown. The [notice guide](notices/README.md) explains payload and origin; the [memory guide](memory/README.md) explains signed ranges and dispatch edge cases. Rendering should use non-notifying APIs where available. `getStatementNoNotify()` can still generate data-read notices when self-modifying-code execution fetches from data; its name does not promise silence on every path.
 
 An injected `AccessOrigin` callback replaces Java thread identity. `Globals` distinguishes executing MIPS access from GUI access, and its synchronous `withGuiAccess()` scope can mark inspection while a run awaits input. Notices capture that origin at access time without storing a DOM object, thread, or component reference.
 

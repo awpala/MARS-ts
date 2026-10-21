@@ -165,7 +165,7 @@ Stop reasons distinguish breakpoints, maximum steps, normal termination, falling
 
 ### Access notices and grouped history
 
-Register, memory, and simulator subscriptions return teardown functions. Hardware access notices are synchronous and preserve Java's observable ordering, including reverse observer registration order where applicable. A UI refresh must use the available nonnotifying inspection APIs so painting a value does not create a simulated read.
+Register, memory, and simulator subscriptions return teardown functions. Hardware access notices are synchronous and preserve Java's observable ordering, including reverse observer registration order where applicable. A UI refresh must use the available non-notifying inspection APIs so painting a value does not create a simulated read.
 
 Access origin is explicit rather than inferred from a Java thread. `Globals.withGuiAccess()` marks synchronous inspection/edit operations as GUI access even while execution awaits input. Its callback must remain synchronous; the scoped access context ends when it returns, not when a returned promise settles.
 

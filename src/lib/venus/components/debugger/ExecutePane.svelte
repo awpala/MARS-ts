@@ -20,12 +20,15 @@
   import type { Symbol as AssemblySymbol } from '#lib/engine/assembler/symbols/Symbol.js';
   import { AddressErrorException } from '#lib/engine/hardware/memory/AddressErrorException.js';
   import { AccessNotice } from '#lib/engine/hardware/notices/AccessNotice.js';
+  import { SimulatorNotice } from '#lib/engine/simulator/SimulatorNotice.js';
   import { Binary, NumberFormatException } from '#lib/engine/formatting/Binary.js';
   import type { RunController } from '../../RunController.js';
   /** Execution tables render the parent-owned machine without owning simulation snapshot. */
   type Props = {
-    /** Required initialized machine; all reads use its public, nonnotifying interfaces. */
+    /** Required initialized machine; all reads use its public, non-notifying interfaces. */
     machine: Globals;
+    /** Required session controller identifies synchronous backstep writes without treating assembly or edits as execution. */
+    controller: RunController;
     /** Required controller snapshot; revision invalidates views after machine changes. */
     snapshot: ReturnType<RunController['getState']>;
     /** Parent-owned selection for the loaded program, persisted with its checkpoint; null clears linked highlights. */
@@ -63,6 +66,7 @@
   };
   let {
     machine,
+    controller,
     snapshot,
     selectedLabel = $bindable(),
     breakpoints,
@@ -83,6 +87,10 @@
   }: Props = $props();
   let memoryError = $state('');
   let editedAddress = $state<number | null>(null);
+  let memoryHighlighting = $state(false);
+  let memoryReveal = 0;
+  let observedText: Record<number, number | undefined> = {};
+  const assemblyStatements = $derived(snapshot.statements);
   const selectedLabelWord = $derived(selectedLabel === null ? null : selectedLabel.address & ~3);
   const memoryRows = 16;
   const memoryPageBytes = memoryRows * 32;
@@ -117,11 +125,56 @@
   ];
   const sortColumn = $derived(labelSortState < 4 ? 1 : 0);
   const sortDescending = $derived((labelSortState & (sortColumn === 0 ? 2 : 1)) !== 0);
-  $effect(() =>
-    machine.memory.addObserver((notice) => {
-      if (notice.getAccessType() === AccessNotice.WRITE) editedAddress = notice.getAddress() & ~3;
-    })
-  );
+  $effect(() => {
+    let trackWrites = false;
+    const releaseSimulator = machine.simulator.subscribe((notice) => {
+      trackWrites =
+        notice.getAction() === SimulatorNotice.SIMULATOR_START &&
+        (notice.getRunSpeed() !== 40 || notice.getMaxSteps() === 1);
+      if (trackWrites) memoryHighlighting = true;
+    });
+    const releaseMemory = machine.memory.addObserver((notice) => {
+      if (notice.getAccessType() !== AccessNotice.WRITE) return;
+      const address = notice.getAddress() & ~3;
+      const previousCode = observedText[address];
+      const currentCode =
+        previousCode === undefined
+          ? undefined
+          : machine.memory.getStatementNoNotify(address)?.getBinaryStatement();
+      // TextSegmentWindow forwards changed code even when ordinary data observation is off.
+      const changedCode = previousCode !== undefined && currentCode !== previousCode;
+      if (changedCode && currentCode !== undefined) observedText[address] = currentCode;
+      if (!trackWrites && !controller.isBackStepping() && !changedCode) return;
+      editedAddress = address;
+      selectMemoryPage(address);
+      const reveal = ++memoryReveal;
+      void tick().then(() => {
+        if (reveal === memoryReveal)
+          revealLabelTarget(document.getElementById(`${id}-memory-${address >>> 0}`));
+      });
+    });
+    return () => {
+      memoryReveal++;
+      releaseMemory();
+      releaseSimulator();
+    };
+  });
+  $effect(() => {
+    // Assembly and Reset replace the statement list after initializing data memory.
+    // Clear their writes just as the legacy run actions call clearHighlighting().
+    observedText = Object.fromEntries(
+      assemblyStatements.map((statement) => [
+        statement.getAddress(),
+        machine.memory.getStatementNoNotify(statement.getAddress())?.getBinaryStatement() ??
+          statement.getBinaryStatement()
+      ])
+    );
+    editedAddress = null;
+    memoryHighlighting = false;
+    memoryReveal++;
+    const viewport = document.getElementById(`${id}-data`)?.querySelector('.data-scroll');
+    if (viewport) viewport.scrollTop = 0;
+  });
   const selfModifying = $derived.by(() => {
     void snapshot.revision;
     return machine.getSettings().getBooleanSetting(Settings.SELF_MODIFYING_CODE_ENABLED);
@@ -130,13 +183,15 @@
   const pc = $derived.by(() => {
     void snapshot.revision;
     const current = machine.registerFile.getProgramCounterRegister().getValueNoNotify();
+    if (snapshot.status === 'terminated') return controller.getLastExecutedAddress();
     return snapshot.error ? (current - 4) | 0 : current;
   });
   const delaySlot = $derived.by(() => {
     void snapshot.revision;
-    return machine.delayedBranch.isTriggered();
+    return controller.getBackstepDelaySlot() ?? machine.delayedBranch.isTriggered();
   });
   const pcHighlight: MachineHighlight = $derived(delaySlot ? 'delay-slot' : 'pc');
+  const highlightedPC = $derived(running && machine.runSpeed === 40 ? null : pc);
   const rows = $derived.by(() => {
     void snapshot.revision;
     void hexAddresses;
@@ -213,6 +268,30 @@
     { value: 'mmio', label: `${Binary.intToHexString(memoryBases.mmio)} (MMIO)` }
   ]);
   const memoryBase = $derived(((memoryBases[segment] & ~3) + pageOffset) | 0);
+  const memoryLimits = $derived.by(() => {
+    void snapshot.revision;
+    const memory = machine.memory;
+    // Linked kernel-text labels share the .text selector with user instructions.
+    const kernelText = segment === 'text' && memoryBase >>> 0 >= memory.kernelTextBaseAddress >>> 0;
+    const kernel = kernelText || segment === 'kernel' || segment === 'mmio';
+    return {
+      low: kernelText
+        ? memory.kernelTextBaseAddress >>> 0
+        : kernel
+          ? memory.kernelDataBaseAddress >>> 0
+          : Math.min(
+              memory.textBaseAddress,
+              memory.dataSegmentBaseAddress,
+              memory.dataBaseAddress
+            ) >>> 0,
+      high:
+        ((kernel ? memory.kernelHighAddress : memory.userHighAddress) >>> 0) - memoryPageBytes + 1
+    };
+  });
+  function pageMemory(bytes: number) {
+    const base = clamp((memoryBase >>> 0) + bytes, memoryLimits.low, memoryLimits.high);
+    pageOffset = base - ((memoryBases[segment] & ~3) >>> 0);
+  }
   const dataRows = $derived.by(() => {
     void snapshot.revision;
     return Array.from({ length: memoryRows }, (_, row) => {
@@ -262,7 +341,6 @@
       machine.withGuiAccess(() =>
         machine.memory.setRawWord(address, Binary.stringToInt(input.value.trim()))
       );
-      editedAddress = address;
       memoryError = '';
       onedit();
     } catch (error) {
@@ -307,12 +385,7 @@
       selectedLabel.address === symbol.getAddress()
     );
   }
-  async function navigateLabel(symbol: AssemblySymbol, filename: string | null) {
-    if (isSelectedLabel(symbol, filename)) {
-      selectedLabel = null;
-      return;
-    }
-    const address = symbol.getAddress();
+  function selectMemoryPage(address: number) {
     const memory = machine.memory;
     const textLabel = memory.inTextSegment(address) || memory.inKernelTextSegment(address);
     if (textLabel) segment = 'text';
@@ -337,6 +410,15 @@
     // Keep the range's page boundaries, rather than placing every label in the first row.
     const pageBase = base + Math.floor(offset / memoryPageBytes) * memoryPageBytes;
     pageOffset = pageBase - (memoryBases[segment] & ~3);
+    return textLabel;
+  }
+  async function navigateLabel(symbol: AssemblySymbol, filename: string | null) {
+    if (isSelectedLabel(symbol, filename)) {
+      selectedLabel = null;
+      return;
+    }
+    const address = symbol.getAddress();
+    const textLabel = selectMemoryPage(address);
     selectedLabel = { filename, name: symbol.getName(), address };
     await tick();
     const word = document.getElementById(`${id}-memory-${(address & ~3) >>> 0}`);
@@ -381,17 +463,29 @@
       active = false;
     };
   });
+  let followedStatements: Props['snapshot']['statements'] | undefined;
+  let centerPC = false;
   function followPC(node: HTMLElement) {
     const viewport = node.closest<HTMLElement>('.text-scroll');
     if (!viewport) return;
+    if (followedStatements !== snapshot.statements) {
+      followedStatements = snapshot.statements;
+      centerPC = false;
+      viewport.scrollTop = 0;
+    }
     const headerHeight = viewport.querySelector('thead')?.getBoundingClientRect().height ?? 0;
-    // Keep the current row below the sticky headings; scrollTop clamps at the last page.
+    const bounds = node.getBoundingClientRect();
+    const viewportTop = viewport.getBoundingClientRect().top + viewport.clientTop;
+    // Hold the opening page through its last fully visible row, then follow every move.
+    if (!centerPC && bounds.bottom <= viewportTop + viewport.clientHeight) return;
+    centerPC = true;
+    // Center below the sticky headings; native clamping pins the first and last pages.
     // Scroll only this pane, preserving horizontal position and keyboard focus.
     viewport.scrollTop +=
-      node.getBoundingClientRect().top -
-      viewport.getBoundingClientRect().top -
-      viewport.clientTop -
-      headerHeight;
+      bounds.top -
+      viewportTop -
+      headerHeight -
+      (viewport.clientHeight - headerHeight - bounds.height) / 2;
   }
 </script>
 
@@ -420,12 +514,12 @@
           {/snippet}
           <tbody>
             {#each rows as row (row.address)}<tr
-                {@attach row.address === pc && followPC}
+                {@attach row.address === highlightedPC && followPC}
                 id={`${id}-instruction-${row.address >>> 0}`}
                 tabindex="-1"
                 data-selected={row.address === selectedLabelWord || undefined}
-                data-highlight={row.address === pc ? pcHighlight : undefined}
-                aria-current={row.address === pc ? 'step' : undefined}
+                data-highlight={row.address === highlightedPC ? pcHighlight : undefined}
+                aria-current={row.address === highlightedPC ? 'step' : undefined}
               >
                 <td
                   ><input
@@ -588,7 +682,9 @@
                     id={`${id}-memory-${word.address >>> 0}`}
                     tabindex="-1"
                     data-selected={word.address === selectedLabelWord || undefined}
-                    data-highlight={word.address === editedAddress ? 'memory' : undefined}
+                    data-highlight={memoryHighlighting && word.address === editedAddress
+                      ? 'memory'
+                      : undefined}
                     ><CellInput
                       aria-label={`Memory ${Binary.intToHexString(word.address)}`}
                       value={formatWord(word.value)}
@@ -605,10 +701,12 @@
           class="grid size-5.5 shrink-0 place-items-center"
           tooltip="Previous memory page"
           aria-label="Previous memory page"
-          onclick={() => (pageOffset -= memoryPageBytes)}
+          disabled={running || memoryBase >>> 0 <= memoryLimits.low}
+          onclick={() => pageMemory(-memoryPageBytes)}
           ><ToolbarIcon name="previousMemoryPage" /></Button
         ><select
           aria-label="Data segment base"
+          disabled={running}
           bind:this={segmentSelect}
           bind:value={segment}
           onpointerdown={armSegment}
@@ -626,8 +724,8 @@
           class="grid size-5.5 shrink-0 place-items-center"
           tooltip="Next memory page"
           aria-label="Next memory page"
-          onclick={() => (pageOffset += memoryPageBytes)}
-          ><ToolbarIcon name="nextMemoryPage" /></Button
+          disabled={running || memoryBase >>> 0 >= memoryLimits.high}
+          onclick={() => pageMemory(memoryPageBytes)}><ToolbarIcon name="nextMemoryPage" /></Button
         >
         <div class="control-separator" role="separator" aria-orientation="vertical"></div>
         <div class="display-options">

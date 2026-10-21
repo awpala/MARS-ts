@@ -1,5 +1,6 @@
 import { openDesktop, openStoredSources, waitForDesktop } from './openDesktop.js';
 import { test, expect, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 
 async function source(page: Page, text: string) {
   await page.getByRole('button', { name: 'New', exact: true }).click();
@@ -9,6 +10,273 @@ async function source(page: Page, text: string) {
 const finished = '\n-- program is finished running --\n\n';
 
 const action = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
+
+test('execution holds the opening page, then centers the PC and pins the final page', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await source(page, '.text\nmain:\n' + 'nop\n'.repeat(100) + 'li $v0,10\nsyscall\n');
+  await action(page, 'Assemble').click();
+  const text = page.getByRole('region', { name: 'Text Segment', exact: true });
+  const scroller = text.locator('.text-scroll');
+  const current = text.locator('tr[aria-current="step"]');
+  const lastVisible = await scroller.evaluate((viewport) => {
+    const bottom =
+      viewport.getBoundingClientRect().top + viewport.clientTop + viewport.clientHeight;
+    return [...viewport.querySelectorAll('tbody tr')].findLastIndex(
+      (row) => row.getBoundingClientRect().bottom <= bottom
+    );
+  });
+  expect(lastVisible).toBeGreaterThan(1);
+  expect(lastVisible).toBeLessThan(50);
+  for (let index = 0; index < lastVisible; index++) await action(page, 'Step').click();
+  await expect(current.locator('td').nth(1)).toHaveText(
+    `0x${(0x00400000 + lastVisible * 4).toString(16).padStart(8, '0')}`
+  );
+  expect(await scroller.evaluate((viewport) => viewport.scrollTop)).toBe(0);
+
+  const centerError = () =>
+    current.evaluate((row) => {
+      const viewport = row.closest<HTMLElement>('.text-scroll')!;
+      const header = viewport.querySelector('thead')!.getBoundingClientRect().height;
+      const bounds = row.getBoundingClientRect();
+      const center =
+        viewport.getBoundingClientRect().top +
+        viewport.clientTop +
+        header +
+        (viewport.clientHeight - header) / 2;
+      return Math.abs(bounds.top + bounds.height / 2 - center);
+    });
+  await action(page, 'Step').click();
+  await expect.poll(centerError).toBeLessThanOrEqual(1);
+  await action(page, 'Step').click();
+  await expect.poll(centerError).toBeLessThanOrEqual(1);
+  await action(page, 'Backstep').click();
+  await expect.poll(centerError).toBeLessThanOrEqual(1);
+
+  await page.getByLabel('Breakpoint 0x00400190', { exact: true }).check();
+  await action(page, 'Go').click();
+  await expect(page.getByLabel('Execution status')).toHaveText('Status: paused');
+  const bottomGap = () =>
+    scroller.evaluate((viewport) =>
+      Math.abs(viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop)
+    );
+  await expect.poll(bottomGap).toBeLessThanOrEqual(1);
+  await action(page, 'Step').click();
+  await expect.poll(bottomGap).toBeLessThanOrEqual(1);
+  await expect(current).toBeInViewport();
+
+  await action(page, 'Reset').click();
+  await action(page, 'Step').click();
+  expect(await scroller.evaluate((viewport) => viewport.scrollTop)).toBe(0);
+});
+
+test('assembly and string-only execution leave data memory unhighlighted', async ({ page }) => {
+  await openDesktop(page);
+  await source(
+    page,
+    `.data
+msg1: .asciiz "Input a positive integer N: "
+msg2: .asciiz "Sum = "
+new_ln: .asciiz "\\n"
+.text
+main:
+li $v0,4
+la $a0,msg1
+syscall
+li $v0,5
+syscall
+move $t0,$v0
+li $t1,0
+li $t2,0
+for:
+addi $t1,$t1,1
+add $t2,$t2,$t1
+beq $t0,$t1,endfor
+j for
+endfor:
+li $v0,4
+la $a0,msg2
+syscall
+li $v0,1
+move $a0,$t2
+syscall
+la $v0,4
+la $a0,new_ln
+syscall
+li $v0,10
+syscall
+`
+  );
+  await action(page, 'Assemble').click();
+  const highlighted = page.locator('.data-segment td[data-highlight="memory"]');
+  const newline = page.getByLabel('Memory 0x10010024', { exact: true });
+  await expect(newline).toHaveValue('0x0000000a');
+  await expect(highlighted).toHaveCount(0);
+  for (const input of ['3', '8']) {
+    await action(page, 'Go').click();
+    await page.getByLabel('Run input', { exact: true }).fill(input);
+    await expect(highlighted).toHaveCount(0);
+    await action(page, 'Submit').click();
+    await expect(page.getByLabel('Execution status')).toHaveText('Status: terminated');
+    await expect(highlighted).toHaveCount(0);
+    await expect(newline).toHaveValue('0x0000000a');
+    await action(page, 'Reset').click();
+    await expect(highlighted).toHaveCount(0);
+  }
+});
+
+test('data highlights follow stores and backstep and clear after Reset and reassembly', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await source(
+    page,
+    '.data\n.space 1024\n.word 11,22\n.text\nlui $t0,0x1001\naddiu $t1,$zero,42\nsw $t1,1024($t0)\nsw $zero,1028($t0)\nli $v0,10\nsyscall\n'
+  );
+  await action(page, 'Assemble').click();
+  const highlighted = page.locator('.data-segment td[data-highlight="memory"]');
+  await expect(highlighted).toHaveCount(0);
+  for (let index = 0; index < 3; index++) await action(page, 'Step').click();
+  await expect(highlighted.getByRole('textbox')).toHaveAccessibleName('Memory 0x10010400');
+  await expect(highlighted.getByRole('textbox')).toHaveValue('0x0000002a');
+  await action(page, 'Step').click();
+  await expect(highlighted.getByRole('textbox')).toHaveAccessibleName('Memory 0x10010404');
+  await expect(highlighted.getByRole('textbox')).toHaveValue('0x00000000');
+  await action(page, 'Backstep').click();
+  await expect(highlighted.getByRole('textbox')).toHaveAccessibleName('Memory 0x10010404');
+  await expect(highlighted.getByRole('textbox')).toHaveValue('0x00000016');
+  await action(page, 'Reset').click();
+  await expect(highlighted).toHaveCount(0);
+  await expect(page.getByLabel('Memory 0x10010000', { exact: true })).toBeVisible();
+  await expect(page.locator('.register-pane tr[data-highlight="register"]')).toHaveCount(0);
+  await action(page, 'Step').click();
+  await expect(highlighted).toHaveCount(0);
+  await action(page, 'Step').click();
+  await action(page, 'Step').click();
+  await expect(highlighted).toHaveCount(1);
+  await action(page, 'Assemble').click();
+  await expect(highlighted).toHaveCount(0);
+  await expect(page.getByLabel('Memory 0x10010000', { exact: true })).toBeVisible();
+  await expect(page.locator('.register-pane tr[data-highlight="register"]')).toHaveCount(0);
+});
+
+test('Fibonacci stores trace their written words in stepped and timed execution', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await source(page, readFileSync(new URL('./fibonacci.asm', import.meta.url), 'utf8'));
+  await action(page, 'Assemble').click();
+  const highlighted = page.locator('.data-segment td[data-highlight="memory"]');
+  await expect(highlighted).toHaveCount(0);
+  // The two address pseudo-instructions expand; stop at the first actual store.
+  for (let index = 0; index < 12 && (await highlighted.count()) === 0; index++)
+    await action(page, 'Step').click();
+  await expect(highlighted.getByRole('textbox')).toHaveAccessibleName('Memory 0x10010000');
+  await expect(highlighted.getByRole('textbox')).toHaveValue('0x00000001');
+  await action(page, 'Step').click();
+  await expect(highlighted.getByRole('textbox')).toHaveAccessibleName('Memory 0x10010004');
+  await expect(highlighted.getByRole('textbox')).toHaveValue('0x00000001');
+  await page.getByRole('slider', { name: 'Run speed', exact: true }).fill('35');
+  await action(page, 'Go').click();
+  await expect(page.getByLabel('Execution status')).toHaveText('Status: terminated', {
+    timeout: 20000
+  });
+  await expect(highlighted.getByRole('textbox')).toHaveAccessibleName('Memory 0x10010024');
+  await expect(highlighted.getByRole('textbox')).toHaveValue('0x00000037');
+  const fibonacci = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55];
+  for (const [index, value] of fibonacci.entries()) {
+    const address = `0x${(0x10010000 + index * 4).toString(16)}`;
+    await expect(page.getByLabel(`Memory ${address}`, { exact: true })).toHaveValue(
+      `0x${value.toString(16).padStart(8, '0')}`
+    );
+  }
+  await expect(page.getByLabel('Run I/O', { exact: true })).toHaveValue(
+    'The Fibonacci numbers are:\n' + fibonacci.map((value) => `${value} \n`).join('') + finished
+  );
+});
+
+test('register writes select their bank and retain independent highlights until Reset', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await source(page, '.text\naddi $t0,$zero,7\nmtc1 $t0,$f0\nmtc0 $t0,$12\nli $v0,10\nsyscall\n');
+  await action(page, 'Assemble').click();
+  const highlighted = page.locator('.register-pane tr[data-highlight="register"]');
+  await action(page, 'Step').click();
+  await expect(highlighted.locator('td').first()).toHaveText('$t0');
+  await action(page, 'Step').click();
+  await expect(action(page, 'Coproc 1')).toHaveAttribute('aria-pressed', 'true');
+  await expect(highlighted.locator('td').first()).toHaveText('$f0');
+  await action(page, 'Registers').click();
+  await expect(highlighted.locator('td').first()).toHaveText('$t0');
+  await action(page, 'Step').click();
+  await expect(action(page, 'Coproc 0')).toHaveAttribute('aria-pressed', 'true');
+  await expect(highlighted.locator('td').first()).toHaveText('$12 (status)');
+  await action(page, 'Reset').click();
+  await expect(highlighted).toHaveCount(0);
+  for (const bank of ['Coproc 1', 'Coproc 0', 'Registers']) {
+    await action(page, bank).click();
+    await expect(highlighted).toHaveCount(0);
+  }
+});
+
+test('unlimited Go suppresses write tracking and successful exit retains the executed instruction', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await source(
+    page,
+    '.data\n.word 11\n.text\nlui $t0,0x1001\naddi $t1,$zero,42\nsw $t1,0($t0)\nli $v0,10\nsyscall\nli $t2,99\n'
+  );
+  await action(page, 'Assemble').click();
+  const memory = page.getByLabel('Memory 0x10010000', { exact: true });
+  await memory.fill('13');
+  await memory.press('Enter');
+  await expect(page.locator('.data-segment td[data-highlight="memory"]')).toHaveCount(0);
+  await action(page, 'Go').click();
+  await expect(page.getByLabel('Execution status')).toHaveText('Status: terminated');
+  await expect(memory).toHaveValue('0x0000002a');
+  await expect(page.locator('.data-segment td[data-highlight="memory"]')).toHaveCount(0);
+  await expect(page.locator('.register-pane tr[data-highlight="register"]')).toHaveCount(0);
+  const current = page.locator('.text-segment tr[aria-current]');
+  await expect(current.locator('td').nth(1)).toHaveText('0x00400010');
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.reload();
+  await waitForDesktop(page);
+  await expect(current.locator('td').nth(1)).toHaveText('0x00400010');
+  await action(page, 'Backstep').click();
+  await expect(current.locator('td').nth(1)).toHaveText('0x0040000c');
+  await action(page, 'Reset').click();
+  await expect(current.locator('td').nth(1)).toHaveText('0x00400000');
+  for (let index = 0; index < 5; index++) await action(page, 'Step').click();
+  await expect(page.getByLabel('Execution status')).toHaveText('Status: terminated');
+  await expect(current.locator('td').nth(1)).toHaveText('0x00400010');
+});
+
+test('memory paging clamps at user and kernel boundaries and Reset restores data', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await source(page, '.text\nnop\n');
+  await action(page, 'Assemble').click();
+  const range = page.getByLabel('Data segment base', { exact: true });
+  await range.selectOption('text');
+  await expect(action(page, 'Previous memory page')).toBeDisabled();
+  await range.selectOption('mmio');
+  // The final MMIO page can be reached without wrapping into user addresses.
+  await action(page, 'Next memory page').evaluate(async (button) => {
+    for (let index = 0; index < 127; index++) {
+      (button as HTMLButtonElement).click();
+      await new Promise(requestAnimationFrame);
+    }
+  });
+  await expect(action(page, 'Next memory page')).toBeDisabled();
+  await expect(page.getByLabel('Memory 0xfffffe00', { exact: true })).toBeVisible();
+  await action(page, 'Reset').click();
+  await expect(range).toHaveValue('data');
+  await expect(page.getByLabel('Memory 0x10010000', { exact: true })).toBeVisible();
+});
 
 test('Text Segment heading stays visible while following and scrolling instructions', async ({
   page
@@ -541,6 +809,7 @@ test('cliff and exception outcomes preserve messages and select the faulting ins
   await expect(page.getByLabel('Run I/O', { exact: true })).toHaveValue(
     '\n-- program is finished running (dropped off bottom) --\n\n'
   );
+  await expect(page.locator('.text-segment tr[aria-current] td').nth(1)).toHaveText('0x00400000');
   await action(page, 'Reset').click();
   await expect(page.getByLabel('Run I/O', { exact: true })).toHaveValue(
     '\n-- program is finished running (dropped off bottom) --\n\n\nReset: reset completed.\n\n'
@@ -633,8 +902,10 @@ test('text memory is readable without SMC and editable code executes then resets
     .filter({ hasText: /^Settings$/ })
     .click();
   await expect(page.getByLabel('Execution status')).toHaveText('Status: assembled');
+  await page.getByLabel('Data segment base', { exact: true }).selectOption('data');
   await page.getByLabel('Code 0x00400000', { exact: true }).fill('0x24080009');
   await page.getByLabel('Code 0x00400000', { exact: true }).press('Enter');
+  await expect(page.getByLabel('Data segment base', { exact: true })).toHaveValue('text');
   await expect(page.getByLabel('Memory 0x00400000', { exact: true })).toHaveValue('0x24080009');
   await expect(page.getByRole('region', { name: 'Text Segment', exact: true })).toContainText(
     '------'
