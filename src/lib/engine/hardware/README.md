@@ -90,7 +90,7 @@ sequenceDiagram
     Layout->>Owner: onChange(configuration)
     Owner->>Memory: clear()
     Memory->>Layout: Read current layout
-    Memory->>Memory: Clamp limits; replace storage; reset heap
+    Memory->>Memory: Clamp limits, replace storage, reset heap
     Owner->>Registers: Change gp, sp, and PC reset values
     Owner->>Registers: Initialize PC and reset registers
 ```
