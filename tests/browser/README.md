@@ -44,11 +44,11 @@ Most scenarios use the root route. Lifetime scenarios serve a test-owned empty p
 
 ## Coverage and extension
 
-| Area                      | Observable contracts                                                                                                                             |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Source workflows          | Exact editor text, save and rename decisions, import/export, recovery, Auto Save, and storage failures                                           |
-| Execution and debugging   | Assembly, stepping and backstep, breakpoints, register and memory edits, labels, console input, cancellation, and reset                          |
-| Presentation and controls | Keyboard commands, focus, modal dismissal, tooltips, pane geometry, theme persistence, machine-table stripes and highlights, and shared settings |
-| Help and lifetimes        | Article availability and attribution, exact snippet transfers, clipboard feedback, stale asynchronous results, and teardown                      |
+| Area                      | Observable contracts                                                                                                                                                        |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Source workflows          | Exact editor text, save and rename decisions, import/export, recovery, Auto Save, and storage failures                                                                      |
+| Execution and debugging   | Assembly, stepping and backstep, breakpoints, register and memory edits, condition flag edits during stepping and execution, labels, console input, cancellation, and reset |
+| Presentation and controls | Keyboard commands, focus, modal dismissal, tooltips, pane geometry, theme persistence, machine-table stripes and highlights, and shared settings                            |
+| Help and lifetimes        | Article availability and attribution, exact snippet transfers, clipboard feedback, stale asynchronous results, and teardown                                                 |
 
 Add scenarios here when correctness depends on browser APIs, rendered interaction, focus, layout, persistence across reload, or component lifetime. Reuse the readiness helpers, prefer accessible roles and names for controls, and keep seeded records and browser API replacements local to each scenario. Assert observable results through production workflows; reserve lower-level algorithm and conversion cases for the TypeScript and oracle suites.

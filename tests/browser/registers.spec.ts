@@ -127,3 +127,65 @@ test('register Name cells describe their legacy roles in all three banks', async
     await expect(page.getByRole('tooltip')).toHaveCount(0);
   }
 });
+
+test('Coproc 1 condition flags carry the legacy panel and checkbox descriptions', async ({
+  page
+}) => {
+  await openDesktop(page);
+  const pane = page.locator('.register-pane');
+  await pane.getByRole('button', { name: 'Coproc 1', exact: true }).click();
+  await pane.getByText('Condition flags', { exact: true }).hover();
+  await expect(page.getByRole('tooltip')).toHaveText(
+    'flags are used by certain floating point instructions, default flag is 0'
+  );
+  await page.keyboard.press('Escape');
+  await pane.getByRole('checkbox', { name: 'Condition flag 5', exact: true }).hover();
+  await expect(page.getByRole('tooltip')).toHaveText('checked == 1, unchecked == 0');
+});
+
+test('Coproc 1 condition flag edits drive branches and are undone by Backstep', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await page.getByRole('button', { name: 'New', exact: true }).click();
+  await page
+    .getByRole('textbox', { name: 'Source mips1.asm', exact: true })
+    .fill('.text\nbc1t taken\nli $t0, 1\ntaken: li $t1, 2\n');
+  await page.getByRole('button', { name: 'Assemble', exact: true }).click();
+  await expect(page.getByLabel('Execution status')).toHaveText('Status: assembled');
+  const pane = page.locator('.register-pane');
+  await pane.getByRole('button', { name: 'Coproc 1', exact: true }).click();
+  const flag = pane.getByRole('checkbox', { name: 'Condition flag 0', exact: true });
+  await expect(flag).toBeEnabled();
+  await flag.check();
+  await expect(flag).toBeChecked();
+  await page.getByRole('button', { name: 'Step', exact: true }).click();
+  await pane.getByRole('button', { name: 'Registers', exact: true }).click();
+  await expect(page.getByLabel('pc value', { exact: true })).toHaveValue('0x00400008');
+  await page.getByRole('button', { name: 'Backstep', exact: true }).click();
+  await expect(page.getByLabel('pc value', { exact: true })).toHaveValue('0x00400000');
+  await pane.getByRole('button', { name: 'Coproc 1', exact: true }).click();
+  await expect(flag).toBeChecked();
+  await page.getByRole('button', { name: 'Backstep', exact: true }).click();
+  await expect(flag).not.toBeChecked();
+  await pane.getByRole('button', { name: 'Registers', exact: true }).click();
+  await expect(page.getByLabel('pc value', { exact: true })).toHaveValue('0x00400000');
+});
+
+test('Coproc 1 condition flags stay editable while the program runs', async ({ page }) => {
+  await openDesktop(page);
+  await page.getByRole('button', { name: 'New', exact: true }).click();
+  await page
+    .getByRole('textbox', { name: 'Source mips1.asm', exact: true })
+    .fill('.text\nwait: bc1f wait\nli $t0, 7\n');
+  await page.getByRole('button', { name: 'Assemble', exact: true }).click();
+  await expect(page.getByLabel('Execution status')).toHaveText('Status: assembled');
+  const pane = page.locator('.register-pane');
+  await pane.getByRole('button', { name: 'Coproc 1', exact: true }).click();
+  await page.getByRole('button', { name: 'Go', exact: true }).click();
+  await expect(page.getByLabel('Execution status')).toHaveText('Status: running');
+  await pane.getByRole('checkbox', { name: 'Condition flag 0', exact: true }).check();
+  await expect(page.getByLabel('Execution status')).toHaveText('Status: terminated');
+  await pane.getByRole('button', { name: 'Registers', exact: true }).click();
+  await expect(page.getByLabel('$t0 value', { exact: true })).toHaveValue('0x00000007');
+});

@@ -9,18 +9,23 @@
     accessibleLabel?: string;
     /** Optional per-choice unavailability; defaults to false. */
     disabled?: boolean;
+    /** Optional description shown on choice hover or focus; omitted by default. */
+    tooltip?: string;
   };
 </script>
 
 <script lang="ts" generics="T extends string | number">
   import type { Snippet } from 'svelte';
   import type { ClassValue } from 'svelte/elements';
+  import Tooltip from '../feedback/Tooltip.svelte';
   import SelectorToggle from './SelectorToggle.svelte';
 
   /** Labeled checkbox group; the caller owns options, selected values, and workflow policy. */
   type Props = {
     /** Required visible and accessible group caption. */
     label: string;
+    /** Optional description shown on caption hover; omitted by default. */
+    tooltip?: string;
     /** Required choices with unique values; their order determines the emitted selection order. */
     options: readonly MultiSelectOption<T>[];
     /** Bindable selected values; defaults to an empty selection. */
@@ -40,6 +45,7 @@
   };
   let {
     label,
+    tooltip,
     options,
     value = $bindable([]),
     disabled = false,
@@ -61,12 +67,21 @@
 
 <!-- @component Generic group of labeled checkboxes, composed from SelectorToggle. Supports editable multi-selection and disabled status groups without domain or persistence state. -->
 <div class={className} role="group" aria-labelledby={id}>
-  <div {id} class="caption">{label}</div>
+  {#if tooltip}
+    <Tooltip text={tooltip}>
+      {#snippet children(trigger, description)}
+        <div {id} class="caption" {@attach trigger} aria-describedby={description}>{label}</div>
+      {/snippet}
+    </Tooltip>
+  {:else}
+    <div {id} class="caption">{label}</div>
+  {/if}
   <div class={['options', orientation, optionsClass]}>
     {#each options as option (option.value)}
       <SelectorToggle
         label={option.label}
         aria-label={option.accessibleLabel}
+        tooltip={option.tooltip}
         checked={value.includes(option.value)}
         disabled={disabled || option.disabled}
         onchange={(checked) => select(option.value, checked)}

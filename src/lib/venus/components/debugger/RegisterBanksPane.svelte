@@ -260,13 +260,24 @@
     Array.from({ length: coprocessor1.getConditionFlagCount() }, (_, flag) => ({
       value: flag,
       label: String(flag),
-      accessibleLabel: `Condition flag ${flag}`
+      accessibleLabel: `Condition flag ${flag}`,
+      tooltip: 'checked == 1, unchecked == 0'
     }))
   );
   const conditionFlags = $derived.by(() => {
     void machineRevision;
     return coprocessor1.getConditionFlagsNoNotify();
   });
+  // Like the legacy checkbox listener, a click writes only its own flag, even during execution.
+  function updateConditionFlags(selection: number[]) {
+    for (const { value: flag } of conditionFlagOptions) {
+      const checked = selection.includes(flag);
+      if (checked === (Binary.bitValue(conditionFlags, flag) === 1)) continue;
+      if (checked) coprocessor1.setConditionFlag(flag);
+      else coprocessor1.clearConditionFlag(flag);
+    }
+    onedit();
+  }
 </script>
 
 <!-- @component Persistent register banks sidebar (Registers, Coproc 1, and Coproc 0), reading engine-owned hardware and releasing subscriptions on teardown. -->
@@ -336,11 +347,12 @@
     <MultiSelect
       class="flags p-1.25 [--selector-gap:3px]"
       label="Condition flags"
+      tooltip="flags are used by certain floating point instructions, default flag is 0"
       options={conditionFlagOptions}
       value={conditionFlagOptions
         .filter((option) => Binary.bitValue(conditionFlags, option.value) === 1)
         .map((option) => option.value)}
-      disabled
+      onchange={updateConditionFlags}
     />
   {/if}
   {#if error}<p role="alert">{error}</p>{/if}

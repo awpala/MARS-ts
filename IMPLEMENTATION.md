@@ -31,20 +31,20 @@ Engine startup builds and tokenizes the canonical instruction registry. Register
 
 ### Native-to-browser adaptations
 
-| Legacy responsibility                       | Current browser interpretation                                                                                |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Java static machine globals                 | One `Globals` instance per mounted IDE, with independent registers, memory, settings, programs, and simulator |
-| Swing windows and modal dialogs             | Svelte components and same-tab native HTML dialogs; no splash or intermediary launcher                        |
-| Native source files and Save                | A localStorage source library containing complete source text; Save commits to that library                   |
-| Unsaved editor buffers                      | A separate persistent recovery workspace, including full text and saved baselines                             |
-| Native Open                                 | A same-tab picker over the local source library                                                               |
-| Moving source between the IDE and OS        | Explicit Import of `.asm` files and Export downloads; no retained OS file handles                             |
-| Assemble a directory                        | Assemble the active source and its explicit includes through the virtual source host                          |
-| SwingWorker and blocking input              | Cooperative asynchronous simulation through injected scheduling and input services                            |
-| Editor/Highlighting configuration dialogs   | Bundled JSON presets selected by the application's editors; user display toggles remain available             |
-| Command-line launcher | Excluded from the web application; Java command-line execution remains development-only oracle infrastructure |
-| Application Print and Exit                  | Printing uses the browser; Exit closes documents through the dirty-buffer workflow and leaves the IDE open    |
-| Raster toolbar imagery                      | SVG icons with retained attribution; the favicon remains the original MARS ICO                                |
+| Legacy responsibility                     | Current browser interpretation                                                                                |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Java static machine globals               | One `Globals` instance per mounted IDE, with independent registers, memory, settings, programs, and simulator |
+| Swing windows and modal dialogs           | Svelte components and same-tab native HTML dialogs; no splash or intermediary launcher                        |
+| Native source files and Save              | A localStorage source library containing complete source text; Save commits to that library                   |
+| Unsaved editor buffers                    | A separate persistent recovery workspace, including full text and saved baselines                             |
+| Native Open                               | A same-tab picker over the local source library                                                               |
+| Moving source between the IDE and OS      | Explicit Import of `.asm` files and Export downloads; no retained OS file handles                             |
+| Assemble a directory                      | Assemble the active source and its explicit includes through the virtual source host                          |
+| SwingWorker and blocking input            | Cooperative asynchronous simulation through injected scheduling and input services                            |
+| Editor/Highlighting configuration dialogs | Bundled JSON presets selected by the application's editors; user display toggles remain available             |
+| Command-line launcher                     | Excluded from the web application; Java command-line execution remains development-only oracle infrastructure |
+| Application Print and Exit                | Printing uses the browser; Exit closes documents through the dirty-buffer workflow and leaves the IDE open    |
+| Raster toolbar imagery                    | SVG icons with retained attribution; the favicon remains the original MARS ICO                                |
 
 ### Help and source examples
 
@@ -219,18 +219,18 @@ Input does not allow a subsequent instruction to overtake the pending syscall. P
 
 ### Debugger behavior
 
-| Action or view          | Current behavior                                                                                                                  |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Go / Step               | Run from the current PC, or execute one machine instruction                                                                       |
-| Pause / Stop            | Request interruption through the simulator's owned operation and release pending input                                            |
-| Backstep                | Restore the latest grouped instruction changes through the program's `BackStepper`                                                |
-| Reset                   | Reassemble retained program representations and reset initialized machine state                                                   |
-| Breakpoints             | Address-based selections in the Text Segment; suspend all without losing addresses, or clear all                                  |
-| Registers               | Inspect integer, CP0, CP1, and condition state; Name cells describe legacy register roles on hover; permitted edits affect the actual machine while stopped                           |
-| Floating register edits | Accept decimal input through Java-compatible conversion or exact hexadecimal bits                                                 |
-| Text Segment            | Show encoded/basic/source statements, current execution location, and source navigation                                           |
-| Data Segment            | Show 16 address rows per page, navigation/range selection, and decimal/hexadecimal/ASCII views; permit word editing while stopped |
-| Labels                  | Filter Data/Text symbols, sort by Label or Address, and click either cell to reveal and focus the corresponding instruction or memory word                            |
+| Action or view          | Current behavior                                                                                                                                                                                                         |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Go / Step               | Run from the current PC, or execute one machine instruction                                                                                                                                                              |
+| Pause / Stop            | Request interruption through the simulator's owned operation and release pending input                                                                                                                                   |
+| Backstep                | Restore the latest grouped instruction changes through the program's `BackStepper`                                                                                                                                       |
+| Reset                   | Reassemble retained program representations and reset initialized machine state                                                                                                                                          |
+| Breakpoints             | Address-based selections in the Text Segment; suspend all without losing addresses, or clear all                                                                                                                         |
+| Registers               | Inspect integer, CP0, CP1, and condition state; Name cells describe legacy register roles on hover; permitted edits affect the actual machine while stopped; condition flags stay clickable during execution, as in MARS |
+| Floating register edits | Accept decimal input through Java-compatible conversion or exact hexadecimal bits                                                                                                                                        |
+| Text Segment            | Show encoded/basic/source statements, current execution location, and source navigation                                                                                                                                  |
+| Data Segment            | Show 16 address rows per page, navigation/range selection, and decimal/hexadecimal/ASCII views; permit word editing while stopped                                                                                        |
+| Labels                  | Filter Data/Text symbols, sort by Label or Address, and click either cell to reveal and focus the corresponding instruction or memory word                                                                               |
 
 The Text Segment heading stays above its independently scrolling instruction table, matching the other Execute sub-panel titles. During execution or stepping, the Text Segment holds the opening page through its last fully visible instruction. Subsequent PC moves center the current row vertically below the sticky column headings, including backward moves. Near either end of the program, scrolling clamps to the first or last page rather than adding blank rows. Assembly and Reset restore the opening-page behavior. Tracking scrolls only the instruction pane and preserves horizontal position and keyboard focus. Assembly and Reset clear data and register write highlighting and restore the first `.data` page. Single-step and timed execution observe writes; unlimited Go and manual edits do not introduce execution highlights. Observed stores and backstep writes reveal and center the destination word without changing label selection or keyboard focus. Register banks retain independent highlights and select the receiving bank for observed writes. Backstep retains the undone instruction's delay-slot display context. Self-modifying changes to assembled text still reveal the changed word when ordinary data-write observation is off, including manual Code edits and unlimited execution. Memory paging clamps to the legacy user/kernel address boundaries. Completion retains the last executed instruction highlight until backstep, assembly, or Reset changes the execution location; errors retain the faulting instruction. The exact stop address is saved in the browser checkpoint and restored without guessing from the next PC. Simulator stop notices provide the actual executed address, including when a jump falls off text, rather than assuming the preceding architectural PC is the instruction that ran. Read-only string and input/output syscalls do not introduce a memory highlight.
 
@@ -352,7 +352,7 @@ The controls group supplies native Button semantics and optional tooltips to Too
 
 Toggle tooltips remain open through pointer clicks while the trigger stays hovered, including updated on/off descriptions. Switches, checkbox toggles, and toolbar buttons with a binary toggle value opt in; ordinary actions and selected tabs or labels retain click dismissal. All standard tooltips immediately disappear when the pointer leaves their trigger, including movement into the tooltip itself; this policy is owned once by the shared Tooltip component. Editor keyword reference documents retain their separate hoverable, scrollable presentation, including clicks and text selection while the pointer remains inside. Textarea blur from selecting reference text does not dismiss the document; pointer exit, editing, and Escape still do.
 
-Reusable selection controls pair native checkboxes with clickable text across debugger panes, menu dropdowns, and source dialogs; callers retain preference and file-selection state through bindings or callbacks. MultiSelect shares checkbox membership and ordering between the Open dialog and read-only condition flags. Generic Slider and Toggle provide range and binary-switch semantics; the shell's SpeedSlider supplies MARS speed mapping, and ThemeToggle supplies appearance content and persists the choice through the browser theme adapter. Run speed remains bound to desktop preferences; the generic controls have no domain or storage policy.
+Reusable selection controls pair native checkboxes with clickable text across debugger panes, menu dropdowns, and source dialogs; callers retain preference and file-selection state through bindings or callbacks. MultiSelect shares checkbox membership and ordering between the Open dialog and editable condition flags. Generic Slider and Toggle provide range and binary-switch semantics; the shell's SpeedSlider supplies MARS speed mapping, and ThemeToggle supplies appearance content and persists the choice through the browser theme adapter. Run speed remains bound to desktop preferences; the generic controls have no domain or storage policy.
 
 The [register banks pane](src/lib/venus/components/debugger/RegisterBanksPane.svelte) groups the Registers, Coproc 1, and Coproc 0 tabs. The Register Banks switch immediately left of Theme defaults to shown, persists sidebar visibility, and uses theme-matched solid active and muted inactive fills. The sidebar and divider slide smoothly while the left panes resize. Hiding the sidebar also removes its divider and lets the left panes fill the available width; showing it restores the retained width and selected bank. The Theme switch keeps neutral track semantics.
 
@@ -501,10 +501,10 @@ The core is usable for the supported instruction and console-service workflows, 
 | Area                      | Current boundary                                                                                                                                                                           |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Runtime platform services | File descriptors/file syscalls, time, sleep, random, MIDI, and dialog syscall families remain deferred                                                                                     |
-| Configuration UI          | Exception-handler selection remains disabled; underlying engine handler dispatch does not imply a complete GUI workflow                    |
+| Configuration UI          | Exception-handler selection remains disabled; underlying engine handler dispatch does not imply a complete GUI workflow                                                                    |
 | Tools and memory dumps    | Tools menu implementations and File → Dump Memory remain deferred in favor of core execution/debugging stability                                                                           |
 | Editor                    | Hover descriptions and lexical highlighting exist; instruction popup completion and full legacy editor behavior remain incomplete; appearance dialogs are deliberately replaced by presets |
-| CLI and OS integration    | Command-line launcher, native directory assembly, and native linked-file saving are intentionally excluded                                                              |
+| CLI and OS integration    | Command-line launcher, native directory assembly, and native linked-file saving are intentionally excluded                                                                                 |
 | Persistence               | Sources, preferences, editor undo/redo, console buffers, and stable debugger checkpoints recover locally; cross-device sync and collaborative editing remain unimplemented                 |
 | Delivery                  | Live, stable static hosting on Coolify; offline caching and a packaged desktop executable are not implemented; final legacy offboarding remains governed by the port plan                  |
 
