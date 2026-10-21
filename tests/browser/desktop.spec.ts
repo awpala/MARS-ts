@@ -10,6 +10,9 @@ test('Alt and Option N create editor buffers from source and register focus', as
 	const first = page.getByRole('textbox', { name: 'Source mips1.asm', exact: true });
 	await expect(first).toBeFocused();
 	await first.fill('# preserve this buffer');
+	await first.press('n');
+	await expect(first).toHaveValue('# preserve this buffern');
+	await first.press('Backspace');
 	await first.press('Alt+n');
 	await expect(page.getByRole('textbox', { name: 'Source mips2.asm', exact: true })).toBeFocused();
 	await page.getByRole('button', { name: '* mips1.asm', exact: true }).click();
@@ -1116,3 +1119,41 @@ function readArchive(path: string): { name: string; source: string }[] {
 		source: execFileSync('unzip', ['-p', path, name], { encoding: 'utf8' })
 	}));
 }
+
+test('new empty buffers stay unsaved until the first character, including with Auto Save', async ({
+	page
+}) => {
+	await openDesktop(page);
+	await page.getByRole('button', { name: 'New', exact: true }).click();
+	const source = page.getByRole('textbox', { name: 'Source mips1.asm', exact: true });
+	const savedSources = () =>
+		page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1') ?? '[]'));
+	await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
+	await source.press('Control+s');
+	await expect(page.getByRole('dialog')).toHaveCount(0);
+	await page
+		.locator('.menubar summary')
+		.filter({ hasText: /^File$/ })
+		.click();
+	await page.getByRole('button', { name: 'Save All', exact: true }).click();
+	await expect(page.getByRole('dialog')).toHaveCount(0);
+	expect(await savedSources()).toEqual([]);
+	await page.getByRole('button', { name: 'Auto Save', exact: true }).click();
+	expect(await savedSources()).toEqual([]);
+	await source.press('Alt+n');
+	expect(await savedSources()).toEqual([]);
+	const second = page.getByRole('textbox', { name: 'Source mips2.asm', exact: true });
+	// Whitespace counts as a character; only truly empty new buffers are deferred.
+	await second.fill(' ');
+	await expect.poll(savedSources).toEqual([{ name: 'mips2.asm', source: ' ' }]);
+	await second.fill('');
+	await expect.poll(savedSources).toEqual([{ name: 'mips2.asm', source: '' }]);
+	await page.getByRole('button', { name: '* mips1.asm', exact: true }).click();
+	await source.fill('x');
+	await expect.poll(savedSources).toEqual(
+		expect.arrayContaining([
+			{ name: 'mips1.asm', source: 'x' },
+			{ name: 'mips2.asm', source: '' }
+		])
+	);
+});

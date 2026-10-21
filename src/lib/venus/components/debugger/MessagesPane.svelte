@@ -1,13 +1,14 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import TabbedPane from '../layout/TabbedPane.svelte';
 	import Button from '../controls/Button.svelte';
 	/** Console view; host output and pending syscall input remain owned by the desktop. */
 	type Props = {
 		/** Required selected output tab, bindable for host-triggered selection changes. */
 		messageTab: string;
-		/** Required assembler/debugger output, bindable for Clear controls. */
+		/** Required desktop-owned assembler/debugger output. */
 		messages: string;
-		/** Required program output, bindable for Clear controls. */
+		/** Required desktop-owned program output. */
 		runIO: string;
 		/** Required indication that inline syscall input is pending. */
 		awaitingInput: boolean;
@@ -17,19 +18,38 @@
 		oninput: (event: Event) => void;
 		/** Required callback completing the pending input. */
 		onsubmit: () => void;
+		/** Required callback clearing selected output, or both outputs when all is true. */
+		onclear: (all?: boolean) => void;
 		/** Required callback stopping execution and releasing input. */
 		onstop: () => void;
 	};
 	let {
 		messageTab = $bindable(),
-		messages = $bindable(),
-		runIO = $bindable(),
+		messages,
+		runIO,
 		awaitingInput,
 		inputText,
 		oninput,
 		onsubmit,
-		onstop
+		onstop,
+		onclear
 	}: Props = $props();
+	let outputText = $derived(messageTab === 'Mars Messages' ? messages : runIO);
+
+	function followOutput(element: HTMLTextAreaElement) {
+		$effect(() => {
+			const text = outputText;
+			let active = true;
+			// Wait for the textarea value and console layout to reflect this output.
+			void tick().then(() => {
+				if (active && element.value === text) element.scrollTop = element.scrollHeight;
+			});
+			return () => {
+				active = false;
+			};
+		});
+	}
+
 	function focusInput(element: HTMLTextAreaElement) {
 		element.focus();
 	}
@@ -46,25 +66,21 @@
 	{#snippet actions()}
 		<Button
 			class="clear mb-0.5 ml-auto rounded-none border border-[var(--theme-border,#aaa)] px-3 py-px"
-			onclick={() => {
-				if (messageTab === 'Mars Messages') messages = '';
-				else runIO = '';
-			}}>Clear</Button
+			tooltip="Clear selected output"
+			shortcut="Ctrl+L"
+			aria-keyshortcuts="Control+L"
+			onclick={() => onclear()}>Clear</Button
 		>
 
 		<Button
-			tooltip="Clear Mars Messages and Run I/O"
+			tooltip="Clear all outputs"
+			shortcut="Ctrl+Shift+L"
 			class="clear-all mb-0.5 rounded-none border border-[var(--theme-border,#aaa)] px-3 py-px"
-			onclick={() => {
-				messages = '';
-				runIO = '';
-			}}>Clear All</Button
+			aria-keyshortcuts="Control+Shift+L"
+			onclick={() => onclear(true)}>Clear All</Button
 		>
 	{/snippet}
-	<textarea
-		readonly
-		aria-label={messageTab}
-		value={messageTab === 'Mars Messages' ? messages : runIO}></textarea>
+	<textarea {@attach followOutput} readonly aria-label={messageTab} value={outputText}></textarea>
 	{#if awaitingInput && messageTab === 'Run I/O'}<form
 			class="console-input"
 			onsubmit={(event) => {

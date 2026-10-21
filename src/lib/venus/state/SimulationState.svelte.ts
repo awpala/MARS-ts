@@ -40,6 +40,11 @@ export class SimulationState {
 		private readonly workspace: SourceWorkspace,
 		private readonly display: DisplayPreferences
 	) {}
+	/** Clear selected output, or both outputs when all is true, preserving selection and pending input. */
+	clearOutput = (all = false): void => {
+		if (all || this.messageTab === 'Mars Messages') this.messages = '';
+		if (all || this.messageTab === 'Run I/O') this.runIO = '';
+	};
 	/** Initialize browser host services and the machine; return teardown for subscriptions, pending input, and scheduler timers. */
 	start(): () => void {
 		let disposed = false;

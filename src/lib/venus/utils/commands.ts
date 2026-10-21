@@ -68,6 +68,11 @@ export const breakpointActions: readonly Action[] = [
 		shortcut: 'Ctrl+K'
 	}
 ];
+/** Console commands available throughout the desktop. */
+export const consoleActions: readonly Action[] = [
+	{ label: 'Clear', command: 'clearOutput', shortcut: 'Ctrl+L' },
+	{ label: 'Clear All', command: 'clearAllOutput', shortcut: 'Ctrl+Shift+L' }
+];
 /** Help commands derived from the article catalog. */
 export const helpActions: readonly Action[] = helpArticles.map((article) => ({
 	label: article.label,
@@ -79,27 +84,25 @@ const keyboardActions = [
 	...editActions,
 	...runActions,
 	...breakpointActions,
+	...consoleActions,
 	...helpActions
 ];
 
 /**
  * Resolve the displayed command shortcuts, accepting Meta as the platform equivalent of Ctrl.
- * Modifiers must match exactly. Alt/Option+N's physical-key capture is owned by the desktop keyboard binding so
- * macOS dead keys are canceled before an input can start composing.
+ * Modifiers must match exactly; the desktop binding captures accepted chords before focused controls.
  */
 export function keyboardAction(event: KeyboardEvent): Action | undefined {
-	return keyboardActions.find(
-		(action) =>
-			action.command !== 'new' &&
-			action.shortcut?.split(' / ').some((chord) => {
-				const keys = chord.toLowerCase().split('+');
-				return (
-					keys.at(-1) === event.key.toLowerCase() &&
-					keys.includes('ctrl') === (event.ctrlKey || event.metaKey) &&
-					keys.includes('shift') === event.shiftKey &&
-					keys.includes('alt') === event.altKey
-				);
-			})
+	return keyboardActions.find((action) =>
+		action.shortcut?.split(' / ').some((chord) => {
+			const keys = chord.toLowerCase().split('+');
+			return (
+				keys.at(-1) === event.key.toLowerCase() &&
+				keys.includes('ctrl') === (event.ctrlKey || event.metaKey) &&
+				keys.includes('shift') === event.shiftKey &&
+				(keys.includes('alt') || keys.includes('option')) === event.altKey
+			);
+		})
 	);
 }
 /** Primary menus and their shared command definitions. */

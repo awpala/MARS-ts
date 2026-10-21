@@ -150,6 +150,7 @@ export class DesktopState {
 		// History and program ownership mutate inside the raw engine; subscribe before short-circuiting.
 		void this.simulation.execution?.revision;
 		if (action.unavailable) return false;
+		if (['clearOutput', 'clearAllOutput'].includes(action.command)) return true;
 		if (action.command === 'assemble') return !!this.workspace.current && !this.simulation.running;
 		if (['pause', 'stop'].includes(action.command)) return this.simulation.running;
 		if (['go', 'step'].includes(action.command))
@@ -174,6 +175,8 @@ export class DesktopState {
 		if (action.command === 'exportAll')
 			return this.workspace.tabs.length > 0 || this.workspace.libraryFiles.length > 0;
 		if (!this.workspace.current) return false;
+		if (['save', 'saveAs'].includes(action.command))
+			return !this.workspace.current.isNew || this.workspace.current.text.length > 0;
 		if (action.command === 'undo') return this.workspace.current.undo.length > 0;
 		if (action.command === 'redo') return this.workspace.current.redo.length > 0;
 		return true;
@@ -188,6 +191,10 @@ export class DesktopState {
 
 	/** Close menus and route a command to its owning domain. */
 	execute = async (command: string): Promise<void> => {
+		if (command === 'clearOutput' || command === 'clearAllOutput') {
+			this.simulation.clearOutput(command === 'clearAllOutput');
+			return;
+		}
 		const article = helpArticles.find((entry) => entry.id === command);
 		this.closeMenus(!!article);
 		if (article) {

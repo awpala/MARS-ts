@@ -148,11 +148,12 @@
 				/>
 				<MessagesPane
 					bind:messageTab={simulation.messageTab}
-					bind:messages={simulation.messages}
-					bind:runIO={simulation.runIO}
+					messages={simulation.messages}
+					runIO={simulation.runIO}
 					awaitingInput={!!simulation.inputRequest && simulation.inputRequest.prompt === null}
 					inputText={simulation.inputText}
 					oninput={simulation.consoleInputChanged}
+					onclear={simulation.clearOutput}
 					onsubmit={() => simulation.completeInput(true)}
 					onstop={() => simulation.controller?.stop()}
 				/>

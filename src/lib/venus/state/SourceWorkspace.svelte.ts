@@ -169,7 +169,9 @@ export class SourceWorkspace {
 				if (this.current) this.save(this.current, true);
 				break;
 			case 'saveAll':
-				this.saveQueue = this.tabs.map((tab) => tab.id);
+				this.saveQueue = this.tabs
+					.filter((tab) => !tab.isNew || tab.text.length > 0)
+					.map((tab) => tab.id);
 				this.nextSave();
 				break;
 			case 'undo':
@@ -252,7 +254,9 @@ export class SourceWorkspace {
 	refresh = (commit = false) => {
 		this.revision++;
 		if (this.ready && this.autoSave && commit) {
-			const changed = this.editor.getEditPanes().filter((tab) => this.editor.isDirty(tab));
+			const changed = this.editor
+				.getEditPanes()
+				.filter((tab) => this.editor.isDirty(tab) && (!tab.isNew || tab.text.length > 0));
 			if (changed.length) {
 				try {
 					this.libraryFiles = this.sourceLibrary.saveMany(
@@ -415,6 +419,10 @@ export class SourceWorkspace {
 		}
 	};
 	private persistSource = (tab: EditPane, name: string, rename = false): boolean => {
+		if (tab.isNew && tab.text.length === 0) {
+			this.fileError = 'Enter at least one character before saving a new source.';
+			return false;
+		}
 		try {
 			this.libraryFiles = rename
 				? this.sourceLibrary.rename(tab.name, name, tab.text)
@@ -429,6 +437,7 @@ export class SourceWorkspace {
 		}
 	};
 	private save = (tab: EditPane, as = false) => {
+		if (tab.isNew && tab.text.length === 0) return;
 		this.renameSource = false;
 		this.fileError = '';
 		this.replaceSave = false;
@@ -546,7 +555,7 @@ export class SourceWorkspace {
 		const tab = this.editor.getEditPanes().find((pane) => pane.id === id);
 		if (!tab) return this.nextClose();
 		this.select(id);
-		if (this.editor.isDirty(tab)) {
+		if (this.editor.isDirty(tab) && (!tab.isNew || tab.text.length > 0)) {
 			this.modal = 'close';
 			return;
 		}

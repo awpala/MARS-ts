@@ -234,6 +234,8 @@ Input does not allow a subsequent instruction to overtake the pending syscall. P
 
 The Text Segment heading stays above its independently scrolling instruction table, matching the other Execute sub-panel titles. As the highlighted instruction changes during execution or stepping, the Text Segment scrolls that row to the top beneath the sticky column headings. Near the end of the program, scrolling clamps at the last page rather than adding blank rows. Tracking scrolls only the instruction pane and preserves horizontal position and keyboard focus.
 
+Mars Messages and Run I/O automatically scroll to the latest line when their displayed output changes, including when switching tabs. From anywhere in the app, Ctrl+L clears the selected output and Ctrl+Shift+L clears both outputs; these shortcuts preserve the selected tab and pending input.
+
 Backstepping uses bounded history and restores recorded machine changes with recording temporarily disabled. It is machine-state undo, not a persistent session checkpoint or reversal of browser side effects: source editing history is a different subsystem, and already-emitted console text is not an external transaction that the machine can retract.
 
 ### Implemented syscall boundary
@@ -304,6 +306,8 @@ Renames require a nonempty basename with an `.asm` or `.s` extension and must sa
 
 ### Recovery and reconciliation
 
+New empty buffers are retained in workspace recovery but are not committed as library files until they contain at least one character, even with Auto Save enabled. Save and Save All also skip new empty buffers. Previously saved sources can still be emptied and saved.
+
 Recovery writes occur synchronously after source/tab changes in both manual-save and Auto Save modes. Loading or selecting a restored tab does not commit it. Clean restored buffers reconcile with newer committed text. If an older dirty recovery buffer conflicts with newer saved text, both versions remain intact and Auto Save is disabled with a visible notice.
 
 ### Storage failures and recovery limits
@@ -344,7 +348,7 @@ The Labels pane separates symbol-table ownership with centered, full-width headi
 
 ### Keyboard delivery and browser reservations
 
-Keyboard commands route to the same actions as menus and buttons. New uses Alt+N / Option+N, matching the physical N key for dead-key layouts. Browser- or OS-reserved combinations can still be intercepted before the page receives them; toolbar/menu actions remain the reliable alternative. The application does not attempt to override browser window creation through Ctrl+N.
+All defined keyboard shortcuts route through one app-wide capture handler to the same actions as menus and buttons, regardless of the focused pane, text field, control, or page body. Matching events cancel browser defaults even when a command is disabled or a dialog blocks desktop actions. New uses Alt+N / Option+N, matching the physical N key for dead-key layouts; held-key repeats are captured without creating additional buffers. Ctrl+N remains browser-owned. Ctrl+L clears the selected console and Ctrl+Shift+L clears both. Browser- or OS-reserved combinations can still be intercepted before the page receives them; toolbar/menu actions remain available.
 
 ## Configuration and persistence
 

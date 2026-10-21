@@ -81,7 +81,7 @@ test('tooltips support disabled controls, hover, focus, dismissal, themes, and k
 	await page.screenshot({ path: '__build/venus-tooltip-dark.png' });
 });
 
-test('keyboard commands share breakpoint policy and leave text inputs and dialogs alone', async ({
+test('keyboard commands work in text inputs and respect disabled commands and dialogs', async ({
 	page
 }) => {
 	await openDesktop(page);
@@ -102,14 +102,15 @@ test('keyboard commands share breakpoint policy and leave text inputs and dialog
 	await expect(toggle).toHaveAttribute('aria-pressed', 'true');
 
 	await page.getByLabel('$t0 value', { exact: true }).press('Control+k');
-	await expect(breakpoint).toBeChecked();
+	await expect(breakpoint).not.toBeChecked();
+	await breakpoint.check();
 	await page.getByRole('button', { name: 'Help', exact: true }).click();
 	await page.keyboard.press('Control+k');
 	await expect(page.getByRole('dialog')).toBeVisible();
 	await expect(breakpoint).toBeChecked();
 	await page.keyboard.press('Escape');
 	await toggle.press('Control+t');
-	await page.getByRole('button', { name: 'Go', exact: true }).click();
+	await page.getByLabel('$t0 value', { exact: true }).press('F5');
 	await expect(toggle).toBeDisabled();
 	await page.keyboard.press('Control+k');
 	await expect(breakpoint).toBeChecked();
@@ -173,9 +174,152 @@ test('shared clear buttons retain independent and combined console clearing', as
 	const clearAll = page.getByRole('button', { name: 'Clear All', exact: true });
 	await clearAll.press('Shift+Tab');
 	await page.keyboard.press('Tab');
-	await expect(clearAll).toHaveAccessibleDescription('Clear Mars Messages and Run I/O');
+	await expect(clearAll).toHaveAccessibleDescription('Clear all outputs Ctrl+Shift+L');
 	await clearAll.press('Enter');
 	await expect(output).toHaveValue('');
 	await page.getByRole('button', { name: 'Mars Messages', exact: true }).click();
 	await expect(messages).toHaveValue('');
+});
+
+test('console shortcuts clear selected or all output while preserving pending input and focus', async ({
+	page
+}) => {
+	await openDesktop(page);
+	await page.getByRole('button', { name: 'New', exact: true }).click();
+	const source = page.getByRole('textbox', { name: /^Source / });
+	await source.fill('.text\nli $a0,7\nli $v0,1\nsyscall\nli $v0,5\nsyscall\nli $v0,10\nsyscall\n');
+	await page.getByRole('button', { name: 'Assemble', exact: true }).click();
+	await page.getByRole('button', { name: 'Go', exact: true }).click();
+	const input = page.getByRole('textbox', { name: 'Run input', exact: true });
+	const output = page.getByRole('textbox', { name: 'Run I/O', exact: true });
+	await expect(input).toBeVisible();
+	await input.fill('42');
+	await page.getByRole('button', { name: 'Edit', exact: true }).click();
+	await source.press('Control+Shift+l');
+	await expect(output).toHaveValue('');
+	await expect(input).toHaveValue('42');
+	await expect(source).toBeFocused();
+	await page.getByRole('button', { name: 'Mars Messages', exact: true }).click();
+	const messages = page.getByRole('textbox', { name: 'Mars Messages', exact: true });
+	await expect(messages).toHaveValue('');
+	await page.getByRole('button', { name: 'Run I/O', exact: true }).click();
+	await expect(input).toHaveValue('42');
+	await input.press('Control+l');
+	await expect(output).toHaveValue('');
+	await expect(input).toBeFocused();
+	await input.press('Enter');
+	await expect(input).toHaveCount(0);
+	await expect(output).toHaveValue(/program is finished running/);
+});
+
+test('both consoles reveal the latest line after overflowing, appending, and switching tabs', async ({
+	page
+}) => {
+	await openDesktop(page);
+	await page.getByRole('button', { name: 'New', exact: true }).click();
+	const source = page.getByRole('textbox', { name: /^Source / });
+	const lines = Array.from({ length: 80 }, (_, index) => `line ${index}`).join('\\n');
+	await source.fill(
+		`.data\ntext: .asciiz "${lines}\\n"\n.text\nla $a0,text\nli $v0,4\nsyscall\nli $v0,5\nsyscall\nli $v0,10\nsyscall\n`
+	);
+	await page.getByRole('button', { name: 'Assemble', exact: true }).click();
+	await page.getByRole('button', { name: 'Go', exact: true }).click();
+	const output = page.getByRole('textbox', { name: 'Run I/O', exact: true });
+	const input = page.getByRole('textbox', { name: 'Run input', exact: true });
+	await expect(input).toBeVisible();
+	await expect(output).toHaveValue(/line 79\n$/);
+	const atBottom = (element: HTMLTextAreaElement) =>
+		element.scrollHeight > element.clientHeight &&
+		Math.abs(element.scrollHeight - element.clientHeight - element.scrollTop) <= 1;
+	await expect.poll(() => output.evaluate(atBottom)).toBe(true);
+	await output.evaluate((element) => (element.scrollTop = 0));
+	await input.fill('42');
+	await input.press('Enter');
+	await expect(output).toHaveValue(/program is finished running/);
+	await expect.poll(() => output.evaluate(atBottom)).toBe(true);
+	await output.evaluate((element) => (element.scrollTop = 0));
+	await page.getByRole('button', { name: 'Mars Messages', exact: true }).click();
+	await page.getByRole('button', { name: 'Run I/O', exact: true }).click();
+	await expect.poll(() => output.evaluate(atBottom)).toBe(true);
+
+	await page.getByRole('button', { name: 'Edit', exact: true }).click();
+	await source.fill('.text\n' + 'invalid_instruction\n'.repeat(80));
+	await page.getByRole('button', { name: 'Assemble', exact: true }).click();
+	const messages = page.getByRole('textbox', { name: 'Mars Messages', exact: true });
+	await expect(messages).toHaveValue(/Error/);
+	await expect.poll(() => messages.evaluate(atBottom)).toBe(true);
+	await messages.evaluate((element) => (element.scrollTop = 0));
+	await page.getByRole('button', { name: 'Assemble', exact: true }).click();
+	await expect.poll(() => messages.evaluate(atBottom)).toBe(true);
+	await messages.press('Control+l');
+	await expect(messages).toHaveValue('');
+	await page.getByRole('button', { name: 'Run I/O', exact: true }).click();
+	await expect(output).toHaveValue(/program is finished running/);
+	await output.press('Control+Shift+l');
+	await expect(output).toHaveValue('');
+});
+
+test('every defined shortcut cancels browser defaults across app surfaces, including when modal-blocked', async ({
+	page
+}) => {
+	await openDesktop(page);
+	await page.getByRole('button', { name: 'New', exact: true }).click();
+	await page.getByRole('button', { name: 'Help', exact: true }).click();
+	const canceled = await page.evaluate(async () => {
+		const path = '/src/lib/venus/utils/commands.ts';
+		const metadata = (await import(
+			/* @vite-ignore */ path
+		)) as typeof import('../../src/lib/venus/utils/commands.js');
+		const actions = [
+			...metadata.fileActions,
+			...metadata.editActions,
+			...metadata.runActions,
+			...metadata.breakpointActions,
+			...metadata.consoleActions,
+			...metadata.helpActions
+		];
+		const input = document.createElement('input');
+		document.querySelector('dialog[open]')!.append(input);
+		const targets = [document.body, document.querySelector('textarea')!, input];
+		const results: { shortcut: string; canceled: boolean }[] = [];
+		for (const target of targets) {
+			for (const action of actions) {
+				for (const shortcut of action.shortcut?.split(' / ') ?? []) {
+					const keys = shortcut.toLowerCase().split('+');
+					results.push({
+						shortcut,
+						canceled: !target.dispatchEvent(
+							new KeyboardEvent('keydown', {
+								key: keys.at(-1)!,
+								ctrlKey: keys.includes('ctrl'),
+								altKey: keys.includes('alt') || keys.includes('option'),
+								shiftKey: keys.includes('shift'),
+								bubbles: true,
+								cancelable: true
+							})
+						)
+					});
+				}
+			}
+		}
+		input.remove();
+		return results;
+	});
+	expect(canceled.length).toBeGreaterThan(0);
+	expect(canceled.filter((result) => !result.canceled)).toEqual([]);
+	await expect(page.getByRole('dialog', { name: 'MARS Help', exact: true })).toBeVisible();
+});
+
+test('Alt N creates buffers from console, source, and register focus', async ({ page }) => {
+	await openDesktop(page);
+	await page.getByRole('textbox', { name: 'Mars Messages', exact: true }).press('Alt+n');
+	const first = page.getByRole('textbox', { name: 'Source mips1.asm', exact: true });
+	await expect(first).toBeFocused();
+	await first.fill('# retained');
+	await first.press('Alt+n');
+	await expect(page.getByRole('textbox', { name: 'Source mips2.asm', exact: true })).toBeFocused();
+	await page.getByLabel('$t0 value', { exact: true }).press('Alt+n');
+	await expect(page.getByRole('textbox', { name: 'Source mips3.asm', exact: true })).toBeFocused();
+	await page.getByRole('button', { name: '* mips1.asm', exact: true }).click();
+	await expect(first).toHaveValue('# retained');
 });
