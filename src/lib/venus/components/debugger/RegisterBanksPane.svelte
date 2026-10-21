@@ -16,7 +16,7 @@
   import { AccessNotice } from '#lib/engine/hardware/notices/AccessNotice.js';
   import { Binary } from '#lib/engine/formatting/Binary.js';
   import { JavaFloatingPoint } from '#lib/engine/formatting/JavaFloatingPoint.js';
-  /** Register display contract; the parent session owns all hardware instances. */
+  /** Register-bank display contract; the parent session owns all hardware instances. */
   type Props = {
     /** Optional parent-owned pane ID, used by the resize separator to identify its controlled region. */
     id?: string;
@@ -240,7 +240,7 @@
   });
 </script>
 
-<!-- @component Persistent registers sidebar, reading engine-owned hardware and releasing subscriptions on teardown. -->
+<!-- @component Persistent register banks sidebar (Registers, Coproc 1, and Coproc 0), reading engine-owned hardware and releasing subscriptions on teardown. -->
 <TabbedPane
   element="aside"
   label="Registers"

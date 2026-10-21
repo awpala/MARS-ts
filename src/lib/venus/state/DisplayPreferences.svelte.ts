@@ -9,7 +9,7 @@ export class DisplayPreferences {
   dataSegment = $state('data');
   /** Relative aligned Data Segment page offset, recovered with the desktop session. */
   dataPageOffset = $state(0);
-  /** Whether the registers pane and its divider are visible; shown by default. */
+  /** Whether the register banks pane and its divider are visible; shown by default. */
   showRegisters = $state(true);
   /** Selected register bank; Registers by default. */
   registerTab = $state('Registers');
@@ -33,7 +33,7 @@ export class DisplayPreferences {
   speed = $state(40);
   /** Measured available width supplied by the workspace element. */
   workspaceWidth = $state(1000);
-  /** Requested register pane width in pixels. */
+  /** Requested register banks pane width in pixels. */
   registerWidth = $state(310);
   /** Measured height of the left pane container. */
   leftPaneHeight = $state(700);

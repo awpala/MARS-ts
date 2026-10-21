@@ -20,7 +20,7 @@
   import PaneDivider from './components/layout/PaneDivider.svelte';
   import LoadingSpinner from './components/feedback/LoadingSpinner.svelte';
   import ExecutePane from './components/debugger/ExecutePane.svelte';
-  import RegistersPane from './components/debugger/RegistersPane.svelte';
+  import RegisterBanksPane from './components/debugger/RegisterBanksPane.svelte';
   import DesktopDialogs from './components/dialogs/DesktopDialogs.svelte';
   import FileImporter from './components/transfers/FileImporter.svelte';
   import FileExporter from './components/transfers/FileExporter.svelte';
@@ -200,7 +200,7 @@
             onchange={(width) => (display.registerWidth = Math.round(width))}
             oncommit={display.persistLayout}
           />
-          {#if simulation.machine}<RegistersPane
+          {#if simulation.machine}<RegisterBanksPane
               hexValues={display.hexValues}
               id={`${paneId}-registers`}
               bind:selected={display.registerTab}
