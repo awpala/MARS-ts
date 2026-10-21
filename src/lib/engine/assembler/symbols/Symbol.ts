@@ -29,39 +29,39 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 /** A program-owned label, its signed 32-bit address, and segment kind. */
 export class Symbol {
-	/** Text-segment symbol marker. */
-	static readonly TEXT_SYMBOL = false;
-	/** Data-segment symbol marker. */
-	static readonly DATA_SYMBOL = true;
+  /** Text-segment symbol marker. */
+  static readonly TEXT_SYMBOL = false;
+  /** Data-segment symbol marker. */
+  static readonly DATA_SYMBOL = true;
 
-	private address: number;
+  private address: number;
 
-	/** Create a label owned by its containing program's symbol table. */
-	constructor(
-		private readonly name: string,
-		address: number,
-		private readonly data: boolean
-	) {
-		this.address = address | 0;
-	}
+  /** Create a label owned by its containing program's symbol table. */
+  constructor(
+    private readonly name: string,
+    address: number,
+    private readonly data: boolean
+  ) {
+    this.address = address | 0;
+  }
 
-	/** Return the address as a signed Java int. */
-	getAddress(): number {
-		return this.address;
-	}
+  /** Return the address as a signed Java int. */
+  getAddress(): number {
+    return this.address;
+  }
 
-	/** Return the original case-sensitive label. */
-	getName(): string {
-		return this.name;
-	}
+  /** Return the original case-sensitive label. */
+  getName(): string {
+    return this.name;
+  }
 
-	/** Return true for data symbols and false for text symbols. */
-	getType(): boolean {
-		return this.data;
-	}
+  /** Return true for data symbols and false for text symbols. */
+  getType(): boolean {
+    return this.data;
+  }
 
-	/** Replace the address, preserving Java int normalization. */
-	setAddress(address: number): void {
-		this.address = address | 0;
-	}
+  /** Replace the address, preserving Java int normalization. */
+  setAddress(address: number): void {
+    this.address = address | 0;
+  }
 }

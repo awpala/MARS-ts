@@ -29,37 +29,37 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 /** The source-file identity consumed by SourceLine; the program remains caller-owned. */
 export interface SourceLineProgram {
-	/** Return the original filename supplied by the source host. */
-	getFilename(): string | null;
+  /** Return the original filename supplied by the source host. */
+  getFilename(): string | null;
 }
 
 /** Source text with its original program and location, retained through include expansion. */
 export class SourceLine<Program extends SourceLineProgram = SourceLineProgram> {
-	private readonly filename: string | null;
+  private readonly filename: string | null;
 
-	/** Snapshot the original filename while retaining the caller-owned program reference. */
-	constructor(
-		private readonly source: string,
-		private readonly mipsProgram: Program | null,
-		private readonly lineNumber: number
-	) {
-		this.filename = mipsProgram?.getFilename() ?? null;
-	}
+  /** Snapshot the original filename while retaining the caller-owned program reference. */
+  constructor(
+    private readonly source: string,
+    private readonly mipsProgram: Program | null,
+    private readonly lineNumber: number
+  ) {
+    this.filename = mipsProgram?.getFilename() ?? null;
+  }
 
-	/** Return the original source text. */
-	getSource(): string {
-		return this.source;
-	}
-	/** Return the filename captured at construction, or null without a program. */
-	getFilename(): string | null {
-		return this.filename;
-	}
-	/** Return the line number within the original program. */
-	getLineNumber(): number {
-		return this.lineNumber;
-	}
-	/** Return the original caller-owned program, or null. */
-	getMIPSprogram(): Program | null {
-		return this.mipsProgram;
-	}
+  /** Return the original source text. */
+  getSource(): string {
+    return this.source;
+  }
+  /** Return the filename captured at construction, or null without a program. */
+  getFilename(): string | null {
+    return this.filename;
+  }
+  /** Return the line number within the original program. */
+  getLineNumber(): number {
+    return this.lineNumber;
+  }
+  /** Return the original caller-owned program, or null. */
+  getMIPSprogram(): Program | null {
+    return this.mipsProgram;
+  }
 }

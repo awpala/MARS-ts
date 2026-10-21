@@ -1,85 +1,85 @@
 <!-- Derived from help/MarsHelpDebugging.html.
 Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt. -->
 <header>
-	<h3>Interactive Debugging Features</h3>
-	<p>Original article: Release 4.5 · August 2014</p>
+  <h3>Interactive Debugging Features</h3>
+  <p>Original article: Release 4.5 · August 2014</p>
 </header>
 <p>
-	Assemble a program to populate the Execute pane. Its Text Segment shows addresses, machine code,
-	basic instructions, and source. The highlighted instruction tracks execution, and register and
-	memory highlights show writes.
+  Assemble a program to populate the Execute pane. Its Text Segment shows addresses, machine code,
+  basic instructions, and source. The highlighted instruction tracks execution, and register and
+  memory highlights show writes.
 </p>
 <ul>
-	<li>
-		<strong>Step (F7)</strong> executes one machine instruction and updates the display. A
-		pseudo-instruction may expand into several machine instructions.
-	</li>
-	<li>
-		<strong>Go (F5)</strong> runs continuously or resumes from a step, pause, or breakpoint. The Run
-		Speed slider ranges from 0.05 instructions per second (20 seconds between steps) to 30
-		instructions per second, then unlimited. The browser yields periodically during unlimited
-		execution so controls can respond; its timing is not a hardware clock.
-	</li>
-	<li>
-		<strong>Breakpoints</strong> use the checkboxes beside instructions in the Text Segment. The
-		toolbar’s Toggle all breakpoints (Ctrl+T) suspends and restores the selected addresses without
-		losing them; Clear all breakpoints (Ctrl+K) removes them. Command is accepted in place of Ctrl
-		on macOS when the browser delivers the shortcut to the page. Breakpoint suspension was
-		introduced in Java Release 3.8.
-	</li>
-	<li>
-		<strong>Pause (F9)</strong> requests a pause; <strong>Stop (F11)</strong> requests termination.
-		Pending console input is released when execution is interrupted. Empty or invalid numeric input
-		can still produce an input error.
-	</li>
-	<li>
-		<strong>Backstep (F8)</strong> undoes recorded memory, register, and condition-flag changes one
-		instruction at a time. History holds up to 2000 recent steps. It does not undo console output or
-		other external I/O, and is separate from source-editor Undo. It is available after stepping,
-		pausing, or termination when history remains. The browser has no properties-file control for its
-		capacity.
-	</li>
-	<li>
-		<strong>Reset (F12)</strong> restores post-assembly memory and registers by reassembling the
-		retained program. Editing source requires a fresh Assemble before execution.
-	</li>
+  <li>
+    <strong>Step (F7)</strong> executes one machine instruction and updates the display. A
+    pseudo-instruction may expand into several machine instructions.
+  </li>
+  <li>
+    <strong>Go (F5)</strong> runs continuously or resumes from a step, pause, or breakpoint. The Run
+    Speed slider ranges from 0.05 instructions per second (20 seconds between steps) to 30
+    instructions per second, then unlimited. The browser yields periodically during unlimited
+    execution so controls can respond; its timing is not a hardware clock.
+  </li>
+  <li>
+    <strong>Breakpoints</strong> use the checkboxes beside instructions in the Text Segment. The
+    toolbar’s Toggle all breakpoints (Ctrl+T) suspends and restores the selected addresses without
+    losing them; Clear all breakpoints (Ctrl+K) removes them. Command is accepted in place of Ctrl
+    on macOS when the browser delivers the shortcut to the page. Breakpoint suspension was
+    introduced in Java Release 3.8.
+  </li>
+  <li>
+    <strong>Pause (F9)</strong> requests a pause; <strong>Stop (F11)</strong> requests termination.
+    Pending console input is released when execution is interrupted. Empty or invalid numeric input
+    can still produce an input error.
+  </li>
+  <li>
+    <strong>Backstep (F8)</strong> undoes recorded memory, register, and condition-flag changes one
+    instruction at a time. History holds up to 2000 recent steps. It does not undo console output or
+    other external I/O, and is separate from source-editor Undo. It is available after stepping,
+    pausing, or termination when history remains. The browser has no properties-file control for its
+    capacity.
+  </li>
+  <li>
+    <strong>Reset (F12)</strong> restores post-assembly memory and registers by reassembling the
+    retained program. Editing source requires a fresh Assemble before execution.
+  </li>
 </ul>
 <h3>Inspecting memory and registers</h3>
 <p>
-	Toolbar toggles select hexadecimal or decimal addresses and values. Data memory also has an ASCII
-	view. Memory is little-endian: a displayed hexadecimal word places its most significant byte on
-	the left, so four string bytes can appear reversed relative to their order in memory.
+  Toolbar toggles select hexadecimal or decimal addresses and values. Data memory also has an ASCII
+  view. Memory is little-endian: a displayed hexadecimal word places its most significant byte on
+  the left, so four string bytes can appear reversed relative to their order in memory.
 </p>
 <p>
-	The Data Segment shows 512 bytes (16 rows) at a time, initially at <code>0x10010000</code>.
-	Navigation and range controls move through memory or select the stack pointer, global pointer,
-	heap (<code>0x10040000</code>), extern globals (<code>0x10000000</code>), kernel data
-	(<code>0x90000000</code>), MMIO (<code>0xFFFF0000</code>), or raw text. Raw text inspection was
-	added in Java MARS 4.4. An MMIO region does not imply that device Tools are available.
+  The Data Segment shows 512 bytes (16 rows) at a time, initially at <code>0x10010000</code>.
+  Navigation and range controls move through memory or select the stack pointer, global pointer,
+  heap (<code>0x10040000</code>), extern globals (<code>0x10000000</code>), kernel data
+  (<code>0x90000000</code>), MMIO (<code>0xFFFF0000</code>), or raw text. Raw text inspection was
+  added in Java MARS 4.4. An MMIO region does not imply that device Tools are available.
 </p>
 <p>
-	While execution is stopped, edit a permitted register or memory input and commit with Enter or by
-	leaving the field. Integers accept decimal or hexadecimal with a leading <code>0x</code>,
-	including negative values in signed or two’s-complement form. Invalid input does not change the
-	machine value. The zero register, program counter, and return address are not editable in the
-	general-register table. ASCII memory cells are read-only.
+  While execution is stopped, edit a permitted register or memory input and commit with Enter or by
+  leaving the field. Integers accept decimal or hexadecimal with a leading <code>0x</code>,
+  including negative values in signed or two’s-complement form. Invalid input does not change the
+  machine value. The zero register, program counter, and return address are not editable in the
+  general-register table. ASCII memory cells are read-only.
 </p>
 <p>
-	Settings → Self-modifying code (off by default, introduced in Java Release 4.4) permits writes to
-	user text and execution from user data. While stopped, text words can be edited in the Data
-	Segment or the Text Segment Code column when this setting is enabled.
+  Settings → Self-modifying code (off by default, introduced in Java Release 4.4) permits writes to
+  user text and execution from user data. While stopped, text words can be edited in the Data
+  Segment or the Text Segment Code column when this setting is enabled.
 </p>
 <p>
-	Floating registers accept decimal values, including E notation such as <code>12.5e3</code>, or
-	hexadecimal IEEE-754 bit patterns. A double overlays two single registers; changing either
-	representation changes the corresponding paired view.
+  Floating registers accept decimal values, including E notation such as <code>12.5e3</code>, or
+  hexadecimal IEEE-754 bit patterns. A double overlays two single registers; changing either
+  representation changes the corresponding paired view.
 </p>
 <p>
-	Enable Show Labels Window in the toolbar to inspect symbols. Filter Data or Text symbols, sort
-	using the Label or Address headings, and select a label to navigate to its memory or instruction
-	address.
+  Enable Show Labels Window in the toolbar to inspect symbols. Filter Data or Text symbols, sort
+  using the Label or Address headings, and select a label to navigate to its memory or instruction
+  address.
 </p>
 <p class="notice">
-	Unlike the original Swing article’s live-editing workflow, MARS-ts disables machine edits during
-	execution. Pause or Step before changing registers, memory, or breakpoints.
+  Unlike the original Swing article’s live-editing workflow, MARS-ts disables machine edits during
+  execution. Pause or Step before changing registers, memory, or breakpoints.
 </p>

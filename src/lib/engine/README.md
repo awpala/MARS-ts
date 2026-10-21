@@ -234,10 +234,10 @@ const machine = new Globals(host);
 const controller = new RunController(machine);
 
 try {
-	controller.assemble(['main.asm'], 'main.asm');
-	await controller.run();
+  controller.assemble(['main.asm'], 'main.asm');
+  await controller.run();
 } finally {
-	await controller.dispose();
+  await controller.dispose();
 }
 ```
 

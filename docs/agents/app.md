@@ -32,7 +32,7 @@ The simulator engine (assembler, instruction set, hardware, simulator, syscalls,
 - SvelteKit 3 takes configuration through `sveltekit(...)` in the root `vite.config.ts`; do not add a competing `svelte.config.js`. Imports use the declared `#lib/*` package subpath.
 - Import shared modules through the package's declared subpath imports or SvelteKit's library alias, consistently, with whatever extension rule the scaffold's TypeScript configuration enforces.
 - Internal links resolve through SvelteKit's typed path helpers rather than bare string paths.
-- Normal development and preview use port `6277`, reserved for human review. Agents must not start, stop, or test against that listener. `npm run test:browser` owns an isolated server on `6278`; `MARS_VALIDATION=1` isolates other validation output under `__build/`. Browser-test mode and Vitest also use isolated generated files and dependency caches. The host bind mount uses polling (`server.watch.usePolling`).
+- Normal development and preview use port `6277`, exclusively for the human. Agents must not start, stop, request, or test against that listener. `npm run test:browser` owns an isolated server on `6278`, and ad hoc agent servers bind `6279` or higher ([development operations](operations.md)); `MARS_VALIDATION=1` isolates other validation output under `__build/`. Browser-test mode and Vitest also use isolated generated files and dependency caches. The host bind mount uses polling (`server.watch.usePolling`).
 
 ## TypeScript
 

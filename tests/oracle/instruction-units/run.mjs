@@ -7,5 +7,10 @@ captureProbe({
   className: 'mars.mips.instructions.InstructionProbe',
   golden: 'tests/oracle/instruction-units/golden.json',
   check: process.argv[2] === '--check',
-  legacySources: ['mars/mips/instructions/Instruction.java', 'mars/mips/instructions/BasicInstruction.java', 'mars/mips/instructions/BasicInstructionFormat.java', 'mars/mips/instructions/InstructionSet.java']
+  legacySources: [
+    'mars/mips/instructions/Instruction.java',
+    'mars/mips/instructions/BasicInstruction.java',
+    'mars/mips/instructions/BasicInstructionFormat.java',
+    'mars/mips/instructions/InstructionSet.java'
+  ]
 });

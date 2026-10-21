@@ -3,9 +3,9 @@
 
 /** Signals use of an odd register for a double-precision pair. */
 export class InvalidRegisterAccessException extends Error {
-	/** Creates the legacy exception with no detail message. */
-	constructor() {
-		super();
-		this.name = 'InvalidRegisterAccessException';
-	}
+  /** Creates the legacy exception with no detail message. */
+  constructor() {
+    super();
+    this.name = 'InvalidRegisterAccessException';
+  }
 }

@@ -4,32 +4,32 @@ The port runs in one container described by [devcontainer.json](../../.devcontai
 
 ## Commands
 
-| Command | Behavior |
-| --- | --- |
-| `run-checks [harness\|docs\|legacy\|app]` | Run gates and report every failure and skip; no selector runs all tiers |
-| `build-legacy` | Compile the legacy Java MARS into `__build/legacy/Mars.jar`, from scratch (provisional) |
-| `run-legacy <options> <file.asm>` | Run legacy MARS headlessly with isolated preferences (provisional) |
-| `run-app` | Start `npm run dev` on `6277` with timestamped `__logs/local/app-*.log` and a latest symlink |
-| `tests` | Run Vitest |
-| `format` | ESLint fixes, then Prettier (stops at the first failure) |
-| `build-app` | Clean generated output, `npm ci`, and build |
-| `kill-app` | Stop only the listener on `6277`, preserving PID identity through bounded escalation |
-| `cd "$app"`, `cd "$legacy"` | `/workspace` for the port; `/workspace/_legacy-app` for the Java reference |
+| Command                                   | Behavior                                                                                     |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `run-checks [harness\|docs\|legacy\|app]` | Run gates and report every failure and skip; no selector runs all tiers                      |
+| `build-legacy`                            | Compile the legacy Java MARS into `__build/legacy/Mars.jar`, from scratch (provisional)      |
+| `run-legacy <options> <file.asm>`         | Run legacy MARS headlessly with isolated preferences (provisional)                           |
+| `run-app`                                 | Start `npm run dev` on `6277` with timestamped `__logs/local/app-*.log` and a latest symlink |
+| `tests`                                   | Run Vitest                                                                                   |
+| `format`                                  | ESLint fixes, then Prettier (stops at the first failure)                                     |
+| `build-app`                               | Clean generated output, `npm ci`, and build                                                  |
+| `kill-app`                                | Stop only the listener on `6277`, preserving PID identity through bounded escalation         |
+| `cd "$app"`, `cd "$legacy"`               | `/workspace` for the port; `/workspace/_legacy-app` for the Java reference                   |
 
 The root package is scaffolded and app commands are active. Noninteractive callers (agents, CI) can use `run-checks`, `tests`, `format`, `build-app`, `kill-app`, `build-legacy`, and `run-legacy` from `PATH`; `run-app` is an interactive alias, and noninteractive callers run `/scripts/bin/run-local-service.sh app`.
 
-Port `6277` is reserved for human review. Agents use `npm run test:browser` on `6278` and `MARS_VALIDATION=1 run-checks` to isolate generated SvelteKit files and Vite caches. Do not use `run-app` or `kill-app` for automated testing. Install Chromium and its system libraries with `npm run test:browser:install` when browser validation is needed in a fresh environment.
+Port `6277` is exclusively for the human; agents never start, stop, request, or test against it. Agents use `npm run test:browser` on `6278` and `MARS_VALIDATION=1 run-checks` to isolate generated SvelteKit files and Vite caches. For ad hoc agent servers (manual probes, screenshots, smoke checks), bind port `6279` or higher, for example `npm run dev -- --mode browser-test --port 6279`, stop only that process afterwards, and do not run it alongside `npm run test:browser`, which shares its isolated build output. Do not use `run-app`, `kill-app`, or a bare `npm run dev` or `npm run preview`; each targets `6277`. Install Chromium and its system libraries with `npm run test:browser:install` when browser validation is needed in a fresh environment.
 
 ## Gates
 
 [checks.sh](../../.devcontainer/scripts/bin/checks.sh) runs each tier and continues after a failure so the summary is complete:
 
-| Tier | Gates |
-| --- | --- |
-| `harness` | [check-harness.sh](../../.devcontainer/scripts/bin/check-harness.sh): `CLAUDE.md` link, role adapters, skill mirror, strict JSON, relative Markdown links, Codex rules (when the CLI is present); then `bash -n` and ShellCheck over every script |
-| `docs` | [check-adr-index.sh](../../.devcontainer/scripts/bin/check-adr-index.sh): `docs/README.md` indexes exactly the ADRs on disk |
-| `legacy` | `build-legacy`, a byte-exact smoke run through `run-legacy`, then `node tests/oracle/run.mjs --check` to verify the captured corpus (the standalone runner rebuilds independently), followed by all registered hardware, numeric, assembler, instruction, syscall, simulator, settings, and editor method-probe comparisons |
-| `app` | `check`, `lint`, `format:check`, `test`, `build`; these run against the scaffolded root application |
+| Tier      | Gates                                                                                                                                                                                                                                                                                                                       |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `harness` | [check-harness.sh](../../.devcontainer/scripts/bin/check-harness.sh): `CLAUDE.md` link, role adapters, skill mirror, strict JSON, relative Markdown links, Codex rules (when the CLI is present); then `bash -n` and ShellCheck over every script                                                                           |
+| `docs`    | [check-adr-index.sh](../../.devcontainer/scripts/bin/check-adr-index.sh): `docs/README.md` indexes exactly the ADRs on disk                                                                                                                                                                                                 |
+| `legacy`  | `build-legacy`, a byte-exact smoke run through `run-legacy`, then `node tests/oracle/run.mjs --check` to verify the captured corpus (the standalone runner rebuilds independently), followed by all registered hardware, numeric, assembler, instruction, syscall, simulator, settings, and editor method-probe comparisons |
+| `app`     | `check`, `lint`, `format:check`, `test`, `build`; these run against the scaffolded root application                                                                                                                                                                                                                         |
 
 CI ([verify.yml](../../.github/workflows/verify.yml)) installs the same Node and JDK majors and ShellCheck, then runs `checks.sh`. A skipped tier is listed separately and never counts as passed.
 

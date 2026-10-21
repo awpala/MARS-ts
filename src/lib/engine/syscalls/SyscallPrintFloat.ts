@@ -3,14 +3,14 @@
 import { AbstractSyscall, type SyscallHost } from './AbstractSyscall.js';
 /** Canonical PrintFloat service; hardware and I/O remain owned by the injected session. */
 export class SyscallPrintFloat extends AbstractSyscall {
-	/** Construct service 2 (PrintFloat) for this session. */
-	constructor(host: SyscallHost) {
-		super(2, 'PrintFloat', host);
-	}
-	/** Execute the canonical register, memory, console, and error behavior. */
-	override simulate(): void {
-		this.host.systemIO.printString(
-			this.host.systemIO.formatFloat(this.host.coprocessor1.getFloatFromRegister(12))
-		);
-	}
+  /** Construct service 2 (PrintFloat) for this session. */
+  constructor(host: SyscallHost) {
+    super(2, 'PrintFloat', host);
+  }
+  /** Execute the canonical register, memory, console, and error behavior. */
+  override simulate(): void {
+    this.host.systemIO.printString(
+      this.host.systemIO.formatFloat(this.host.coprocessor1.getFloatFromRegister(12))
+    );
+  }
 }

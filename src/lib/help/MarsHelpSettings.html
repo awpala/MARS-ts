@@ -1,115 +1,115 @@
 <!-- Derived from help/MarsHelpSettings.html.
 Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt. -->
 <header>
-	<h3>Configuration Settings</h3>
-	<p>Original article: Release 4.5 · August 2014</p>
+  <h3>Configuration Settings</h3>
+  <p>Original article: Release 4.5 · August 2014</p>
 </header>
 <p>
-	Settings menu checkboxes control display, input, assembly, and execution. The first four entries
-	are Show Labels Window, Popup dialog for input syscalls (5,6,7,8,12), Addresses displayed in
-	hexadecimal, and Values displayed in hexadecimal. These share their state with the corresponding
-	toolbar buttons; a separator follows Values displayed in hexadecimal. Preferences are stored in
-	this browser’s localStorage when available; if storage is unavailable, changes remain in memory.
-	Java MARS retained settings beginning with Release 3.2 through
-	<code>java.util.prefs.Preferences</code> (the Windows Registry on Windows); the browser does not
-	use that mechanism.
+  Settings menu checkboxes control display, input, assembly, and execution. The first four entries
+  are Show Labels Window, Popup dialog for input syscalls (5,6,7,8,12), Addresses displayed in
+  hexadecimal, and Values displayed in hexadecimal. These share their state with the corresponding
+  toolbar buttons; a separator follows Values displayed in hexadecimal. Preferences are stored in
+  this browser’s localStorage when available; if storage is unavailable, changes remain in memory.
+  Java MARS retained settings beginning with Release 3.2 through
+  <code>java.util.prefs.Preferences</code> (the Windows Registry on Windows); the browser does not
+  use that mechanism.
 </p>
 <h3>Display and input</h3>
 <ul>
-	<li>
-		<strong>Show Labels Window:</strong> off by default. Shows program labels and addresses beside
-		the Text Segment, with Data/Text filters and sorting.
-	</li>
-	<li>
-		<strong>Addresses displayed in hexadecimal:</strong> on by default. Turn it off for decimal
-		addresses.
-	</li>
-	<li>
-		<strong>Values displayed in hexadecimal:</strong> on by default. Turn it off for decimal memory
-		and register values.
-	</li>
-	<li>
-		<strong>ASCII data display:</strong> off by default. Interprets Data Segment bytes as characters
-		and disables editing in that view. Its state is shared by the toolbar and Data Segment checkbox.
-	</li>
-	<li>
-		<strong>Show line numbers:</strong> on by default in the source editor. Its toggle is at the end
-		of the editing toolbar group, after the undo/redo and clipboard actions.
-	</li>
-	<li>
-		<strong>Popup dialog for input syscalls:</strong> off by default; introduced in Java Release
-		4.0. Services 5, 6, 7, 8, and 12 normally read in Run I/O. Enable this toggle for same-tab input
-		dialogs. This does not enable the separate, unfinished dialog services 50–59.
-	</li>
-	<li>
-		<strong>Appearance:</strong> the menu-bar sun/moon switch selects light or dark mode; light is
-		the default. The choice persists independently of machine state.
-	</li>
+  <li>
+    <strong>Show Labels Window:</strong> off by default. Shows program labels and addresses beside
+    the Text Segment, with Data/Text filters and sorting.
+  </li>
+  <li>
+    <strong>Addresses displayed in hexadecimal:</strong> on by default. Turn it off for decimal
+    addresses.
+  </li>
+  <li>
+    <strong>Values displayed in hexadecimal:</strong> on by default. Turn it off for decimal memory
+    and register values.
+  </li>
+  <li>
+    <strong>ASCII data display:</strong> off by default. Interprets Data Segment bytes as characters
+    and disables editing in that view. Its state is shared by the toolbar and Data Segment checkbox.
+  </li>
+  <li>
+    <strong>Show line numbers:</strong> on by default in the source editor. Its toggle is at the end
+    of the editing toolbar group, after the undo/redo and clipboard actions.
+  </li>
+  <li>
+    <strong>Popup dialog for input syscalls:</strong> off by default; introduced in Java Release
+    4.0. Services 5, 6, 7, 8, and 12 normally read in Run I/O. Enable this toggle for same-tab input
+    dialogs. This does not enable the separate, unfinished dialog services 50–59.
+  </li>
+  <li>
+    <strong>Appearance:</strong> the menu-bar sun/moon switch selects light or dark mode; light is
+    the default. The choice persists independently of machine state.
+  </li>
 </ul>
 <h3>Assembly and execution</h3>
 <p>
-	The Settings menu has separators after Initialize Program Counter and Self-modifying code.
-	Assembly uses the active source and its explicit <code>.include</code> directives; there is no
-	assemble-all control. A previously saved assemble-all preference is reset when the desktop starts.
-	Included source resolves from current open buffers first, then saved library files.
+  The Settings menu has separators after Initialize Program Counter and Self-modifying code.
+  Assembly uses the active source and its explicit <code>.include</code> directives; there is no
+  assemble-all control. A previously saved assemble-all preference is reset when the desktop starts.
+  Included source resolves from current open buffers first, then saved library files.
 </p>
 <ol>
-	<li>
-		<strong>Assemble file on open:</strong> off by default. Automatically assembles a source when
-		opened.
-	</li>
-	<li>
-		<strong>Assembler warnings are considered errors:</strong> off by default; introduced in Java
-		Release 3.5. When enabled, any assembly warning makes assembly fail. Unrecognized or ignored
-		directives can produce warnings, as can truncated numeric data.
-	</li>
-	<li>
-		<strong>Initialize Program Counter to global main if defined:</strong> off by default;
-		introduced in Java Release 3.8. Uses the address of the text label <code>main</code> declared
-		with <code>.globl main</code>, if present. Otherwise execution starts at the default text
-		address.
-	</li>
-	<li>
-		<strong>Permit extended (pseudo) instructions and formats:</strong> on by default. Includes
-		address forms beyond the native 16-bit offset plus register.
-	</li>
-	<li>
-		<strong>Delayed branching:</strong> off by default. The instruction after a branch or jump
-		executes before the transfer. Account for the delay slot, often with an explicit
-		<code>nop</code>; the assembler does not automatically add one after every source branch.
-		Introduced in Java Release 3.3. Since Release 3.4, branch offsets are encoded relative to the
-		next instruction regardless of this setting, with simulation adjusted accordingly.
-	</li>
-	<li>
-		<strong>Self-modifying code:</strong> off by default; introduced in Java Release 4.4. Permits
-		program writes to user text, execution from user data, and stopped-state editing of text words.
-	</li>
+  <li>
+    <strong>Assemble file on open:</strong> off by default. Automatically assembles a source when
+    opened.
+  </li>
+  <li>
+    <strong>Assembler warnings are considered errors:</strong> off by default; introduced in Java
+    Release 3.5. When enabled, any assembly warning makes assembly fail. Unrecognized or ignored
+    directives can produce warnings, as can truncated numeric data.
+  </li>
+  <li>
+    <strong>Initialize Program Counter to global main if defined:</strong> off by default;
+    introduced in Java Release 3.8. Uses the address of the text label <code>main</code> declared
+    with <code>.globl main</code>, if present. Otherwise execution starts at the default text
+    address.
+  </li>
+  <li>
+    <strong>Permit extended (pseudo) instructions and formats:</strong> on by default. Includes
+    address forms beyond the native 16-bit offset plus register.
+  </li>
+  <li>
+    <strong>Delayed branching:</strong> off by default. The instruction after a branch or jump
+    executes before the transfer. Account for the delay slot, often with an explicit
+    <code>nop</code>; the assembler does not automatically add one after every source branch.
+    Introduced in Java Release 3.3. Since Release 3.4, branch offsets are encoded relative to the
+    next instruction regardless of this setting, with simulation adjusted accordingly.
+  </li>
+  <li>
+    <strong>Self-modifying code:</strong> off by default; introduced in Java Release 4.4. Permits
+    program writes to user text, execution from user data, and stopped-state editing of text words.
+  </li>
 </ol>
 <h3>Legacy settings without a current browser control</h3>
 <ul>
-	<li>
-		<strong>Program arguments</strong> (Java Release 3.5, originally off): Java supplied argc in
-		<code>$a0</code>, argv in <code>$a1</code>, and arguments on the stack. Program-argument
-		controls and command-line integration are excluded from this browser application.
-	</li>
-	<li>
-		<strong>Editor dialog</strong> (Java Release 3.3) and <strong>Highlighting dialog</strong> (Java
-		Release 3.6): the port uses bundled editor/highlighting presets instead of font and color
-		dialogs. Toolbar display settings and the appearance switch remain available.
-	</li>
-	<li>
-		<strong>Exception Handler dialog</strong> (Java Release 3.2, automatic inclusion originally
-		off): not yet available. Place the handler in the program or reference its source with an
-		explicit <code>.include</code> directive.
-	</li>
-	<li>
-		<strong>Memory Configuration dialog</strong> (Java Release 3.7): not yet available. The browser
-		uses the default SPIM-derived layout. The engine also retains CompactDataAtZero and
-		CompactTextAtZero configurations, but no UI selector is exposed.
-	</li>
+  <li>
+    <strong>Program arguments</strong> (Java Release 3.5, originally off): Java supplied argc in
+    <code>$a0</code>, argv in <code>$a1</code>, and arguments on the stack. Program-argument
+    controls and command-line integration are excluded from this browser application.
+  </li>
+  <li>
+    <strong>Editor dialog</strong> (Java Release 3.3) and <strong>Highlighting dialog</strong> (Java
+    Release 3.6): the port uses bundled editor/highlighting presets instead of font and color
+    dialogs. Toolbar display settings and the appearance switch remain available.
+  </li>
+  <li>
+    <strong>Exception Handler dialog</strong> (Java Release 3.2, automatic inclusion originally
+    off): not yet available. Place the handler in the program or reference its source with an
+    explicit <code>.include</code> directive.
+  </li>
+  <li>
+    <strong>Memory Configuration dialog</strong> (Java Release 3.7): not yet available. The browser
+    uses the default SPIM-derived layout. The engine also retains CompactDataAtZero and
+    CompactTextAtZero configurations, but no UI selector is exposed.
+  </li>
 </ul>
 <p>
-	Source saving has separate controls: File → Auto Save commits edits to the local source library.
-	Recovery backups retain open-buffer text independently of manual Save. Machine state and backstep
-	history are not restored after reload.
+  Source saving has separate controls: File → Auto Save commits edits to the local source library.
+  Recovery backups retain open-buffer text independently of manual Save. Machine state and backstep
+  history are not restored after reload.
 </p>

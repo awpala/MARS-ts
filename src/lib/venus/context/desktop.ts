@@ -9,11 +9,11 @@ export const getDesktop = readDesktop;
 
 /** Install one component-owned desktop and its narrower command capability; no global state is created. */
 export function provideDesktop(desktop: DesktopState): DesktopState {
-	setDesktop(desktop);
-	setDesktopCommands({
-		isEnabled: desktop.enabled,
-		execute: desktop.execute,
-		isPressed: desktop.isPressed
-	});
-	return desktop;
+  setDesktop(desktop);
+  setDesktopCommands({
+    isEnabled: desktop.enabled,
+    execute: desktop.execute,
+    isPressed: desktop.isPressed
+  });
+  return desktop;
 }

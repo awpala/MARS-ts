@@ -33,59 +33,59 @@ import type { TokenTypes } from './TokenTypes.js';
 
 /** A token's category, value, and current/original source locations. */
 export class Token {
-	private originalMIPSprogram: DiagnosticProgram | null;
-	private originalSourceLine: number;
+  private originalMIPSprogram: DiagnosticProgram | null;
+  private originalSourceLine: number;
 
-	/** Retain caller-owned program and token-type identities; positions follow the lexer. */
-	constructor(
-		private type: TokenTypes,
-		private readonly value: string,
-		private readonly sourceMIPSprogram: DiagnosticProgram | null,
-		private readonly sourceLine: number,
-		private readonly sourcePos: number
-	) {
-		this.originalMIPSprogram = sourceMIPSprogram;
-		this.originalSourceLine = sourceLine;
-	}
-	/** Preserve the location before include expansion moves the token. */
-	setOriginal(program: DiagnosticProgram | null, line: number): void {
-		this.originalMIPSprogram = program;
-		this.originalSourceLine = line;
-	}
-	/** Return the original caller-owned program, or null. */
-	getOriginalProgram(): DiagnosticProgram | null {
-		return this.originalMIPSprogram;
-	}
-	/** Return the original source line. */
-	getOriginalSourceLine(): number {
-		return this.originalSourceLine;
-	}
-	/** Return the current token category identity. */
-	getType(): TokenTypes {
-		return this.type;
-	}
-	/** Replace the category when an instruction spelling is recognized as a label. */
-	setType(type: TokenTypes): void {
-		this.type = type;
-	}
-	/** Return the exact token spelling. */
-	getValue(): string {
-		return this.value;
-	}
-	/** Return the exact token spelling. */
-	toString(): string {
-		return this.value;
-	}
-	/** Return the caller-owned program after include expansion, or null. */
-	getSourceMIPSprogram(): DiagnosticProgram | null {
-		return this.sourceMIPSprogram;
-	}
-	/** Return the current source line. */
-	getSourceLine(): number {
-		return this.sourceLine;
-	}
-	/** Return the starting character position supplied by the lexer. */
-	getStartPos(): number {
-		return this.sourcePos;
-	}
+  /** Retain caller-owned program and token-type identities; positions follow the lexer. */
+  constructor(
+    private type: TokenTypes,
+    private readonly value: string,
+    private readonly sourceMIPSprogram: DiagnosticProgram | null,
+    private readonly sourceLine: number,
+    private readonly sourcePos: number
+  ) {
+    this.originalMIPSprogram = sourceMIPSprogram;
+    this.originalSourceLine = sourceLine;
+  }
+  /** Preserve the location before include expansion moves the token. */
+  setOriginal(program: DiagnosticProgram | null, line: number): void {
+    this.originalMIPSprogram = program;
+    this.originalSourceLine = line;
+  }
+  /** Return the original caller-owned program, or null. */
+  getOriginalProgram(): DiagnosticProgram | null {
+    return this.originalMIPSprogram;
+  }
+  /** Return the original source line. */
+  getOriginalSourceLine(): number {
+    return this.originalSourceLine;
+  }
+  /** Return the current token category identity. */
+  getType(): TokenTypes {
+    return this.type;
+  }
+  /** Replace the category when an instruction spelling is recognized as a label. */
+  setType(type: TokenTypes): void {
+    this.type = type;
+  }
+  /** Return the exact token spelling. */
+  getValue(): string {
+    return this.value;
+  }
+  /** Return the exact token spelling. */
+  toString(): string {
+    return this.value;
+  }
+  /** Return the caller-owned program after include expansion, or null. */
+  getSourceMIPSprogram(): DiagnosticProgram | null {
+    return this.sourceMIPSprogram;
+  }
+  /** Return the current source line. */
+  getSourceLine(): number {
+    return this.sourceLine;
+  }
+  /** Return the starting character position supplied by the lexer. */
+  getStartPos(): number {
+    return this.sourcePos;
+  }
 }

@@ -6,9 +6,9 @@ These scenarios complement the [TypeScript suites and Java oracle](../README.md)
 
 ## Server and browser ownership
 
-The [Playwright configuration](../../playwright.config.ts) starts `npm run dev -- --mode browser-test` at `http://127.0.0.1:6278`. It refuses to reuse an existing server, runs scenarios fully in parallel, and uses a default viewport of 1280 × 900. Tests use Playwright's isolated page and browser context, so cookies and localStorage do not carry between scenarios.
+The [Playwright configuration](../../playwright.config.ts) starts `npm run dev -- --mode browser-test` at `http://127.0.0.1:6278`. It refuses to reuse an existing server, runs scenarios fully in parallel, allows each scenario 60 seconds (about twice the slowest full-desktop scenarios measured on a loaded development container, including cold dev-server compiles and reloads), and uses a default viewport of 1280 × 900. A scenario may set a longer `test.setTimeout` only when it needs more than that default. Tests use Playwright's isolated page and browser context, so cookies and localStorage do not carry between scenarios.
 
-The [Vite configuration](../../vite.config.ts) reserves port **6278** for validation and keeps its generated SvelteKit output in `__build/browser-kit`, Vite cache in `node_modules/.vite-browser-test`, and validation static builds in `__build/browser-site`. Port **6277** belongs to ad hoc developer review. Run browser tests sequentially with application checks or builds that share the validation output, and leave the review server running independently.
+The [Vite configuration](../../vite.config.ts) reserves port **6278** for validation and keeps its generated SvelteKit output in `__build/browser-kit`, Vite cache in `node_modules/.vite-browser-test`, and validation static builds in `__build/browser-site`. Port **6277** belongs exclusively to the human's own development review; agents never start, stop, or test against it, and ad hoc agent servers bind **6279** or higher. Run browser tests sequentially with application checks or builds that share the validation output, and leave the review server running independently.
 
 ## Running scenarios
 
@@ -38,11 +38,11 @@ Most scenarios use the root route. Lifetime scenarios serve a test-owned empty p
 
 ## Coverage and extension
 
-| Area                      | Observable contracts                                                                                                        |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Source workflows          | Exact editor text, save and rename decisions, import/export, recovery, Auto Save, and storage failures                      |
-| Execution and debugging   | Assembly, stepping and backstep, breakpoints, register and memory edits, labels, console input, cancellation, and reset     |
-| Presentation and controls | Keyboard commands, focus, modal dismissal, tooltips, pane geometry, theme persistence, and shared settings                  |
-| Help and lifetimes        | Article availability and attribution, exact snippet transfers, clipboard feedback, stale asynchronous results, and teardown |
+| Area                      | Observable contracts                                                                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Source workflows          | Exact editor text, save and rename decisions, import/export, recovery, Auto Save, and storage failures                                           |
+| Execution and debugging   | Assembly, stepping and backstep, breakpoints, register and memory edits, labels, console input, cancellation, and reset                          |
+| Presentation and controls | Keyboard commands, focus, modal dismissal, tooltips, pane geometry, theme persistence, machine-table stripes and highlights, and shared settings |
+| Help and lifetimes        | Article availability and attribution, exact snippet transfers, clipboard feedback, stale asynchronous results, and teardown                      |
 
 Add scenarios here when correctness depends on browser APIs, rendered interaction, focus, layout, persistence across reload, or component lifetime. Reuse the readiness helpers, prefer accessible roles and names for controls, and keep seeded records and browser API replacements local to each scenario. Assert observable results through production workflows; reserve lower-level algorithm and conversion cases for the TypeScript and oracle suites.

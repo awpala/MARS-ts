@@ -1,22 +1,22 @@
 {
-	"_description": "Build-time editorial configuration for the source editor. Syntax styles follow canonical token IDs 0 through 11; rebuild after editing.",
-	"_attribution": "Syntax defaults derived from MARS, copyright Pete Sanderson and Kenneth Vollmar (MIT), and jEdit SyntaxUtilities, copyright 1999 Slava Pestov. You may use and modify this package for any purpose. Redistribution is permitted, in both source and binary form, provided that this notice remains intact in all source distributions of this package.",
-	"font": "14px/21px 'Courier New', monospace",
-	"tabSize": 8,
-	"caretColor": "#17202b",
-	"selectionBackground": "#b4d5fe88",
-	"syntaxStyles": [
-		{ "color": "#000000", "italic": false, "bold": false },
-		{ "color": "#00cc33", "italic": true, "bold": false },
-		{ "color": "#990033", "italic": true, "bold": false },
-		{ "color": "#00cc33", "italic": false, "bold": false },
-		{ "color": "#00cc33", "italic": false, "bold": false },
-		{ "color": "#000000", "italic": true, "bold": false },
-		{ "color": "#0000ff", "italic": false, "bold": false },
-		{ "color": "#ff00ff", "italic": false, "bold": false },
-		{ "color": "#ff0000", "italic": false, "bold": false },
-		{ "color": "#000000", "italic": false, "bold": true },
-		{ "color": "#ff0000", "italic": false, "bold": false },
-		{ "color": "#969600", "italic": false, "bold": false }
-	]
+  "_description": "Build-time editorial configuration for the source editor. Syntax styles follow canonical token IDs 0 through 11; rebuild after editing.",
+  "_attribution": "Syntax defaults derived from MARS, copyright Pete Sanderson and Kenneth Vollmar (MIT), and jEdit SyntaxUtilities, copyright 1999 Slava Pestov. You may use and modify this package for any purpose. Redistribution is permitted, in both source and binary form, provided that this notice remains intact in all source distributions of this package.",
+  "font": "14px/21px 'Courier New', monospace",
+  "tabSize": 8,
+  "caretColor": "#17202b",
+  "selectionBackground": "#b4d5fe88",
+  "syntaxStyles": [
+    { "color": "#000000", "italic": false, "bold": false },
+    { "color": "#00cc33", "italic": true, "bold": false },
+    { "color": "#990033", "italic": true, "bold": false },
+    { "color": "#00cc33", "italic": false, "bold": false },
+    { "color": "#00cc33", "italic": false, "bold": false },
+    { "color": "#000000", "italic": true, "bold": false },
+    { "color": "#0000ff", "italic": false, "bold": false },
+    { "color": "#ff00ff", "italic": false, "bold": false },
+    { "color": "#ff0000", "italic": false, "bold": false },
+    { "color": "#000000", "italic": false, "bold": true },
+    { "color": "#ff0000", "italic": false, "bold": false },
+    { "color": "#969600", "italic": false, "bold": false }
+  ]
 }

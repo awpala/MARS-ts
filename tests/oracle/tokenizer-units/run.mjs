@@ -7,10 +7,15 @@ captureProbe({
   golden: 'tests/oracle/tokenizer-units/golden.json',
   check: process.argv.includes('--check'),
   legacySources: [
-    'mars/assembler/Tokenizer.java', 'mars/assembler/TokenTypes.java',
-    'mars/assembler/Token.java', 'mars/assembler/TokenList.java',
-    'mars/assembler/SourceLine.java', 'mars/assembler/Directives.java',
-    'mars/MIPSprogram.java', 'mars/ErrorMessage.java', 'mars/ErrorList.java',
+    'mars/assembler/Tokenizer.java',
+    'mars/assembler/TokenTypes.java',
+    'mars/assembler/Token.java',
+    'mars/assembler/TokenList.java',
+    'mars/assembler/SourceLine.java',
+    'mars/assembler/Directives.java',
+    'mars/MIPSprogram.java',
+    'mars/ErrorMessage.java',
+    'mars/ErrorList.java',
     'tests/oracle/tokenizer-units/inputs/main.asm',
     'tests/oracle/tokenizer-units/inputs/nested/one.inc',
     'tests/oracle/tokenizer-units/inputs/nested/two.inc',
@@ -19,6 +24,6 @@ captureProbe({
     'tests/oracle/tokenizer-units/inputs/missing.asm',
     'tests/oracle/tokenizer-units/inputs/bad.inc',
     'tests/oracle/tokenizer-units/inputs/include-errors.asm',
-    'tests/oracle/tokenizer-units/inputs/include-trailing.asm',
-  ],
+    'tests/oracle/tokenizer-units/inputs/include-trailing.asm'
+  ]
 });

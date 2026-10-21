@@ -1,7 +1,7 @@
 <!-- Derived from help/ExceptionsHelp.html.
 Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt. -->
 <header>
-	<h3>Writing and Using MIPS exception handlers in MARS</h3>
+  <h3>Writing and Using MIPS exception handlers in MARS</h3>
 </header>
 
 <h3>Introduction</h3>
@@ -10,82 +10,82 @@ easily be incorporated into a MIPS program. This guide is not intended to be com
 provides the essential information for writing and using exception handlers.
 
 <p>
-	Although the same mechanism services all three, <i>exceptions</i>, <i>traps</i> and
-	<i>interrupts</i> are all distinct from each other. Exceptions are caused by exceptional
-	conditions that occur at runtime such as invalid memory address references. Traps are caused by
-	instructions constructed especially for this purpose, listed below. Interrupts are caused by
-	external devices.
+  Although the same mechanism services all three, <i>exceptions</i>, <i>traps</i> and
+  <i>interrupts</i> are all distinct from each other. Exceptions are caused by exceptional
+  conditions that occur at runtime such as invalid memory address references. Traps are caused by
+  instructions constructed especially for this purpose, listed below. Interrupts are caused by
+  external devices.
 </p>
 <p>MARS partially but not completely implements the exception and interrupt mechanism of SPIM.</p>
 <h3>Essential Facts</h3>
 Some essential facts about writing and using exception handlers include:
 <ul>
-	<li>MARS simulates basic elements of the MIPS32 exception mechanism.</li>
-	<li>
-		The MIPS instruction set includes a number of instructions that conditionally trigger a trap
-		exception based on the relative values of two registers or of a constant and a register:
-		<code>teq</code>, <code>teqi</code> (trap if equal), <code>tne</code>, <code>tnei</code> (trap
-		if not equal), <code>tge</code>, <code>tgeu</code>, <code>tgei</code>, <code>tgeiu</code> (trap
-		if greater than or equal), <code>tlt</code>, <code>tltu</code>, <code>tlti</code>,
-		<code>tltiu</code> (trap if less than)
-	</li>
-	<li>
-		When an exception occurs,
-		<ol>
-			<li>Coprocessor 0 register $12 (status) bit 1 is set</li>
-			<li>
-				Coprocessor 0 register $13 (cause) bits 2-6 are set to the exception type (codes below)
-			</li>
-			<li>
-				Coprocessor 0 register $14 (epc) is set to the address of the instruction that triggered the
-				exception
-			</li>
-			<li>
-				If the exception was caused by an invalid memory address, Coprocessor 0 register $8 (vaddr)
-				is set to the invalid address.
-			</li>
-			<li>
-				Execution flow jumps to the MIPS instruction at memory location <code>0x80000180</code>.
-				This address in the kernel text segment (<code>.ktext</code> directive) is the standard
-				MIPS32 exception handler location. MARS-ts currently uses the default memory configuration;
-				the Memory Configuration dialog is not yet available.
-			</li>
-		</ol>
-	</li>
-	<li>
-		Include a handler in the same source as the program (as below), use <code>.include</code> to
-		insert a handler from the browser source library. Opening a handler in another tab alone does
-		not include it in assembly. The legacy Exception Handler dialog for automatically adding a
-		handler to every assembly is not yet available.
-	</li>
-	<li>
-		If there is no instruction at location <code>0x80000180</code>, MARS will terminate the MIPS
-		program with an appropriate error message.
-	</li>
-	<li>
-		The exception handler can return control to the program using the <code>eret</code> instruction.
-		This will place the EPC register $14 value into the Program Counter, so be sure to increment $14
-		by 4 before returning to skip over the instruction that caused the exception. The
-		<code>mfc0</code> and <code>mtc0</code> instructions are used to read from and write to
-		Coprocessor 0 registers.
-	</li>
-	<li>
-		Bits 8-15 of the Cause register $13 can also be used to indicate pending interrupts. In Java
-		MARS this is used by the Keyboard and Display Simulator Tool (not yet available in MARS-ts),
-		where bit 8 represents a keyboard interrupt and bit 9 represents a display interrupt. For more
-		details, see the Help panel for that Tool.
-	</li>
-	<li>
-		Exception types declared in <code>mars.simulator.Exceptions</code>, but not necessarily
-		implemented, are ADDRESS_EXCEPTION_LOAD (4), ADDRESS_EXCEPTION_STORE (5), SYSCALL_EXCEPTION (8),
-		BREAKPOINT_EXCEPTION (9), RESERVED_INSTRUCTION_EXCEPTION (10), ARITHMETIC_OVERFLOW_EXCEPTION
-		(12), TRAP_EXCEPTION(13), DIVIDE_BY_ZERO_EXCEPTION (15), FLOATING_POINT_OVERFLOW (16), and
-		FLOATING_POINT_UNDERFLOW (17).
-	</li>
-	<li>
-		When writing a non-trivial exception handler, your handler must first save general purpose
-		register contents, then restore them before returning.
-	</li>
+  <li>MARS simulates basic elements of the MIPS32 exception mechanism.</li>
+  <li>
+    The MIPS instruction set includes a number of instructions that conditionally trigger a trap
+    exception based on the relative values of two registers or of a constant and a register:
+    <code>teq</code>, <code>teqi</code> (trap if equal), <code>tne</code>, <code>tnei</code> (trap
+    if not equal), <code>tge</code>, <code>tgeu</code>, <code>tgei</code>, <code>tgeiu</code> (trap
+    if greater than or equal), <code>tlt</code>, <code>tltu</code>, <code>tlti</code>,
+    <code>tltiu</code> (trap if less than)
+  </li>
+  <li>
+    When an exception occurs,
+    <ol>
+      <li>Coprocessor 0 register $12 (status) bit 1 is set</li>
+      <li>
+        Coprocessor 0 register $13 (cause) bits 2-6 are set to the exception type (codes below)
+      </li>
+      <li>
+        Coprocessor 0 register $14 (epc) is set to the address of the instruction that triggered the
+        exception
+      </li>
+      <li>
+        If the exception was caused by an invalid memory address, Coprocessor 0 register $8 (vaddr)
+        is set to the invalid address.
+      </li>
+      <li>
+        Execution flow jumps to the MIPS instruction at memory location <code>0x80000180</code>.
+        This address in the kernel text segment (<code>.ktext</code> directive) is the standard
+        MIPS32 exception handler location. MARS-ts currently uses the default memory configuration;
+        the Memory Configuration dialog is not yet available.
+      </li>
+    </ol>
+  </li>
+  <li>
+    Include a handler in the same source as the program (as below), use <code>.include</code> to
+    insert a handler from the browser source library. Opening a handler in another tab alone does
+    not include it in assembly. The legacy Exception Handler dialog for automatically adding a
+    handler to every assembly is not yet available.
+  </li>
+  <li>
+    If there is no instruction at location <code>0x80000180</code>, MARS will terminate the MIPS
+    program with an appropriate error message.
+  </li>
+  <li>
+    The exception handler can return control to the program using the <code>eret</code> instruction.
+    This will place the EPC register $14 value into the Program Counter, so be sure to increment $14
+    by 4 before returning to skip over the instruction that caused the exception. The
+    <code>mfc0</code> and <code>mtc0</code> instructions are used to read from and write to
+    Coprocessor 0 registers.
+  </li>
+  <li>
+    Bits 8-15 of the Cause register $13 can also be used to indicate pending interrupts. In Java
+    MARS this is used by the Keyboard and Display Simulator Tool (not yet available in MARS-ts),
+    where bit 8 represents a keyboard interrupt and bit 9 represents a display interrupt. For more
+    details, see the Help panel for that Tool.
+  </li>
+  <li>
+    Exception types declared in <code>mars.simulator.Exceptions</code>, but not necessarily
+    implemented, are ADDRESS_EXCEPTION_LOAD (4), ADDRESS_EXCEPTION_STORE (5), SYSCALL_EXCEPTION (8),
+    BREAKPOINT_EXCEPTION (9), RESERVED_INSTRUCTION_EXCEPTION (10), ARITHMETIC_OVERFLOW_EXCEPTION
+    (12), TRAP_EXCEPTION(13), DIVIDE_BY_ZERO_EXCEPTION (15), FLOATING_POINT_OVERFLOW (16), and
+    FLOATING_POINT_UNDERFLOW (17).
+  </li>
+  <li>
+    When writing a non-trivial exception handler, your handler must first save general purpose
+    register contents, then restore them before returning.
+  </li>
 </ul>
 
 <h3>Example of Trap Handler</h3>
@@ -113,8 +113,8 @@ main:
    addi $k0,$k0,4 # Add 4 to point to next instruction
    mtc0 $k0,$14   # Store new address back into $14
    eret           # Error return; set PC to value in $14
-   .kdata	
-msg:   
+   .kdata
+msg:
    .asciiz "Trap generated"
 </pre>
 

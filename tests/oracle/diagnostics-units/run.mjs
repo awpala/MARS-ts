@@ -7,5 +7,11 @@ captureProbe({
   className: 'DiagnosticsProbe',
   golden: 'tests/oracle/diagnostics-units/golden.json',
   check: process.argv[2] === '--check',
-  legacySources: ['mars/ErrorMessage.java', 'mars/ErrorList.java', 'mars/ProcessingException.java', 'mars/Globals.java', 'Config.properties']
+  legacySources: [
+    'mars/ErrorMessage.java',
+    'mars/ErrorList.java',
+    'mars/ProcessingException.java',
+    'mars/Globals.java',
+    'Config.properties'
+  ]
 });

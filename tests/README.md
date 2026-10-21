@@ -35,7 +35,7 @@ run-checks legacy
 
 The first command verifies the original whole-program corpus. The `legacy` tier also verifies the registered method-probe suites. Each oracle subdirectory documents its own capture format and commands. Only the documented update commands regenerate expected results; review every changed golden and never hand-edit captured output to make a TypeScript comparison pass.
 
-For application checks, lint, formatting, unit tests, and an isolated static build, use `MARS_VALIDATION=1 run-checks app`. Run `npm run test:browser` separately using the [browser setup](browser/README.md#running-scenarios). Checks and browser runs that share generated validation output must run sequentially. Port **6277** remains available for ad hoc developer review; browser automation owns **6278**.
+For application checks, lint, formatting, unit tests, and an isolated static build, use `MARS_VALIDATION=1 run-checks app`. Run `npm run test:browser` separately using the [browser setup](browser/README.md#running-scenarios). Checks and browser runs that share generated validation output must run sequentially. Port **6277** remains exclusively for the human's own development review; browser automation owns **6278**, and ad hoc agent servers bind **6279** or higher.
 
 ## Extending coverage
 

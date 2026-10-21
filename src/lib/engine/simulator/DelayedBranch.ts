@@ -29,41 +29,41 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 /** One session's pending branch and delay-slot state; no external resources. */
 export class DelayedBranch {
-	private static readonly CLEARED = 0;
-	private static readonly REGISTERED = 1;
-	private static readonly TRIGGERED = 2;
-	private state = DelayedBranch.CLEARED;
-	private branchTargetAddress = 0;
+  private static readonly CLEARED = 0;
+  private static readonly REGISTERED = 1;
+  private static readonly TRIGGERED = 2;
+  private state = DelayedBranch.CLEARED;
+  private branchTargetAddress = 0;
 
-	/** Register a branch; nested branches extend the delay slot but retain the first target. */
-	register(targetAddress: number): void {
-		if (this.state === DelayedBranch.CLEARED) this.branchTargetAddress = targetAddress | 0;
-		this.state = DelayedBranch.REGISTERED;
-	}
+  /** Register a branch; nested branches extend the delay slot but retain the first target. */
+  register(targetAddress: number): void {
+    if (this.state === DelayedBranch.CLEARED) this.branchTargetAddress = targetAddress | 0;
+    this.state = DelayedBranch.REGISTERED;
+  }
 
-	/** Mark a pending branch triggered at the end of its instruction cycle. */
-	trigger(): void {
-		if (this.state !== DelayedBranch.CLEARED) this.state = DelayedBranch.TRIGGERED;
-	}
+  /** Mark a pending branch triggered at the end of its instruction cycle. */
+  trigger(): void {
+    if (this.state !== DelayedBranch.CLEARED) this.state = DelayedBranch.TRIGGERED;
+  }
 
-	/** Clear the pending branch after the simulator applies its target. */
-	clear(): void {
-		this.state = DelayedBranch.CLEARED;
-		this.branchTargetAddress = 0;
-	}
+  /** Clear the pending branch after the simulator applies its target. */
+  clear(): void {
+    this.state = DelayedBranch.CLEARED;
+    this.branchTargetAddress = 0;
+  }
 
-	/** Whether a branch is registered and awaiting the end-of-cycle trigger. */
-	isRegistered(): boolean {
-		return this.state === DelayedBranch.REGISTERED;
-	}
+  /** Whether a branch is registered and awaiting the end-of-cycle trigger. */
+  isRegistered(): boolean {
+    return this.state === DelayedBranch.REGISTERED;
+  }
 
-	/** Whether the delay slot can complete and apply the pending target. */
-	isTriggered(): boolean {
-		return this.state === DelayedBranch.TRIGGERED;
-	}
+  /** Whether the delay slot can complete and apply the pending target. */
+  isTriggered(): boolean {
+    return this.state === DelayedBranch.TRIGGERED;
+  }
 
-	/** Return the signed 32-bit target; the simulator reads this after the delay slot. */
-	getBranchTargetAddress(): number {
-		return this.branchTargetAddress;
-	}
+  /** Return the signed 32-bit target; the simulator reads this after the delay slot. */
+  getBranchTargetAddress(): number {
+    return this.branchTargetAddress;
+  }
 }

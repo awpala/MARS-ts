@@ -1,27 +1,27 @@
 <!-- Derived from help/MarsHelpTools.html.
 Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt. -->
 <p class="notice">
-	<strong>Legacy reference — Tools are not yet available in MARS-ts.</strong> The disabled Tools
-	menu does not load Java plugins. The Java extension instructions below are retained for the
-	original application. The browser app bundles its instruction definitions and uses an explicit
-	TypeScript syscall registry; it does not discover .class files or read editable JAR resources.
+  <strong>Legacy reference — Tools are not yet available in MARS-ts.</strong> The disabled Tools
+  menu does not load Java plugins. The Java extension instructions below are retained for the
+  original application. The browser app bundles its instruction definitions and uses an explicit
+  TypeScript syscall registry; it does not discover .class files or read editable JAR resources.
 </p>
 
 <header>
-	<h3>MARS - Mips Assembly and Runtime Simulator</h3>
-	<h4>Release 4.5</h4>
-	<h4>August 2014</h4>
-	<h4>Cool Capability: Plug-in Tools</h4>
+  <h3>MARS - Mips Assembly and Runtime Simulator</h3>
+  <h4>Release 4.5</h4>
+  <h4>August 2014</h4>
+  <h4>Cool Capability: Plug-in Tools</h4>
 </header>
 
 Beginning with Release 2.0, MARS is capable of running externally-developed software that interacts
 with an executing MIPS program and MIPS system resources. The requirements for such a program are:
 <ol>
-	<li>It implements the <code>mars.tools.MarsTool</code> interface.</li>
-	<li>It is part of the <code>mars.tools</code> package.</li>
-	<li>
-		It compiles cleanly into a ".class" file, stored in the <code>mars/tools</code> directory.
-	</li>
+  <li>It implements the <code>mars.tools.MarsTool</code> interface.</li>
+  <li>It is part of the <code>mars.tools</code> package.</li>
+  <li>
+    It compiles cleanly into a ".class" file, stored in the <code>mars/tools</code> directory.
+  </li>
 </ol>
 MARS will detect all qualifying tools upon startup and include them in its Tools menu. When a tool's
 menu item is selected, an instance of it will be created using its no-argument constructor and its
@@ -29,39 +29,39 @@ menu item is selected, an instance of it will be created using its no-argument c
 Tools menu will not appear.
 
 <p>
-	To use such a tool, load and assemble a MIPS program of interest then select the desired tool from
-	the Tools menu. The tool's window will open and depending on how it is written it will either need
-	to be "connected" to the MIPS program by clicking a button or will already be connected. Run the
-	MIPS program as you normally would, to initiate tool interaction with the executing program.
+  To use such a tool, load and assemble a MIPS program of interest then select the desired tool from
+  the Tools menu. The tool's window will open and depending on how it is written it will either need
+  to be "connected" to the MIPS program by clicking a button or will already be connected. Run the
+  MIPS program as you normally would, to initiate tool interaction with the executing program.
 </p>
 <p>
-	Beginning with Release 3.2, the abstract class
-	<code>mars.tools.AbstractMarsToolAndApplication</code>
-	is included in the MARS distribution to provide a substantial framework for implementing your own
-	MARS Tool. A subclass that extends it by implementing at least its two abstract methods can be run
-	not only from the Tools menu but also as a free-standing application that uses the MARS assembler
-	and simulator in the background.
+  Beginning with Release 3.2, the abstract class
+  <code>mars.tools.AbstractMarsToolAndApplication</code>
+  is included in the MARS distribution to provide a substantial framework for implementing your own
+  MARS Tool. A subclass that extends it by implementing at least its two abstract methods can be run
+  not only from the Tools menu but also as a free-standing application that uses the MARS assembler
+  and simulator in the background.
 </p>
 <p>
-	Several Tools developed by subclassing <code>AbstractMarsToolAndApplication</code> are included
-	with MARS: an Introduction to Tools, a Data Cache Simulator, a Memory Reference Visualizer, and a
-	Floating Point tool. The last one is quite useful even when not connected to a MIPS program
-	because it displays binary, hexadecimal and decimal representations for a 32 bit floating point
-	value; when any of them is modified the other two are updated as well.
+  Several Tools developed by subclassing <code>AbstractMarsToolAndApplication</code> are included
+  with MARS: an Introduction to Tools, a Data Cache Simulator, a Memory Reference Visualizer, and a
+  Floating Point tool. The last one is quite useful even when not connected to a MIPS program
+  because it displays binary, hexadecimal and decimal representations for a 32 bit floating point
+  value; when any of them is modified the other two are updated as well.
 </p>
 <p>
-	Release 3.5 includes new tools, most notably a keyboard and display simulator that allows you to
-	perform memory-mapped I/O (MMIO) using polled and interrupt-driven techniques as described in
-	various references. Click its Help button for more details.
+  Release 3.5 includes new tools, most notably a keyboard and display simulator that allows you to
+  perform memory-mapped I/O (MMIO) using polled and interrupt-driven techniques as described in
+  various references. Click its Help button for more details.
 </p>
 <p>
-	If you wish to develop your own MARS Tool, you will first need to extract the MARS distribution
-	from its JAR file if you have not already done so. All MARS tools must be stored in the
-	<code>mars/tools</code> directory.
+  If you wish to develop your own MARS Tool, you will first need to extract the MARS distribution
+  from its JAR file if you have not already done so. All MARS tools must be stored in the
+  <code>mars/tools</code> directory.
 </p>
 <p>
-	Follow the Tutorial Materials link on the MARS homepage to find a tutorial that covers development
-	of MARS Tools.
+  Follow the Tutorial Materials link on the MARS homepage to find a tutorial that covers development
+  of MARS Tools.
 </p>
 <h4>Cool Capability: Extending the syscall set or reassigning syscall numbers</h4>
 
@@ -69,30 +69,30 @@ Beginning with Release 3.1, system calls (<code>syscall</code> instruction) are 
 technique similar to that for tools. This permits anyone to add a new syscall by defining a new
 class that meets these requirements:
 <ol>
-	<li>
-		It implements the <code>mars.mips.instructions.syscalls.Syscall</code> interface, or extends the
-		<code>mars.mips.instructions.syscalls.AbstractSyscall</code> class (which provides default
-		implementations of everything except the <code>simulate()</code> method).
-	</li>
-	<li>It is part of the <code>mars.mips.instructions.syscalls</code> package.</li>
-	<li>
-		It compiles cleanly into a ".class" file, stored in the
-		<code>mars/mips/instructions/syscalls</code> directory.
-	</li>
+  <li>
+    It implements the <code>mars.mips.instructions.syscalls.Syscall</code> interface, or extends the
+    <code>mars.mips.instructions.syscalls.AbstractSyscall</code> class (which provides default
+    implementations of everything except the <code>simulate()</code> method).
+  </li>
+  <li>It is part of the <code>mars.mips.instructions.syscalls</code> package.</li>
+  <li>
+    It compiles cleanly into a ".class" file, stored in the
+    <code>mars/mips/instructions/syscalls</code> directory.
+  </li>
 </ol>
 MARS will detect all qualifying syscall classes upon startup and the runtime simulator will invoke
 them when the <code>syscall</code> instruction is simulated and register <code>$v0</code>
 contains the corresponding integer service number.
 
 <p>
-	Syscalls and syscall number assignments in MARs match those of SPIM for syscalls 1 through 17.
-	However if you wish to change syscall number assignments, you may do so by editing the
-	<code>Syscall.properties</code> file included in the release (this requires extraction from the
-	JAR file).
+  Syscalls and syscall number assignments in MARs match those of SPIM for syscalls 1 through 17.
+  However if you wish to change syscall number assignments, you may do so by editing the
+  <code>Syscall.properties</code> file included in the release (this requires extraction from the
+  JAR file).
 </p>
 <p>
-	Follow the Tutorial Materials link on the MARS homepage to find a tutorial that covers development
-	of system calls.
+  Follow the Tutorial Materials link on the MARS homepage to find a tutorial that covers development
+  of system calls.
 </p>
 <h4>Cool Capability: Extending the instruction set</h4>
 
@@ -106,11 +106,11 @@ template specification symbols. The latter permit substitution at program assemb
 from the user's program into the expanded pseudo-instruction.
 
 <p>
-	<code>PseudoOps.txt</code> is read and processed at MARS startup, and error messages will be
-	produced if a specification is not correctly formatted. Note that if you wish to edit it you first
-	have to extract it from the JAR file.
+  <code>PseudoOps.txt</code> is read and processed at MARS startup, and error messages will be
+  produced if a specification is not correctly formatted. Note that if you wish to edit it you first
+  have to extract it from the JAR file.
 </p>
 <p>
-	Follow the Tutorial Materials link on the MARS homepage to find a tutorial that covers
-	modification of the pseudo-instruction set.
+  Follow the Tutorial Materials link on the MARS homepage to find a tutorial that covers
+  modification of the pseudo-instruction set.
 </p>

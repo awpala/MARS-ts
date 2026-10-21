@@ -1,62 +1,62 @@
 <!-- Derived from help/MarsHelpIntro.html.
 Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt. -->
 <header>
-	<h3>MARS — MIPS Assembler and Runtime Simulator</h3>
-	<p>Original article: Release 4.5 · August 2014</p>
-	<h4>Introduction</h4>
+  <h3>MARS — MIPS Assembler and Runtime Simulator</h3>
+  <p>Original article: Release 4.5 · August 2014</p>
+  <h4>Introduction</h4>
 </header>
 <p>
-	MARS assembles and simulates MIPS assembly language programs. MARS-ts brings its assembler,
-	simulator, and interactive desktop to the browser using TypeScript and Svelte. You do not need
-	Java or an executable JAR to use this application. The TypeScript port targets MARS-ts 1.0; the
-	original article’s release and date above identify its source.
+  MARS assembles and simulates MIPS assembly language programs. MARS-ts brings its assembler,
+  simulator, and interactive desktop to the browser using TypeScript and Svelte. You do not need
+  Java or an executable JAR to use this application. The TypeScript port targets MARS-ts 1.0; the
+  original article’s release and date above identify its source.
 </p>
 <p>
-	The current instruction registry contains 155 basic registrations and 388 pseudo-instruction
-	definitions. Load and store instructions support seven address forms: <code>label</code>,
-	<code>immed</code>, <code>label+immed</code>, <code>($reg)</code>, <code>label($reg)</code>,
-	<code>immed($reg)</code>, and <code>label+immed($reg)</code>, where <code>immed</code> can be a
-	32-bit integer. Settings → Permit extended (pseudo) instructions and formats controls whether
-	extended forms are accepted.
+  The current instruction registry contains 155 basic registrations and 388 pseudo-instruction
+  definitions. Load and store instructions support seven address forms: <code>label</code>,
+  <code>immed</code>, <code>label+immed</code>, <code>($reg)</code>, <code>label($reg)</code>,
+  <code>immed($reg)</code>, and <code>label+immed($reg)</code>, where <code>immed</code> can be a
+  32-bit integer. Settings → Permit extended (pseudo) instructions and formats controls whether
+  extended forms are accepted.
 </p>
 <p>
-	The original authors’ guiding reference was
-	<cite>Computer Organization and Design, Fourth Edition</cite>, Patterson and Hennessy, Elsevier –
-	Morgan Kaufmann, 2009: Figures 3.24 and 3.25, pages 279–281, and Appendix B. The legacy
-	implementation excluded the delay branches from the left column of Figure 3.25. The browser port
-	derives its instruction definitions from that implementation.
+  The original authors’ guiding reference was
+  <cite>Computer Organization and Design, Fourth Edition</cite>, Patterson and Hennessy, Elsevier –
+  Morgan Kaufmann, 2009: Figures 3.24 and 3.25, pages 279–281, and Appendix B. The legacy
+  implementation excluded the delay branches from the left column of Figure 3.25. The browser port
+  derives its instruction definitions from that implementation.
 </p>
 <h3>Working in the browser</h3>
 <p>
-	New creates an editor source. Open selects sources saved in this browser; Save commits the current
-	text to that local library. Auto Save commits edits automatically when enabled. Open tabs and
-	in-progress edits are recovered after reload when browser storage is available. Import reads .asm
-	files from your computer, and Export downloads copies. Browser storage can be cleared, so export
-	sources you need to keep.
+  New creates an editor source. Open selects sources saved in this browser; Save commits the current
+  text to that local library. Auto Save commits edits automatically when enabled. Open tabs and
+  in-progress edits are recovered after reload when browser storage is available. Import reads .asm
+  files from your computer, and Export downloads copies. Browser storage can be cleared, so export
+  sources you need to keep.
 </p>
 <p>
-	Assemble (F3) translates the current source, including unsaved edits. To assemble additional
-	source, use explicit <code>.include</code> directives in the active program. Included sources
-	resolve from open buffers first and saved library sources second.
+  Assemble (F3) translates the current source, including unsaved edits. To assemble additional
+  source, use explicit <code>.include</code> directives in the active program. Included sources
+  resolve from open buffers first and saved library sources second.
 </p>
 <p>
-	The Execute pane supports Go, Step, Backstep, Pause, Stop, Reset, breakpoints, labels, and
-	inspection and editing of registers and memory while execution is stopped. Registers remain
-	visible beside Edit and Execute. The toolbar controls labels, number formats, ASCII data, line
-	numbers, and popup input.
+  The Execute pane supports Go, Step, Backstep, Pause, Stop, Reset, breakpoints, labels, and
+  inspection and editing of registers and memory while execution is stopped. Registers remain
+  visible beside Edit and Execute. The toolbar controls labels, number formats, ASCII data, line
+  numbers, and popup input.
 </p>
 <p>
-	Console reads and writes, heap allocation, exit, and integer formatting syscalls are available.
-	File, time, random, MIDI, sleep, and dialog syscall families remain unfinished; see Syscalls for
-	the service-by-service reference. Tools, memory dumps, and the Exception Handler and Memory
-	Configuration dialogs are not yet available. This browser application has no command-line launcher
-	or program-argument controls.
+  Console reads and writes, heap allocation, exit, and integer formatting syscalls are available.
+  File, time, random, MIDI, sleep, and dialog syscall families remain unfinished; see Syscalls for
+  the service-by-service reference. Tools, memory dumps, and the Exception Handler and Memory
+  Configuration dialogs are not yet available. This browser application has no command-line launcher
+  or program-argument controls.
 </p>
 <h3>Original authors and project history</h3>
 <p>
-	The original “Questions and Comments” section credited Dr. Pete Sanderson
-	(<code>PSanderson@otterbein.edu</code>) and Dr. Ken Vollmar
-	(<code>KenVollmar@missouristate.edu</code>). These are historical Java MARS contacts, not a
-	support commitment for the TypeScript port. The authors presented MARS papers at the 2005 CCSC:MW
-	conference and the 2006 SIGCSE Technical Symposium, and a tutorial at the 2007 CCSC:CP conference.
+  The original “Questions and Comments” section credited Dr. Pete Sanderson
+  (<code>PSanderson@otterbein.edu</code>) and Dr. Ken Vollmar
+  (<code>KenVollmar@missouristate.edu</code>). These are historical Java MARS contacts, not a
+  support commitment for the TypeScript port. The authors presented MARS papers at the 2005 CCSC:MW
+  conference and the 2006 SIGCSE Technical Symposium, and a tutorial at the 2007 CCSC:CP conference.
 </p>

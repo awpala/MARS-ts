@@ -140,13 +140,13 @@ The [system implementation guide](../../IMPLEMENTATION.md) describes current fea
 
 [VenusUI](venus/VenusUI.svelte) creates a per-component desktop state graph, installs typed contexts, mounts the browser lifecycle, and arranges the views. It remains at the Venus root because it coordinates that module. UI components are grouped by responsibility under [Venus components](venus/components/README.md); component-local interactions stay with their elements, while source workflows, pending input, shared preferences, and execution ownership live in [state](venus/state/README.md).
 
-| Presentation boundary     | Responsibility                                                                                        |
-| ------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Shell and layout          | Application commands and appearance; reusable pane geometry and resize interactions                   |
-| Controls                  | Native buttons, checkbox selections, tab strips, sliders, and switches with caller-owned values       |
-| Editor and debugger views | Source editing and inspection of actual machine statements, registers, memory, labels, and output     |
-| Feedback and transfers    | Loading, tooltips/keycaps, clipboard feedback, native file selection, and single/all export mechanics |
-| Dialogs                   | Shared native modal rendering and focused workflow variants composed through snippets                 |
+| Presentation boundary     | Responsibility                                                                                                          |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Shell and layout          | Application commands and appearance; reusable pane geometry and resize interactions                                     |
+| Controls                  | Native buttons, new-tab resource links, checkbox selections, tab strips, sliders, and switches with caller-owned values |
+| Editor and debugger views | Source editing and inspection of actual machine statements, registers, memory, labels, and output                       |
+| Feedback and transfers    | Loading, tooltips/keycaps, clipboard feedback, native file selection, and single/all export mechanics                   |
+| Dialogs                   | Shared native modal rendering and focused workflow variants composed through snippets                                   |
 
 The generic controls, pane, tab, menu, and toolbar contracts use records, callbacks, and snippets. Controls own native input semantics and presentation; shell specializations supply toolbar styling, run-speed conversion, and browser theme selection. Pane renders a sized region, while TabbedPane composes it with the control group's tab strip. These reusable controls and layout components have no desktop context dependency. A workflow-specific dialog or file-transfer behavior can read its nearest owner through context without passing unrelated state through every ancestor. The modal shell remains independent of workflow names; the dialog coordinator selects focused variants.
 
@@ -216,6 +216,6 @@ Core assembly, simulation, deterministic console syscalls, and desktop debugging
 
 ### Choosing an extension boundary
 
-Place translated algorithms and machine semantics in the responsible engine module. Add browser mechanics to the browser adapter or mounted interaction that owns their resources. Put cross-view workflow state in its existing Venus owner, and presentation in the corresponding component group. Share a utility only when consumers share the same rule. Keep Help content separate from editor and machine ownership.
+Place translated algorithms and machine semantics in the responsible engine module. Add browser mechanics to the browser adapter or mounted interaction that owns their resources. Put cross-view workflow state in its existing Venus owner, and presentation in the corresponding component group. Share logic that consumers repeat through a stateless utility, including general-purpose helpers where warranted. Keep Help content separate from editor and machine ownership.
 
 Import the responsible module directly; this directory is an architectural entry point, not a barrel that combines unrelated libraries. A relocation updates its consumers and documentation together. New interactions must define their owner, input/output contract, and cleanup without adding process-global state or making the engine depend on presentation.

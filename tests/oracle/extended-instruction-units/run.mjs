@@ -6,5 +6,11 @@ captureProbe({
   className: 'ExtendedInstructionProbe',
   golden: 'tests/oracle/extended-instruction-units/golden.json',
   check: process.argv[2] === '--check',
-  legacySources: ['mars/mips/instructions/ExtendedInstruction.java','mars/mips/instructions/Instruction.java','PseudoOps.txt','mars/assembler/SymbolTable.java','mars/util/Binary.java']
+  legacySources: [
+    'mars/mips/instructions/ExtendedInstruction.java',
+    'mars/mips/instructions/Instruction.java',
+    'PseudoOps.txt',
+    'mars/assembler/SymbolTable.java',
+    'mars/util/Binary.java'
+  ]
 });
