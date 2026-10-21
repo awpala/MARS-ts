@@ -61,6 +61,17 @@ export class DesktopState {
       disabled: false
     },
     {
+      icon: 'input' as const,
+      label: popupInputOption.label,
+      active: this.simulation.engineSettings[Settings.POPUP_SYSCALL_INPUT] ?? false,
+      toggle: () =>
+        this.simulation.updateEngineSetting(
+          Settings.POPUP_SYSCALL_INPUT,
+          !this.simulation.engineSettings[Settings.POPUP_SYSCALL_INPUT]
+        ),
+      disabled: this.simulation.running
+    },
+    {
       icon: 'addresses' as const,
       label: 'Addresses displayed in hexadecimal',
       active: this.display.hexAddresses,
@@ -80,17 +91,6 @@ export class DesktopState {
       active: this.display.ascii,
       toggle: () => (this.display.ascii = !this.display.ascii),
       disabled: false
-    },
-    {
-      icon: 'input' as const,
-      label: popupInputOption.label,
-      active: this.simulation.engineSettings[Settings.POPUP_SYSCALL_INPUT] ?? false,
-      toggle: () =>
-        this.simulation.updateEngineSetting(
-          Settings.POPUP_SYSCALL_INPUT,
-          !this.simulation.engineSettings[Settings.POPUP_SYSCALL_INPUT]
-        ),
-      disabled: this.simulation.running
     }
   ]);
 
