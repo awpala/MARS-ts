@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Tooltip from '../feedback/Tooltip.svelte';
   import MultiSelect from '../controls/MultiSelect.svelte';
   import TabbedPane from '../layout/TabbedPane.svelte';
   import { formatInteger } from '../../utils/tableCells.js';
@@ -53,6 +54,86 @@
     registers.getHighOrderRegister(),
     registers.getLowOrderRegister()
   ]);
+  // Name-column descriptions from the three legacy register windows, in display order.
+  const nameTooltips: Record<string, readonly string[]> = {
+    Registers: [
+      'constant 0',
+      'reserved for assembler',
+      'expression evaluation and results of a function',
+      'expression evaluation and results of a function',
+      'argument 1',
+      'argument 2',
+      'argument 3',
+      'argument 4',
+      'temporary (not preserved across call)',
+      'temporary (not preserved across call)',
+      'temporary (not preserved across call)',
+      'temporary (not preserved across call)',
+      'temporary (not preserved across call)',
+      'temporary (not preserved across call)',
+      'temporary (not preserved across call)',
+      'temporary (not preserved across call)',
+      'saved temporary (preserved across call)',
+      'saved temporary (preserved across call)',
+      'saved temporary (preserved across call)',
+      'saved temporary (preserved across call)',
+      'saved temporary (preserved across call)',
+      'saved temporary (preserved across call)',
+      'saved temporary (preserved across call)',
+      'saved temporary (preserved across call)',
+      'temporary (not preserved across call)',
+      'temporary (not preserved across call)',
+      'reserved for OS kernel',
+      'reserved for OS kernel',
+      'pointer to global area',
+      'stack pointer',
+      'frame pointer',
+      'return address (used by function call)',
+      'program counter',
+      'high-order word of multiply product, or divide remainder',
+      'low-order word of multiply product, or divide quotient'
+    ],
+    'Coproc 0': [
+      'Memory address at which address exception occurred',
+      'Interrupt mask and enable bits',
+      'Exception type and pending interrupt bits',
+      'Address of instruction that caused exception'
+    ],
+    'Coproc 1': [
+      'floating point subprogram return value',
+      'should not be referenced explicitly in your program',
+      'floating point subprogram return value',
+      'should not be referenced explicitly in your program',
+      'temporary (not preserved across call)',
+      'should not be referenced explicitly in your program',
+      'temporary (not preserved across call)',
+      'should not be referenced explicitly in your program',
+      'temporary (not preserved across call)',
+      'should not be referenced explicitly in your program',
+      'temporary (not preserved across call)',
+      'should not be referenced explicitly in your program',
+      'floating point subprogram argument 1',
+      'should not be referenced explicitly in your program',
+      'floating point subprogram argument 2',
+      'should not be referenced explicitly in your program',
+      'temporary (not preserved across call)',
+      'should not be referenced explicitly in your program',
+      'temporary (not preserved across call)',
+      'should not be referenced explicitly in your program',
+      'saved temporary (preserved across call)',
+      'should not be referenced explicitly in your program',
+      'saved temporary (preserved across call)',
+      'should not be referenced explicitly in your program',
+      'saved temporary (preserved across call)',
+      'should not be referenced explicitly in your program',
+      'saved temporary (preserved across call)',
+      'should not be referenced explicitly in your program',
+      'saved temporary (preserved across call)',
+      'should not be referenced explicitly in your program',
+      'saved temporary (preserved across call)',
+      'should not be referenced explicitly in your program'
+    ]
+  };
   let revision = $state(0);
   let error = $state('');
   let changed = $state('');
@@ -65,7 +146,8 @@
         : selected === 'Coproc 0'
           ? coprocessor0.getRegisters()
           : coprocessor1.getRegisters()
-    ).map((register) => ({
+    ).map((register, index) => ({
+      tooltip: nameTooltips[selected][index],
       name: register.getName(),
       number: register.getNumber(),
       value: register.getValueNoNotify()
@@ -183,7 +265,17 @@
       <tbody>
         {#each rows as row (row.number)}<tr
             data-highlight={changed === row.name ? 'register' : undefined}
-            ><td class="identifier">{row.name}</td>{#if selected === 'Coproc 1'}<td class="numeric"
+            ><td class="identifier">
+              <Tooltip text={row.tooltip}>
+                {#snippet children(trigger, description)}
+                  <span
+                    class="block cursor-pointer"
+                    {@attach trigger}
+                    aria-describedby={description}>{row.name}</span
+                  >
+                {/snippet}
+              </Tooltip>
+            </td>{#if selected === 'Coproc 1'}<td class="numeric"
                 ><CellInput
                   aria-label={`${row.name} float value`}
                   value={floatValue(row.number)}

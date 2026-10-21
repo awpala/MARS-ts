@@ -1,6 +1,8 @@
 <script lang="ts">
   import PaneTabs from '../controls/PaneTabs.svelte';
   import Button from '../controls/Button.svelte';
+  import CloseButton from '../controls/CloseButton.svelte';
+  import { fileActions } from '../../utils/commands.js';
   import { sourceLabel } from '../../utils/sourceLabel.js';
   /** Open-document navigation; buffers, dirty state, and close confirmation belong to the owner. */
   type Props = {
@@ -23,6 +25,7 @@
   };
   let { tabs, selected, onselect, onclose, canRename, onrename, canReorder, onreorder }: Props =
     $props();
+  const closeShortcut = fileActions.find((action) => action.command === 'close')?.shortcut;
   let editing = $state<number>();
   let filename = $state('');
   let focusAfterRename: number | undefined;
@@ -126,6 +129,7 @@
       <Button
         class={[
           'source-name px-[7px] py-1 whitespace-nowrap',
+          selected === tab.id && 'font-bold',
           canReorder && tabs.length > 1 && 'cursor-grab active:cursor-grabbing'
         ]}
         draggable={canReorder && tabs.length > 1 && editing === undefined}
@@ -159,11 +163,11 @@
     {/if}
   {/snippet}
   {#snippet tabActions(id)}
-    <Button
-      class="close-source px-[7px] py-1 whitespace-nowrap"
-      aria-label={`Close ${tabs.find((tab) => tab.id === id)?.name}`}
-      onclick={() => onclose(id)}>×</Button
-    >
+    <CloseButton
+      label={`Close ${tabs.find((tab) => tab.id === id)?.name}`}
+      shortcut={closeShortcut}
+      onclick={() => onclose(id)}
+    />
   {/snippet}
 </PaneTabs>
 

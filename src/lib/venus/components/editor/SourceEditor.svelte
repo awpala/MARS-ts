@@ -118,6 +118,10 @@
     if (!(event.relatedTarget instanceof Element) || !event.relatedTarget.closest('.source-help'))
       sourceHelp = null;
   }
+  function blurSource() {
+    // Selecting reference text blurs the textarea; the popup's pointer exit owns dismissal there.
+    if (!sourceInput?.parentElement?.querySelector('.source-help:hover')) sourceHelp = null;
+  }
 
   function selection() {
     onselection(sourceInput?.selectionStart ?? 0, sourceInput?.selectionEnd ?? 0);
@@ -173,7 +177,7 @@
         onpointermove={hoverSource}
         onpointerleave={leaveSource}
         onpointerdown={() => (sourceHelp = null)}
-        onblur={() => (sourceHelp = null)}
+        onblur={blurSource}
         onkeydown={sourceKeydown}
         onkeyup={selection}
         onselect={selection}
@@ -241,6 +245,8 @@
     background: var(--editor-selection);
   }
   .source-help {
+    cursor: text;
+    user-select: text;
     position: fixed;
     z-index: 30;
     width: max-content;

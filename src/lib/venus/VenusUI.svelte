@@ -141,11 +141,12 @@
             {#if simulation.machine && simulation.execution}<ExecutePane
                 machine={simulation.machine}
                 snapshot={simulation.execution}
+                bind:selectedLabel={simulation.labelSelection}
                 breakpoints={simulation.breakpoints}
                 ontogglebreakpoint={simulation.toggleBreakpoint}
                 onedit={() => simulation.controller?.refresh()}
                 onsource={workspace.showSource}
-                showLabels={display.showLabels}
+                bind:showLabels={display.showLabels}
                 bind:showDataLabels={display.showDataLabels}
                 bind:showTextLabels={display.showTextLabels}
                 bind:labelSortState={display.labelSortState}

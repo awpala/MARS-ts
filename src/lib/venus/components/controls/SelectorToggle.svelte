@@ -55,7 +55,7 @@
 {/snippet}
 
 {#if tooltip}
-  <Tooltip text={tooltip}>
+  <Tooltip text={tooltip} keepOpenOnClick>
     {#snippet children(trigger, tooltipDescription)}
       {@render control(trigger, tooltipDescription)}
     {/snippet}

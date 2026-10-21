@@ -61,7 +61,10 @@ export class DesktopPersistence {
           scroll: [Math.round(workspace.sourceScrollTop), Math.round(workspace.sourceScrollLeft)],
           breakpoints: [...simulation.breakpoints],
           breakpointsEnabled: simulation.breakpointsEnabled,
-          ...stable
+          ...stable,
+          execution: stable.execution
+            ? { ...stable.execution, labelSelection: simulation.labelSelection }
+            : null
         });
         this.error = '';
       } catch (error) {

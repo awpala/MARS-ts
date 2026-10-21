@@ -1,3 +1,5 @@
+import { Globals } from '#lib/engine/Globals.js';
+import { RunController } from '#lib/venus/RunController.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   DESKTOP_SESSION_STORAGE_KEY,
@@ -84,4 +86,50 @@ describe('desktop browser recovery storage', () => {
     vi.stubGlobal('localStorage', undefined);
     expect(loadDesktopSession()).toBeUndefined();
   });
+});
+
+it('validates optional program-owned label identities and preserves older checkpoints without a selection', async () => {
+  const machine = new Globals({
+    readSource: () => '.text\nnop\n',
+    readInput: () => '',
+    printString: () => {},
+    yieldControl: async () => {},
+    sourcePaths: {
+      separator: '/',
+      isAbsolute: (filename) => filename.startsWith('/'),
+      getParent: () => ''
+    }
+  });
+  const controller = new RunController(machine);
+  try {
+    controller.assemble(['main.asm'], 'main.asm');
+    const execution = {
+      machine: controller.captureCheckpoint()!,
+      sources: { 'main.asm': '.text\nnop\n' }
+    };
+    expect(isDesktopSession({ ...record(), execution })).toBe(true);
+    for (const labelSelection of [
+      null,
+      { filename: null, name: 'global', address: -2147483648 },
+      { filename: 'main.asm', name: 'alias', address: 0x00400000 }
+    ]) {
+      expect(isDesktopSession({ ...record(), execution: { ...execution, labelSelection } })).toBe(
+        true
+      );
+    }
+    for (const labelSelection of [
+      false,
+      {},
+      { filename: 1, name: 'label', address: 0 },
+      { filename: null, name: '', address: 0 },
+      { filename: 'main.asm', name: 'label', address: 0x90000000 },
+      { filename: 'main.asm', name: 'label', address: 1.5 }
+    ]) {
+      expect(isDesktopSession({ ...record(), execution: { ...execution, labelSelection } })).toBe(
+        false
+      );
+    }
+  } finally {
+    await controller.dispose();
+  }
 });

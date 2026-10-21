@@ -14,10 +14,20 @@
     attachment?: Attachment<HTMLButtonElement>;
     /** Optional themed description; omitted or empty text leaves the button without a tooltip. */
     tooltip?: string;
+    /** Keep a toggle's tooltip visible through pointer clicks while hovered; false for ordinary actions and navigation. */
+    keepTooltipOnClick?: boolean;
     /** Optional keyboard hint for the tooltip; does not register a shortcut. */
     shortcut?: string;
   };
-  let { children, type = 'button', tooltip, shortcut, attachment, ...attributes }: Props = $props();
+  let {
+    children,
+    type = 'button',
+    tooltip,
+    keepTooltipOnClick = false,
+    shortcut,
+    attachment,
+    ...attributes
+  }: Props = $props();
 </script>
 
 <!-- @component Generic native action button with caller-supplied content and optional themed tooltip. Adds no layout wrapper or default visual style; native attributes, events, and form semantics are preserved. -->
@@ -35,7 +45,7 @@
 {/snippet}
 
 {#if tooltip}
-  <Tooltip text={tooltip} {shortcut}>
+  <Tooltip text={tooltip} {shortcut} keepOpenOnClick={keepTooltipOnClick}>
     {#snippet children(trigger, description)}
       {@render control(trigger, description)}
     {/snippet}

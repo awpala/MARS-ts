@@ -21,7 +21,7 @@
   type Props = {
     /** Required header cells (`<th>` elements) for the single sticky heading row rendered by this table. */
     header: Snippet;
-    /** Required body sections: one or more `<tbody>` elements. Rows or cells may set `data-highlight` to a MachineHighlight; the table owns colors and preset enablement. Body cells may add the `numeric` class to right-align monospace numbers and hexadecimal words (including CellInput values) and the `identifier` class to bold the cell naming the row, such as an address, register, or label. */
+    /** Required body sections: one or more `<tbody>` elements. Rows or cells may set `data-selected="true"` for label navigation selection, independently of machine changes, and `data-highlight` to a MachineHighlight; the table owns colors and preset enablement. Body cells may add the `numeric` class to right-align monospace numbers and hexadecimal words (including CellInput values) and the `identifier` class to bold the cell naming the row, such as an address, register, or label. */
     children: Snippet;
     /** Heading typeface: `interface` (default) uses the application font, while `table` uses the preset monospace font of the cells. */
     headingFont?: 'interface' | 'table';
@@ -132,6 +132,13 @@
   .memory-highlighting :global(tbody td[data-highlight='memory']) {
     background: var(--memory-background);
     color: var(--memory-foreground);
+  }
+  /* Label navigation selection remains visible across the tables when keyboard focus moves. */
+  .machine-table :global(tbody :is(tr, td)[data-selected='true']) {
+    background: var(--theme-selected, #c7dff7);
+    color: var(--theme-text, #17202b);
+    outline: 2px solid var(--theme-focus, #507b9f);
+    outline-offset: -2px;
   }
   /* Right-aligned monospace numbers line up digit by digit for comparison. */
   .machine-table :global(td.numeric) {

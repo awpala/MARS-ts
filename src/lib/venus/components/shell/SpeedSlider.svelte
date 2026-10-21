@@ -22,9 +22,9 @@
 </script>
 
 <!-- @component Run-speed specialization with one evenly spaced position per distinct speed and adjacent granular increment/decrement controls. The desktop retains legacy-compatible application and persistence. -->
-<div class="ml-auto flex items-center gap-1">
+<div class="ml-auto flex h-7.25 shrink-0 items-center gap-1">
   <Slider
-    class="speed min-w-42.5 text-center text-[11px]"
+    class="speed min-w-42.5 text-center text-[11px] leading-3.5"
     label="Run speed"
     valueText={runSpeedLabel(value)}
     min={0}
@@ -32,10 +32,10 @@
     step={1}
     bind:value={() => position, setPosition}
   />
-  <div class="flex shrink-0 flex-col gap-px">
+  <div class="grid h-full shrink-0 grid-rows-2 gap-px">
     {#each steps as step (step.icon)}
       <Button
-        class="grid h-4 w-4 place-items-center rounded-xs border border-(--theme-border,#a2aab1) bg-(--theme-surface,#fafafa) hover:enabled:bg-(--theme-hover,#dbe8f2) disabled:opacity-40"
+        class="grid h-full min-h-0 w-4 place-items-center rounded-xs border border-(--theme-border,#a2aab1) bg-(--theme-surface,#fafafa) hover:enabled:bg-(--theme-hover,#dbe8f2) disabled:opacity-40"
         aria-label={step.label}
         tooltip={step.label}
         disabled={step.delta > 0 ? position === RUN_SPEED_MAX_POSITION : position === 0}

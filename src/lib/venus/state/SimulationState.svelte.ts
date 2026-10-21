@@ -1,4 +1,4 @@
-import type { SavedExecution } from '#lib/browser/DesktopSession.js';
+import type { SavedExecution, SavedLabelSelection } from '#lib/browser/DesktopSession.js';
 import { browserEnginePreferences } from '#lib/browser/EnginePreferences.js';
 import { Globals } from '#lib/engine/Globals.js';
 import { ProcessingException } from '#lib/engine/diagnostics/ProcessingException.js';
@@ -18,6 +18,8 @@ export class SimulationState {
   controller = $state.raw<RunController>();
   /** Latest immutable controller snapshot. */
   execution = $state.raw<ReturnType<RunController['getState']>>();
+  /** Selected label owned by the loaded program, independent of the currently displayed Edit source. */
+  labelSelection = $state.raw<SavedLabelSelection | null>(null);
   /** Configured instruction addresses; suspension retains this list. */
   breakpoints = $state.raw<number[]>([]);
   /** Whether Go supplies configured breakpoints to the simulator. */
@@ -116,8 +118,14 @@ export class SimulationState {
     const controls = new RunController(session);
     this.controller = controls;
     this.engineSettings = this.readEngineSettings(session);
+    // Keep publication bookkeeping outside reactive state: refresh may run inside a display effect.
+    let programs = controls.getState().programs;
     const release = controls.subscribe((state) => {
-      if (!disposed) this.execution = state;
+      if (!disposed) {
+        if (state.programs !== programs) this.labelSelection = null;
+        programs = state.programs;
+        this.execution = state;
+      }
     });
     this.execution = controls.getState();
     return () => {
@@ -214,6 +222,17 @@ export class SimulationState {
     this.checkpointSources = Object.create(null);
     try {
       this.controller!.restoreCheckpoint(saved.machine);
+      const selection = saved.labelSelection;
+      if (selection) {
+        const table =
+          selection.filename === null
+            ? this.machine!.symbolTable
+            : this.execution?.programs
+                .find((program) => program.getFilename() === selection.filename)
+                ?.getLocalSymbolTable();
+        if (table?.getSymbol(selection.name)?.getAddress() === selection.address)
+          this.labelSelection = selection;
+      }
       this.engineSettings = this.readEngineSettings(this.machine!);
     } finally {
       this.recoverySources = null;

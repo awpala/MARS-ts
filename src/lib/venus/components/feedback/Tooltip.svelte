@@ -9,10 +9,12 @@
     text: string;
     /** Optional keyboard hint displayed as keycaps after the description. */
     shortcut?: string;
+    /** Keep descriptions through pointer activation for toggle controls only; false by default. All descriptions hide on trigger exit. */
+    keepOpenOnClick?: boolean;
     /** Required trigger template. Attach the supplied attachment to one element and apply the description ID to its focusable control. */
     children: Snippet<[Attachment<HTMLElement>, string | undefined]>;
   };
-  let { text, shortcut, children }: Props = $props();
+  let { text, shortcut, keepOpenOnClick = false, children }: Props = $props();
   const id = $props.id();
   let visible = $state(false);
   let position = $state.raw<{ left: number; top: number; above: boolean }>();
@@ -21,7 +23,6 @@
   let timer: ReturnType<typeof setTimeout> | undefined;
   let hovered = false;
   let focused = false;
-  let tooltipHovered = false;
   let dismissed = false;
 
   function cancelTimer() {
@@ -32,7 +33,6 @@
     cancelTimer();
     visible = false;
     position = undefined;
-    tooltipHovered = false;
   }
   function show() {
     cancelTimer();
@@ -40,7 +40,7 @@
   }
   function leave() {
     cancelTimer();
-    if (!hovered && !focused && !tooltipHovered) hide();
+    if (!hovered && !focused) hide();
   }
   function dismiss() {
     dismissed = true;
@@ -54,12 +54,10 @@
       cancelTimer();
       timer = setTimeout(show, 350);
     };
-    const exit = (event: PointerEvent) => {
-      hovered = false;
-      tooltipHovered =
-        event.relatedTarget instanceof Node && !!hoverRegion?.contains(event.relatedTarget);
+    const exit = () => {
+      hovered = focused = false;
       dismissed = false;
-      leave();
+      hide();
     };
     const focus = () => {
       // Mouse activation may leave the trigger focused after a popup or tab returns.
@@ -74,6 +72,7 @@
     };
     const activate = () => {
       focused = false;
+      if (keepOpenOnClick && hovered) return;
       dismiss();
     };
     element.addEventListener('pointerenter', enter);
@@ -92,15 +91,11 @@
       hide();
     };
   }
-  function place(element: HTMLElement) {
-    // Re-measure when a live description changes, without recreating trigger listeners.
-    void text;
-    void shortcut;
+  function updatePosition(element: HTMLElement) {
     if (!anchor) return;
     const bounds = anchor.getBoundingClientRect();
     const tooltip = element.getBoundingClientRect();
     const above = bounds.bottom + tooltip.height + 8 > window.innerHeight;
-    hoverRegion = element;
     position = {
       left: clamp(
         bounds.left + (bounds.width - tooltip.width) / 2,
@@ -110,6 +105,13 @@
       top: Math.max(8, above ? bounds.top - tooltip.height : bounds.bottom),
       above
     };
+  }
+  function place(element: HTMLElement) {
+    // Re-measure when a live description changes, without recreating trigger listeners.
+    void text;
+    void shortcut;
+    hoverRegion = element;
+    updatePosition(element);
     return () => {
       if (hoverRegion === element) hoverRegion = undefined;
     };
@@ -123,6 +125,11 @@
       }
     };
     const scroll = (event: Event) => {
+      // A toggle can scroll nearby content without moving the pointer off its trigger.
+      if (keepOpenOnClick && hovered && anchor?.matches(':hover')) {
+        if (hoverRegion) updatePosition(hoverRegion);
+        return;
+      }
       if (!(event.target instanceof Node) || !hoverRegion?.contains(event.target)) dismiss();
     };
     window.addEventListener('keydown', escape);
@@ -149,15 +156,6 @@
     style:left={`${position?.left ?? 0}px`}
     style:top={`${position?.top ?? 0}px`}
     style:visibility={position ? 'visible' : 'hidden'}
-    onpointerenter={() => {
-      tooltipHovered = true;
-      cancelTimer();
-    }}
-    onpointerleave={(event) => {
-      tooltipHovered = false;
-      hovered = event.relatedTarget instanceof Node && !!anchor?.contains(event.relatedTarget);
-      leave();
-    }}
   >
     <div class="tooltip">
       {text}
@@ -167,8 +165,9 @@
 {/if}
 
 <style>
-  /* Bridge the visual gap so descriptions remain reachable without a close delay. */
+  /* Standard descriptions never capture pointer hover; the trigger alone owns their lifetime. */
   .tooltip-region {
+    pointer-events: none;
     position: fixed;
     z-index: 60;
     padding-top: 8px;

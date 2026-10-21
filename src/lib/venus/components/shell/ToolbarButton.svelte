@@ -26,6 +26,7 @@
   aria-label={label}
   aria-pressed={pressed}
   tooltip={title ?? label}
+  keepTooltipOnClick={pressed !== undefined}
   {shortcut}
   {disabled}
   {onclick}

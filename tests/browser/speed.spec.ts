@@ -5,6 +5,8 @@ test('speed buttons step through distinct evenly spaced settings with maximum on
   page
 }) => {
   await openDesktop(page);
+  const toolbar = page.getByLabel('Toolbar', { exact: true });
+  const toolbarHeight = (await toolbar.boundingBox())!.height;
   await page.getByRole('button', { name: 'Execute', exact: true }).click();
   const slider = page.getByRole('slider', { name: 'Run speed', exact: true });
   const plus = page.getByRole('button', { name: 'Increase run speed', exact: true });
@@ -15,6 +17,10 @@ test('speed buttons step through distinct evenly spaced settings with maximum on
   const sliderBox = (await slider.boundingBox())!;
   const plusBox = (await plus.boundingBox())!;
   const minusBox = (await minus.boundingBox())!;
+  const toolbarBox = (await toolbar.boundingBox())!;
+  expect(toolbarBox.height).toBe(toolbarHeight);
+  expect(plusBox.y).toBeGreaterThanOrEqual(toolbarBox.y);
+  expect(minusBox.y + minusBox.height).toBeLessThanOrEqual(toolbarBox.y + toolbarBox.height);
   expect(plusBox.x).toBeGreaterThan(sliderBox.x + sliderBox.width);
   expect(minusBox.x).toBe(plusBox.x);
   expect(minusBox.y).toBeGreaterThan(plusBox.y);
@@ -62,4 +68,5 @@ test('speed buttons step through distinct evenly spaced settings with maximum on
   await expect(slider).toHaveCount(0);
   await expect(plus).toHaveCount(0);
   await expect(minus).toHaveCount(0);
+  expect((await toolbar.boundingBox())!.height).toBe(toolbarHeight);
 });

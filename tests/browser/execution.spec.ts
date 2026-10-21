@@ -647,3 +647,176 @@ test('text memory is readable without SMC and editable code executes then resets
     '------'
   );
 });
+
+test('data label names and addresses reveal their range and cell after paging or scrolling away', async ({
+  page
+}) => {
+  // Traversing every data range and alias/byte-label selection takes 50–60 s on a loaded container.
+  test.setTimeout(90_000);
+  await openDesktop(page);
+  await source(
+    page,
+    '.data\n.space 1476\nDataTarget:\nDataAlias: .byte 1\nByteTarget: .byte 2\n' +
+      '.data 0x10000020\nExternTarget: .word 4\n' +
+      '.data 0x10008020\nGlobalTarget: .word 5\n' +
+      '.data 0x10040020\nHeapTarget: .word 6\n' +
+      '.data 0x7fffefdc\nStackTarget: .word 7\n' +
+      '.kdata\nKernelTarget: .word 3\n.text\nEarlyText: nop\n' +
+      'nop\n'.repeat(200) +
+      'LateText: li $t1, 9\n.ktext\nKernelText: li $t2, 10\n'
+  );
+  await action(page, 'Show Labels Window').click();
+  await action(page, 'Assemble').click();
+  const labels = page.getByRole('region', { name: 'Labels', exact: true });
+  const data = page.getByRole('region', { name: 'Data Segment', exact: true });
+  const range = page.getByRole('combobox', { name: 'Data segment base' });
+  const tooltip = page.getByRole('tooltip');
+  const label = (name: string) => labels.getByRole('button', { name, exact: true });
+  await label('DataTarget').hover();
+  await expect(tooltip).toHaveText('Click on label or address to view it in Text/Data Segment');
+  const divider = page.getByRole('separator', { name: 'Data Segment height' });
+  await divider.focus();
+  for (let i = 0; i < 8; i++) await divider.press('ArrowDown');
+  await range.selectOption('heap');
+  await action(page, 'Next memory page').click();
+  await data.locator('.data-scroll').evaluate((node) => (node.scrollTop = node.scrollHeight));
+  await label('DataTarget').click();
+  await expect(label('DataTarget').locator('xpath=ancestor::tr')).toHaveAttribute(
+    'data-selected',
+    'true'
+  );
+  await expect(range).toHaveValue('data');
+  const word = page.getByLabel('Memory 0x100105c4', { exact: true });
+  await expect(word).toHaveValue('0x00000201');
+  await expect(word.locator('..')).toBeFocused();
+  await expect(word).toBeInViewport();
+  await expect(data.locator('tbody tr').first()).toContainText('0x10010400');
+  // Alias labels select their own row even when they share a destination address.
+  await label('DataAlias').click();
+  await expect(label('DataAlias').locator('xpath=ancestor::tr')).toHaveAttribute(
+    'data-selected',
+    'true'
+  );
+  await expect(label('DataTarget').locator('xpath=ancestor::tr')).not.toHaveAttribute(
+    'data-selected'
+  );
+  await expect(word.locator('..')).toHaveAttribute('data-selected', 'true');
+  // The byte label selects the containing word, even with decimal address display.
+  await action(page, 'Addresses displayed in hexadecimal').click();
+  const byteAddress = label('ByteTarget').locator('xpath=ancestor::tr').getByRole('button').nth(1);
+  await byteAddress.hover();
+  await expect(tooltip).toHaveText('Click on label or address to view it in Text/Data Segment');
+  await action(page, 'Previous memory page').click();
+  await byteAddress.click();
+  await expect(label('DataTarget').locator('xpath=ancestor::tr')).not.toHaveAttribute(
+    'data-selected'
+  );
+  await expect(label('ByteTarget').locator('xpath=ancestor::tr')).toHaveAttribute(
+    'data-selected',
+    'true'
+  );
+  await expect(word.locator('..')).toBeFocused();
+  await expect(word).toBeInViewport();
+  await byteAddress.click();
+  await expect(data.locator('[data-selected="true"]')).toHaveCount(0);
+  await expect(labels.locator('[data-selected="true"]')).toHaveCount(0);
+  await expect(range).toHaveValue('data');
+  for (const [name, segment, address, value] of [
+    ['KernelTarget', 'kernel', '0x90000000', '0x00000003'],
+    ['ExternTarget', 'extern', '0x10000020', '0x00000004'],
+    ['GlobalTarget', 'gp', '0x10008020', '0x00000005'],
+    ['HeapTarget', 'heap', '0x10040020', '0x00000006'],
+    ['StackTarget', 'sp', '0x7fffefdc', '0x00000007']
+  ]) {
+    await label(name).locator('xpath=ancestor::tr').getByRole('button').nth(1).click();
+    await expect(range).toHaveValue(segment);
+    await expect(label(name).locator('xpath=ancestor::tr')).toHaveAttribute(
+      'data-selected',
+      'true'
+    );
+    const cell = page.getByLabel(`Memory ${address}`, { exact: true });
+    await expect(cell).toHaveValue(value);
+    await expect(cell.locator('..')).toBeFocused();
+    await expect(cell).toBeInViewport();
+  }
+  await expect(page.getByLabel('pc value', { exact: true })).toHaveValue('0x00400000');
+});
+
+test('text labels select both segment tables and toggle their Labels row after paging away', async ({
+  page
+}) => {
+  // Repeated text/kernel navigation and synchronized selection takes 50–60 s on a loaded container.
+  test.setTimeout(90_000);
+  await openDesktop(page);
+  await source(
+    page,
+    '.text\nEarlyText: nop\n' +
+      'nop\n'.repeat(200) +
+      'LateText: li $t1, 9\n.ktext\nKernelText: li $t2, 10\n'
+  );
+  await action(page, 'Show Labels Window').click();
+  await action(page, 'Assemble').click();
+  const labels = page.getByRole('region', { name: 'Labels', exact: true });
+  const data = page.getByRole('region', { name: 'Data Segment', exact: true });
+  const text = page.getByRole('region', { name: 'Text Segment', exact: true });
+  const range = page.getByRole('combobox', { name: 'Data segment base' });
+  const label = (name: string) => labels.getByRole('button', { name, exact: true });
+  const divider = page.getByRole('separator', { name: 'Data Segment height' });
+  for (let i = 0; i < 8; i++) await divider.press('ArrowDown');
+  for (const [name, address] of [
+    ['LateText', '0x00400324'],
+    ['EarlyText', '0x00400000'],
+    ['KernelText', '0x80000000']
+  ]) {
+    await text.locator('.text-scroll').evaluate((node) => (node.scrollTop = node.scrollHeight));
+    await range.selectOption('heap');
+    await action(page, 'Next memory page').click();
+    await label(name).click();
+    await expect(range).toHaveValue('text');
+    await expect(label(name).locator('xpath=ancestor::tr')).toHaveAttribute(
+      'data-selected',
+      'true'
+    );
+    const memory = page.getByLabel(`Memory ${address}`, { exact: true });
+    await expect(memory).toBeInViewport();
+    await expect(memory.locator('..')).toHaveAttribute('data-selected', 'true');
+    await expect(memory).toHaveValue(
+      name === 'LateText' ? '0x24090009' : name === 'KernelText' ? '0x240a000a' : '0x00000000'
+    );
+    const row = page
+      .getByLabel(`Breakpoint ${address}`, { exact: true })
+      .locator('xpath=ancestor::tr');
+    await expect(row).toBeFocused();
+    await expect(row).toHaveAttribute('data-selected', 'true');
+    await expect(row).toHaveCSS('background-color', 'rgb(199, 223, 247)');
+    await expect(memory.locator('..')).toHaveCSS('background-color', 'rgb(199, 223, 247)');
+    await expect(label(name).locator('xpath=ancestor::tr')).toHaveCSS(
+      'background-color',
+      'rgb(199, 223, 247)'
+    );
+    await expect(row).toBeInViewport();
+    const bounds = await row.evaluate((node) => ({
+      top: node.getBoundingClientRect().top,
+      header: node.closest('table')!.querySelector('thead')!.getBoundingClientRect().bottom
+    }));
+    expect(bounds.top).toBeGreaterThanOrEqual(bounds.header - 1);
+    // Clicking the other cell for the same label clears both table selections.
+    const addressButton = label(name).locator('xpath=ancestor::tr').getByRole('button').nth(1);
+    await addressButton.click();
+    await expect(text.locator('[data-selected="true"]')).toHaveCount(0);
+    await expect(data.locator('[data-selected="true"]')).toHaveCount(0);
+    await expect(labels.locator('[data-selected="true"]')).toHaveCount(0);
+    await expect(row).not.toHaveCSS('background-color', 'rgb(199, 223, 247)');
+    // An unselected text label restores its page even if the .text range was paged away.
+    await action(page, 'Next memory page').click();
+    await addressButton.click();
+    await expect(memory).toBeInViewport();
+    await expect(memory.locator('..')).toHaveAttribute('data-selected', 'true');
+    await expect(row).toHaveAttribute('data-selected', 'true');
+    await expect(label(name).locator('xpath=ancestor::tr')).toHaveAttribute(
+      'data-selected',
+      'true'
+    );
+  }
+  await expect(page.getByLabel('pc value', { exact: true })).toHaveValue('0x00400000');
+});

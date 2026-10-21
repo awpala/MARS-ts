@@ -97,6 +97,30 @@ test('source hover shows instruction syntax and documentation without interferin
   await hoverToken('li');
   await expect(tooltip).toContainText('Load Immediate');
   await expect(tooltip).toContainText('li $t1,100000');
+  // Editor reference documents retain their hoverable, scrollable content.
+  await tooltip.hover();
+  await expect(tooltip).toBeVisible();
+  await tooltip.locator('p').first().click();
+  await expect(tooltip).toBeVisible();
+  const reference = (await tooltip.locator('code').first().boundingBox())!;
+  await page.mouse.move(reference.x + 1, reference.y + reference.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(reference.x + reference.width - 1, reference.y + reference.height / 2, {
+    steps: 8
+  });
+  await page.mouse.up();
+  await expect
+    .poll(() => page.evaluate(() => window.getSelection()?.toString().trim()))
+    .toBeTruthy();
+  await expect(tooltip).toBeVisible();
+  await tooltip.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await expect(tooltip).toBeVisible();
+  await page.mouse.move(5, 5);
+  await expect(tooltip).toBeHidden();
+  await hoverToken('li');
+  await expect(tooltip).toBeVisible();
   await source.press('Escape');
   await expect(tooltip).toBeHidden();
   await hoverToken('la');
@@ -261,6 +285,29 @@ test('working display settings and run speed survive reload', async ({ page }) =
     });
   }
   await expect(slider).toHaveValue('20');
+  await settings.click();
+  const labels = page.getByRole('region', { name: 'Labels', exact: true });
+  const closeLabels = labels.getByRole('button', { name: 'Hide Labels Window', exact: true });
+  expect(
+    (await labels.getByRole('heading', { name: 'Labels', exact: true }).boundingBox())!.height
+  ).toBe(
+    (await page.getByRole('heading', { name: 'Text Segment', exact: true }).boundingBox())!.height
+  );
+  await closeLabels.hover();
+  await expect(closeLabels).toHaveAccessibleDescription('Hide Labels Window');
+  await closeLabels.click();
+  await expect(labels).toHaveCount(0);
+  const labelsToggle = toggles.getByRole('button', { name: 'Show Labels Window', exact: true });
+  await expect(labelsToggle).toHaveAttribute('aria-pressed', 'false');
+  await settings.click();
+  await expect(menu.getByRole('checkbox', { name: 'Show Labels Window' })).not.toBeChecked();
+  await settings.click();
+  await page.reload();
+  await waitForDesktop(page);
+  await expect(labelsToggle).toHaveAttribute('aria-pressed', 'false');
+  await expect(labels).toHaveCount(0);
+  await labelsToggle.click();
+  await expect(labels).toBeVisible();
 });
 
 test('pane sizes persist after reload and the editor divider adjusts height', async ({ page }) => {
@@ -1239,4 +1286,122 @@ test('new empty buffers stay unsaved until the first character, including with A
       { name: 'mips2.asm', source: '' }
     ])
   );
+});
+
+test('Alt W and Option W close the current source through the dirty-buffer workflow and tab tooltips share the shortcut', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await openStoredSources(page, [
+    { name: 'one.asm', source: '# one\n' },
+    { name: 'two.asm', source: '# two\n' },
+    { name: 'three.asm', source: '# three\n' }
+  ]);
+  const close = page.getByRole('button', { name: 'Close one.asm', exact: true });
+  await close.hover();
+  await expect(page.getByRole('tooltip')).toBeVisible();
+  await expect(close).toHaveAccessibleDescription('Close one.asm Alt+W / Option+W');
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'one.asm', exact: true }).click();
+  const source = page.getByRole('textbox', { name: 'Source one.asm', exact: true });
+  await source.fill('# dirty source');
+  await source.press('Alt+w');
+  const dialog = page.getByRole('dialog', { name: 'Save changes?', exact: true });
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Alt+w');
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(source).toHaveValue('# dirty source');
+  await source.press('Alt+w');
+  await dialog.getByRole('button', { name: 'Discard', exact: true }).click();
+  await expect(close).toHaveCount(0);
+  await page.getByRole('button', { name: 'two.asm', exact: true }).click();
+  const other = page.getByRole('textbox', { name: 'Source two.asm', exact: true });
+  // macOS Option+W can emit a character rather than the letter W.
+  expect(
+    await other.evaluate((element) =>
+      element.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: '∑',
+          code: 'KeyW',
+          altKey: true,
+          bubbles: true,
+          cancelable: true
+        })
+      )
+    )
+  ).toBe(false);
+  await expect(page.getByRole('button', { name: 'Close two.asm', exact: true })).toHaveCount(0);
+  expect(
+    await page.evaluate(() =>
+      document.activeElement!.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'w',
+          code: 'KeyW',
+          altKey: true,
+          repeat: true,
+          bubbles: true,
+          cancelable: true
+        })
+      )
+    )
+  ).toBe(false);
+  await expect(page.getByRole('button', { name: 'Close three.asm', exact: true })).toBeVisible();
+  await page.getByLabel('$t0 value', { exact: true }).press('Alt+w');
+  await expect(page.getByRole('button', { name: 'Close three.asm', exact: true })).toHaveCount(0);
+  await page.keyboard.press('Alt+w');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+test('source textarea captures explicit Option W even when marked composing or AltGraph', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await openStoredSources(page, [{ name: 'option.asm', source: '# original\n' }]);
+  const source = page.getByRole('textbox', { name: 'Source option.asm', exact: true });
+  const text = '# keep this source';
+  await source.fill(text);
+  const dialog = page.getByRole('dialog', { name: 'Save changes?', exact: true });
+  for (const composing of [true, false]) {
+    await source.focus();
+    expect(
+      await source.evaluate((element, composing) => {
+        const event = new KeyboardEvent('keydown', {
+          key: composing ? '∑' : 'W',
+          code: 'KeyW',
+          altKey: true,
+          isComposing: composing,
+          bubbles: true,
+          cancelable: true
+        });
+        if (!composing)
+          Object.defineProperty(event, 'getModifierState', {
+            value: (modifier: string) => modifier === 'AltGraph'
+          });
+        return element.dispatchEvent(event);
+      }, composing)
+    ).toBe(false);
+    await expect(dialog).toBeVisible();
+    await expect(source).toHaveValue(text);
+    await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+  }
+  // Genuine Ctrl+Alt/AltGraph input still belongs to the editor.
+  expect(
+    await source.evaluate((element) => {
+      const event = new KeyboardEvent('keydown', {
+        key: 'w',
+        code: 'KeyW',
+        altKey: true,
+        ctrlKey: true,
+        bubbles: true,
+        cancelable: true
+      });
+      Object.defineProperty(event, 'getModifierState', {
+        value: (modifier: string) => modifier === 'AltGraph'
+      });
+      return element.dispatchEvent(event);
+    })
+  ).toBe(true);
+  await expect(dialog).toHaveCount(0);
+  await expect(source).toHaveValue(text);
 });

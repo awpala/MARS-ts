@@ -4,12 +4,24 @@ import { isRunCheckpoint, type RunCheckpoint } from '#lib/venus/RunCheckpoint.js
 /** Versioned browser-local recovery record, independent of committed source files. */
 export const DESKTOP_SESSION_STORAGE_KEY = 'mars-ts:desktop-session:v1';
 
+/** Identity of one selected label within its loaded program's symbol tables. */
+export interface SavedLabelSelection {
+  /** Owning source filename; null identifies the global symbol table. */
+  filename: string | null;
+  /** Exact case-sensitive label name, distinguishing aliases at the same address. */
+  name: string;
+  /** Signed address captured with the loaded assembly. */
+  address: number;
+}
+
 /** Stable program plus captured source dependencies; independent of the current Edit tab. */
 export interface SavedExecution {
   /** Exact idle hardware and bounded debugger history. */
   machine: RunCheckpoint;
   /** Original virtual source texts, including explicit includes. */
   sources: Record<string, string>;
+  /** Selected label for this program; absent in older recovery records, or null when unselected. */
+  labelSelection?: SavedLabelSelection | null;
 }
 
 /** Restorable desktop presentation and last stable execution; no live promises, dialogs, or timers. */
@@ -47,6 +59,18 @@ export interface DesktopSession {
   execution: SavedExecution | null;
   /** Preserve a visible assembly error even without a loaded program. */
   unloadedError: boolean;
+}
+
+function isLabelSelection(value: unknown): value is SavedLabelSelection {
+  if (!value || typeof value !== 'object') return false;
+  const selection = value as SavedLabelSelection;
+  return (
+    (selection.filename === null || typeof selection.filename === 'string') &&
+    typeof selection.name === 'string' &&
+    selection.name.length > 0 &&
+    typeof selection.address === 'number' &&
+    (selection.address | 0) === selection.address
+  );
 }
 
 /** Validate recovery before it can affect the desktop or allocate machine blocks. */
@@ -87,6 +111,9 @@ export function isDesktopSession(value: unknown): value is DesktopSession {
     (s.execution === null ||
       (!!s.execution &&
         isRunCheckpoint(s.execution.machine) &&
+        (s.execution.labelSelection === undefined ||
+          s.execution.labelSelection === null ||
+          isLabelSelection(s.execution.labelSelection)) &&
         !!s.execution.sources &&
         typeof s.execution.sources === 'object' &&
         !Array.isArray(s.execution.sources) &&

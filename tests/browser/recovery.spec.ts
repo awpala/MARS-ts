@@ -101,3 +101,93 @@ test('reload retains assembly errors, console diagnostics, source caret, and edi
   await expect(source).toHaveValue('');
   await expect(page.getByLabel('Execution status')).toHaveCount(0);
 });
+
+test('localStorage retains label selection with the loaded program across Edit switches and reloads', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await openStoredSources(page, [
+    { name: 'loaded.asm', source: '.text\nmain: nop\nselected: li $t0, 7\n' },
+    { name: 'editing.asm', source: '.text\nmain: nop\nselected: nop\n' }
+  ]);
+  await action(page, 'loaded.asm').click();
+  await action(page, 'Show Labels Window').click();
+  await action(page, 'Assemble').click();
+  const labels = page.getByRole('region', { name: 'Labels', exact: true });
+  const selected = labels.getByRole('button', { name: 'selected', exact: true });
+  const stored = () =>
+    page.evaluate(
+      () =>
+        JSON.parse(localStorage.getItem('mars-ts:desktop-session:v1')!).execution?.labelSelection
+    );
+  await selected.click();
+  await expect
+    .poll(stored)
+    .toEqual({ filename: 'loaded.asm', name: 'selected', address: 0x00400004 });
+  await action(page, 'Edit').click();
+  await action(page, 'editing.asm').click();
+  await action(page, 'Execute').click();
+  await expect(selected).toHaveAttribute('aria-pressed', 'true');
+  await action(page, 'Edit').click();
+  await page.reload();
+  await waitForDesktop(page);
+  await expect(page.locator('footer > span').first()).toHaveText('Editing: editing.asm');
+  await action(page, 'Execute').click();
+  await expect(page.locator('footer > span').first()).toHaveText('Loaded: loaded.asm');
+  await expect(selected.locator('xpath=ancestor::tr')).toHaveAttribute('data-selected', 'true');
+  const memory = page.getByLabel('Memory 0x00400004', { exact: true });
+  await expect(memory.locator('..')).toHaveAttribute('data-selected', 'true');
+  const row = page
+    .getByLabel('Breakpoint 0x00400004', { exact: true })
+    .locator('xpath=ancestor::tr');
+  await expect(row).toHaveAttribute('data-selected', 'true');
+  await selected.locator('xpath=ancestor::tr').getByRole('button').nth(1).click();
+  await expect.poll(stored).toBeNull();
+  await page.reload();
+  await waitForDesktop(page);
+  await expect(labels.locator('[data-selected="true"]')).toHaveCount(0);
+  await selected.click();
+  await action(page, 'Assemble').click();
+  await expect(page.locator('footer > span').first()).toHaveText('Loaded: editing.asm');
+  await expect(labels.locator('[data-selected="true"]')).toHaveCount(0);
+  await expect.poll(stored).toBeNull();
+});
+
+test('global label selection restores and invalid stored label identity leaves the machine usable', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await openStoredSources(page, [
+    { name: 'global.asm', source: '.data\n.globl shared\nshared: .word 11\n.text\nnop\n' }
+  ]);
+  await action(page, 'Show Labels Window').click();
+  await action(page, 'Assemble').click();
+  const label = page
+    .getByRole('region', { name: 'Labels', exact: true })
+    .getByRole('button', { name: 'shared', exact: true });
+  await label.click();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          JSON.parse(localStorage.getItem('mars-ts:desktop-session:v1')!).execution?.labelSelection
+      )
+    )
+    .toEqual({ filename: null, name: 'shared', address: 0x10010000 });
+  await page.reload();
+  await waitForDesktop(page);
+  await expect(label).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByLabel('Memory 0x10010000', { exact: true }).locator('..')).toHaveAttribute(
+    'data-selected',
+    'true'
+  );
+  await page.evaluate(() => {
+    const record = JSON.parse(localStorage.getItem('mars-ts:desktop-session:v1')!);
+    record.execution.labelSelection.name = 'missing';
+    localStorage.setItem('mars-ts:desktop-session:v1', JSON.stringify(record));
+  });
+  await page.reload();
+  await waitForDesktop(page);
+  await expect(label).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByLabel('Execution status')).toHaveText('Status: assembled');
+});

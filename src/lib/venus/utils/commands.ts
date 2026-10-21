@@ -22,7 +22,7 @@ export type Action = {
 export const fileActions: readonly Action[] = [
   { label: 'New', icon: 'New', command: 'new', shortcut: 'Alt+N / Option+N' },
   { label: 'Open ...', icon: 'Open', command: 'open', shortcut: 'Ctrl+O' },
-  { label: 'Close', command: 'close' },
+  { label: 'Close', command: 'close', shortcut: 'Alt+W / Option+W' },
   { label: 'Close All', command: 'closeAll' },
   { label: 'Save', icon: 'Save', command: 'save', shortcut: 'Ctrl+S' },
   { label: 'Save as ...', icon: 'SaveAs', command: 'saveAs', shortcut: 'Ctrl+Shift+S' },

@@ -54,6 +54,7 @@
     aria-checked={checked}
     {disabled}
     {tooltip}
+    keepTooltipOnClick
     onclick={() => {
       checked = !checked;
       onchange?.(checked);

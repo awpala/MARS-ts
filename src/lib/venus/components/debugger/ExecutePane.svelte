@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import SelectorToggle from '../controls/SelectorToggle.svelte';
   import Button from '../controls/Button.svelte';
+  import CloseButton from '../controls/CloseButton.svelte';
   import Pane from '../layout/Pane.svelte';
   import { formatInteger } from '../../utils/tableCells.js';
   import { errorMessage } from '../../utils/errorMessage.js';
@@ -12,8 +14,10 @@
   import PaneDivider from '../layout/PaneDivider.svelte';
   import MachineTable, { type MachineHighlight } from './MachineTable.svelte';
   import CellInput from './CellInput.svelte';
+  import type { SavedLabelSelection } from '#lib/browser/DesktopSession.js';
   import type { Globals } from '#lib/engine/Globals.js';
   import { Settings } from '#lib/engine/Settings.js';
+  import type { Symbol as AssemblySymbol } from '#lib/engine/assembler/symbols/Symbol.js';
   import { AddressErrorException } from '#lib/engine/hardware/memory/AddressErrorException.js';
   import { AccessNotice } from '#lib/engine/hardware/notices/AccessNotice.js';
   import { Binary, NumberFormatException } from '#lib/engine/formatting/Binary.js';
@@ -24,6 +28,8 @@
     machine: Globals;
     /** Required controller snapshot; revision invalidates views after machine changes. */
     snapshot: ReturnType<RunController['getState']>;
+    /** Parent-owned selection for the loaded program, persisted with its checkpoint; null clears linked highlights. */
+    selectedLabel: SavedLabelSelection | null;
     /** Required breakpoint addresses owned by the desktop. */
     breakpoints: readonly number[];
     /** Required callback toggles a breakpoint in the desktop. */
@@ -32,7 +38,7 @@
     onedit: () => void;
     /** Required callback opens the corresponding source location. */
     onsource: (filename: string, line: number) => void;
-    /** Whether to show labels, controlled by Settings. */
+    /** Parent-owned persisted visibility, shared by Settings, the toolbar, and the pane's close button. */
     showLabels: boolean;
     /** Parent-owned persisted inclusion of data labels; toggled inside the Labels panel. */
     showDataLabels: boolean;
@@ -58,11 +64,12 @@
   let {
     machine,
     snapshot,
+    selectedLabel = $bindable(),
     breakpoints,
     ontogglebreakpoint,
     onedit,
     onsource,
-    showLabels,
+    showLabels = $bindable(),
     showDataLabels = $bindable(),
     showTextLabels = $bindable(),
     labelSortState = $bindable(),
@@ -76,6 +83,7 @@
   }: Props = $props();
   let memoryError = $state('');
   let editedAddress = $state<number | null>(null);
+  const selectedLabelWord = $derived(selectedLabel === null ? null : selectedLabel.address & ~3);
   const memoryRows = 16;
   const memoryPageBytes = memoryRows * 32;
   // The text row keeps its 100px minimum beside the 7px divider.
@@ -153,11 +161,13 @@
       {
         owner: machine.symbolTable,
         file: '(global)',
+        filename: null,
         symbols: machine.symbolTable.getAllSymbols()
       },
       ...snapshot.programs.map((program) => ({
         owner: program,
         file: program.getFilename() ?? '',
+        filename: program.getFilename() ?? '',
         symbols: program.getLocalSymbolTable()?.getAllSymbols() ?? []
       }))
     ]
@@ -221,6 +231,8 @@
   }
   function readWord(address: number): number {
     return machine.withGuiAccess(() => {
+      if (machine.memory.inKernelTextSegment(address))
+        return machine.memory.getStatementNoNotify(address)?.getBinaryStatement() ?? 0;
       try {
         return machine.memory.getWordNoNotify(address);
       } catch (error) {
@@ -287,17 +299,88 @@
       else restoreSegment();
     } else if (event.key === 'Enter' || event.key === ' ' || event.key === 'F4') armSegment();
   }
-  function navigateLabel(address: number) {
-    if (machine.memory.inTextSegment(address) || machine.memory.inKernelTextSegment(address)) {
-      document
-        .getElementById(`${id}-instruction-${address >>> 0}`)
-        ?.scrollIntoView({ block: 'nearest' });
-    } else {
-      segment = 'data';
-      pageOffset = (address & ~31) - machine.memory.dataBaseAddress;
+  // Both tables reveal text labels; data labels retain DataSegmentWindow's range selection.
+  function isSelectedLabel(symbol: AssemblySymbol, filename: string | null) {
+    return (
+      selectedLabel?.filename === filename &&
+      selectedLabel.name === symbol.getName() &&
+      selectedLabel.address === symbol.getAddress()
+    );
+  }
+  async function navigateLabel(symbol: AssemblySymbol, filename: string | null) {
+    if (isSelectedLabel(symbol, filename)) {
+      selectedLabel = null;
+      return;
     }
+    const address = symbol.getAddress();
+    const memory = machine.memory;
+    const textLabel = memory.inTextSegment(address) || memory.inKernelTextSegment(address);
+    if (textLabel) segment = 'text';
+    else if (memory.inKernelDataSegment(address)) segment = 'kernel';
+    else if (memory.inMemoryMapSegment(address)) segment = 'mmio';
+    else {
+      // DataSegmentWindow chooses the nearest eligible base; ties keep the earlier range.
+      let shortest = 0x7fffffff;
+      for (const range of ['extern', 'gp', 'data', 'heap', 'sp']) {
+        const distance =
+          range === 'gp' || range === 'sp'
+            ? Math.abs(address - memoryBases[range])
+            : address - memoryBases[range];
+        if (distance >= 0 && distance < shortest) {
+          shortest = distance;
+          segment = range;
+        }
+      }
+    }
+    const base = memoryBases[segment] & ~31;
+    const offset = address - base;
+    // Keep the range's page boundaries, rather than placing every label in the first row.
+    const pageBase = base + Math.floor(offset / memoryPageBytes) * memoryPageBytes;
+    pageOffset = pageBase - (memoryBases[segment] & ~3);
+    selectedLabel = { filename, name: symbol.getName(), address };
+    await tick();
+    const word = document.getElementById(`${id}-memory-${(address & ~3) >>> 0}`);
+    revealLabelTarget(word);
+    if (textLabel) {
+      const instruction = document.getElementById(`${id}-instruction-${address >>> 0}`);
+      revealLabelTarget(instruction);
+      instruction?.focus({ preventScroll: true });
+    } else word?.focus({ preventScroll: true });
+  }
+  function revealLabelTarget(target: HTMLElement | null) {
+    if (!target) return;
+    const viewport = target.closest<HTMLElement>('.text-scroll, .data-scroll, .labels-scroll');
+    if (!viewport) return;
+    const headerHeight = viewport.querySelector('thead')?.getBoundingClientRect().height ?? 0;
+    const bounds = target.getBoundingClientRect();
+    // Center only the destination pane, below its sticky header, without moving the desktop.
+    viewport.scrollTop +=
+      bounds.top -
+      viewport.getBoundingClientRect().top -
+      viewport.clientTop -
+      headerHeight -
+      (viewport.clientHeight - headerHeight - bounds.height) / 2;
   }
   const id = $props.id();
+  function labelRowId(filename: string | null, name: string) {
+    return `${id}-label-${encodeURIComponent(filename ?? '(global)')}-${encodeURIComponent(name)}`;
+  }
+  $effect(() => {
+    const selection = selectedLabel;
+    if (selection === null) return;
+    const address = selection.address & ~3;
+    let active = true;
+    void tick().then(() => {
+      if (!active) return;
+      // Reopening Execute or restoring a session reveals selection after the PC attachment runs.
+      revealLabelTarget(document.getElementById(`${id}-instruction-${address >>> 0}`));
+      revealLabelTarget(document.getElementById(`${id}-memory-${address >>> 0}`));
+      revealLabelTarget(document.getElementById(labelRowId(selection.filename, selection.name)));
+    });
+    return () => {
+      active = false;
+    };
+  });
   function followPC(node: HTMLElement) {
     const viewport = node.closest<HTMLElement>('.text-scroll');
     if (!viewport) return;
@@ -339,6 +422,8 @@
             {#each rows as row (row.address)}<tr
                 {@attach row.address === pc && followPC}
                 id={`${id}-instruction-${row.address >>> 0}`}
+                tabindex="-1"
+                data-selected={row.address === selectedLabelWord || undefined}
                 data-highlight={row.address === pc ? pcHighlight : undefined}
                 aria-current={row.address === pc ? 'step' : undefined}
               >
@@ -380,7 +465,10 @@
         minHeight="0"
         overflow="hidden"
       >
-        <h2 class="shrink-0">Labels</h2>
+        <h2 aria-label="Labels" class="flex shrink-0 items-center justify-between gap-2">
+          Labels
+          <CloseButton label="Hide Labels Window" onclick={() => (showLabels = false)} />
+        </h2>
         <div class="label-controls">
           <SelectorToggle
             tooltip="Show labels defined in the data segment"
@@ -421,15 +509,28 @@
               <tbody aria-label={group.file}>
                 <tr><th class="label-group" scope="rowgroup" colspan="2">{group.name}</th></tr>
                 {#each group.symbols as symbol (symbol.getName())}
-                  <tr>
+                  <tr
+                    id={labelRowId(group.filename, symbol.getName())}
+                    data-selected={isSelectedLabel(symbol, group.filename) || undefined}
+                  >
                     <td class="identifier">
                       <Button
-                        tooltip={group.file}
-                        onclick={() => navigateLabel(symbol.getAddress())}
+                        tooltip="Click on label or address to view it in Text/Data Segment"
+                        class="block w-full text-left"
+                        aria-pressed={isSelectedLabel(symbol, group.filename)}
+                        onclick={() => navigateLabel(symbol, group.filename)}
                         >{symbol.getName()}</Button
                       >
                     </td>
-                    <td class="numeric">{formatAddress(symbol.getAddress())}</td>
+                    <td class="numeric">
+                      <Button
+                        class="block w-full text-right"
+                        tooltip="Click on label or address to view it in Text/Data Segment"
+                        aria-pressed={isSelectedLabel(symbol, group.filename)}
+                        onclick={() => navigateLabel(symbol, group.filename)}
+                        >{formatAddress(symbol.getAddress())}</Button
+                      >
+                    </td>
                   </tr>
                 {/each}
               </tbody>
@@ -484,6 +585,9 @@
                 ><td class="numeric identifier">{formatAddress(row.address)}</td
                 >{#each row.words as word (word.address)}<td
                     class="numeric"
+                    id={`${id}-memory-${word.address >>> 0}`}
+                    tabindex="-1"
+                    data-selected={word.address === selectedLabelWord || undefined}
                     data-highlight={word.address === editedAddress ? 'memory' : undefined}
                     ><CellInput
                       aria-label={`Memory ${Binary.intToHexString(word.address)}`}

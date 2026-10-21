@@ -171,7 +171,7 @@
 {/snippet}
 
 {#snippet assembleGlyph()}
-  <g transform="rotate(40 12 12)" stroke-width="1.3">
+  <g transform="rotate(40 12 12) translate(24 0) scale(-1 1)" stroke-width="1.3">
     <rect
       x="10"
       y="9"

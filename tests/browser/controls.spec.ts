@@ -67,9 +67,7 @@ test('tooltips support disabled controls, hover, focus, dismissal, themes, and k
   await page.mouse.move(tooltipBounds.x + tooltipBounds.width / 2, tooltipBounds.y + 1, {
     steps: 12
   });
-  await expect(tooltip).toBeVisible();
-  await tooltip.hover();
-  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toBeHidden();
   await page.mouse.move(5, 200);
   await expect(tooltip).toBeHidden();
 
@@ -360,4 +358,84 @@ test('Alt N creates buffers from console, source, and register focus', async ({ 
   await expect(page.getByRole('textbox', { name: 'Source mips3.asm', exact: true })).toBeFocused();
   await page.getByRole('button', { name: '* mips1.asm', exact: true }).click();
   await expect(first).toHaveValue('# retained');
+});
+
+test('only toggle tooltips remain visible through pointer clicks until hover ends', async ({
+  page
+}) => {
+  await openDesktop(page);
+  const tooltip = page.getByRole('tooltip');
+  const theme = page.getByRole('switch', { name: 'Dark theme', exact: true });
+  await theme.hover();
+  await expect(theme).toHaveAccessibleDescription('Switch to dark theme');
+  const original = await tooltip.elementHandle();
+  await theme.click();
+  await expect(theme).toHaveAccessibleDescription('Switch to light theme');
+  expect(await original!.isVisible()).toBe(true);
+  await theme.click();
+  await expect(theme).toHaveAccessibleDescription('Switch to dark theme');
+  expect(await original!.isVisible()).toBe(true);
+  // Toggle descriptions do not own hover: entering the tooltip itself ends their lifetime.
+  const descriptionBounds = (await tooltip.boundingBox())!;
+  await page.mouse.move(
+    descriptionBounds.x + descriptionBounds.width / 2,
+    descriptionBounds.y + descriptionBounds.height / 2,
+    { steps: 12 }
+  );
+  await expect(tooltip).toHaveCount(0);
+  expect(await original!.isVisible()).toBe(false);
+
+  const banks = page.getByRole('switch', { name: 'Register banks', exact: true });
+  await banks.hover();
+  await expect(banks).toHaveAccessibleDescription('Hide register banks');
+  await banks.click();
+  await expect(banks).toHaveAccessibleDescription('Show register banks');
+  await expect(tooltip).toBeVisible();
+  await page.mouse.move(5, 200);
+  await expect(tooltip).toHaveCount(0);
+
+  const create = page.getByRole('button', { name: 'New', exact: true });
+  await create.hover();
+  await expect(tooltip).toBeVisible();
+  await create.click();
+  await expect(tooltip).toHaveCount(0);
+  await page
+    .getByRole('textbox', { name: /^Source / })
+    .fill(
+      '.data\n' +
+        Array.from({ length: 60 }, (_, i) => `item${i}: .word ${i}`).join('\n') +
+        '\n.text\nmain: nop\n'
+    );
+  await page.getByRole('button', { name: 'Assemble', exact: true }).click();
+  const labelsToggle = page.getByRole('button', { name: 'Show Labels Window', exact: true });
+  await labelsToggle.hover();
+  await expect(tooltip).toBeVisible();
+  const toolbarDescription = await tooltip.elementHandle();
+  await labelsToggle.click();
+  await expect(labelsToggle).toHaveAttribute('aria-pressed', 'true');
+  expect(await toolbarDescription!.isVisible()).toBe(true);
+  await page.mouse.move(5, 200);
+  await expect(tooltip).toHaveCount(0);
+
+  const labels = page.getByRole('region', { name: 'Labels', exact: true });
+  await labels
+    .locator('.labels-scroll')
+    .evaluate((element) => (element.scrollTop = element.scrollHeight));
+  const data = labels.getByRole('checkbox', { name: 'Data', exact: true });
+  await data.hover();
+  await expect(data).toHaveAccessibleDescription('Show labels defined in the data segment');
+  const checkboxDescription = await tooltip.elementHandle();
+  await data.click();
+  await expect(data).not.toBeChecked();
+  expect(await checkboxDescription!.isVisible()).toBe(true);
+  await page.mouse.move(5, 200);
+  await expect(tooltip).toHaveCount(0);
+
+  // Pressed navigation controls are selections, not binary toggles.
+  const textLabel = labels.getByRole('button', { name: 'main', exact: true });
+  await textLabel.hover();
+  await expect(tooltip).toBeVisible();
+  await textLabel.click();
+  await expect(textLabel).toHaveAttribute('aria-pressed', 'true');
+  await expect(tooltip).toHaveCount(0);
 });
