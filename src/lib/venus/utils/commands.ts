@@ -119,9 +119,15 @@ export const popupInputOption = {
   id: Settings.POPUP_SYSCALL_INPUT,
   label: 'Popup dialog for input syscalls'
 };
+/** Program-argument preference shared by the Settings menu and Args toolbar toggle. */
+export const programArgumentsOption = {
+  id: Settings.PROGRAM_ARGUMENTS,
+  label: 'Program arguments provided to MIPS program'
+};
 /** Engine settings exposed by the desktop. */
 export const engineOptions = [
   popupInputOption,
+  programArgumentsOption,
   { id: Settings.ASSEMBLE_ON_OPEN_ENABLED, label: 'Assemble file on open' },
   { id: Settings.WARNINGS_ARE_ERRORS, label: 'Assembler warnings are considered errors' },
   { id: Settings.START_AT_MAIN, label: 'Initialize Program Counter to global main if defined' },
@@ -137,6 +143,7 @@ export const pendingSettings = ['Exception Handler ...'];
 
 /** Legacy Settings action descriptions; the console-clearing option is browser-specific. */
 export const settingsTooltips: Readonly<Record<string, string>> = {
+  args: 'If set, program arguments for MIPS program can be entered in border of Text Segment window.',
   labels: 'Toggle visibility of Labels window (symbol table) in the Execute tab',
   input:
     'If set, use popup dialog for input syscalls (5,6,7,8,12) instead of cursor in Run I/O window',

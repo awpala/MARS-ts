@@ -26,6 +26,8 @@ export interface SavedExecution {
 
 /** Restorable desktop presentation and last stable execution; no live promises, dialogs, or timers. */
 export interface DesktopSession {
+  /** Argument draft for the next initial Go/Step; absent in older records, defaulting to empty. */
+  programArguments?: string;
   /** Selected primary workspace. */
   view: 'Edit' | 'Execute';
   /** Selected register bank. */
@@ -80,6 +82,7 @@ export function isDesktopSession(value: unknown): value is DesktopSession {
   const pair = (v: unknown) =>
     Array.isArray(v) && v.length === 2 && v.every((n) => Number.isInteger(n) && n >= 0);
   return (
+    (s.programArguments === undefined || typeof s.programArguments === 'string') &&
     ['Edit', 'Execute'].includes(s.view) &&
     ['Registers', 'Coproc 1', 'Coproc 0'].includes(s.registerTab) &&
     ['Mars Messages', 'Run I/O'].includes(s.messageTab) &&

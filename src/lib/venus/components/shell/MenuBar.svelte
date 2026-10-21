@@ -5,6 +5,7 @@
     menus,
     engineOptions,
     popupInputOption,
+    programArgumentsOption,
     pendingSettings,
     settingsTooltips,
     helpActions,
@@ -54,7 +55,7 @@
     const groups: MenuGroup[] = [
       {
         id: 'display',
-        items: ['labels', 'input', 'addresses', 'values'].flatMap((icon) =>
+        items: ['labels', 'args', 'input', 'addresses', 'values'].flatMap((icon) =>
           displayToggles
             .filter((toggle) => toggle.icon === icon)
             .map((toggle) => ({
@@ -69,7 +70,9 @@
       }
     ];
     let items: MenuItem[] = [];
-    for (const option of engineOptions.filter((entry) => entry !== popupInputOption)) {
+    for (const option of engineOptions.filter(
+      (entry) => entry !== popupInputOption && entry !== programArgumentsOption
+    )) {
       items.push({
         id: String(option.id),
         label: option.label,

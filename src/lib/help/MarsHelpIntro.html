@@ -42,15 +42,17 @@ Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSl
 <p>
   The Execute pane supports Go, Step, Backstep, Pause, Stop, Reset, breakpoints, labels, and
   inspection and editing of registers and memory while execution is stopped. Registers remain
-  visible beside Edit and Execute. The toolbar controls labels, number formats, ASCII data, line
-  numbers, and popup input.
+  visible beside Edit and Execute. The toolbar controls labels, program arguments, number formats,
+  ASCII data, line numbers, and popup input. Enable Args to enter program arguments below the Text
+  Segment heading; the first Go or Step after assembly or Reset supplies them through
+  <code>$a0</code> (argc) and <code>$a1</code> (argv).
 </p>
 <p>
   Console reads and writes, heap allocation, exit, and integer formatting syscalls are available.
   File, time, random, MIDI, sleep, and dialog syscall families remain unfinished; see Syscalls for
-  the service-by-service reference. Tools, memory dumps, and the Exception Handler and Memory
-  Configuration dialogs are not yet available. This browser application has no command-line launcher
-  or program-argument controls.
+  the service-by-service reference. Tools, memory dumps, and the Exception Handler dialog are not
+  yet available. Memory Configuration is available in Settings. This browser application has no
+  command-line launcher.
 </p>
 <h3>Original authors and project history</h3>
 <p>

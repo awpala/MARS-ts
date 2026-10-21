@@ -51,6 +51,7 @@ export class DesktopPersistence {
       const stable = this.stable;
       try {
         saveDesktopSession({
+          programArguments: simulation.programArguments,
           view: display.view === 'Execute' ? 'Execute' : 'Edit',
           registerTab: display.registerTab as 'Registers' | 'Coproc 1' | 'Coproc 0',
           messageTab: simulation.messageTab as 'Mars Messages' | 'Run I/O',
@@ -86,6 +87,7 @@ export class DesktopPersistence {
   restore(): void {
     const saved = loadDesktopSession();
     if (saved) {
+      this.simulation.programArguments = saved.programArguments ?? '';
       this.simulation.messages = saved.messages;
       this.simulation.runIO = saved.runIO;
       this.stable = {

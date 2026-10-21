@@ -1,0 +1,22 @@
+{
+  "jdkMajor": 21,
+  "legacySourceSha256": "49c6b8ae0d9f66f355f741b86d812aef135b6fb915c7305874290d355c0938b6",
+  "command": [
+    "java",
+    "-Djava.awt.headless=true",
+    "-Djava.util.prefs.userRoot=<fresh-user>",
+    "-Djava.util.prefs.systemRoot=<fresh-system>",
+    "-cp",
+    "<probe-classes>:__build/legacy/Mars.jar",
+    "ProgramArgumentsFailureProbe"
+  ],
+  "stdin": "",
+  "stdout": "Internal Error: Memory write error occurred while storing program arguments! mars.mips.hardware.AddressErrorException: address out of range 0xffffffff\n",
+  "stderr": "",
+  "status": 0,
+  "hashes": {
+    "tests/oracle/program-arguments-units/ProgramArgumentsFailureProbe.java": "06785a50834447bfb6690afe752395fd4fd2acbdf597e8f1763bdc32cb8c55b4",
+    "mars/simulator/ProgramArgumentList.java": "c9c042c3324c5d3065a8c7823b9ab8ec8dfd8fff50ecb153b991b4d3305c8e75",
+    "mars/mips/hardware/Memory.java": "a63cda1737ab1a2061de540aa354bec49ca34722365d91fa2c70bfc57e9e0a5d"
+  }
+}

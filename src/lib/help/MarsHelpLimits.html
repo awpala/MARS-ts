@@ -34,16 +34,19 @@ Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSl
     service availability. Tools and File → Dump Memory are disabled.
   </li>
   <li>
-    The Exception Handler and Memory Configuration dialogs are unfinished. Include handler code
-    explicitly; the browser currently uses the default memory layout.
+    The Exception Handler dialog is unfinished; include handler code explicitly. Memory
+    Configuration supports the default layout and both compact layouts.
   </li>
   <li>
     Editor and highlighting customization use bundled presets, not the original dialogs.
-    Command-line operation and program arguments are excluded.
+    Command-line operation is excluded. Program arguments are available through Settings and the
+    Args toolbar toggle; their text follows legacy whitespace splitting and low-byte character
+    storage.
   </li>
   <li>
     Backstep history is bounded to 2000 recent steps and does not reverse output or external I/O.
-    Machine state is not persisted across reloads. Machine edits require execution to be stopped.
+    Stable machine state and Backstep history are recovered after reload; active execution is not
+    resumed. Machine edits require execution to be stopped.
   </li>
   <li>
     Execution yields cooperatively to the browser. Limited-speed timing is approximate, and large

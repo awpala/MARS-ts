@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Tooltip from '../feedback/Tooltip.svelte';
   import { tick } from 'svelte';
   import SelectorToggle from '../controls/SelectorToggle.svelte';
   import Button from '../controls/Button.svelte';
@@ -33,6 +34,8 @@
     snapshot: ReturnType<RunController['getState']>;
     /** Parent-owned selection for the loaded program, persisted with its checkpoint; null clears linked highlights. */
     selectedLabel: SavedLabelSelection | null;
+    /** Parent-owned argument draft; bindable and persisted independently of loaded machine state. */
+    programArguments: string;
     /** Required breakpoint addresses owned by the desktop. */
     breakpoints: readonly number[];
     /** Required callback toggles a breakpoint in the desktop. */
@@ -69,6 +72,7 @@
     controller,
     snapshot,
     selectedLabel = $bindable(),
+    programArguments = $bindable(),
     breakpoints,
     ontogglebreakpoint,
     onedit,
@@ -178,6 +182,10 @@
   const selfModifying = $derived.by(() => {
     void snapshot.revision;
     return machine.getSettings().getBooleanSetting(Settings.SELF_MODIFYING_CODE_ENABLED);
+  });
+  const showProgramArguments = $derived.by(() => {
+    void snapshot.revision;
+    return machine.getSettings().getBooleanSetting(Settings.PROGRAM_ARGUMENTS);
   });
   const running = $derived(snapshot.status === 'running');
   const pc = $derived.by(() => {
@@ -505,6 +513,29 @@
       overflow="hidden"
     >
       <h2 class="shrink-0">Text Segment</h2>
+      {#if showProgramArguments}
+        <div class="program-arguments">
+          <Tooltip text="Arguments provided to program at runtime via $a0 (argc) and $a1 (argv)">
+            {#snippet children(trigger, description)}
+              <label {@attach trigger}>
+                <span>Program Arguments:</span>
+                <input
+                  type="text"
+                  bind:value={programArguments}
+                  aria-describedby={description}
+                  spellcheck="false"
+                  autocomplete="off"
+                />
+              </label>
+            {/snippet}
+          </Tooltip>
+          <CloseButton
+            label="Clear program arguments (argv)"
+            disabled={programArguments.length === 0}
+            onclick={() => (programArguments = '')}
+          />
+        </div>
+      {/if}
       <div class="text-scroll">
         <MachineTable>
           {#snippet header()}
@@ -773,6 +804,33 @@
     flex: 1;
     min-height: 0;
     overflow: auto;
+  }
+  .program-arguments {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px;
+    background: var(--theme-chrome, #eee);
+    border-bottom: 1px solid var(--theme-border, #a2aab1);
+  }
+  .program-arguments span {
+    white-space: nowrap;
+  }
+  .program-arguments label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .program-arguments input {
+    width: 32ch;
+    min-width: 0;
+    padding: 2px 6px;
+    border: 1px solid var(--theme-accent-border, #849eb5);
+    border-radius: 2px;
+    background: var(--theme-surface, #fff);
+    color: var(--theme-text, #17202b);
   }
   .label-controls {
     display: flex;

@@ -41,6 +41,8 @@ export class Settings {
   static readonly EDITOR_LINE_NUMBERS_DISPLAYED = 9;
   /** Canonical Settings.java identifier for warnings are errors. */
   static readonly WARNINGS_ARE_ERRORS = 10;
+  /** Canonical Settings.java identifier for runtime program arguments. */
+  static readonly PROGRAM_ARGUMENTS = 11;
   /** Canonical Settings.java identifier for data segment highlighting. */
   static readonly DATA_SEGMENT_HIGHLIGHTING = 12;
   /** Canonical Settings.java identifier for registers highlighting. */

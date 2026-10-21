@@ -173,7 +173,7 @@ test('every Settings item has a themed description, including disabled settings 
   await openDesktop(page);
   await settings(page).click();
   const items = menu(page).locator('label, button');
-  expect(await items.count()).toBe(13);
+  expect(await items.count()).toBe(14);
   for (const item of await items.all()) {
     await item.hover();
     const tooltip = page.getByRole('tooltip');

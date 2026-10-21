@@ -199,13 +199,20 @@ test('working display settings and run speed survive reload', async ({ page }) =
   const toggles = page.getByRole('group', { name: 'Display settings', exact: true });
   const sharedLabels = [
     'Show Labels Window',
+    'Program arguments provided to MIPS program',
     'Popup dialog for input syscalls',
     'Addresses displayed in hexadecimal',
     'Values displayed in hexadecimal'
   ];
   expect(
-    (await menu.locator('label').allTextContents()).slice(0, 4).map((label) => label.trim())
-  ).toEqual([sharedLabels[0], `${sharedLabels[1]} (5,6,7,8,12)`, sharedLabels[2], sharedLabels[3]]);
+    (await menu.locator('label').allTextContents()).slice(0, 5).map((label) => label.trim())
+  ).toEqual([
+    sharedLabels[0],
+    sharedLabels[1],
+    `${sharedLabels[2]} (5,6,7,8,12)`,
+    sharedLabels[3],
+    sharedLabels[4]
+  ]);
   for (const label of sharedLabels) {
     const checkbox = menu.getByRole('checkbox', { name: label });
     const button = toggles.getByRole('button', { name: label, exact: true });
@@ -216,7 +223,7 @@ test('working display settings and run speed survive reload', async ({ page }) =
     await expect(button).toHaveAttribute('aria-pressed', String(checked));
   }
   await settings.click();
-  await expect(toggles.getByRole('button')).toHaveCount(5);
+  await expect(toggles.getByRole('button')).toHaveCount(6);
   const editing = page.locator('.toolbar .toolgroup').filter({
     has: page.getByRole('button', { name: 'Undo', exact: true })
   });

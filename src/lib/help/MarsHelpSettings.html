@@ -5,12 +5,13 @@ Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSl
   <p>Original article: Release 4.5 · August 2014</p>
 </header>
 <p>
-  Settings menu checkboxes control display, input, assembly, and execution. The first four entries
-  are Show Labels Window, Popup dialog for input syscalls (5,6,7,8,12), Addresses displayed in
-  hexadecimal, and Values displayed in hexadecimal. These share their state with the corresponding
-  toolbar buttons; a separator follows Values displayed in hexadecimal. Preferences are stored in
-  this browser’s localStorage when available; if storage is unavailable, changes remain in memory.
-  Java MARS retained settings beginning with Release 3.2 through
+  Settings menu checkboxes control display, input, assembly, and execution. The first five entries
+  are Show Labels Window, Program arguments provided to MIPS program, Popup dialog for input
+  syscalls (5,6,7,8,12), Addresses displayed in hexadecimal, and Values displayed in hexadecimal.
+  These share their state with the corresponding toolbar buttons; a separator follows Values
+  displayed in hexadecimal. Preferences are stored in this browser’s localStorage when available; if
+  storage is unavailable, changes remain in memory. Java MARS retained settings beginning with
+  Release 3.2 through
   <code>java.util.prefs.Preferences</code> (the Windows Registry on Windows); the browser does not
   use that mechanism.
 </p>
@@ -86,6 +87,31 @@ Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSl
     program writes to user text, execution from user data, and stopped-state editing of text words.
   </li>
 </ol>
+<h3>Program arguments</h3>
+<p>
+  Program arguments provided to MIPS program is off by default. Its Args toolbar toggle sits
+  immediately to the right of Labels and shares the Settings selection. When enabled, a Program
+  Arguments field appears below the Text Segment heading, above the instruction table. The setting
+  and argument text are saved in this browser. The X button beside the field clears the entry
+  without turning Args off or changing arguments already applied to the program.
+</p>
+<p>
+  Enter arguments separated by spaces or tabs. For example, <code>first second</code> supplies two
+  arguments. Quotes and backslashes are literal characters, not shell syntax:
+  <code>"two words"</code> supplies two arguments with quote characters included. Newline, carriage
+  return, and form feed are also delimiters in the engine's text parser. No executable filename is
+  added. Non-ASCII text follows the original MARS low-byte character storage, not UTF-8 encoding.
+</p>
+<p>
+  Before the first Go or Step after Assemble or Reset, MARS places null-terminated strings and their
+  pointers on the stack, sets <code>$a0</code> to the argument count (argc), sets
+  <code>$a1</code> to the pointer array (argv), and adjusts <code>$sp</code>. A null pointer ends
+  argv. Empty or whitespace-only input leaves these registers unchanged. Initialization occurs only
+  when the setting is enabled. Editing the field or toggling it after execution starts affects the
+  next Assemble/Reset run; it does not change the current program's arguments. Backstep does not
+  undo initialization. Reload recovers the applied machine arguments and retains the current field
+  text separately. This feature does not provide a command-line launcher.
+</p>
 <h3>Memory Configuration</h3>
 <p>
   Choose Default (the SPIM-derived layout), Compact, Data at Address 0, or Compact, Text at Address
@@ -97,11 +123,6 @@ Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSl
 </p>
 <h3>Legacy settings without a current browser control</h3>
 <ul>
-  <li>
-    <strong>Program arguments</strong> (Java Release 3.5, originally off): Java supplied argc in
-    <code>$a0</code>, argv in <code>$a1</code>, and arguments on the stack. Program-argument
-    controls and command-line integration are excluded from this browser application.
-  </li>
   <li>
     <strong>Editor dialog</strong> (Java Release 3.3) and <strong>Highlighting dialog</strong> (Java
     Release 3.6): the port uses bundled editor/highlighting presets instead of font and color

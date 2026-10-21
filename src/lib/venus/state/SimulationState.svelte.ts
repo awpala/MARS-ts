@@ -29,6 +29,8 @@ export class SimulationState {
   breakpointsEnabled = $state(true);
   /** Reactive values of settings exposed in desktop menus. */
   engineSettings = $state<Record<number, boolean>>({});
+  /** Desktop-owned argument draft; retained across assemblies and saved with desktop presentation. */
+  programArguments = $state('');
   /** Pending syscall request, or null when no input is owed. */
   inputRequest = $state.raw<InputRequest | null>(null);
   /** Current pending input buffer. */
@@ -157,6 +159,7 @@ export class SimulationState {
       ![
         Settings.POPUP_SYSCALL_INPUT,
         Settings.ASSEMBLE_ON_OPEN_ENABLED,
+        Settings.PROGRAM_ARGUMENTS,
         Settings.SELF_MODIFYING_CODE_ENABLED
       ].includes(id)
     )
@@ -305,11 +308,15 @@ export class SimulationState {
       this.messageTab = 'Run I/O';
       const name = command === 'step' ? 'Step' : 'Go';
       const filename = this.machine?.program?.getFilename() ?? '';
-      if (command === 'step') await this.controller.step();
+      if (command === 'step') await this.controller.step(this.programArguments);
       else {
         if (this.display.clearAllOutputsOnGo) this.clearOutput(true);
         this.messages += `Go: running ${filename}\n\n`;
-        await this.controller.run(this.breakpointsEnabled ? this.breakpoints : []);
+        await this.controller.run(
+          this.breakpointsEnabled ? this.breakpoints : [],
+          -1,
+          this.programArguments
+        );
       }
       if (this.disposed) return;
       const result = this.controller.getState();

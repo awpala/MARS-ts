@@ -1,7 +1,13 @@
 import { tick } from 'svelte';
 import { Settings } from '#lib/engine/Settings.js';
 import { helpArticles, type HelpArticle } from '#lib/help/articles.js';
-import { runActions, breakpointActions, popupInputOption, type Action } from '../utils/commands.js';
+import {
+  runActions,
+  breakpointActions,
+  popupInputOption,
+  programArgumentsOption,
+  type Action
+} from '../utils/commands.js';
 import { runSpeedValue } from '../utils/runSpeed.js';
 import { isSavableSource } from '../utils/savableSource.js';
 import { DisplayPreferences } from './DisplayPreferences.svelte.js';
@@ -66,6 +72,17 @@ export class DesktopState {
       active: this.display.showLabels,
       toggle: () => (this.display.showLabels = !this.display.showLabels),
       disabled: false
+    },
+    {
+      icon: 'args' as const,
+      label: programArgumentsOption.label,
+      active: this.simulation.engineSettings[Settings.PROGRAM_ARGUMENTS] ?? false,
+      toggle: () =>
+        this.simulation.updateEngineSetting(
+          Settings.PROGRAM_ARGUMENTS,
+          !this.simulation.engineSettings[Settings.PROGRAM_ARGUMENTS]
+        ),
+      disabled: this.simulation.running
     },
     {
       icon: 'input' as const,

@@ -22,6 +22,7 @@ function record(): DesktopSession {
     breakpoints: [],
     breakpointsEnabled: true,
     messages: 'saved diagnostics',
+    programArguments: 'one two',
     runIO: 'saved output',
     execution: null,
     unloadedError: true
@@ -50,6 +51,7 @@ describe('desktop browser recovery storage', () => {
       '{',
       '{}',
       JSON.stringify({ ...record(), selection: [-1, 0] }),
+      JSON.stringify({ ...record(), programArguments: 42 }),
       JSON.stringify({
         ...record(),
         editHistory: [{ name: 'main.asm', text: 'a', undo: [null], redo: [] }]

@@ -13,7 +13,6 @@ import { RunController } from '#lib/venus/RunController.js';
 const rootPrefix = resolve('.') + '/';
 const normalize = (text: string) => Buffer.from(text.replaceAll(rootPrefix, '<repo>/'), 'utf8');
 const deferred: Record<string, string> = {
-  'program-arguments': 'CLI/program-argument integration is explicitly excluded from this port',
   'seeded-random': 'random services await the P4 syscall implementation and Java Random parity'
 };
 
@@ -113,6 +112,10 @@ describe('original Java corpus through production Globals and RunController', ()
         );
         settings.setBooleanSettingNonPersistent(Settings.START_AT_MAIN, entry.id === 'main-global');
         settings.setBooleanSettingNonPersistent(Settings.POPUP_SYSCALL_INPUT, false);
+        settings.setBooleanSettingNonPersistent(
+          Settings.PROGRAM_ARGUMENTS,
+          entry.id === 'program-arguments'
+        );
         let unsubscribe = () => {};
         try {
           let assemblyError: ProcessingException | null = null;
@@ -149,7 +152,11 @@ describe('original Java corpus through production Globals and RunController', ()
               machine.memory.textBaseAddress,
               machine.memory.textLimitAddress
             );
-            await controller.run([], entry.id === 'step-limit' ? 100 : -1);
+            await controller.run(
+              [],
+              entry.id === 'step-limit' ? 100 : -1,
+              entry.arguments.join(' ')
+            );
             unsubscribe();
             const state = controller.getState();
             if (metadata.exitCode === 3) {

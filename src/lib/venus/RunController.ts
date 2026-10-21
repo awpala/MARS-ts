@@ -6,6 +6,8 @@ import {
   isRunCheckpoint,
   type RunCheckpoint
 } from './RunCheckpoint.js';
+import { Settings } from '../engine/Settings.js';
+import { ProgramArgumentList } from '../engine/simulator/ProgramArgumentList.js';
 import { Globals } from '../engine/Globals.js';
 import type { MIPSprogram } from '../engine/assembler/programs/MIPSprogram.js';
 import type { ProgramStatement } from '../engine/assembler/programs/ProgramStatement.js';
@@ -183,13 +185,13 @@ export class RunController {
       statements: []
     });
   }
-  /** Run from current PC with current breakpoint addresses and an optional instruction limit. */
-  run(breakpoints: readonly number[] = [], maxSteps = -1): Promise<boolean> {
-    return this.execute(false, breakpoints, maxSteps);
+  /** Run from current PC; optional argument text is applied only before the first execution after assembly/reset when enabled. */
+  run(breakpoints: readonly number[] = [], maxSteps = -1, programArguments = ''): Promise<boolean> {
+    return this.execute(false, breakpoints, maxSteps, programArguments);
   }
-  /** Execute exactly one machine instruction, preserving the canonical stepped-execution flag. */
-  step(): Promise<boolean> {
-    return this.execute(true, [], 1);
+  /** Execute one instruction; optional argument text uses the same first-execution initialization as Go. */
+  step(programArguments = ''): Promise<boolean> {
+    return this.execute(true, [], 1, programArguments);
   }
   /** Request pause at the next canonical instruction boundary, releasing pending host input. */
   pause(): void {
@@ -270,13 +272,24 @@ export class RunController {
   private execute(
     step: boolean,
     breakpoints: readonly number[],
-    maxSteps: number
+    maxSteps: number,
+    programArguments: string
   ): Promise<boolean> {
     this.requireIdle();
     this.backstepDelaySlot = null;
     this.requireProgram();
     if (this.state.status === 'terminated' || this.state.status === 'error')
       throw new Error('Reset or assemble the program before running it again.');
+    if (
+      !this.state.started &&
+      this.machine.getSettings().getBooleanSetting(Settings.PROGRAM_ARGUMENTS)
+    )
+      this.machine.withGuiAccess(() =>
+        new ProgramArgumentList(programArguments).storeProgramArguments(
+          this.machine.memory,
+          this.machine.registerFile
+        )
+      );
     this.publish({ status: 'running', started: true, error: null, reason: 0 });
     if (this.disposed) throw new Error('This run controller has been disposed.');
     const action: SimulatorAction = step

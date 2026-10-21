@@ -21,6 +21,7 @@
     | 'breakpoints'
     | 'breakpointsDisabled'
     | 'labels'
+    | 'args'
     | 'addresses'
     | 'ascii'
     | 'values'
@@ -55,6 +56,7 @@
     expandDataSegment: expandDataSegmentGlyph,
     assemble: assembleGlyph,
     labels: labelsGlyph,
+    args: argsGlyph,
     addresses: addressesGlyph,
     ascii: asciiGlyph,
     values: valuesGlyph,
@@ -192,6 +194,11 @@
 
 {#snippet labelsGlyph()}
   <path d="M3 4h8l10 10-7 7L3 10Z" /><circle cx="7" cy="8" r="1" />
+{/snippet}
+
+{#snippet argsGlyph()}
+  <path d="M6 4H3v16h3m12-16h3v16h-3" stroke="var(--theme-icon-blue, #236ba5)" />
+  <path d="M8 16l4-8 4 8m-6.5-3h5" />
 {/snippet}
 
 {#snippet addressesGlyph()}

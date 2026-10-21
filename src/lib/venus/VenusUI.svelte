@@ -144,6 +144,7 @@
                 controller={simulation.controller!}
                 snapshot={simulation.execution}
                 bind:selectedLabel={simulation.labelSelection}
+                bind:programArguments={simulation.programArguments}
                 breakpoints={simulation.breakpoints}
                 ontogglebreakpoint={simulation.toggleBreakpoint}
                 onedit={() => simulation.controller?.refresh()}

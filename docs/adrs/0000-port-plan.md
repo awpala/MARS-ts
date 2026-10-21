@@ -22,7 +22,9 @@ MARS is a Java/Swing desktop IDE for MIPS assembly programming, written by Pete 
 
 **In scope for the full port:** the assembler (including pseudo-instructions, macros, directives, and `.include`), the simulator (step, run, backstep, breakpoints, delayed branching, exceptions, memory configurations), the syscalls, the editor and execution views of the Venus UI, settings, help content, and the bundled MARS tools (`_legacy-app/mars/tools/`). The tools' implementation order remains open; the requested full port does not authorize dropping existing functionality.
 
-**Out of scope:** porting `MarsLaunch` or exposing a TypeScript command-line interface, command-line integration and program-argument controls in the web GUI, changing MIPS semantics, extending the instruction set beyond the legacy reference, and reproducing legacy Java packaging (`CreateMarsJar.bat`). The Java command line remains test infrastructure only. The initial web UI uses the Swing desktop layout and appearance as its reference, with the browser adaptations in [ADR 0002](0002-port-fidelity.md).
+Program-argument controls and runtime argument setup are in scope under [ADR 0009](0009-program-arguments.md).
+
+**Out of scope:** porting `MarsLaunch` or exposing a TypeScript command-line interface, command-line integration, changing MIPS semantics, extending the instruction set beyond the legacy reference, and reproducing legacy Java packaging (`CreateMarsJar.bat`). The Java command line remains test infrastructure only. The initial web UI uses the Swing desktop layout and appearance as its reference, with the browser adaptations in [ADR 0002](0002-port-fidelity.md).
 
 ## 2. Planned stack
 
@@ -67,7 +69,7 @@ The SvelteKit package and configuration are at the repository root (`package.jso
 | --- | --- | --- |
 | **P0 — Environment and harness** (complete) | Devcontainer with Node, the TypeScript CLI, the `sv` CLI, and a provisional JDK; legacy oracle helpers; gates and CI; agent harness | `run-checks` harness, docs, and legacy tiers pass; app tier reported skipped |
 | **P1 — Scaffold and fixtures** (complete) | `sv create` app at the root with the planned stack, Vite on `6277`, pinned local Svelte MCP, golden-fixture format and regeneration script, a first fixture corpus | All four `run-checks` tiers pass; fixtures regenerate byte-identically; initial browser workflows pass on isolated port `6278` |
-| **P2 — Engine core** (complete) | Numeric helpers, hardware, basic instructions, assembler, pseudo-instructions, simulator (run/step/backstep), deterministic console syscalls, parity runner | All 19 in-scope core corpus cases pass through production engine APIs, alongside unit oracle probes; CLI arguments are excluded and seeded random remains in P4 |
+| **P2 — Engine core** (complete) | Numeric helpers, hardware, basic instructions, assembler, pseudo-instructions, simulator (run/step/backstep), deterministic console syscalls, parity runner | The original 19 P2 corpus cases pass through production engine APIs; P3 program arguments expand coverage to 20 under ADR 0009, while seeded random remains in P4 |
 | **P3 — Web IDE** | Editor with MIPS highlighting, assemble/run/step/backstep/breakpoints, register, coprocessor, memory, and label views, messages and run I/O, settings | Browser exercise of the core workflows; engine parity unchanged |
 | **P4 — Remaining syscalls and tools** | Dialog, file (virtual file system), and MIDI syscalls, dump formats, bundled tools, help content | Per-feature fixtures or documented manual checks |
 | **P5 — Offboarding Java** | Remove the Java sources, legacy Javadoc archive `_legacy-app/docs/`, legacy resources not used as data, the Java feature, `build-legacy`/`run-legacy`, the legacy gate, and the Java editor extension | Gates pass without a JDK; fixtures remain; attribution retained |
