@@ -1089,7 +1089,9 @@ test('Rename requires confirmation before replacing an existing closed source', 
 	).toEqual([{ name: 'target.asm', source: '# original source\n' }]);
 });
 
-test('Line and Column status appears only when editing an open source', async ({ page }) => {
+test('Line and Column follows source focus while the selected filename stays visible', async ({
+	page
+}) => {
 	await openDesktop(page);
 	const position = page.locator('footer').getByText(/^Line \d+, Column \d+$/);
 	await expect(position).toBeHidden();
@@ -1098,9 +1100,29 @@ test('Line and Column status appears only when editing an open source', async ({
 	await source.fill('one\ntwo\nabc');
 	await source.press('Control+End');
 	await expect(position).toHaveText('Line 3, Column 4');
+	const filename = page.locator('footer > span').first();
+	await expect(filename).toHaveText('mips1.asm');
+	await page.getByLabel('$t0 value', { exact: true }).focus();
+	await expect(position).toBeHidden();
+	await expect(filename).toHaveText('mips1.asm');
+	await source.focus();
+	await expect(position).toHaveText('Line 3, Column 4');
+	await page.getByRole('textbox', { name: 'Mars Messages', exact: true }).focus();
+	await expect(position).toBeHidden();
+	await expect(filename).toHaveText('mips1.asm');
 	await page.getByRole('button', { name: 'Execute', exact: true }).click();
 	await expect(position).toBeHidden();
+	await expect(filename).toHaveText('mips1.asm');
 	await page.getByRole('button', { name: 'Edit', exact: true }).click();
+	await expect(position).toBeHidden();
+	await expect(filename).toHaveText('mips1.asm');
+	await source.focus();
+	await expect(position).toBeVisible();
+	await page.getByRole('button', { name: 'Help', exact: true }).click();
+	await expect(position).toBeHidden();
+	await expect(filename).toHaveText('mips1.asm');
+	await page.keyboard.press('Escape');
+	await source.focus();
 	await expect(position).toBeVisible();
 	await page.getByRole('button', { name: 'Close mips1.asm', exact: true }).click();
 	await page

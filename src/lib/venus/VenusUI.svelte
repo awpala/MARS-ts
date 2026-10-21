@@ -22,6 +22,7 @@
 	import FileImporter from './components/transfers/FileImporter.svelte';
 	import FileExporter from './components/transfers/FileExporter.svelte';
 	let menuBar: MenuBar | undefined;
+	let activeElement = $state<Element | null>(null);
 	const desktop = provideDesktop(new DesktopState((restoreFocus) => menuBar?.close(restoreFocus)));
 	const { workspace, simulation, display } = desktop;
 	const paneId = $props.id();
@@ -31,6 +32,8 @@
 </script>
 
 <!-- @component Composes the Venus desktop and owns its context lifetime. Domain state, workflows, and browser resources belong to the per-desktop controllers. -->
+<svelte:document bind:activeElement />
+
 <svelte:head>
 	<title>
 		{workspace.current
@@ -184,7 +187,7 @@
 		</main>
 		<footer>
 			<span>{workspace.current?.name ?? 'No file open'}</span><span
-				>{display.view === 'Edit' && workspace.current
+				>{display.view === 'Edit' && workspace.current && activeElement === workspace.sourceInput
 					? `Line ${workspace.position.line}, Column ${workspace.position.column}`
 					: ''}</span
 			><span aria-label="Execution status"

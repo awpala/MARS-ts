@@ -174,7 +174,7 @@ test('shared clear buttons retain independent and combined console clearing', as
 	const clearAll = page.getByRole('button', { name: 'Clear All', exact: true });
 	await clearAll.press('Shift+Tab');
 	await page.keyboard.press('Tab');
-	await expect(clearAll).toHaveAccessibleDescription('Clear all outputs Ctrl+Shift+L');
+	await expect(clearAll).toHaveAccessibleDescription('Clear all outputs Alt+L / Option+L');
 	await clearAll.press('Enter');
 	await expect(output).toHaveValue('');
 	await page.getByRole('button', { name: 'Mars Messages', exact: true }).click();
@@ -195,7 +195,21 @@ test('console shortcuts clear selected or all output while preserving pending in
 	await expect(input).toBeVisible();
 	await input.fill('42');
 	await page.getByRole('button', { name: 'Edit', exact: true }).click();
-	await source.press('Control+Shift+l');
+	await source.focus();
+	// macOS Option+L can report a character rather than the letter L.
+	expect(
+		await source.evaluate((element) =>
+			element.dispatchEvent(
+				new KeyboardEvent('keydown', {
+					key: '¬',
+					code: 'KeyL',
+					altKey: true,
+					bubbles: true,
+					cancelable: true
+				})
+			)
+		)
+	).toBe(false);
 	await expect(output).toHaveValue('');
 	await expect(input).toHaveValue('42');
 	await expect(source).toBeFocused();
@@ -255,7 +269,7 @@ test('both consoles reveal the latest line after overflowing, appending, and swi
 	await expect(messages).toHaveValue('');
 	await page.getByRole('button', { name: 'Run I/O', exact: true }).click();
 	await expect(output).toHaveValue(/program is finished running/);
-	await output.press('Control+Shift+l');
+	await output.press('Alt+l');
 	await expect(output).toHaveValue('');
 });
 

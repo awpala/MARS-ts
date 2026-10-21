@@ -71,7 +71,7 @@ export const breakpointActions: readonly Action[] = [
 /** Console commands available throughout the desktop. */
 export const consoleActions: readonly Action[] = [
 	{ label: 'Clear', command: 'clearOutput', shortcut: 'Ctrl+L' },
-	{ label: 'Clear All', command: 'clearAllOutput', shortcut: 'Ctrl+Shift+L' }
+	{ label: 'Clear All', command: 'clearAllOutput', shortcut: 'Alt+L / Option+L' }
 ];
 /** Help commands derived from the article catalog. */
 export const helpActions: readonly Action[] = helpArticles.map((article) => ({

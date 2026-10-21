@@ -163,6 +163,7 @@
 					onedit(event.currentTarget.value);
 					selection();
 				}}
+				onfocus={selection}
 				onclick={selection}
 				onpointermove={hoverSource}
 				onpointerleave={leaveSource}

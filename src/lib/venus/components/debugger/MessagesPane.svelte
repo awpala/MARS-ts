@@ -74,9 +74,9 @@
 
 		<Button
 			tooltip="Clear all outputs"
-			shortcut="Ctrl+Shift+L"
+			shortcut="Alt+L / Option+L"
 			class="clear-all mb-0.5 rounded-none border border-[var(--theme-border,#aaa)] px-3 py-px"
-			aria-keyshortcuts="Control+Shift+L"
+			aria-keyshortcuts="Alt+L"
 			onclick={() => onclear(true)}>Clear All</Button
 		>
 	{/snippet}
