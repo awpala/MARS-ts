@@ -4,6 +4,12 @@ import { loadDisplaySettings, saveDisplaySettings } from '#lib/browser/DisplaySe
 export class DisplayPreferences {
 	/** Selected main pane; Edit by default. */
 	view = $state('Edit');
+	/** Selected Data Segment range, recovered with the desktop session. */
+	dataSegment = $state('data');
+	/** Relative aligned Data Segment page offset, recovered with the desktop session. */
+	dataPageOffset = $state(0);
+	/** Whether the registers pane and its divider are visible; shown by default. */
+	showRegisters = $state(true);
 	/** Selected register bank; Registers by default. */
 	registerTab = $state('Registers');
 	/** Whether Execute shows the Labels pane. */
@@ -58,6 +64,7 @@ export class DisplayPreferences {
 		const settings = loadDisplaySettings();
 		if (!settings) return false;
 		this.ascii = settings.ascii;
+		this.showRegisters = settings.showRegisters;
 		this.showLabels = settings.showLabels;
 		this.showDataLabels = settings.showDataLabels;
 		this.showTextLabels = settings.showTextLabels;
@@ -72,6 +79,7 @@ export class DisplayPreferences {
 	persist(autoSave: boolean): void {
 		saveDisplaySettings({
 			autoSave,
+			showRegisters: this.showRegisters,
 			ascii: this.ascii,
 			showLabels: this.showLabels,
 			showDataLabels: this.showDataLabels,

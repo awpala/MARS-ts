@@ -1,5 +1,13 @@
 /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license.
  * Ports boolean and engine string settings from mars/Settings.java; see MARSlicense.txt. */
+/** Portable engine preference snapshot, independent of browser persistence. */
+export interface SettingsState {
+	/** Boolean values in canonical setting-ID order. */
+	booleans: boolean[];
+	/** String values in canonical setting-ID order. */
+	strings: string[];
+}
+
 /** Host-owned persistence replaces Java Preferences; absent callbacks keep preferences in this session. */
 export interface SettingsHost {
 	/** Read a saved preference, or null to use canonical defaults. */
@@ -143,6 +151,24 @@ export class Settings {
 	subscribe(observer: () => void): () => void {
 		this.observers.add(observer);
 		return () => this.observers.delete(observer);
+	}
+	/** Capture engine preferences without browser persistence or observers. */
+	captureState(): SettingsState {
+		return { booleans: [...this.booleans], strings: [...this.strings] };
+	}
+	/** Restore a validated engine preference snapshot without changing persisted user defaults. */
+	restoreState(state: SettingsState): void {
+		if (
+			!Array.isArray(state.booleans) ||
+			state.booleans.length !== this.booleans.length ||
+			!state.booleans.every((v) => typeof v === 'boolean') ||
+			!Array.isArray(state.strings) ||
+			state.strings.length !== this.strings.length ||
+			!state.strings.every((v) => typeof v === 'string')
+		)
+			throw new TypeError('Invalid settings checkpoint');
+		this.booleans = [...state.booleans];
+		this.strings = [...state.strings];
 	}
 	/** Read a boolean by its canonical ID; invalid IDs throw. */
 	getBooleanSetting(id: number): boolean {

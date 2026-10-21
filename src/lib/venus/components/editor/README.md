@@ -1,6 +1,6 @@
 # Source editor views
 
-This group renders source documents and their nested tabs. The [workspace state](../../state/README.md) owns buffers, selection, dirty state, file workflows, and undo history; components receive those values and report edits or selections. Closing or selecting a tab delegates to that owner rather than manipulating a second editor model.
+This group renders source documents and their nested tabs. The [workspace state](../../state/README.md) owns buffers, selection, dirty state, file workflows, and undo history; components receive those values and report edits or selections. Dragging a document name before or after another tab changes only open-tab order; Alt+Shift+Left/Right moves the focused tab one position. The workspace preserves selection, dirty buffers, and loaded execution and stores the new order in source recovery. Dragging is unavailable with one tab, during inline renaming, execution, or a blocking desktop workflow. Closing or selecting a tab delegates to that owner rather than manipulating a second editor model.
 
 The source view owns its textarea, scroll synchronization, syntax painting, and instruction-hover lifetime. Highlighting reads the [editor module](../../../editor/README.md), and instruction descriptions read the machine's public instruction metadata. Document tabs reuse the generic strip and native button from [controls](../controls/README.md), retaining their own rename input and focus behavior. The bindable textarea handle lets the workspace focus and select text for navigation and find/replace.
 

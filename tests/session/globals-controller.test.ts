@@ -273,3 +273,101 @@ describe('production Globals and Venus RunController', () => {
 		await item.controller.dispose();
 	});
 });
+
+describe('portable debugger checkpoints', () => {
+	it('retains successfully loaded data-only programs without executable text', async () => {
+		const code = '.data\nvalue: .word 73\n';
+		const original = session(code);
+		original.controller.assemble(['main.asm'], 'main.asm');
+		const checkpoint = original.controller.captureCheckpoint();
+		expect(checkpoint?.status).toBe('assembled');
+		const restored = session(code);
+		restored.controller.restoreCheckpoint(JSON.parse(JSON.stringify(checkpoint)));
+		expect(restored.controller.captureCheckpoint()).toEqual(checkpoint);
+		await Promise.all([original.controller.dispose(), restored.controller.dispose()]);
+	});
+
+	it('restores raw memory, registers, delayed branches, and backstep history into an independent session', async () => {
+		const code =
+			'.data\nvalue: .word 7\n.text\nli $t0, 9\nsw $t0, 0($gp)\nb target\naddiu $t0, $t0, 1\ntarget: li $v0, 10\nsyscall\n';
+		const original = session(code);
+		original.globals
+			.getSettings()
+			.setBooleanSettingNonPersistent(Settings.DELAYED_BRANCHING_ENABLED, true);
+		original.controller.assemble(['main.asm'], 'main.asm');
+		await original.controller.step();
+		await original.controller.step();
+		await original.controller.step();
+		original.globals.coprocessor1.setRegisterToInt(0, 0x7fa12345);
+		original.globals.coprocessor1.setConditionFlag(7);
+		original.globals.memory.allocateBytesFromHeap(19);
+		const checkpoint = JSON.parse(JSON.stringify(original.controller.captureCheckpoint()));
+		const restored = session(code);
+		restored.controller.restoreCheckpoint(checkpoint);
+		expect(restored.controller.captureCheckpoint()).toEqual(checkpoint);
+		expect(restored.globals.delayedBranch.isTriggered()).toBe(true);
+		await restored.controller.step();
+		await original.controller.step();
+		expect(restored.controller.captureCheckpoint()).toEqual(
+			original.controller.captureCheckpoint()
+		);
+		restored.controller.backStep();
+		original.controller.backStep();
+		expect(restored.controller.captureCheckpoint()).toEqual(
+			original.controller.captureCheckpoint()
+		);
+		await Promise.all([original.controller.dispose(), restored.controller.dispose()]);
+	});
+
+	it('retains terminated execution, self-modified instructions, and Reset metadata without replaying output', async () => {
+		const code = '.text\nli $a0, 42\nli $v0, 1\nsyscall\nli $v0, 10\nsyscall\n';
+		const original = session(code);
+		original.globals
+			.getSettings()
+			.setBooleanSettingNonPersistent(Settings.SELF_MODIFYING_CODE_ENABLED, true);
+		original.controller.assemble(['main.asm'], 'main.asm');
+		await original.controller.run();
+		original.globals.memory.setRawWord(0x00400000, 0);
+		const checkpoint = JSON.parse(JSON.stringify(original.controller.captureCheckpoint()));
+		const restored = session(code);
+		restored.controller.restoreCheckpoint(checkpoint);
+		expect(restored.controller.captureCheckpoint()).toEqual(checkpoint);
+		expect(restored.controller.getState().status).toBe('terminated');
+		expect(restored.output).toEqual([]);
+		expect(restored.globals.memory.getStatementNoNotify(0x00400000)!.getBinaryStatement()).toBe(0);
+		restored.controller.reset();
+		expect(restored.globals.memory.getStatementNoNotify(0x00400000)!.getBinaryStatement()).not.toBe(
+			0
+		);
+		await Promise.all([original.controller.dispose(), restored.controller.dispose()]);
+	});
+
+	it('rejects malformed checkpoints before changing hardware and refuses mid-flight capture', async () => {
+		let resume: (() => void) | undefined;
+		const running = session('.text\nloop: b loop\n', {
+			yieldControl: () =>
+				new Promise<void>((resolve) => {
+					resume = resolve;
+				}),
+			instructionsPerYield: 1
+		});
+		running.controller.assemble(['main.asm'], 'main.asm');
+		const checkpoint = running.controller.captureCheckpoint()!;
+		expect(() => running.controller.restoreCheckpoint({ ...checkpoint, registers: [] })).toThrow(
+			'Invalid execution checkpoint'
+		);
+		expect(() =>
+			running.controller.restoreCheckpoint({
+				...checkpoint,
+				memory: { ...checkpoint.memory, words: [] }
+			})
+		).toThrow('Invalid execution checkpoint');
+		expect(running.controller.captureCheckpoint()).toEqual(checkpoint);
+		const pending = running.controller.run();
+		expect(running.controller.captureCheckpoint()).toBeNull();
+		running.controller.stop();
+		resume?.();
+		await pending;
+		await running.controller.dispose();
+	});
+});

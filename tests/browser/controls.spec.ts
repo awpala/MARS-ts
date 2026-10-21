@@ -10,6 +10,8 @@ test('repository link opens a new tab and releases mouse tooltip while preservin
 	);
 	await openDesktop(page);
 	const link = page.getByRole('link', { name: 'MARS-ts on GitHub (opens in a new tab)' });
+	await expect(link.locator('.github-icon')).toHaveCSS('mask-image', /\/icons\/GitHub\.svg/);
+	expect((await page.request.get('/icons/GitHub.svg')).ok()).toBe(true);
 	const theme = page.getByRole('switch', { name: 'Dark theme' });
 	const tooltip = page.locator('.tooltip');
 	const themeBounds = (await theme.boundingBox())!;
@@ -44,6 +46,28 @@ test('tooltips support disabled controls, hover, focus, dismissal, themes, and k
 	await expect(tooltip).toBeVisible();
 	await expect(step).toHaveAccessibleDescription('Step F7');
 	await expect(step).not.toHaveAttribute('title');
+	// Moving into an adjacent control must remove the old description in the same update.
+	const remaining = await step.evaluate(async (element) => {
+		element.dispatchEvent(
+			new PointerEvent('pointerleave', { relatedTarget: element.parentElement })
+		);
+		await Promise.resolve();
+		return document.querySelectorAll('.tooltip').length;
+	});
+	expect(remaining).toBe(0);
+	await page.mouse.move(5, 200);
+	await step.hover();
+	await expect(tooltip).toBeVisible();
+	const triggerBounds = (await step.boundingBox())!;
+	const tooltipBounds = (await tooltip.boundingBox())!;
+	await page.mouse.move(
+		triggerBounds.x + triggerBounds.width / 2,
+		triggerBounds.y + triggerBounds.height - 1
+	);
+	await page.mouse.move(tooltipBounds.x + tooltipBounds.width / 2, tooltipBounds.y + 1, {
+		steps: 12
+	});
+	await expect(tooltip).toBeVisible();
 	await tooltip.hover();
 	await expect(tooltip).toBeVisible();
 	await page.mouse.move(5, 200);

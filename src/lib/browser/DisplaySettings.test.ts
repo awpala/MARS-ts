@@ -7,6 +7,7 @@ import {
 
 const settings = {
 	autoSave: false,
+	showRegisters: false,
 	ascii: false,
 	showLabels: true,
 	showDataLabels: false,
@@ -37,6 +38,7 @@ describe('working display preference persistence', () => {
 			{},
 			{ ...settings, showLines: 'false' },
 			{ ...settings, autoSave: 'true' },
+			{ ...settings, showRegisters: 'false' },
 			{ ...settings, ascii: 'true' },
 			{ ...settings, speed: -1 },
 			{ ...settings, speed: 41 },
@@ -61,6 +63,13 @@ describe('working display preference persistence', () => {
 		expect(
 			loadDisplaySettings(() => ({ getItem: () => JSON.stringify(older), setItem: () => {} }))
 		).toEqual({ ...older, showDataLabels: true, showTextLabels: true, labelSortState: 0 });
+	});
+	it('defaults the register pane to shown for pre-toggle preferences', () => {
+		const { showRegisters, ...older } = settings;
+		void showRegisters;
+		expect(
+			loadDisplaySettings(() => ({ getItem: () => JSON.stringify(older), setItem: () => {} }))
+		).toEqual({ ...older, showRegisters: true });
 	});
 	it('tolerates denied storage access and quota failures', () => {
 		const denied = () => {

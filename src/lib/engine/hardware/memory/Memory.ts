@@ -6,6 +6,50 @@ import { AddressErrorException } from './AddressErrorException.js';
 import { MemoryAccessNotice } from '../notices/MemoryAccessNotice.js';
 import { MemoryConfigurations } from './MemoryConfigurations.js';
 
+/** Portable sparse memory payload; block indices retain allocation and raw zero words. */
+export interface MemoryState {
+	/** Raw data, kernel data, stack, and MMIO blocks, in that order. */
+	words: [number, number[]][][];
+	/** User and kernel text blocks, containing instruction words or empty slots. */
+	text: [number, (number | null)[]][][];
+	/** Next heap allocation address. */
+	heapAddress: number;
+	/** Whether byte accesses use little endian ordering. */
+	littleEndian: boolean;
+}
+
+/** Validate portable memory before allocating or mutating a machine. */
+export function isMemoryState(value: unknown): value is MemoryState {
+	if (!value || typeof value !== 'object') return false;
+	const state = value as MemoryState;
+	const word = (v: unknown) => typeof v === 'number' && (v | 0) === v;
+	const tables = (v: unknown, counts: number[], text: boolean): boolean =>
+		Array.isArray(v) &&
+		v.length === counts.length &&
+		v.every((table, i) => {
+			if (!Array.isArray(table) || table.length > counts[i]) return false;
+			const seen = new Set<number>();
+			return table.every((entry) => {
+				if (!Array.isArray(entry) || entry.length !== 2) return false;
+				const [index, block] = entry;
+				if (!Number.isInteger(index) || index < 0 || index >= counts[i] || seen.has(index))
+					return false;
+				seen.add(index);
+				return (
+					Array.isArray(block) &&
+					block.length === 1024 &&
+					block.every((n) => word(n) || (text && n === null))
+				);
+			});
+		});
+	return (
+		word(state.heapAddress) &&
+		typeof state.littleEndian === 'boolean' &&
+		tables(state.words, [1024, 1024, 1024, 16], false) &&
+		tables(state.text, [1024, 1024], true)
+	);
+}
+
 /** The storage-facing ProgramStatement contract; instruction decoding belongs to the owning session. */
 export interface MemoryStatement {
 	/** Returns the exact signed machine instruction word. */
@@ -112,6 +156,69 @@ export class Memory<Statement extends MemoryStatement = MemoryStatement> {
 		private readonly configurations = new MemoryConfigurations()
 	) {
 		this.clear();
+	}
+	/** Capture allocated blocks without notices; callers must hold an idle machine checkpoint. */
+	captureState(): MemoryState {
+		return {
+			words: [
+				this.dataBlockTable,
+				this.kernelDataBlockTable,
+				this.stackBlockTable,
+				this.memoryMapBlockTable
+			].map((table) =>
+				table.flatMap((block, i) => (block ? [[i, Array.from(block)] as [number, number[]]] : []))
+			),
+			text: [this.textBlockTable, this.kernelTextBlockTable].map((table) =>
+				table.flatMap((block, i) =>
+					block
+						? [
+								[i, Array.from(block, (ps) => ps?.getBinaryStatement() ?? null)] as [
+									number,
+									(number | null)[]
+								]
+							]
+						: []
+				)
+			),
+			heapAddress: this.heapAddress,
+			littleEndian: this.byteOrder
+		};
+	}
+	/** Restore validated allocated blocks silently, retaining matching assembled statement objects and observers. */
+	restoreState(state: MemoryState): void {
+		if (!isMemoryState(state)) throw new TypeError('Invalid memory checkpoint');
+		const words = state.words.map((entries, i) => {
+			const table: WordTable = Array(i === 3 ? 16 : 1024).fill(null);
+			for (const [index, block] of entries) table[index] = Int32Array.from(block);
+			return table;
+		});
+		const text = state.text.map((entries, i) => {
+			const old = i === 0 ? this.textBlockTable : this.kernelTextBlockTable;
+			const base = i === 0 ? this.textBaseAddress : this.kernelTextBaseAddress;
+			const table: StatementTable<Statement> = Array(1024).fill(null);
+			for (const [index, block] of entries)
+				table[index] = block.map((word, offset) => {
+					if (word === null) return null;
+					const original = old[index]?.[offset];
+					return original?.getBinaryStatement() === word
+						? original
+						: this.host.decodeStatement(word, (base + (index * 1024 + offset) * 4) | 0);
+				});
+			return table;
+		});
+		[
+			this.dataBlockTable,
+			this.kernelDataBlockTable,
+			this.stackBlockTable,
+			this.memoryMapBlockTable
+		] = words;
+		[this.textBlockTable, this.kernelTextBlockTable] = text;
+		this.heapAddress = state.heapAddress;
+		this.byteOrder = state.littleEndian;
+	}
+	/** Decode a detached instruction for restoring historical statement identities without a memory write. */
+	decodeCheckpointStatement(word: number, address: number): Statement {
+		return this.host.decodeStatement(word, address);
 	}
 	/** Clears storage and heap position using the current configuration; subscriptions and byte order survive. */
 	clear(): void {

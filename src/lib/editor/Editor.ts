@@ -3,6 +3,18 @@
  * Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license.
  */
 
+/** Detached undo/redo recovery payload, applied only to an identical source buffer. */
+export interface EditHistory {
+	/** Virtual source identity. */
+	name: string;
+	/** Exact current text anchoring this history branch. */
+	text: string;
+	/** Prior revisions, oldest first. */
+	undo: string[];
+	/** Undone revisions in the editor's stack order. */
+	redo: string[];
+}
+
 /** An editor buffer owned by one Editor instance; the view never mutates its history. */
 export interface EditPane {
 	/** Stable session-local tab identity. */
@@ -40,6 +52,15 @@ export class Editor {
 	setCurrentEditTab(id: number): void {
 		if (this.documents.some((tab) => tab.id === id)) this.selectedId = id;
 	}
+	/** Move one open tab before or after another, retaining buffer identity, history, and current selection. */
+	reorder(id: number, targetId: number, after = false): void {
+		if (id === targetId) return;
+		const source = this.documents.findIndex((tab) => tab.id === id);
+		if (source < 0 || !this.documents.some((tab) => tab.id === targetId)) return;
+		const [tab] = this.documents.splice(source, 1);
+		const target = this.documents.findIndex((tab) => tab.id === targetId);
+		this.documents.splice(target + (after ? 1 : 0), 0, tab);
+	}
 	/** Generates the next mipsN.asm filename; opening existing files does not advance this counter. */
 	getNextDefaultFilename(): string {
 		return `mips${++this.newUsageCount}.asm`;
@@ -72,6 +93,25 @@ export class Editor {
 		tab.undo.push(tab.text);
 		tab.text = text;
 		tab.redo = [];
+	}
+	/** Copy each buffer's undo/redo branch for browser recovery; callers must track editor revision changes. */
+	captureHistory(): EditHistory[] {
+		return this.documents.map((tab) => ({
+			name: tab.name,
+			text: tab.text,
+			undo: [...tab.undo],
+			redo: [...tab.redo]
+		}));
+	}
+	/** Recover history only for an exact source identity/text match, leaving conflicting drafts untouched. */
+	restoreHistory(records: readonly EditHistory[]): void {
+		for (const tab of this.documents) {
+			const record = records.find((r) => r.name === tab.name && r.text === tab.text);
+			if (record) {
+				tab.undo = [...record.undo];
+				tab.redo = [...record.redo];
+			}
+		}
 	}
 	/** Restores the preceding source revision when available. */
 	undo(): void {

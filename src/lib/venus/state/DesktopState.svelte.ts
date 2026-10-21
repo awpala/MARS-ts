@@ -6,6 +6,7 @@ import { runSpeedValue } from '../utils/runSpeed.js';
 import { DisplayPreferences } from './DisplayPreferences.svelte.js';
 import { SourceWorkspace } from './SourceWorkspace.svelte.js';
 import { SimulationState } from './SimulationState.svelte.js';
+import { DesktopPersistence } from './DesktopPersistence.svelte.js';
 import { SourceSearch } from './SourceSearch.svelte.js';
 
 /** Browser file-transfer capabilities supplied by mounted action components. */
@@ -28,6 +29,8 @@ export class DesktopState {
 	readonly simulation: SimulationState = new SimulationState(this.workspace, this.display);
 	/** Search dialog state targeting this desktop's workspace. */
 	readonly search = new SourceSearch(this.workspace);
+	/** Browser-local recovery of the existing state graph and stable execution checkpoints. */
+	readonly persistence = new DesktopPersistence(this.workspace, this.simulation, this.display);
 	/** Whether browser restoration and machine initialization have finished. */
 	ready = $state(false);
 	/** Whether restored layout has been measured and can replace the loading overlay. */
@@ -123,6 +126,7 @@ export class DesktopState {
 				this.workspace.autoSave = this.display.restore();
 				this.workspace.restore();
 				cleanup = this.simulation.start();
+				this.persistence.restore();
 				this.workspace.activate();
 				this.ready = true;
 				// Measure restored panes while hidden, then reveal after the first layout frame.

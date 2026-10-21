@@ -247,6 +247,10 @@ export class MIPSprogram {
 			action
 		);
 	}
+	/** Restore the debugger's stable stepped-mode annotation without starting execution. */
+	restoreSteppedExecution(stepped: boolean): void {
+		this.steppedExecution = stepped;
+	}
 	/** Whether the latest execution entry point selected single-step mode. */
 	inSteppedExecution(): boolean {
 		return this.steppedExecution;

@@ -18,8 +18,10 @@
 		showLines: boolean;
 		/** Required run-speed slider position (0–40), bindable to its owner. */
 		speed: number;
+		/** Required visibility gate; the desktop shows run speed only in Execute. */
+		showSpeed: boolean;
 	};
-	let { displayToggles, showLines = $bindable(), speed = $bindable() }: Props = $props();
+	let { displayToggles, showLines = $bindable(), speed = $bindable(), showSpeed }: Props = $props();
 	const commands = getDesktopCommands();
 	const icons: Record<string, string> = {
 		Previous: asset('icons/Previous.svg'),
@@ -84,7 +86,7 @@
 		{/each}
 	</ToolbarGroup>
 	<ToolbarGroup label="Help actions">{@render commandButton(helpActions[0])}</ToolbarGroup>
-	<SpeedSlider bind:value={speed} />
+	{#if showSpeed}<SpeedSlider bind:value={speed} />{/if}
 </div>
 
 <style>

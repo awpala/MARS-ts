@@ -17,3 +17,5 @@ The shell's ToolbarButton specializes Button with compact icon geometry, toolbar
 [Toggle](Toggle.svelte) composes Button into a labeled binary switch with a bindable value, disabled state, optional description, and decorative track content. It owns keyboard activation and thumb presentation. The shell's ThemeToggle supplies the sun/moon icons, restores the pre-paint theme on mount, and updates the document theme and separate browser preference. The generic switch does not access storage or choose an application theme.
 
 Add controls here when they own a focused input-and-label interaction or preference switch. Shell components compose controls into application chrome; feature-specific selection rules and execution behavior remain with their callers.
+
+Toggle keeps a neutral track by default for settings such as light/dark appearance. Its active variant uses distinct on/off fills and a contrasting thumb for enabled/disabled presentation, as used by Registers visibility. Both variants retain the same native keyboard and switch semantics; callers own values and persistence.

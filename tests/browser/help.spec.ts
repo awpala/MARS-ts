@@ -236,7 +236,7 @@ test('F1 overview and long articles remain usable in dark mode at a smaller view
 	);
 	await page.keyboard.press('Escape');
 	await page.setViewportSize({ width: 800, height: 600 });
-	await page.getByRole('switch').click();
+	await page.getByRole('switch', { name: 'Dark theme', exact: true }).click();
 	await page
 		.locator('.menubar summary')
 		.filter({ hasText: /^Help$/ })

@@ -16,6 +16,20 @@ export class BackstepStack<Statement> {
 			throw new RangeError('Invalid backstep capacity');
 		this.stack = Array.from({ length: capacity }, () => new BackStep<Statement>());
 	}
+	/** Copy retained records oldest first; statement identities remain owned by the machine. */
+	captureState(): Omit<BackStep<Statement>, 'assign'>[] {
+		return Array.from({ length: this.size }, (_, i) => ({
+			...this.stack[(this.top - this.size + 1 + i + this.capacity) % this.capacity]
+		}));
+	}
+	/** Replace history with validated oldest-first records, preserving restored statement identity groups. */
+	restoreState(records: readonly Omit<BackStep<Statement>, 'assign'>[]): void {
+		if (records.length > this.capacity)
+			throw new RangeError('Checkpoint exceeds backstep capacity');
+		this.size = records.length;
+		this.top = records.length - 1;
+		for (let i = 0; i < records.length; i++) Object.assign(this.stack[i], records[i]);
+	}
 	/** Whether no undo records are retained. */
 	empty(): boolean {
 		return this.size === 0;

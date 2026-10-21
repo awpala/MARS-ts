@@ -5,8 +5,16 @@ import type { RegisterFile } from '../hardware/registers/RegisterFile.js';
 import type { Coprocessor0 } from '../hardware/registers/Coprocessor0.js';
 import type { Coprocessor1 } from '../hardware/registers/Coprocessor1.js';
 import { Instruction } from '../instructions/Instruction.js';
-import { BackStepAction } from './BackStep.js';
+import { BackStepAction, type BackStep } from './BackStep.js';
 import { BackstepStack } from './BackstepStack.js';
+
+/** Detached bounded undo history; statement references retain their original grouping until serialization. */
+export interface BackStepperState<Statement> {
+	/** Whether recording/restoration are enabled. */
+	enabled: boolean;
+	/** Oldest-first copies of restoration records, without assign methods. */
+	records: Omit<BackStep<Statement>, 'assign'>[];
+}
 
 /** Session-owned machine and fatal-error boundary used to restore canonical undo actions. */
 export interface BackStepperHost<Statement extends MemoryStatement> {
@@ -40,6 +48,15 @@ export class BackStepper<Statement extends MemoryStatement = MemoryStatement> {
 			getStatementNoNotify: (address) => host.memory.getStatementNoNotify(address),
 			inDelaySlot: () => host.inDelaySlot()
 		});
+	}
+	/** Capture bounded undo records and their statement identities at an idle checkpoint. */
+	captureState(): BackStepperState<Statement> {
+		return { enabled: this.engaged, records: this.backSteps.captureState() };
+	}
+	/** Restore retained undo groups without recording hardware writes. */
+	restoreState(state: BackStepperState<Statement>): void {
+		this.backSteps.restoreState(state.records);
+		this.engaged = state.enabled;
 	}
 	/** Whether callers should record undo actions; add methods themselves intentionally do not gate recording. */
 	enabled(): boolean {

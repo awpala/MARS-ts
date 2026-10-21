@@ -66,6 +66,10 @@ export class SourceWorkspace {
 	selectionStart = $state(0);
 	/** Current source-selection end offset. */
 	selectionEnd = $state(0);
+	/** Current source viewport top offset, restored with the desktop session. */
+	sourceScrollTop = $state(0);
+	/** Current source viewport left offset, restored with the desktop session. */
+	sourceScrollLeft = $state(0);
 	/** Mounted source textarea supplied by SourceEditor; cleared on unmount. */
 	sourceInput = $state<HTMLTextAreaElement>();
 	/** Line and column derived from the selected source and caret. */
@@ -291,6 +295,12 @@ export class SourceWorkspace {
 		this.editor.setCurrentEditTab(id);
 		this.selectionStart = 0;
 		this.selectionEnd = 0;
+		this.refresh();
+	};
+	/** Reorder open tabs without selecting, editing, or invalidating the loaded machine; persist the ordered workspace. */
+	reorder = (id: number, targetId: number, after: boolean): void => {
+		if (this.disposed || this.host.running() || this.modal) return;
+		this.editor.reorder(id, targetId, after);
 		this.refresh();
 	};
 	/** Record source edits, invalidate assembly, and persist according to workspace policy. */

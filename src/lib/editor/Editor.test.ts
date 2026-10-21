@@ -50,3 +50,26 @@ describe('browser editor buffer lifecycle', () => {
 		expect(new Editor().getEditPanes()).toEqual([]);
 	});
 });
+
+it('reorders open buffers while retaining selection, dirty text, and independent undo/redo branches', () => {
+	const editor = new Editor();
+	const first = editor.openFile('a.asm', 'a');
+	const second = editor.openFile('b.asm', 'b');
+	editor.setText('edited b');
+	const third = editor.openFile('c.asm', 'c');
+	editor.setCurrentEditTab(second.id);
+	editor.reorder(third.id, first.id);
+	expect(editor.getEditPanes().map((tab) => tab.name)).toEqual(['c.asm', 'a.asm', 'b.asm']);
+	expect(editor.getCurrentEditTab()).toBe(second);
+	expect(editor.isDirty(second)).toBe(true);
+	editor.undo();
+	expect(second.text).toBe('b');
+	editor.reorder(first.id, second.id, true);
+	expect(editor.getEditPanes().map((tab) => tab.name)).toEqual(['c.asm', 'b.asm', 'a.asm']);
+	editor.redo();
+	expect(second.text).toBe('edited b');
+	editor.reorder(second.id, second.id);
+	editor.reorder(-1, first.id);
+	editor.reorder(first.id, -1);
+	expect(editor.getEditPanes().map((tab) => tab.name)).toEqual(['c.asm', 'b.asm', 'a.asm']);
+});

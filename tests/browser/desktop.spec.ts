@@ -149,6 +149,7 @@ test('modal backdrop closes Help and cancels dirty-file closure without losing s
 
 test('working display settings and run speed survive reload', async ({ page }) => {
 	await openDesktop(page);
+	await expect(page.getByRole('slider', { name: 'Run speed' })).toHaveCount(0);
 	await page.getByRole('button', { name: 'New', exact: true }).click();
 	await page.getByRole('textbox', { name: 'Source mips1.asm', exact: true }).fill('.text\nmain:\n');
 	const settings = page.locator('.menubar summary').filter({ hasText: /^Settings$/ });
@@ -227,9 +228,13 @@ test('working display settings and run speed survive reload', async ({ page }) =
 	await expect(page.locator('.line-numbers')).toHaveCount(0);
 	await page.getByRole('button', { name: 'Execute', exact: true }).click();
 	const slider = page.getByRole('slider');
-	await expect(page.locator('.speed')).toHaveText('Run speed unlimited');
+	await expect(page.locator('.speed')).toHaveText('Run speed at max (no interaction)');
 	await slider.fill('20');
 	await expect(page.locator('.speed')).toHaveText('Run speed 15 inst/sec');
+	await page.getByRole('button', { name: 'Edit', exact: true }).click();
+	await expect(slider).toHaveCount(0);
+	await page.getByRole('button', { name: 'Execute', exact: true }).click();
+	await expect(slider).toHaveValue('20');
 	await page.reload();
 	await waitForDesktop(page);
 	await expect(page.getByRole('button', { name: 'New', exact: true })).toBeEnabled({
@@ -1101,26 +1106,27 @@ test('Line and Column follows source focus while the selected filename stays vis
 	await source.press('Control+End');
 	await expect(position).toHaveText('Line 3, Column 4');
 	const filename = page.locator('footer > span').first();
-	await expect(filename).toHaveText('mips1.asm');
+	await expect(filename).toHaveText('Editing: mips1.asm');
+	await expect(page.getByLabel('Execution status', { exact: true })).toHaveCount(0);
 	await page.getByLabel('$t0 value', { exact: true }).focus();
 	await expect(position).toBeHidden();
-	await expect(filename).toHaveText('mips1.asm');
+	await expect(filename).toHaveText('Editing: mips1.asm');
 	await source.focus();
 	await expect(position).toHaveText('Line 3, Column 4');
 	await page.getByRole('textbox', { name: 'Mars Messages', exact: true }).focus();
 	await expect(position).toBeHidden();
-	await expect(filename).toHaveText('mips1.asm');
+	await expect(filename).toHaveText('Editing: mips1.asm');
 	await page.getByRole('button', { name: 'Execute', exact: true }).click();
 	await expect(position).toBeHidden();
-	await expect(filename).toHaveText('mips1.asm');
+	await expect(filename).toHaveText('No program loaded');
 	await page.getByRole('button', { name: 'Edit', exact: true }).click();
 	await expect(position).toBeHidden();
-	await expect(filename).toHaveText('mips1.asm');
+	await expect(filename).toHaveText('Editing: mips1.asm');
 	await source.focus();
 	await expect(position).toBeVisible();
 	await page.getByRole('button', { name: 'Help', exact: true }).click();
 	await expect(position).toBeHidden();
-	await expect(filename).toHaveText('mips1.asm');
+	await expect(filename).toHaveText('Editing: mips1.asm');
 	await page.keyboard.press('Escape');
 	await source.focus();
 	await expect(position).toBeVisible();
@@ -1130,6 +1136,61 @@ test('Line and Column follows source focus while the selected filename stays vis
 		.getByRole('button', { name: 'Discard', exact: true })
 		.click();
 	await expect(position).toBeHidden();
+	await expect(filename).toHaveText('No current edits');
+});
+
+test('Execute footer follows the loaded program independently of the selected Edit tab', async ({
+	page
+}) => {
+	await openDesktop(page);
+	await openStoredSources(page, [
+		{ name: 'first.asm', source: '.text\nli $t0, 1\nli $v0, 10\nsyscall\n' },
+		{ name: 'second.asm', source: '.text\nli $t0, 2\nli $v0, 10\nsyscall\n' }
+	]);
+	const filename = page.locator('footer > span').first();
+	await page.getByRole('button', { name: 'first.asm', exact: true }).click();
+	await page.getByRole('button', { name: 'Assemble', exact: true }).click();
+	await expect(filename).toHaveText('Loaded: first.asm');
+	await expect(filename.locator('strong')).toHaveText('first.asm');
+	await expect(filename).toHaveCSS('font-weight', '400');
+	await expect(filename.locator('strong')).toHaveCSS('font-weight', '700');
+	const status = page.getByLabel('Execution status', { exact: true });
+	await expect(status).toHaveText('Status: assembled');
+	await expect(status.locator('strong')).toHaveText('assembled');
+	await expect(status).toHaveCSS('font-weight', '400');
+	await expect(status.locator('strong')).toHaveCSS('font-weight', '700');
+	await page.getByRole('button', { name: 'Step', exact: true }).click();
+	await expect(status).toHaveText('Status: paused');
+	await expect(status.locator('strong')).toHaveText('paused');
+	const sourceLink = page.locator('.text-segment .source-link').first();
+	await sourceLink.hover();
+	await expect(sourceLink).not.toHaveAttribute('aria-describedby');
+	await expect(sourceLink).not.toHaveAttribute('title');
+	await page.getByRole('button', { name: 'Edit', exact: true }).click();
+	await page.getByRole('button', { name: 'second.asm', exact: true }).click();
+	await expect(filename).toHaveText('Editing: second.asm');
+	await expect(status).toHaveCount(0);
+	await page.getByRole('button', { name: 'Execute', exact: true }).click();
+	await expect(filename).toHaveText('Loaded: first.asm');
+	await page.getByLabel('$t0 value', { exact: true }).focus();
+	await expect(filename).toHaveText('Loaded: first.asm');
+	await page.getByRole('button', { name: 'Edit', exact: true }).click();
+	await expect(filename).toHaveText('Editing: second.asm');
+	await expect(status).toHaveCount(0);
+	await page.getByRole('button', { name: 'Assemble', exact: true }).click();
+	await expect(filename).toHaveText('Loaded: second.asm');
+	await page.getByRole('button', { name: 'Reset', exact: true }).click();
+	await expect(filename).toHaveText('Loaded: second.asm');
+	await page.getByRole('button', { name: 'Edit', exact: true }).click();
+	await page
+		.getByRole('textbox', { name: 'Source second.asm', exact: true })
+		.fill('invalid_instruction');
+	await page.getByRole('button', { name: 'Assemble', exact: true }).click();
+	await expect(filename).toHaveText('Editing: second.asm');
+	await expect(status).toHaveText('Status: error');
+	await expect(status.locator('strong')).toHaveText('error');
+	await page.getByRole('button', { name: 'Execute', exact: true }).click();
+	await expect(filename).toHaveText('No program loaded');
 });
 
 // Decode with an independent ZIP reader, which also verifies entry CRCs.

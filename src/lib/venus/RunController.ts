@@ -1,5 +1,11 @@
 /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license.
  * Ports the engine workflows in mars/venus/Run{Assemble,Go,Step,Backstep,Pause,Stop,Reset}Action.java. */
+import {
+	captureRunCheckpoint,
+	restoreRunHardware,
+	isRunCheckpoint,
+	type RunCheckpoint
+} from './RunCheckpoint.js';
 import { Globals } from '../engine/Globals.js';
 import type { MIPSprogram } from '../engine/assembler/programs/MIPSprogram.js';
 import type { ProgramStatement } from '../engine/assembler/programs/ProgramStatement.js';
@@ -70,6 +76,51 @@ export class RunController {
 	/** Publish a revision after timed execution or external machine edits without copying engine state. */
 	refresh(): void {
 		if (!this.disposed) this.publish({});
+	}
+	/** Recover the error annotation for an unloaded assembly without inventing executable machine statements. */
+	restoreUnloadedError(): void {
+		this.invalidate();
+		this.publish({ status: 'error', error: new ProcessingException() });
+	}
+	/** Whether an execution operation still owns hardware, including its completion callbacks. */
+	isBusy(): boolean {
+		return (
+			this.pending !== null || this.state.status === 'running' || this.machine.simulator.isRunning()
+		);
+	}
+	/** Capture only stable loaded execution; source text and platform output belong to the browser owner. */
+	captureCheckpoint(): RunCheckpoint | null {
+		if (
+			this.pending ||
+			this.machine.simulator.isRunning() ||
+			this.state.status === 'running' ||
+			this.state.status === 'idle' ||
+			(this.state.status === 'error' && !this.state.started) ||
+			!this.machine.program ||
+			this.machine.program.getMachineList() === null
+		)
+			return null;
+		return captureRunCheckpoint(this.machine, this.state);
+	}
+	/** Rebuild source metadata before restoring an exact stable machine, without executing instructions. */
+	restoreCheckpoint(checkpoint: RunCheckpoint): void {
+		this.requireIdle();
+		if (!isRunCheckpoint(checkpoint)) throw new TypeError('Invalid execution checkpoint');
+		const configuration = this.machine.memoryConfigurations.getConfigurationByName(
+			checkpoint.configuration
+		);
+		if (!configuration) throw new TypeError('Unknown checkpoint memory configuration');
+		this.machine.getSettings().restoreState(checkpoint.settings);
+		this.machine.memoryConfigurations.setCurrentConfiguration(configuration);
+		this.assemble([checkpoint.filename], checkpoint.filename);
+		this.machine.withGuiAccess(() => restoreRunHardware(this.machine, checkpoint));
+		this.publish({
+			status: checkpoint.status,
+			started: checkpoint.started,
+			reset: checkpoint.reset,
+			reason: checkpoint.reason,
+			error: checkpoint.error ? new ProcessingException() : null
+		});
 	}
 	/** Read current virtual buffers and assemble either the lead file or explicitly supplied open files. */
 	assemble(openFilenames: readonly string[], leadFilename: string): ErrorList | null {

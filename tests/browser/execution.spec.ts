@@ -21,7 +21,7 @@ test('Text Segment heading stays visible while following and scrolling instructi
 	await expect(heading).toBeInViewport();
 	await page.getByLabel('Breakpoint 0x004000c8', { exact: true }).check();
 	await action(page, 'Go').click();
-	await expect(page.getByLabel('Execution status')).toHaveText('paused');
+	await expect(page.getByLabel('Execution status')).toHaveText('Status: paused');
 	await expect(heading).toBeInViewport();
 	const bounds = await text.evaluate((panel) => ({
 		headingBottom: panel.querySelector('h2')!.getBoundingClientRect().bottom,
@@ -68,12 +68,12 @@ test('breakpoint toolbar actions follow Reset and suspend or clear breakpoints',
 	await expect(breakpoint).toBeChecked();
 	await action(page, 'Go').click();
 	await expect(page.getByLabel('Execution status')).toHaveText(
-		'terminated — breakpoints suspended'
+		'Status: terminated — breakpoints suspended'
 	);
 	await action(page, 'Reset').click();
 	await toggle.click();
 	await action(page, 'Go').click();
-	await expect(page.getByLabel('Execution status')).toHaveText('paused');
+	await expect(page.getByLabel('Execution status')).toHaveText('Status: paused');
 	await expect(page.getByLabel('pc value', { exact: true })).toHaveValue('0x00400004');
 	await clear.click();
 	await expect(breakpoint).not.toBeChecked();
@@ -283,8 +283,11 @@ test('data pages show sixteen rows and ASCII follows hexadecimal values inline',
 	await waitForDesktop(page);
 	await expect(action(page, 'New')).toBeEnabled();
 	await expect(asciiToolbar).toHaveAttribute('aria-pressed', 'true');
+	await expect(range).toHaveValue('gp');
+	await expect(data.locator('tbody tr').first()).toContainText('0x10008000');
 	await action(page, 'Assemble').click();
 	await expect(ascii).toBeChecked();
+	await range.selectOption('data');
 	await expect(word).toHaveValue('  D  C  B  A');
 });
 
@@ -309,7 +312,7 @@ syscall
 `
 	);
 	await action(page, 'Assemble').click();
-	await expect(page.getByLabel('Execution status')).toHaveText('assembled');
+	await expect(page.getByLabel('Execution status')).toHaveText('Status: assembled');
 	await expect(
 		page.getByRole('region', { name: 'Text Segment', exact: true }).getByRole('row')
 	).toHaveCount(10);
@@ -322,18 +325,18 @@ syscall
 	await expect(page.getByLabel('pc value', { exact: true })).toHaveValue('0x00400000');
 	await page.getByLabel('Breakpoint 0x00400008', { exact: true }).check();
 	await action(page, 'Go').click();
-	await expect(page.getByLabel('Execution status')).toHaveText('paused');
+	await expect(page.getByLabel('Execution status')).toHaveText('Status: paused');
 	await expect(page.getByLabel('$t0 value', { exact: true })).toHaveValue('0x00000007');
 	await expect(page.getByLabel('pc value', { exact: true })).toHaveValue('0x00400008');
 	await action(page, 'Go').click();
-	await expect(page.getByLabel('Execution status')).toHaveText('terminated');
+	await expect(page.getByLabel('Execution status')).toHaveText('Status: terminated');
 	await expect(page.getByLabel('Run I/O', { exact: true })).toHaveValue('42' + finished);
 	await expect(page.getByLabel('Memory 0x10010000', { exact: true })).toHaveValue('0x00000007');
 	await page.getByLabel('Memory 0x10010000', { exact: true }).fill('99');
 	await page.getByLabel('Memory 0x10010000', { exact: true }).press('Enter');
 	await expect(page.getByLabel('Memory 0x10010000', { exact: true })).toHaveValue('0x00000063');
 	await action(page, 'Reset').click();
-	await expect(page.getByLabel('Execution status')).toHaveText('assembled');
+	await expect(page.getByLabel('Execution status')).toHaveText('Status: assembled');
 	await expect(page.getByLabel('Memory 0x10010000', { exact: true })).toHaveValue('0x0000000b');
 	await expect(page.getByLabel('$t0 value', { exact: true })).toHaveValue('0x00000000');
 });
@@ -350,7 +353,7 @@ test('console syscall input resumes execution and popup input cancels through St
 	await action(page, 'Go').click();
 	await page.getByLabel('Run input', { exact: true }).fill('-42');
 	await action(page, 'Submit').click();
-	await expect(page.getByLabel('Execution status')).toHaveText('terminated');
+	await expect(page.getByLabel('Execution status')).toHaveText('Status: terminated');
 	await expect(page.getByLabel('Run I/O', { exact: true })).toHaveValue('-42\n-42' + finished);
 	await page.getByRole('button', { name: 'Popup dialog for input syscalls', exact: true }).click();
 	await action(page, 'Reset').click();
@@ -359,7 +362,7 @@ test('console syscall input resumes execution and popup input cancels through St
 	await page.getByLabel('Syscall input', { exact: true }).fill('17');
 	await page.mouse.click(10, 10);
 	await expect(page.getByRole('dialog')).toHaveCount(0);
-	await expect(page.getByLabel('Execution status')).toHaveText('terminated');
+	await expect(page.getByLabel('Execution status')).toHaveText('Status: terminated');
 	await expect(page.getByLabel('$v0 value', { exact: true })).toHaveValue('0x00000011');
 });
 
@@ -370,13 +373,13 @@ test('unlimited execution yields to Pause and Stop and source edits invalidate e
 	await source(page, '.text\nloop: addiu $t0,$t0,1\nb loop\n');
 	await action(page, 'Assemble').click();
 	await action(page, 'Go').click();
-	await expect(page.getByLabel('Execution status')).toHaveText('running');
+	await expect(page.getByLabel('Execution status')).toHaveText('Status: running');
 	await action(page, 'Pause').click();
-	await expect(page.getByLabel('Execution status')).toHaveText('paused');
+	await expect(page.getByLabel('Execution status')).toHaveText('Status: paused');
 	await expect(page.getByLabel('$t0 value', { exact: true })).not.toHaveValue('0x00000000');
 	await action(page, 'Go').click();
 	await action(page, 'Stop').click();
-	await expect(page.getByLabel('Execution status')).toHaveText('terminated');
+	await expect(page.getByLabel('Execution status')).toHaveText('Status: terminated');
 	await action(page, 'Reset').click();
 	await action(page, 'Edit').click();
 	await page.getByRole('textbox', { name: /^Source / }).fill('.text\ninvalid_instruction\n');
@@ -417,14 +420,14 @@ test('active-source assembly uses explicit unsaved includes and retires saved as
 		.check();
 	await page.getByRole('button', { name: 'Show Labels Window', exact: true }).click();
 	await action(page, 'Assemble').click();
-	await expect(page.getByLabel('Execution status')).toHaveText('assembled');
+	await expect(page.getByLabel('Execution status')).toHaveText('Status: assembled');
 	await expect(
 		page
 			.getByRole('region', { name: 'Labels', exact: true })
 			.getByRole('button', { name: 'compute', exact: true })
 	).toBeVisible();
 	await action(page, 'Go').click();
-	await expect(page.getByLabel('Execution status')).toHaveText('terminated');
+	await expect(page.getByLabel('Execution status')).toHaveText('Status: terminated');
 	await expect(page.getByLabel('Run I/O', { exact: true })).toHaveValue('73' + finished);
 	page.once('dialog', (dialog) => dialog.accept());
 	await page.reload();
@@ -465,7 +468,7 @@ test('closed local includes feed the real tokenizer and floating registers use e
 		0
 	);
 	await action(page, 'Assemble').click();
-	await expect(page.getByLabel('Execution status')).toHaveText('assembled');
+	await expect(page.getByLabel('Execution status')).toHaveText('Status: assembled');
 	await action(page, 'Go').click();
 	await expect(page.getByLabel('Run I/O', { exact: true })).toHaveValue('19' + finished);
 	await action(page, 'Coproc 1').click();
@@ -497,7 +500,7 @@ test('cliff and exception outcomes preserve messages and select the faulting ins
 	await page.getByRole('textbox', { name: /^Source / }).fill('.text\nli $t0,1\nteq $t0,$t0\n');
 	await action(page, 'Assemble').click();
 	await action(page, 'Go').click();
-	await expect(page.getByLabel('Execution status')).toHaveText('error');
+	await expect(page.getByLabel('Execution status')).toHaveText('Status: error');
 	await expect(action(page, 'Coproc 0')).toHaveAttribute('aria-pressed', 'true');
 	await expect(page.getByLabel('Mars Messages', { exact: true })).toHaveValue(
 		/Go: execution terminated with errors/
@@ -580,7 +583,7 @@ test('text memory is readable without SMC and editable code executes then resets
 		.locator('.menubar summary')
 		.filter({ hasText: /^Settings$/ })
 		.click();
-	await expect(page.getByLabel('Execution status')).toHaveText('assembled');
+	await expect(page.getByLabel('Execution status')).toHaveText('Status: assembled');
 	await page.getByLabel('Code 0x00400000', { exact: true }).fill('0x24080009');
 	await page.getByLabel('Code 0x00400000', { exact: true }).press('Enter');
 	await expect(page.getByLabel('Memory 0x00400000', { exact: true })).toHaveValue('0x24080009');

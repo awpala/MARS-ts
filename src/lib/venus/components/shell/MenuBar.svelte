@@ -11,12 +11,15 @@
 		type DisplayToggle
 	} from '../../utils/commands.js';
 	import DropdownMenu, { type MenuItem, type MenuGroup } from './DropdownMenu.svelte';
+	import RegistersToggle from './RegistersToggle.svelte';
 	import ThemeToggle from './ThemeToggle.svelte';
 	import GitHubLink from './GitHubLink.svelte';
 	/** Preference controls remain parent-owned; command behavior comes from the desktop context. */
 	type Props = {
 		/** Required current display preferences with their owner callbacks. */
 		displayToggles: readonly DisplayToggle[];
+		/** Required parent-owned visibility of the registers sidebar; bindable and shown by default in its owner. */
+		showRegisters: boolean;
 		/** Required current engine setting values. */
 		engineSettings: Readonly<Record<number, boolean>>;
 		/** Required execution state, used to disable engine setting changes. */
@@ -24,7 +27,13 @@
 		/** Required callback writes settings through the parent machine. */
 		onsetting: (id: number, value: boolean) => void;
 	};
-	let { displayToggles, engineSettings, running, onsetting }: Props = $props();
+	let {
+		displayToggles,
+		engineSettings,
+		running,
+		onsetting,
+		showRegisters = $bindable()
+	}: Props = $props();
 	const commands = getDesktopCommands();
 	const groupName = $props.id();
 	let element: HTMLElement;
@@ -147,8 +156,11 @@
 			{groupName}
 		/>
 	{/each}
-	<ThemeToggle />
-	<GitHubLink />
+	<div class="ml-auto flex items-center gap-3">
+		<RegistersToggle bind:visible={showRegisters} />
+		<ThemeToggle />
+		<GitHubLink />
+	</div>
 </nav>
 
 <style>

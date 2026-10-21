@@ -20,6 +20,10 @@
 		instructionSet?: InstructionSet;
 		/** Optional bindable textarea handle for parent focus and selection commands; cleared on unmount. */
 		sourceInput?: HTMLTextAreaElement;
+		/** Parent-owned source viewport top offset; defaults to zero and binds scroll recovery. */
+		scrollTop?: number;
+		/** Parent-owned source viewport left offset; defaults to zero and binds scroll recovery. */
+		scrollLeft?: number;
 		/** Required callback recording edits in the parent Editor and invalidating assembly. */
 		onedit: (source: string) => void;
 		/** Required callback updating the parent's selection offsets. */
@@ -32,13 +36,13 @@
 		helpEnabled,
 		instructionSet,
 		sourceInput = $bindable(),
+		scrollTop = $bindable(0),
+		scrollLeft = $bindable(0),
 		onedit,
 		onselection
 	}: Props = $props();
 	const paneId = $props.id();
 	const syntaxStyles = editorPreset.syntaxStyles;
-	let scrollTop = $state(0);
-	let scrollLeft = $state(0);
 	const highlighted = $derived(highlightSource(current?.text ?? ''));
 	let sourceHelp = $state.raw<{
 		buffer: number;

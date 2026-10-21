@@ -5,11 +5,13 @@
 	 * Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license.
 	 */
 	import { onMount } from 'svelte';
+	import { slide } from 'svelte/transition';
 	import { DesktopState } from './state/DesktopState.svelte.js';
 	import { provideDesktop } from './context/desktop.js';
 	import { useDesktopKeyboard } from './hooks/useDesktopKeyboard.js';
 	import MenuBar from './components/shell/MenuBar.svelte';
 	import Toolbar from './components/shell/Toolbar.svelte';
+	import Footer from './components/shell/Footer.svelte';
 	import SourceTabs from './components/editor/SourceTabs.svelte';
 	import SourceEditor from './components/editor/SourceEditor.svelte';
 	import MessagesPane from './components/debugger/MessagesPane.svelte';
@@ -25,6 +27,13 @@
 	let activeElement = $state<Element | null>(null);
 	const desktop = provideDesktop(new DesktopState((restoreFocus) => menuBar?.close(restoreFocus)));
 	const { workspace, simulation, display } = desktop;
+	const loadedFilename = $derived(
+		simulation.execution?.programs
+			.find(
+				(program) => program === simulation.machine?.program && program.getMachineList() !== null
+			)
+			?.getFilename()
+	);
 	const paneId = $props.id();
 	const exportVariants = ['single', 'all'] as const;
 	useDesktopKeyboard(() => menuBar?.close());
@@ -56,11 +65,15 @@
 	<FileImporter />
 	{#each exportVariants as variant (variant)}<FileExporter {variant} />{/each}
 	<div class="desktop flex h-dvh min-h-120 flex-col overflow-hidden text-[12px]">
-		{#if workspace.backupError || workspace.autoSaveError}<p class="backup-error" role="alert">
-				{workspace.backupError || workspace.autoSaveError}
+		{#if workspace.backupError || workspace.autoSaveError || desktop.persistence.error}<p
+				class="backup-error"
+				role="alert"
+			>
+				{workspace.backupError || workspace.autoSaveError || desktop.persistence.error}
 			</p>{/if}
 		<MenuBar
 			bind:this={menuBar}
+			bind:showRegisters={display.showRegisters}
 			displayToggles={desktop.displayToggles}
 			engineSettings={simulation.engineSettings}
 			running={simulation.running}
@@ -70,6 +83,7 @@
 			displayToggles={desktop.displayToggles}
 			bind:showLines={display.showLines}
 			bind:speed={display.speed}
+			showSpeed={display.view === 'Execute'}
 		/>
 		<main
 			class="workspace"
@@ -103,6 +117,8 @@
 							onselect={workspace.select}
 							onclose={(id) => workspace.startClose([id])}
 							canRename={!simulation.running && !desktop.hasModal}
+							canReorder={!simulation.running && !desktop.hasModal}
+							onreorder={workspace.reorder}
 							onrename={workspace.rename}
 						/>
 						<SourceEditor
@@ -112,6 +128,8 @@
 							helpEnabled={!desktop.hasModal}
 							instructionSet={simulation.machine?.instructionSet}
 							bind:sourceInput={workspace.sourceInput}
+							bind:scrollTop={workspace.sourceScrollTop}
+							bind:scrollLeft={workspace.sourceScrollLeft}
 							onedit={workspace.edit}
 							onselection={(start, end) => {
 								workspace.selectionStart = start;
@@ -134,6 +152,8 @@
 								bind:hexAddresses={display.hexAddresses}
 								bind:hexValues={display.hexValues}
 								bind:dataHeight={display.dataSegmentHeight}
+								bind:segment={display.dataSegment}
+								bind:pageOffset={display.dataPageOffset}
 								onresizecommit={display.persistLayout}
 							/>{/if}
 					{/if}
@@ -161,41 +181,58 @@
 					onstop={() => simulation.controller?.stop()}
 				/>
 			</div>
-			<PaneDivider
-				class="register-divider"
-				label="Register panel width"
-				controls={`${paneId}-registers`}
-				orientation="vertical"
-				min={260}
-				max={display.maxRegisterWidth}
-				value={display.displayedRegisterWidth}
-				reverse
-				onchange={(width) => (display.registerWidth = Math.round(width))}
-				oncommit={display.persistLayout}
-			/>
-			{#if simulation.machine}<RegistersPane
-					hexValues={display.hexValues}
-					id={`${paneId}-registers`}
-					bind:selected={display.registerTab}
-					registers={simulation.machine.registerFile}
-					coprocessor0={simulation.machine.coprocessor0}
-					coprocessor1={simulation.machine.coprocessor1}
-					machineRevision={simulation.execution?.revision ?? 0}
-					running={simulation.running}
-					onedit={() => simulation.controller?.refresh()}
-				/>{/if}
+			{#if display.showRegisters}
+				<div
+					class="register-sidebar"
+					transition:slide={{ axis: 'x', duration: desktop.visible ? 220 : 0 }}
+				>
+					<PaneDivider
+						class="register-divider"
+						label="Register panel width"
+						controls={`${paneId}-registers`}
+						orientation="vertical"
+						min={260}
+						max={display.maxRegisterWidth}
+						value={display.displayedRegisterWidth}
+						reverse
+						onchange={(width) => (display.registerWidth = Math.round(width))}
+						oncommit={display.persistLayout}
+					/>
+					{#if simulation.machine}<RegistersPane
+							hexValues={display.hexValues}
+							id={`${paneId}-registers`}
+							bind:selected={display.registerTab}
+							registers={simulation.machine.registerFile}
+							coprocessor0={simulation.machine.coprocessor0}
+							coprocessor1={simulation.machine.coprocessor1}
+							machineRevision={simulation.execution?.revision ?? 0}
+							running={simulation.running}
+							onedit={() => simulation.controller?.refresh()}
+						/>{/if}
+				</div>
+			{/if}
 		</main>
-		<footer>
-			<span>{workspace.current?.name ?? 'No file open'}</span><span
-				>{display.view === 'Edit' && workspace.current && activeElement === workspace.sourceInput
-					? `Line ${workspace.position.line}, Column ${workspace.position.column}`
-					: ''}</span
-			><span aria-label="Execution status"
-				>{simulation.execution?.status ?? 'idle'}{!simulation.breakpointsEnabled
-					? ' — breakpoints suspended'
-					: ''}</span
-			>
-		</footer>
+		<Footer
+			filenamePrefix={display.view === 'Execute'
+				? loadedFilename
+					? 'Loaded: '
+					: ''
+				: workspace.current
+					? 'Editing: '
+					: ''}
+			filename={display.view === 'Execute'
+				? (loadedFilename ?? 'No program loaded')
+				: (workspace.current?.name ?? 'No current edits')}
+			position={display.view === 'Edit' &&
+			workspace.current &&
+			activeElement === workspace.sourceInput
+				? workspace.position
+				: null}
+			status={display.view === 'Execute' || simulation.execution?.status === 'error'
+				? (simulation.execution?.status ?? 'idle')
+				: null}
+			breakpointsEnabled={simulation.breakpointsEnabled}
+		/>
 	</div>
 </fieldset>
 
@@ -231,7 +268,15 @@
 		flex: 1;
 		min-height: 0;
 		padding: 4px;
+		gap: 0;
+	}
+	.register-sidebar {
+		display: flex;
+		flex: 0 0 auto;
+		min-height: 0;
+		padding-left: 5px;
 		gap: 5px;
+		overflow: hidden;
 	}
 	.left-panes {
 		display: flex;
@@ -239,14 +284,6 @@
 		flex: 1;
 		min-width: 300px;
 		min-height: 0;
-	}
-	footer {
-		display: flex;
-		justify-content: space-between;
-		gap: 12px;
-		padding: 2px 8px;
-		border-top: 1px solid var(--theme-border, #aaa);
-		font-size: 11px;
 	}
 	p {
 		margin: 8px 0;

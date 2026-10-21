@@ -1,3 +1,4 @@
+import type { SavedExecution } from '#lib/browser/DesktopSession.js';
 import { Globals } from '#lib/engine/Globals.js';
 import { ProcessingException } from '#lib/engine/diagnostics/ProcessingException.js';
 import { Settings } from '#lib/engine/Settings.js';
@@ -34,6 +35,9 @@ export class SimulationState {
 	messages = $state('');
 	/** Console output and echoed input. */
 	runIO = $state('');
+	/** Exact virtual sources read for the loaded assembly, independent of later Edit selection. */
+	checkpointSources: Record<string, string> = Object.create(null);
+	private recoverySources: Record<string, string> | null = null;
 	private disposed = false;
 	/** Compose the machine host with source resolution and display navigation owned by this desktop. */
 	constructor(
@@ -58,7 +62,15 @@ export class SimulationState {
 			timers.clear();
 		};
 		const session: Globals = new Globals({
-			readSource: this.workspace.readSource,
+			readSource: (filename) => {
+				if (this.recoverySources && !Object.hasOwn(this.recoverySources, filename))
+					throw new Error(`Checkpoint source is missing: ${filename}`);
+				const source = this.recoverySources
+					? this.recoverySources[filename]
+					: this.workspace.readSource(filename);
+				this.checkpointSources[filename] = source;
+				return source;
+			},
 			sourcePaths: {
 				separator: '/',
 				isAbsolute: (name) => name.startsWith('/'),
@@ -188,6 +200,7 @@ export class SimulationState {
 	assemble = () => {
 		if (!this.controller || !this.workspace.current) return;
 		try {
+			this.checkpointSources = Object.create(null);
 			const diagnostics = this.controller.assemble(
 				[this.workspace.current.name],
 				this.workspace.current.name
@@ -205,6 +218,22 @@ export class SimulationState {
 		}
 		this.messageTab = 'Mars Messages';
 	};
+	/** Rebuild captured sources without changing Edit buffers, then restore stable hardware and history. */
+	restoreExecution(saved: SavedExecution): void {
+		this.recoverySources = saved.sources;
+		this.checkpointSources = Object.create(null);
+		try {
+			this.controller!.restoreCheckpoint(saved.machine);
+			this.engineSettings = Object.fromEntries(
+				engineOptions.map((option) => [
+					option.id,
+					this.machine!.getSettings().getBooleanSetting(option.id)
+				])
+			);
+		} finally {
+			this.recoverySources = null;
+		}
+	}
 	/** Dispatch debugger actions through RunController and publish their existing diagnostics. */
 	runCommand = async (command: string) => {
 		if (!this.controller) return;
@@ -242,7 +271,7 @@ export class SimulationState {
 			}
 			this.messageTab = 'Run I/O';
 			const name = command === 'step' ? 'Step' : 'Go';
-			const filename = this.workspace.current?.name ?? '';
+			const filename = this.machine?.program?.getFilename() ?? '';
 			if (command === 'step') await this.controller.step();
 			else {
 				this.messages += `Go: running ${filename}\n\n`;

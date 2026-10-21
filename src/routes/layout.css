@@ -27,6 +27,10 @@
 	--theme-selected-hover: #416a8e;
 	--theme-accent-border: #80afd5;
 	--theme-accent-text: #b7dcff;
+	--theme-switch-active: #416a8e;
+	--theme-switch-active-hover: #507c9f;
+	--theme-switch-inactive: #3d4c5e;
+	--theme-switch-inactive-hover: #526277;
 	--theme-error: #ffaaaa;
 	--theme-warning: #49362c;
 	--theme-tooltip: #343b32;

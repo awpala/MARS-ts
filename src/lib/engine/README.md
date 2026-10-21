@@ -169,7 +169,7 @@ Register, memory, and simulator subscriptions return teardown functions. Hardwar
 
 Access origin is explicit rather than inferred from a Java thread. `Globals.withGuiAccess()` marks synchronous inspection/edit operations as GUI access even while execution awaits input. Its callback must remain synchronous; the scoped access context ends when it returns, not when a returned promise settles.
 
-Hardware recording hooks resolve the current program's enabled `BackStepper`. The history stores bounded restore records, groups changes by their statement references, and retains delay-slot context. Backstep temporarily disables recording while restoring state. It reverses recorded machine changes, not source editing or already-emitted console output, and does not provide a persistent session checkpoint.
+Hardware recording hooks resolve the current program's enabled `BackStepper`. The history stores bounded restore records, groups changes by their statement references, and retains delay-slot context. Backstep temporarily disables recording while restoring state. It reverses recorded machine changes, not source editing or already-emitted console output, and remains separate from the desktop’s persistent session checkpoint.
 
 ### Reset and disposal
 
@@ -248,3 +248,5 @@ Here `host` implements `GlobalsHost`, including source lookup and scheduling. Im
 Keep translated machine behavior in its responsible subsystem and platform mechanics behind an injected host. Add mutable state to the appropriate session or program owner. Preserve the Java class/algorithm mapping, numeric conventions, access ordering, and failure-time mutations; a convenient UI representation must not become a second machine model.
 
 New behavior needs evidence at the relevant boundary: a focused Java probe for the translated unit, composition coverage where collaborators interact, and browser scenarios for the platform adaptation. [ADR 0002](../../../docs/adrs/0002-port-fidelity.md) records fidelity and browser adaptations; deliberate semantic divergences need their own decision and fixture. The [port plan](../../../docs/adrs/0000-port-plan.md) distinguishes unfinished work from excluded features, and the subsystem guides own the detailed extension contracts.
+
+Portable desktop recovery captures settings, sparse memory, raw register banks, delayed-branch/interrupt state, stepped mode, and bounded Backstep history through framework-free per-instance APIs. The Venus controller rebuilds captured source metadata before applying validated idle hardware; browser adapters own JSON and localStorage. [ADR 0007](../../../docs/adrs/0007-desktop-session-recovery.md) defines this added browser workflow without changing the translated MIPS algorithms.

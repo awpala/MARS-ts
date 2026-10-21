@@ -45,6 +45,10 @@
 		ascii: boolean;
 		/** Parent-owned requested Data Segment height in pixels; null keeps its natural height. */
 		dataHeight: number | null;
+		/** Parent-owned Data Segment range; defaults to data and survives view changes. */
+		segment?: string;
+		/** Parent-owned relative aligned memory page offset; defaults to zero. */
+		pageOffset?: number;
 		/** Required callback persists the Data Segment height after a completed resize. */
 		onresizecommit: () => void;
 	};
@@ -63,10 +67,10 @@
 		hexValues = $bindable(),
 		ascii = $bindable(),
 		dataHeight = $bindable(),
+		segment = $bindable('data'),
+		pageOffset = $bindable(0),
 		onresizecommit
 	}: Props = $props();
-	let segment = $state('data');
-	let pageOffset = $state(0);
 	let memoryError = $state('');
 	let editedAddress = $state<number | null>(null);
 	const memoryRows = 16;
@@ -367,7 +371,6 @@
 								><td>{row.basic}</td>
 								<td
 									>{#if row.modified}<span> ------ </span>{:else}<Button
-											tooltip={row.filename}
 											class="source-link text-left whitespace-pre"
 											onclick={() => onsource(row.filename, row.line)}
 											>{row.line}: {row.source}</Button

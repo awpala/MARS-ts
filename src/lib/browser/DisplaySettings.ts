@@ -7,6 +7,8 @@ export interface DisplaySettings {
 	autoSave: boolean;
 	/** Render Data Segment bytes as ASCII; defaults to false for older records. */
 	ascii: boolean;
+	/** Whether the registers sidebar is shown; defaults to true for older records. */
+	showRegisters: boolean;
 	/** Whether Execute displays the Labels pane. */
 	showLabels: boolean;
 	/** Whether the Labels panel includes data symbols; defaults to true for older records. */
@@ -42,6 +44,7 @@ function validate(value: unknown): DisplaySettings | undefined {
 	)
 		return;
 	if (
+		(data.showRegisters !== undefined && typeof data.showRegisters !== 'boolean') ||
 		(data.autoSave !== undefined && typeof data.autoSave !== 'boolean') ||
 		(data.ascii !== undefined && typeof data.ascii !== 'boolean') ||
 		(data.showDataLabels !== undefined && typeof data.showDataLabels !== 'boolean') ||
@@ -55,6 +58,7 @@ function validate(value: unknown): DisplaySettings | undefined {
 		return;
 	return {
 		autoSave: data.autoSave ?? false,
+		showRegisters: data.showRegisters ?? true,
 		ascii: data.ascii ?? false,
 		showLabels: data.showLabels,
 		showDataLabels: data.showDataLabels ?? true,

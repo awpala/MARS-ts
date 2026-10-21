@@ -14,7 +14,8 @@
 	let { text, shortcut, children }: Props = $props();
 	const id = $props.id();
 	let visible = $state(false);
-	let position = $state.raw<{ left: number; top: number }>();
+	let position = $state.raw<{ left: number; top: number; above: boolean }>();
+	let hoverRegion: HTMLElement | undefined;
 	let anchor: HTMLElement | undefined;
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let hovered = false;
@@ -38,7 +39,7 @@
 	}
 	function leave() {
 		cancelTimer();
-		if (!hovered && !focused && !tooltipHovered) timer = setTimeout(hide, 120);
+		if (!hovered && !focused && !tooltipHovered) hide();
 	}
 	function dismiss() {
 		dismissed = true;
@@ -52,8 +53,10 @@
 			cancelTimer();
 			timer = setTimeout(show, 350);
 		};
-		const exit = () => {
+		const exit = (event: PointerEvent) => {
 			hovered = false;
+			tooltipHovered =
+				event.relatedTarget instanceof Node && !!hoverRegion?.contains(event.relatedTarget);
 			dismissed = false;
 			leave();
 		};
@@ -95,6 +98,8 @@
 		if (!anchor) return;
 		const bounds = anchor.getBoundingClientRect();
 		const tooltip = element.getBoundingClientRect();
+		const above = bounds.bottom + tooltip.height + 8 > window.innerHeight;
+		hoverRegion = element;
 		position = {
 			left: Math.max(
 				8,
@@ -103,12 +108,11 @@
 					window.innerWidth - tooltip.width - 8
 				)
 			),
-			top: Math.max(
-				8,
-				bounds.bottom + tooltip.height + 16 > window.innerHeight
-					? bounds.top - tooltip.height - 8
-					: bounds.bottom + 8
-			)
+			top: Math.max(8, above ? bounds.top - tooltip.height : bounds.bottom),
+			above
+		};
+		return () => {
+			if (hoverRegion === element) hoverRegion = undefined;
 		};
 	}
 	$effect(() => {
@@ -120,7 +124,7 @@
 			}
 		};
 		const scroll = (event: Event) => {
-			if (!(event.target instanceof Element) || event.target.id !== id) dismiss();
+			if (!(event.target instanceof Node) || !hoverRegion?.contains(event.target)) dismiss();
 		};
 		window.addEventListener('keydown', escape);
 		window.addEventListener('scroll', scroll, true);
@@ -140,8 +144,8 @@
 {#if visible}
 	<div
 		{id}
-		class="tooltip"
 		role="tooltip"
+		class={['tooltip-region', { above: position?.above }]}
 		{@attach place}
 		style:left={`${position?.left ?? 0}px`}
 		style:top={`${position?.top ?? 0}px`}
@@ -150,26 +154,37 @@
 			tooltipHovered = true;
 			cancelTimer();
 		}}
-		onpointerleave={() => {
+		onpointerleave={(event) => {
 			tooltipHovered = false;
+			hovered = event.relatedTarget instanceof Node && !!anchor?.contains(event.relatedTarget);
 			leave();
 		}}
 	>
-		{text}
-		{#if shortcut}<KeyboardShortcut {shortcut} />{/if}
+		<div class="tooltip">
+			{text}
+			{#if shortcut}<KeyboardShortcut {shortcut} />{/if}
+		</div>
 	</div>
 {/if}
 
 <style>
-	.tooltip {
+	/* Bridge the visual gap so descriptions remain reachable without a close delay. */
+	.tooltip-region {
 		position: fixed;
+		z-index: 60;
+		padding-top: 8px;
+	}
+	.tooltip-region.above {
+		padding-top: 0;
+		padding-bottom: 8px;
+	}
+	.tooltip {
 		display: flex;
 		align-items: center;
 		gap: 8px;
-		z-index: 60;
 		width: max-content;
 		max-width: min(320px, calc(100vw - 16px));
-		max-height: calc(100dvh - 16px);
+		max-height: calc(100dvh - 24px);
 		overflow: auto;
 		padding: 6px 9px;
 		border: 1px solid var(--theme-border, #8d969e);
