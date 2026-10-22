@@ -19,7 +19,7 @@ Make the existing static build an installable Progressive Web App with SvelteKit
 
 ## Consequences
 
-After one online visit to the hosted site, or to a copy served from `localhost`, the application starts offline and can be installed from the browser. Opening `index.html` directly from `file://` remains unsupported; a local copy needs a static file server on `localhost`. A single-file build that works from `file://` and a packaged desktop wrapper remain undecided options.
+After one online visit to the hosted site, or to a copy served from `localhost`, the application starts offline and can be installed from the browser. Opening `index.html` directly from `file://` remains unsupported; a local copy needs a static file server on `localhost`. Screenshots for the richer install dialog are deferred. A single-file build that works from `file://` and a packaged desktop wrapper remain undecided options.
 
 Updates reach a user on the next visit after all tabs on the old release close, not instantly. Browser data stays scoped to the origin, so an installed copy from `localhost` and the hosted site hold separate sources; export/import is the migration path. The icons are a 50 × 50 favicon enlarged to 192 and 512 pixels, so they look soft until higher-resolution artwork replaces them. The Nginx configuration in the [runbook](../runbooks/prod-deployment.md) already revalidates non-hashed files, which covers `service-worker.js` and the manifest; browsers also bypass the HTTP cache for the worker script by default.
 
@@ -28,3 +28,5 @@ The development server does not bundle or register the worker. Offline behavior 
 ## Evidence
 
 A production build previewed on port 6279 was driven with Playwright: the worker activated at the site scope, populated a version-named cache with 59 entries, and an offline reload rendered the desktop. This was a one-off manual check, not a committed test. `npm run check` and the service worker's own `tsc` project pass.
+
+On October 22, 2026 the repository owner checked the deployed site in browser developer tools: `/manifest.webmanifest` returned 200, `/service-worker.js` showed as activated, and with the Network panel set to Offline a reload still rendered the application with the worker still running. The Manifest panel's only messages were two optional warnings that richer install UI needs `screenshots` entries (one with `form_factor` `wide`, one without); they do not affect installability or offline use, and screenshots are deliberately omitted for now because the layout targets desktop. This was a manual check, not a committed test. Offline persistence of saved sources was not part of it.

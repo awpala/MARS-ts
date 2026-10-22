@@ -29,6 +29,8 @@ Service workers require a secure context: `https` or `localhost`. They do not ru
 
 A production build served by `vite preview` on port 6279 was driven manually with Playwright: the worker activated, the release cache held 59 entries, and a reload with the network disabled rendered the desktop. This was a one-off manual check, not a committed test. The committed [pwa.spec.ts](../../tests/browser/pwa.spec.ts) runs against the development server and covers only the manifest link, its contents, and that its icons are served as PNG. Nothing in the suite exercises the worker itself.
 
+The deployed site was also checked manually in browser developer tools on October 22, 2026: the manifest returned 200, the worker was activated, and an offline reload rendered the application with the worker still running. The Manifest panel's only messages were two optional warnings about missing `screenshots` entries, which affect only the richer install dialog and are deliberately deferred.
+
 ## Changing the worker
 
 Change the worker when the application gains runtime requests that are not static files (an API, remote assets, or a new Worker script), when the caching policy should differ for some class of request, or when the release-update behavior should change. Keep the precache set derived from SvelteKit's manifest rather than hand-listing files. Any such change revisits [ADR 0010](../../docs/adrs/0010-pwa-offline-support.md), and the deployment runbook's cache-header guidance, in the same change: `service-worker.js` and `manifest.webmanifest` must stay revalidated so releases are picked up.
