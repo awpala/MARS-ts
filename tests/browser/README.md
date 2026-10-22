@@ -8,6 +8,8 @@ Settings scenarios cover memory-layout preview/application, opening-selection Re
 
 [Program argument scenarios](program-arguments.spec.ts) cover the shared Args toolbar/menu setting, its position after Labels, the input row above the Text Segment table, draft and checkpoint recovery, literal quotes, and first-Go/Step initialization across Backstep, Reset, and pane changes.
 
+[PWA scenario](pwa.spec.ts) checks that the page links a manifest and that its declared icons are served. The dev server neither bundles nor registers the service worker, so offline behavior is not covered by this suite; it is checked manually against a production build served by `vite preview` on port 6279 or higher ([ADR 0010](../../docs/adrs/0010-pwa-offline-support.md)).
+
 These scenarios complement the [TypeScript suites and Java oracle](../README.md). They establish browser integration behavior, while engine parity remains supported by the corresponding oracle comparisons.
 
 ## Server and browser ownership

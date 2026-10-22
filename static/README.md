@@ -16,6 +16,8 @@ The [icons](icons/) are hand-authored SVG equivalents of the corresponding 22-pi
 
 Use the SVGs as external images with an empty `alt` when the containing button supplies its accessible label; an icon alone must not be the only description of an action. Render at the legacy 22-pixel toolbar size initially. If an SVG is later inlined more than once, replace its local title ID with a unique component ID. Do not introduce inline raster payloads or remote resource references.
 
+[manifest.webmanifest](manifest.webmanifest) makes the application installable ([ADR 0010](../docs/adrs/0010-pwa-offline-support.md)); the root layout links it. Its [icons/mars-192.png](icons/mars-192.png) and [icons/mars-512.png](icons/mars-512.png) are enlargements of the unchanged favicon rendered in Chromium, so they are soft; replace them with higher-resolution artwork when available. The service worker precaches every file in this directory, so keep assets here small.
+
 The [GUI port mapping](../docs/gui-port.md) records the source owners, initial desktop layout, remaining work, and browser adaptations.
 
 Preparation checks parsed all 22 SVGs as XML and confirmed their view boxes, titles, and absence of raster image or script elements. Byte comparisons confirmed the favicon and bundled license match their sources. The source rasters were visually inspected, but a browser/SVG renderer was unavailable; rendered appearance, accessibility integration, and application behavior remain unverified.
