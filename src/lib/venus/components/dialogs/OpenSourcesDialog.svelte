@@ -20,7 +20,6 @@
 <!-- @component Saved-source selection; workspace context owns opening and deletion requests. -->
 <Modal title="Open" onclose={workspace.dismiss}>
   <form
-    class="open-sources"
     onsubmit={(event) => {
       event.preventDefault();
       workspace.confirmOpen();
@@ -59,10 +58,3 @@
     </DialogActions>
   </form>
 </Modal>
-
-<style>
-  .open-sources :global(button:enabled:hover) {
-    border-color: var(--theme-accent-border, #849eb5);
-    background: var(--theme-hover, #dbe8f2);
-  }
-</style>

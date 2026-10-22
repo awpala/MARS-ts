@@ -112,10 +112,6 @@
   .actions {
     flex-shrink: 0;
   }
-  .actions :global(button:enabled:hover) {
-    border-color: var(--theme-accent-border, #849eb5);
-    background: var(--theme-hover, #dbe8f2);
-  }
   @media (max-width: 640px) {
     .configuration {
       grid-template-columns: 1fr;

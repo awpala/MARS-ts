@@ -18,7 +18,7 @@
 
 <!-- @component Compact close button with shared theme-aware hover styling and description. Owns no close confirmation, visibility state, or keyboard shortcut. -->
 <Button
-  class="grid size-4.5 shrink-0 place-items-center self-center border border-transparent hover:enabled:border-(--theme-accent-border,#849eb5) hover:enabled:bg-(--theme-hover,#dbe8f2) disabled:opacity-35"
+  class="grid size-4.5 shrink-0 place-items-center self-center border border-transparent disabled:opacity-35"
   aria-label={label}
   tooltip={label}
   {shortcut}

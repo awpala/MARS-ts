@@ -17,12 +17,12 @@
 <!-- @component Reusable Select all / Select none button pair with selection-derived availability and theme-aware hover feedback. Callers own selection state and surrounding placement; --selection-action-padding adjusts button sizing. -->
 <div class="flex gap-2">
   <Button
-    class="border border-(--theme-border,#929eaa) bg-(--theme-surface,#f8f8f8) p-(--selection-action-padding,2px_8px) hover:enabled:border-(--theme-accent-border,#849eb5) hover:enabled:bg-(--theme-hover,#dbe8f2)"
+    class="border border-(--theme-border,#929eaa) bg-(--theme-surface,#f8f8f8) p-(--selection-action-padding,2px_8px)"
     disabled={allSelected}
     onclick={() => onchange([...values])}>Select all</Button
   >
   <Button
-    class="border border-(--theme-border,#929eaa) bg-(--theme-surface,#f8f8f8) p-(--selection-action-padding,2px_8px) hover:enabled:border-(--theme-accent-border,#849eb5) hover:enabled:bg-(--theme-hover,#dbe8f2)"
+    class="border border-(--theme-border,#929eaa) bg-(--theme-surface,#f8f8f8) p-(--selection-action-padding,2px_8px)"
     disabled={value.length === 0}
     onclick={() => onchange([])}>Select none</Button
   >

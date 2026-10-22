@@ -30,7 +30,7 @@
   {shortcut}
   {disabled}
   {onclick}
-  class="grid size-7.25 place-items-center border border-transparent hover:enabled:border-(--theme-accent-border,#849eb5) hover:enabled:bg-(--theme-hover,#dbe8f2) disabled:opacity-35 aria-pressed:border-(--theme-accent-border,#648eae) aria-pressed:bg-(--theme-selected,#c4ddef) aria-pressed:text-(--theme-accent-text,#164c75) aria-pressed:hover:bg-(--theme-selected-hover,#b1d1e8)"
+  class="grid size-7.25 place-items-center border border-transparent disabled:opacity-35 aria-pressed:border-(--theme-accent-border,#648eae) aria-pressed:bg-(--theme-selected,#c4ddef) aria-pressed:text-(--theme-accent-text,#164c75) aria-pressed:hover:enabled:bg-(--theme-selected-hover,#b1d1e8)"
 >
   {#if 'glyph' in icon}
     <ToolbarIcon name={icon.glyph} />

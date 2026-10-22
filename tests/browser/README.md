@@ -10,6 +10,8 @@ Settings scenarios cover memory-layout preview/application, opening-selection Re
 
 [PWA scenario](pwa.spec.ts) checks that the page links a manifest and that its declared icons are served. The dev server neither bundles nor registers the service worker, so offline behavior is not covered by this suite; it is checked manually against a production build served by `vite preview` on port 6279 or higher ([ADR 0010](../../docs/adrs/0010-pwa-offline-support.md)).
 
+[Button hover scenarios](button-hover.spec.ts) exercise the shared enabled-state highlight in both themes, including Delete Sources confirmation, dialog actions, console input, source and pane tabs, and disabled controls. Selected tabs retain their resting colors.
+
 These scenarios complement the [TypeScript suites and Java oracle](../README.md). They establish browser integration behavior, while engine parity remains supported by the corresponding oracle comparisons.
 
 ## Server and browser ownership

@@ -62,7 +62,7 @@
           />
         {:else}
           <Button
-            class="flex w-full items-center justify-between gap-2 px-3 py-[5px] text-left whitespace-nowrap hover:enabled:bg-[var(--theme-hover,#c6dcef)]"
+            class="flex w-full items-center justify-between gap-2 px-3 py-[5px] text-left whitespace-nowrap"
             tooltip={item.tooltip}
             disabled={item.disabled}
             onclick={item.onselect}

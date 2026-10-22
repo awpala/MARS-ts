@@ -35,7 +35,7 @@
   <div class="grid h-full shrink-0 grid-rows-2 gap-px">
     {#each steps as step (step.icon)}
       <Button
-        class="grid h-full min-h-0 w-4 place-items-center rounded-xs border border-(--theme-border,#a2aab1) bg-(--theme-surface,#fafafa) hover:enabled:bg-(--theme-hover,#dbe8f2) disabled:opacity-40"
+        class="grid h-full min-h-0 w-4 place-items-center rounded-xs border border-(--theme-border,#a2aab1) bg-(--theme-surface,#fafafa) disabled:opacity-40"
         aria-label={step.label}
         tooltip={step.label}
         disabled={step.delta > 0 ? position === RUN_SPEED_MAX_POSITION : position === 0}
