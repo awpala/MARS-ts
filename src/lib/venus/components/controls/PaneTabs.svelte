@@ -51,7 +51,10 @@
           ? 'px-[7px] py-1'
           : 'rounded-t-[3px] border border-b-0 border-[var(--theme-border,#a6aeb5)] p-[var(--tab-padding,4px_12px)]',
         { active: selected === tab.id },
-        variant === 'pane' && selected === tab.id && 'bg-[var(--theme-canvas,white)] font-semibold'
+        variant === 'pane' &&
+          (selected === tab.id
+            ? 'bg-[var(--theme-canvas,white)] font-semibold'
+            : 'hover:enabled:border-(--theme-accent-border,#849eb5) hover:enabled:bg-(--theme-hover,#dbe8f2)')
       ]}
       aria-pressed={selected === tab.id}
       onclick={() => onselect(tab.id)}>{tab.label}</Button

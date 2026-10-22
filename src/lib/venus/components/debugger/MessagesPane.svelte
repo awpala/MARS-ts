@@ -69,7 +69,7 @@
 >
   {#snippet actions()}
     <Button
-      class="clear mb-0.5 ml-auto rounded-none border border-(--theme-border,#aaa) px-3 py-px"
+      class="clear mb-0.5 ml-auto rounded-none border border-(--theme-border,#aaa) px-3 py-px hover:enabled:border-(--theme-accent-border,#849eb5) hover:enabled:bg-(--theme-hover,#dbe8f2)"
       tooltip="Clear selected output"
       shortcut={clear.shortcut}
       aria-keyshortcuts={ariaKeyShortcuts(clear.shortcut!)}
@@ -79,7 +79,7 @@
     <Button
       tooltip="Clear all outputs"
       shortcut={clearAll.shortcut}
-      class="clear-all mb-0.5 rounded-none border border-(--theme-border,#aaa) px-3 py-px"
+      class="clear-all mb-0.5 rounded-none border border-(--theme-border,#aaa) px-3 py-px hover:enabled:border-(--theme-accent-border,#849eb5) hover:enabled:bg-(--theme-hover,#dbe8f2)"
       aria-keyshortcuts={ariaKeyShortcuts(clearAll.shortcut!)}
       onclick={() => onclear(true)}>{clearAll.label}</Button
     >
