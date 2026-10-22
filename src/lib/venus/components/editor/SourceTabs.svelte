@@ -110,68 +110,95 @@
   {onselect}
 >
   {#snippet tabControl(tab)}
-    {#if editing === tab.id && selected === tab.id && canRename}
-      <input
-        class="source-name-input"
-        aria-label="Rename source file"
-        bind:value={filename}
-        size={Math.max(12, filename.length)}
-        {@attach (input) => {
-          input.focus();
-          input.select();
-        }}
-        onkeydown={(event) => renameKeydown(event, tab.id)}
-        onblur={() => finishRename(tab.id)}
-        autocomplete="off"
-        spellcheck="false"
+    <div
+      class="source-tab"
+      role="group"
+      aria-label={tab.label}
+      data-drop-position={dropTarget === tab.id ? (dropAfter ? 'after' : 'before') : undefined}
+      ondragover={(event) => dragOver(event, tab.id)}
+      ondragleave={(event) => {
+        if (
+          dropTarget === tab.id &&
+          !(
+            event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)
+          )
+        )
+          dropTarget = undefined;
+      }}
+      ondrop={(event) => drop(event, tab.id)}
+    >
+      {#if editing === tab.id && selected === tab.id && canRename}
+        <input
+          class="source-name-input"
+          aria-label="Rename source file"
+          bind:value={filename}
+          size={Math.max(12, filename.length)}
+          {@attach (input) => {
+            input.focus();
+            input.select();
+          }}
+          onkeydown={(event) => renameKeydown(event, tab.id)}
+          onblur={() => finishRename(tab.id)}
+          autocomplete="off"
+          spellcheck="false"
+        />
+      {:else}
+        <Button
+          class={[
+            'source-name px-[7px] py-1 whitespace-nowrap',
+            selected === tab.id && 'font-bold',
+            canReorder && tabs.length > 1 && 'cursor-grab active:cursor-grabbing'
+          ]}
+          draggable={canReorder && tabs.length > 1 && editing === undefined}
+          ondragstart={(event) => startDrag(event, tab.id)}
+          ondragend={clearDrag}
+          aria-pressed={selected === tab.id}
+          attachment={(button) => {
+            if (focusAfterRename === tab.id) {
+              focusAfterRename = undefined;
+              button.focus();
+            }
+          }}
+          onclick={() => onselect(tab.id)}
+          ondblclick={() => beginRename(tab.id)}
+          onkeydown={(event) => {
+            reorderKey(event, tab.id);
+            if (event.key === 'F2' && canRename) {
+              event.preventDefault();
+              beginRename(tab.id);
+            }
+          }}>{tab.label}</Button
+        >
+      {/if}
+      <CloseButton
+        label={`Close ${tabs.find((item) => item.id === tab.id)?.name}`}
+        shortcut={closeShortcut}
+        onclick={() => onclose(tab.id)}
       />
-    {:else}
-      <Button
-        class={[
-          'source-name px-[7px] py-1 whitespace-nowrap',
-          selected === tab.id && 'font-bold',
-          canReorder && tabs.length > 1 && 'cursor-grab active:cursor-grabbing'
-        ]}
-        draggable={canReorder && tabs.length > 1 && editing === undefined}
-        style={dropTarget === tab.id
-          ? `box-shadow: inset ${dropAfter ? '-2px' : '2px'} 0 var(--theme-focus, #2c679c)`
-          : undefined}
-        ondragstart={(event) => startDrag(event, tab.id)}
-        ondragover={(event) => dragOver(event, tab.id)}
-        ondragleave={() => {
-          if (dropTarget === tab.id) dropTarget = undefined;
-        }}
-        ondrop={(event) => drop(event, tab.id)}
-        ondragend={clearDrag}
-        aria-pressed={selected === tab.id}
-        attachment={(button) => {
-          if (focusAfterRename === tab.id) {
-            focusAfterRename = undefined;
-            button.focus();
-          }
-        }}
-        onclick={() => onselect(tab.id)}
-        ondblclick={() => beginRename(tab.id)}
-        onkeydown={(event) => {
-          reorderKey(event, tab.id);
-          if (event.key === 'F2' && canRename) {
-            event.preventDefault();
-            beginRename(tab.id);
-          }
-        }}>{tab.label}</Button
-      >
-    {/if}
-  {/snippet}
-  {#snippet tabActions(id)}
-    <CloseButton
-      label={`Close ${tabs.find((tab) => tab.id === id)?.name}`}
-      shortcut={closeShortcut}
-      onclick={() => onclose(id)}
-    />
+    </div>
   {/snippet}
 </PaneTabs>
 
 <style>
+  .source-tab {
+    position: relative;
+    display: flex;
+  }
+  .source-tab[data-drop-position]::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--theme-focus, #2c679c);
+    pointer-events: none;
+  }
+  .source-tab[data-drop-position='before']::after {
+    left: 0;
+  }
+  .source-tab[data-drop-position='after']::after {
+    right: 0;
+  }
   .source-name-input {
     min-width: 10ch;
     max-width: 40ch;
