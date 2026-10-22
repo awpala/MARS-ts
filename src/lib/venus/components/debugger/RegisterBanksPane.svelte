@@ -372,7 +372,7 @@
       <div class="mt-1 flex gap-2">
         {#each conditionFlagActions as action (action.label)}
           <Button
-            class="border border-(--theme-border,#929eaa) bg-(--theme-surface,#f8f8f8) px-2 py-0.5"
+            class="border border-(--theme-border,#929eaa) bg-(--theme-surface,#f8f8f8) px-2 py-0.5 hover:enabled:border-(--theme-accent-border,#849eb5) hover:enabled:bg-(--theme-hover,#dbe8f2)"
             disabled={action.disabled}
             onclick={() => updateConditionFlags(action.selection)}>{action.label}</Button
           >

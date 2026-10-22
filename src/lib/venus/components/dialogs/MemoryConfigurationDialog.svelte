@@ -112,6 +112,10 @@
   .actions {
     flex-shrink: 0;
   }
+  .actions :global(button:enabled:hover) {
+    border-color: var(--theme-accent-border, #849eb5);
+    background: var(--theme-hover, #dbe8f2);
+  }
   @media (max-width: 640px) {
     .configuration {
       grid-template-columns: 1fr;
@@ -119,6 +123,7 @@
   }
 
   fieldset {
+    align-self: center;
     border: 1px solid var(--theme-border, #919191);
     padding: 8px 12px;
   }
