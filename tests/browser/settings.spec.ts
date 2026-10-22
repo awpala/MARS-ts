@@ -227,7 +227,7 @@ test('boolean preferences persist without a loaded program', async ({ page }) =>
     await expect(menu(page).getByRole('checkbox', { name, exact: true })).not.toBeChecked();
 });
 
-test('memory dialog keeps columns aligned and actions visible in short viewports', async ({
+test('memory dialog centers configuration choices and keeps actions visible in short viewports', async ({
   page
 }) => {
   await page.setViewportSize({ width: 1100, height: 500 });
@@ -239,7 +239,7 @@ test('memory dialog keeps columns aligned and actions visible in short viewports
   const left = (await choices.boundingBox())!;
   const right = (await table.boundingBox())!;
   expect(right.x).toBeGreaterThan(left.x + left.width);
-  expect(Math.abs(right.y - left.y)).toBeLessThan(2);
+  expect(Math.abs(right.y + right.height / 2 - (left.y + left.height / 2))).toBeLessThan(2);
   for (const name of ['Apply and Close', 'Apply', 'Cancel', 'Reset'])
     await expect(dialog.getByRole('button', { name, exact: true })).toBeInViewport({ ratio: 1 });
   const scroller = dialog.locator('.configuration');

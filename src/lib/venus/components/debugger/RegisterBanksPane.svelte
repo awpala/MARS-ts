@@ -1,6 +1,6 @@
 <script lang="ts">
   import Tooltip from '../feedback/Tooltip.svelte';
-  import Button from '../controls/Button.svelte';
+  import SelectAllNone from '../controls/SelectAllNone.svelte';
   import MultiSelect from '../controls/MultiSelect.svelte';
   import TabbedPane from '../layout/TabbedPane.svelte';
   import { formatInteger } from '../../utils/tableCells.js';
@@ -274,15 +274,6 @@
       .filter((option) => Binary.bitValue(conditionFlags, option.value) === 1)
       .map((option) => option.value)
   );
-  // Port-specific bulk edits; the legacy panel offers only individual checkboxes. Each disables once its selection holds.
-  const conditionFlagActions = $derived([
-    {
-      label: 'Select all',
-      selection: conditionFlagOptions.map((option) => option.value),
-      disabled: selectedConditionFlags.length === conditionFlagOptions.length
-    },
-    { label: 'Select none', selection: [], disabled: selectedConditionFlags.length === 0 }
-  ]);
   // Like the legacy checkbox listener, a click writes only its own flag, even during execution.
   function updateConditionFlags(selection: number[]) {
     for (const { value: flag } of conditionFlagOptions) {
@@ -369,14 +360,12 @@
         value={selectedConditionFlags}
         onchange={updateConditionFlags}
       />
-      <div class="mt-1 flex gap-2">
-        {#each conditionFlagActions as action (action.label)}
-          <Button
-            class="border border-(--theme-border,#929eaa) bg-(--theme-surface,#f8f8f8) px-2 py-0.5 hover:enabled:border-(--theme-accent-border,#849eb5) hover:enabled:bg-(--theme-hover,#dbe8f2)"
-            disabled={action.disabled}
-            onclick={() => updateConditionFlags(action.selection)}>{action.label}</Button
-          >
-        {/each}
+      <div class="mt-1">
+        <SelectAllNone
+          values={conditionFlagOptions.map((option) => option.value)}
+          value={selectedConditionFlags}
+          onchange={updateConditionFlags}
+        />
       </div>
     </div>
   {/if}

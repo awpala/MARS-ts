@@ -1,6 +1,7 @@
 <script lang="ts">
   import Button from '../controls/Button.svelte';
   import MultiSelect from '../controls/MultiSelect.svelte';
+  import SelectAllNone from '../controls/SelectAllNone.svelte';
   import { getDesktop } from '../../context/desktop.js';
   import Modal from './Modal.svelte';
   import DialogActions from './DialogActions.svelte';
@@ -19,6 +20,7 @@
 <!-- @component Saved-source selection; workspace context owns opening and deletion requests. -->
 <Modal title="Open" onclose={workspace.dismiss}>
   <form
+    class="open-sources"
     onsubmit={(event) => {
       event.preventDefault();
       workspace.confirmOpen();
@@ -38,6 +40,14 @@
     </MultiSelect>
     <DialogError message={workspace.fileError} />
     <DialogActions>
+      {#snippet leading()}
+        <SelectAllNone
+          values={files.map((file) => file.name)}
+          value={workspace.selectedSources}
+          onchange={(selection) => (workspace.selectedSources = selection)}
+          --selection-action-padding="4px 13px"
+        />
+      {/snippet}
       <Button type="submit" disabled={!workspace.selectedSources.length || !!workspace.fileError}
         >Open</Button
       >
@@ -49,3 +59,10 @@
     </DialogActions>
   </form>
 </Modal>
+
+<style>
+  .open-sources :global(button:enabled:hover) {
+    border-color: var(--theme-accent-border, #849eb5);
+    background: var(--theme-hover, #dbe8f2);
+  }
+</style>
