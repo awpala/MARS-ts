@@ -1,0 +1,14 @@
+<!-- Original theme-aware Clear all breakpoints glyph. ToolbarIcon references #icon, so the page theme's variables and current text color apply; the fallbacks render the light theme standalone. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22">
+  <g
+    id="icon"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <circle cx="9" cy="10" r="6" stroke="var(--theme-icon-red, #bc4141)" />
+    <path d="m15 15 6 6m0-6-6 6" />
+  </g>
+</svg>

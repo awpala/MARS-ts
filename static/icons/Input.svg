@@ -1,0 +1,13 @@
+<!-- Original theme-aware popup syscall input glyph. ToolbarIcon references #icon, so the page theme's variables and current text color apply; the fallbacks render the light theme standalone. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22">
+  <g
+    id="icon"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="M3 4h18v14h-9l-5 3v-3H3ZM3 8h18M7 12h1m3 0h6M7 15h10" />
+  </g>
+</svg>

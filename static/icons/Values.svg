@@ -1,0 +1,22 @@
+<!-- Original theme-aware hexadecimal-value glyph. ToolbarIcon references #icon, so the page theme's variables and current text color apply; the fallbacks render the light theme standalone. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22">
+  <g
+    id="icon"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="M3 4h18v16H3ZM3 9h18M8 9v11" />
+    <text
+      x="10"
+      y="17"
+      fill="currentColor"
+      stroke="none"
+      font-family="monospace"
+      font-size="9"
+      font-weight="bold"
+    >0x</text>
+  </g>
+</svg>

@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { saveTheme } from '#lib/browser/ThemePreference.js';
   import Toggle from '../controls/Toggle.svelte';
+  import MaskIcon from '../icons/MaskIcon.svelte';
   let dark = $state(false);
 
   onMount(() => {
@@ -25,44 +26,23 @@
   onchange={toggle}
   tooltip={dark ? 'Switch to light theme' : 'Switch to dark theme'}
 >
-  <svg
-    class="sun"
-    width="12"
-    height="12"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="1.8"
-    aria-hidden="true"
-  >
-    <circle cx="12" cy="12" r="4" />
-    <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" />
-  </svg>
-  <svg
-    class="moon"
-    width="12"
-    height="12"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="1.8"
-    aria-hidden="true"
-  >
-    <path d="M20 15.5A9 9 0 0 1 8.5 4 9 9 0 1 0 20 15.5Z" />
-  </svg>
+  <MaskIcon class="sun" name="Sun" size={12} />
+  <MaskIcon class="moon" name="Moon" size={12} />
 </Toggle>
 
 <style>
-  svg {
+  /* The glyphs render inside MaskIcon within Toggle, so their classes are targeted explicitly. */
+  :global(.theme-control .sun),
+  :global(.theme-control .moon) {
     position: absolute;
     top: 5px;
     pointer-events: none;
   }
-  .sun {
+  :global(.theme-control .sun) {
     left: 5px;
     color: var(--theme-text, #315e88);
   }
-  .moon {
+  :global(.theme-control .moon) {
     right: 5px;
     color: var(--theme-background, #667);
   }

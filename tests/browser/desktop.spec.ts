@@ -449,6 +449,53 @@ test('opens multiple files, preserves dirty content on cancel, finds/replaces, u
   await expect(page.getByRole('button', { name: 'Close one.asm', exact: true })).toHaveCount(0);
 });
 
+test('Close All confirms from the toolbar or File menu before resolving every buffer', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await openStoredSources(page, [
+    { name: 'one.asm', source: 'one\n' },
+    { name: 'two.asm', source: 'two\n' }
+  ]);
+  const toolbar = page.getByLabel('Toolbar', { exact: true });
+  const closeAll = toolbar.getByRole('button', { name: 'Close All', exact: true });
+  await expect(
+    toolbar
+      .getByRole('button', { name: 'Open ...', exact: true })
+      .locator('xpath=following-sibling::button[1]')
+  ).toHaveAttribute('aria-label', 'Close All');
+  await page.getByRole('textbox', { name: 'Source two.asm', exact: true }).fill('two changed\n');
+  await closeAll.click();
+  const confirm = page.getByRole('dialog', { name: 'Close all files?', exact: true });
+  await expect(confirm).toContainText('Close all 2 open files?');
+  await expect(confirm).toContainText('You will be asked to save or discard unsaved changes.');
+  await confirm.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(confirm).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Close one.asm', exact: true })).toHaveCount(1);
+  await expect(page.getByRole('textbox', { name: 'Source two.asm', exact: true })).toHaveValue(
+    'two changed\n'
+  );
+  await page
+    .locator('.menubar summary')
+    .filter({ hasText: /^File$/ })
+    .click();
+  await page.locator('.menubar').getByRole('button', { name: 'Close All', exact: true }).click();
+  await confirm.getByRole('button', { name: 'Close All', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: 'Save changes?', exact: true })
+    .getByRole('button', { name: 'Discard', exact: true })
+    .click();
+  await expect(page.getByRole('button', { name: /^Close (one|two)\.asm$/ })).toHaveCount(0);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(closeAll).toBeDisabled();
+  expect(
+    await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+  ).toEqual([
+    { name: 'one.asm', source: 'one\n' },
+    { name: 'two.asm', source: 'two\n' }
+  ]);
+});
+
 test('menus dismiss outside and retain usable actions inside', async ({ page }) => {
   await openDesktop(page);
   await expect(page.getByRole('button', { name: 'New', exact: true })).toBeEnabled();

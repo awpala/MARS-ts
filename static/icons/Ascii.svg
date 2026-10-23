@@ -1,0 +1,21 @@
+<!-- Original theme-aware ASCII display glyph. ToolbarIcon references #icon, so the page theme's variables and current text color apply; the fallbacks render the light theme standalone. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22">
+  <g
+    id="icon"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <text
+      x="2"
+      y="17"
+      fill="currentColor"
+      stroke="none"
+      font-family="monospace"
+      font-size="13"
+      font-weight="bold"
+    >Aa</text>
+  </g>
+</svg>

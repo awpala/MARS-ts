@@ -64,6 +64,20 @@ describe('command catalog', () => {
     for (const group of toolbarGroups)
       for (const action of group.actions) expect(action.icon, action.command).toBeDefined();
   });
+  it('places Close All directly after Open in the file toolbar', () => {
+    const file = toolbarGroups.find((group) => group.id === 'file')!;
+    expect(file.actions.map((action) => action.command)).toEqual([
+      'new',
+      'open',
+      'closeAll',
+      'save',
+      'saveAs',
+      'autoSave',
+      'import',
+      'export',
+      'exportAll'
+    ]);
+  });
 });
 
 describe('keyboardAction', () => {

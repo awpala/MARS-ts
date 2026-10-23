@@ -1,9 +1,9 @@
 /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license.
  * Menu structure and shortcuts derive from mars/venus/VenusUI.java. */
 import { helpArticles } from '#lib/help/articles.js';
-import type { IconSource } from '../../components/controls/IconButton.svelte';
-import type { IconName } from '../../components/shell/MaskIcon.svelte';
-import type { ToolbarIconName } from '../../components/shell/ToolbarIcon.svelte';
+import type { IconSource } from '../../components/icons/Icon.svelte';
+import type { IconName } from '../../components/icons/MaskIcon.svelte';
+import type { ToolbarIconName } from '../../components/icons/ToolbarIcon.svelte';
 import { shortcutChords } from './shortcuts.js';
 
 /** Toolbar icon of an action: an inline SVG glyph or a full-color bundled image. */
@@ -39,16 +39,15 @@ export const fileActions: readonly Action[] = [
   },
   { label: 'Open ...', icon: image('Open'), command: 'open', shortcut: 'Ctrl+O' },
   { label: 'Close', command: 'close', shortcut: 'Alt+W / Option+W', noRepeat: true },
-  { label: 'Close All', command: 'closeAll' },
+  { label: 'Close All', icon: glyph('CloseAll'), command: 'closeAll' },
   { label: 'Save', icon: image('Save'), command: 'save', shortcut: 'Ctrl+S' },
   { label: 'Save as ...', icon: image('SaveAs'), command: 'saveAs', shortcut: 'Ctrl+Shift+S' },
   { label: 'Save All', command: 'saveAll' },
-  { label: 'Auto Save', icon: glyph('autoSave'), command: 'autoSave' },
-  { label: 'Import ...', icon: glyph('import'), command: 'import' },
+  { label: 'Auto Save', icon: glyph('AutoSave'), command: 'autoSave' },
+  { label: 'Import ...', icon: glyph('Import'), command: 'import' },
   { label: 'Dump Memory ...', command: 'dump', unavailable: true },
-  { label: 'Export', icon: glyph('export'), command: 'export' },
-  { label: 'Export All', icon: glyph('exportAll'), command: 'exportAll' },
-  { label: 'Exit', command: 'exit' }
+  { label: 'Export', icon: glyph('Export'), command: 'export' },
+  { label: 'Export All', icon: glyph('ExportAll'), command: 'exportAll' }
 ];
 /** Editor commands shared by menu, toolbar, and shortcuts. */
 export const editActions: readonly Action[] = [
@@ -62,25 +61,25 @@ export const editActions: readonly Action[] = [
 ];
 /** Execution commands shared by menu, toolbar, and shortcuts. */
 export const runActions: readonly Action[] = [
-  { label: 'Assemble', icon: glyph('assemble'), command: 'assemble', shortcut: 'F3' },
-  { label: 'Go', icon: glyph('go'), command: 'go', shortcut: 'F5' },
-  { label: 'Step', icon: glyph('step'), command: 'step', shortcut: 'F7' },
-  { label: 'Backstep', icon: glyph('backstep'), command: 'backstep', shortcut: 'F8' },
-  { label: 'Pause', icon: glyph('pause'), command: 'pause', shortcut: 'F9' },
-  { label: 'Stop', icon: glyph('stop'), command: 'stop', shortcut: 'F11' },
-  { label: 'Reset', icon: glyph('reset'), command: 'reset', shortcut: 'F12' }
+  { label: 'Assemble', icon: glyph('Assemble'), command: 'assemble', shortcut: 'F3' },
+  { label: 'Go', icon: glyph('Go'), command: 'go', shortcut: 'F5' },
+  { label: 'Step', icon: glyph('Step'), command: 'step', shortcut: 'F7' },
+  { label: 'Backstep', icon: glyph('Backstep'), command: 'backstep', shortcut: 'F8' },
+  { label: 'Pause', icon: glyph('Pause'), command: 'pause', shortcut: 'F9' },
+  { label: 'Stop', icon: glyph('Stop'), command: 'stop', shortcut: 'F11' },
+  { label: 'Reset', icon: glyph('Reset'), command: 'reset', shortcut: 'F12' }
 ];
 /** Breakpoint toolbar commands. */
 export const breakpointActions: readonly Action[] = [
   {
     label: 'Toggle all breakpoints',
-    icon: glyph('breakpoints'),
+    icon: glyph('Breakpoints'),
     command: 'toggleBreakpoints',
     shortcut: 'Ctrl+T'
   },
   {
     label: 'Clear all breakpoints',
-    icon: glyph('clearBreakpoints'),
+    icon: glyph('ClearBreakpoints'),
     command: 'clearBreakpoints',
     shortcut: 'Ctrl+K'
   }

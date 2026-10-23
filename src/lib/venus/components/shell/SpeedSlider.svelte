@@ -1,7 +1,7 @@
 <script lang="ts">
   import Slider from '../controls/Slider.svelte';
   import Button from '../controls/Button.svelte';
-  import MaskIcon from './MaskIcon.svelte';
+  import MaskIcon from '../icons/MaskIcon.svelte';
   import { MAX_SPEED_POSITION } from '#lib/browser/DisplaySettings.js';
   import { runSpeedLabel, RUN_SPEED_MAX_POSITION } from '../../utils/execution/runSpeed.js';
   import { clamp } from '../../utils/geometry/clamp.js';

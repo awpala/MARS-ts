@@ -1,7 +1,7 @@
 /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license.
  * Setting labels and descriptions derive from mars/venus/VenusUI.java. */
 import { Settings } from '#lib/engine/Settings.js';
-import type { ToolbarIconName } from '../../components/shell/ToolbarIcon.svelte';
+import type { ToolbarIconName } from '../../components/icons/ToolbarIcon.svelte';
 
 /** Preference identity, label, and description of one engine setting shown in the Settings menu. */
 export type EngineOption = {
@@ -25,7 +25,7 @@ export const engineOptions: readonly EngineOption[] = [
     description:
       'If set, use popup dialog for input syscalls (5,6,7,8,12) instead of cursor in Run I/O window',
     invalidatesAssembly: false,
-    toolbarIcon: 'input'
+    toolbarIcon: 'Input'
   },
   {
     id: Settings.PROGRAM_ARGUMENTS,
@@ -33,7 +33,7 @@ export const engineOptions: readonly EngineOption[] = [
     description:
       'If set, program arguments for MIPS program can be entered in border of Text Segment window.',
     invalidatesAssembly: false,
-    toolbarIcon: 'args'
+    toolbarIcon: 'Args'
   },
   {
     id: Settings.ASSEMBLE_ON_OPEN_ENABLED,
@@ -143,7 +143,7 @@ function engineToggle(id: number, menuLabel?: string): ToggleSpec {
 /** Toggles in toolbar order. The Settings menu lists those with `inSettings`, in this order, ahead of the other engine settings. */
 export const toggleSpecs: readonly ToggleSpec[] = [
   {
-    icon: 'labels',
+    icon: 'Labels',
     label: 'Show Labels Window',
     description: 'Toggle visibility of Labels window (symbol table) in the Execute tab',
     inSettings: true,
@@ -155,21 +155,21 @@ export const toggleSpecs: readonly ToggleSpec[] = [
     `${engineOption(Settings.POPUP_SYSCALL_INPUT)!.label} (5,6,7,8,12)`
   ),
   {
-    icon: 'addresses',
+    icon: 'Addresses',
     label: 'Addresses displayed in hexadecimal',
     description: 'Toggle between hexadecimal and decimal display of memory addresses',
     inSettings: true,
     target: { display: 'hexAddresses' }
   },
   {
-    icon: 'values',
+    icon: 'Values',
     label: 'Values displayed in hexadecimal',
     description: 'Toggle between hexadecimal and decimal display of memory/register values',
     inSettings: true,
     target: { display: 'hexValues' }
   },
   {
-    icon: 'ascii',
+    icon: 'Ascii',
     label: 'Display Data Segment values as ASCII',
     inSettings: false,
     target: { display: 'ascii' }

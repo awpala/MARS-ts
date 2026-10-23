@@ -8,6 +8,7 @@
   import SaveSourceDialog from './SaveSourceDialog.svelte';
   import RenameWarningDialog from './RenameWarningDialog.svelte';
   import CloseSourceDialog from './CloseSourceDialog.svelte';
+  import CloseAllSourcesDialog from './CloseAllSourcesDialog.svelte';
   import FindReplaceDialog from './FindReplaceDialog.svelte';
   import MemoryConfigurationDialog from './MemoryConfigurationDialog.svelte';
   import HelpDialog from './HelpDialog.svelte';
@@ -20,6 +21,7 @@
     save: SaveSourceDialog,
     'rename-warning': RenameWarningDialog,
     close: CloseSourceDialog,
+    'close-all': CloseAllSourcesDialog,
     find: FindReplaceDialog
   } satisfies Record<NonNullable<typeof workspace.modal>, Component>;
   let WorkspaceDialog = $derived(workspace.modal ? dialogs[workspace.modal] : null);

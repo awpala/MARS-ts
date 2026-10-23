@@ -1,0 +1,13 @@
+<!-- Original theme-aware Auto Save glyph. ToolbarIcon references #icon, so the page theme's variables and current text color apply; the fallbacks render the light theme standalone. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22">
+  <g
+    id="icon"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="M3 3h13l5 5v13H3ZM7 3v6h9V3M7 21v-8h10v8m-7-5 2 2 4-4" stroke="var(--theme-icon-blue, #236ba5)" />
+  </g>
+</svg>

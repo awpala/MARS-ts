@@ -1,29 +1,7 @@
-<script module lang="ts">
-  import type { ToolbarIconName } from '../shell/ToolbarIcon.svelte';
-  import type { IconName } from '../shell/MaskIcon.svelte';
-
-  /** Visual content of an icon-only button: an inline SVG glyph, a full-color bundled image, or a bundled SVG tinted with the surrounding text color. */
-  export type IconSource =
-    | {
-        /** Inline SVG glyph name. */
-        glyph: ToolbarIconName;
-      }
-    | {
-        /** Basename of a full-color bundled SVG under `static/icons`. */
-        image: IconName;
-      }
-    | {
-        /** Basename of a bundled SVG under `static/icons`, rendered in the current text color. */
-        mask: IconName;
-      };
-</script>
-
 <script lang="ts">
   import type { ClassValue } from 'svelte/elements';
-  import { asset } from '$app/paths';
   import Button from './Button.svelte';
-  import MaskIcon from '../shell/MaskIcon.svelte';
-  import ToolbarIcon from '../shell/ToolbarIcon.svelte';
+  import Icon, { type IconSource } from '../icons/Icon.svelte';
 
   /** Square icon-only button; callers own the meaning, availability, and activation of its action. */
   type Props = {
@@ -75,11 +53,5 @@
   {disabled}
   {onclick}
 >
-  {#if 'glyph' in icon}
-    <ToolbarIcon name={icon.glyph} />
-  {:else if 'image' in icon}
-    <img src={asset(`icons/${icon.image}.svg`)} alt="" width="22" height="22" />
-  {:else}
-    <MaskIcon name={icon.mask} size={12} />
-  {/if}
+  <Icon {icon} />
 </Button>

@@ -1,0 +1,13 @@
+<!-- Original theme-aware Export glyph. ToolbarIcon references #icon, so the page theme's variables and current text color apply; the fallbacks render the light theme standalone. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22">
+  <g
+    id="icon"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="M6 2h10l5 5v6M16 2v5h5M6 2v17h5M16 12v9m-4-4 4 4 4-4" stroke="var(--theme-icon-green, #278443)" />
+  </g>
+</svg>

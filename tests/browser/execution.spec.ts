@@ -535,14 +535,20 @@ syscall
 test('data pages show sixteen rows and ASCII follows hexadecimal values inline', async ({
   page
 }) => {
-  await page.route('**/icons/Previous.svg', (route) => route.abort());
-  await page.route('**/icons/Next.svg', (route) => route.abort());
   await openDesktop(page);
   await source(page, '.data\n.word 0x44434241\n.text\nnop\n');
   await action(page, 'Assemble').click();
   const data = page.getByRole('region', { name: 'Data Segment', exact: true });
-  await expect(action(page, 'Previous memory page').locator('svg')).toBeVisible();
-  await expect(action(page, 'Next memory page').locator('svg')).toBeVisible();
+  for (const [label, icon] of [
+    ['Previous memory page', 'Previous'],
+    ['Next memory page', 'Next']
+  ]) {
+    await expect(action(page, label).locator('svg')).toBeVisible();
+    await expect(action(page, label).locator('svg use')).toHaveAttribute(
+      'href',
+      new RegExp(`icons/${icon}\\.svg#icon$`)
+    );
+  }
   await expect(data.locator('tbody tr')).toHaveCount(16);
   await expect(data.locator('tbody tr').last()).toContainText('0x100101e0');
   await expect(data.locator('tbody tr').last()).toBeInViewport();

@@ -1,0 +1,11 @@
+# Icon components
+
+This group owns icon rendering that needs more than a pass-through image: theme-dependent color, conditional selection, or caller classes. Every icon's artwork is a file under [static/icons](../../../../../static/icons/); these components reference those files and draw no paths of their own. A well-defined icon that is independent of the theme and of rendering conditions needs no component here: callers pass its static file through as an `<img>` with an empty `alt`.
+
+ToolbarIcon references a glyph file's `#icon` group through SVG `<use>`. The referenced artwork inherits from the page, so the `--theme-icon-*` variables, the muted color, and the current text color (including a pressed toggle's text color) follow the active theme; the files' own fallbacks render the light theme when opened standalone. `ToolbarIconName` lists the basenames whose files expose `#icon`, and the typed asset helper rejects a name without a bundled file. File, debugger, display-toggle, and Data Segment paging and sizing glyphs use it.
+
+MaskIcon tints a bundled SVG with the current text color through a CSS mask at a caller-chosen size, accepts caller classes, and exports `IconName`, the union of the bundled icon basenames. The repository link, run-speed steppers, and the theme toggle's sun and moon use it directly; close affordances reach it through IconButton.
+
+Icon renders an `IconSource` for IconButton: a ToolbarIcon glyph, a full-color image passed through unchanged, or a 12-pixel MaskIcon. Buttons and the [command catalog](../../utils/commands/README.md) therefore describe icons as data and do not branch on how they are drawn. ClipboardIcon likewise selects the [Clipboard](../transfers/README.md) variant's 18-pixel icon: the Copy image passed through unchanged, or the masked new-file transfer glyph.
+
+All icons are decorative: the owning control supplies the accessible name, tooltip, interaction, and state. Add new artwork as a file under `static/icons`, and add a component here only when an icon needs theme-dependent rendering, conditional rendering, or caller classes. The [browser assets guide](../../../../../static/README.md) records the files' provenance and attribution.

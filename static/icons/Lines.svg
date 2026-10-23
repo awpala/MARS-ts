@@ -1,0 +1,37 @@
+<!-- Original theme-aware line-number glyph. ToolbarIcon references #icon, so the page theme's variables and current text color apply; the fallbacks render the light theme standalone. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22">
+  <g
+    id="icon"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="M10 5h11M10 12h11M10 19h11" />
+    <text
+      x="2"
+      y="8"
+      fill="currentColor"
+      stroke="none"
+      font-family="monospace"
+      font-size="8"
+    >1</text>
+    <text
+      x="2"
+      y="15"
+      fill="currentColor"
+      stroke="none"
+      font-family="monospace"
+      font-size="8"
+    >2</text>
+    <text
+      x="2"
+      y="22"
+      fill="currentColor"
+      stroke="none"
+      font-family="monospace"
+      font-size="8"
+    >3</text>
+  </g>
+</svg>

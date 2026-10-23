@@ -1,0 +1,11 @@
+<!-- Original geometric glyph for opening a Help code snippet as a new source file. -->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.5"
+  stroke-linejoin="round"
+>
+  <path d="M13 3h5l4 4v14H8v-5M18 3v5h4M2 11h12m-4-4 4 4-4 4" />
+</svg>

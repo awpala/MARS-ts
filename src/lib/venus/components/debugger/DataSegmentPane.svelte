@@ -141,7 +141,7 @@
       <IconButton
         size="sm"
         label="Restore full Data Segment height"
-        icon={{ glyph: 'expandDataSegment' }}
+        icon={{ glyph: 'ExpandDataSegment' }}
         disabled={!dataHeightRestorable}
         onclick={restoreDataHeight}
       />
@@ -184,7 +184,7 @@
       <IconButton
         size="md"
         label="Previous memory page"
-        icon={{ glyph: 'previousMemoryPage' }}
+        icon={{ glyph: 'Previous' }}
         disabled={view.running || view.memoryBase >>> 0 <= limits.low}
         onclick={() => pageMemory(-MEMORY_PAGE_BYTES)}
       /><select
@@ -206,7 +206,7 @@
       ><IconButton
         size="md"
         label="Next memory page"
-        icon={{ glyph: 'nextMemoryPage' }}
+        icon={{ glyph: 'Next' }}
         disabled={view.running || view.memoryBase >>> 0 >= limits.high}
         onclick={() => pageMemory(MEMORY_PAGE_BYTES)}
       />

@@ -1,6 +1,6 @@
 # Desktop dialog composition
 
-This directory owns workflow-specific dialog presentation. Each variant reads the nearest [desktop context](../../context/README.md), renders one workflow through [Modal](Modal.svelte), and delegates actions to the existing [state owner](../../state/README.md). Source opening, deletion, import collisions, saving, dirty closure, search, Help, and prompted syscall input have independent views. The workspace, search, and simulation owners retain their rules, pending data, and cancellation behavior.
+This directory owns workflow-specific dialog presentation. Each variant reads the nearest [desktop context](../../context/README.md), renders one workflow through [Modal](Modal.svelte), and delegates actions to the existing [state owner](../../state/README.md). Source opening, deletion, import collisions, saving, close-all confirmation, dirty closure, search, Help, and prompted syscall input have independent views. The workspace, search, and simulation owners retain their rules, pending data, and cancellation behavior.
 
 [DesktopDialogs](DesktopDialogs.svelte) selects workspace dialogs through a registry checked against the workspace's modal type. Help and input views observe their separate owners. A change of workspace variant mounts the corresponding component; save-target changes also remount the save shell to preserve initial focus between queued saves.
 

@@ -1,6 +1,6 @@
 <script lang="ts">
   import LinkedResource from '../controls/LinkedResource.svelte';
-  import MaskIcon from './MaskIcon.svelte';
+  import MaskIcon from '../icons/MaskIcon.svelte';
   const label = 'MARS-ts on GitHub (opens in a new tab)';
 </script>
 

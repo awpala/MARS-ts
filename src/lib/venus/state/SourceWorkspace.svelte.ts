@@ -68,7 +68,7 @@ export class SourceWorkspace {
   renameSource = $state(false);
   /** Current source-workflow dialog; Help and syscall input have separate owners. */
   modal = $state<
-    'open' | 'delete' | 'import' | 'save' | 'close' | 'find' | 'rename-warning' | null
+    'open' | 'delete' | 'import' | 'save' | 'close' | 'close-all' | 'find' | 'rename-warning' | null
   >(null);
   /** Pending Save As filename. */
   filename = $state('');
@@ -172,8 +172,7 @@ export class SourceWorkspace {
         if (this.current) this.startClose([this.current.id]);
         break;
       case 'closeAll':
-      case 'exit':
-        this.startClose(this.tabs.map((tab) => tab.id));
+        if (this.tabs.length) this.modal = 'close-all';
         break;
       case 'save':
         if (this.current) this.save(this.current);
@@ -592,6 +591,11 @@ export class SourceWorkspace {
   startClose = (ids: number[]) => {
     this.closeQueue = ids;
     this.nextClose();
+  };
+  /** Accept the Close All confirmation, then resolve each buffer through the dirty-buffer workflow. */
+  confirmCloseAll = () => {
+    this.modal = null;
+    this.startClose(this.tabs.map((tab) => tab.id));
   };
   /** Discard the current buffer and continue the close queue. */
   discard = () => {

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import { asset } from '$app/paths';
   import Button from '../controls/Button.svelte';
+  import ClipboardIcon from '../icons/ClipboardIcon.svelte';
 
   /** Exact-text transfer control; file creation remains with the caller. */
   type Props = {
@@ -70,19 +70,7 @@
     disabled={disabled || busy}
     onclick={activate}
   >
-    {#if variant === 'copy-code'}
-      <img src={asset('icons/Copy.svg')} width="18" height="18" alt="" />
-    {:else}
-      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-        <path
-          d="M13 3h5l4 4v14H8v-5M18 3v5h4M2 11h12m-4-4 4 4-4 4"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.5"
-          stroke-linejoin="round"
-        />
-      </svg>
-    {/if}
+    <ClipboardIcon {variant} />
   </Button>
 </span>
 

@@ -1,5 +1,5 @@
 <!--
-Vector adaptation of images/Previous22.png.
+Theme-aware vector adaptation of images/Previous22.png. ToolbarIcon references #icon.
 Copyright (c) 2003-2013,  Pete Sanderson and Kenneth Vollmar
 
 Developed by Pete Sanderson (psanderson@otterbein.edu)
@@ -26,7 +26,20 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 (MIT license, http://www.opensource.org/licenses/mit-license.html)
 -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" role="img" aria-labelledby="title">
-  <title id="title">Previous memory block</title>
-  <path fill="#88be47" stroke="#4f7f20" d="m2 12 10-9v6h10v6H12v6z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22">
+  <g
+    id="icon"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path
+      d="M2 12 12 3v6h10v6H12v6Z"
+      fill="var(--theme-icon-green, #88be47)"
+      stroke="var(--theme-icon-green, #4f7f20)"
+      stroke-width="1"
+    />
+  </g>
 </svg>

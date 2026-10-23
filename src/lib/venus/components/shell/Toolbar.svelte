@@ -21,7 +21,7 @@
 {#snippet commandButton(item: Action)}
   {@const icon = item.icon!}
   {@const suspended =
-    'glyph' in icon && icon.glyph === 'breakpoints' && !commands.isPressed(item.command)}
+    'glyph' in icon && icon.glyph === 'Breakpoints' && !commands.isPressed(item.command)}
   <IconButton
     label={item.label}
     tooltip={item.unavailable ? `${item.label} — not yet available` : item.label}
@@ -29,7 +29,7 @@
     pressed={commands.isPressed(item.command)}
     disabled={!commands.isEnabled(item)}
     onclick={() => void commands.execute(item.command)}
-    icon={suspended ? { glyph: 'breakpointsDisabled' } : icon}
+    icon={suspended ? { glyph: 'BreakpointsDisabled' } : icon}
   />
 {/snippet}
 <div class="toolbar" aria-label="Toolbar">
@@ -39,7 +39,7 @@
       {#if group.id === 'edit'}
         <IconButton
           label="Show line numbers"
-          icon={{ glyph: 'lines' }}
+          icon={{ glyph: 'Lines' }}
           pressed={showLines}
           onclick={() => (showLines = !showLines)}
         />
