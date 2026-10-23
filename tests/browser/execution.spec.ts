@@ -706,6 +706,7 @@ test('breakpoints are locked at maximum run speed and change in flight at finite
     'Breakpoint locked at maximum run speed — lower the run speed to change breakpoints'
   );
   await expect(branch).toHaveAccessibleDescription(/lower the run speed/);
+  await expect(branch.locator('xpath=ancestor::tr/*')).toHaveCount(5);
   await action(page, 'Go').click();
   await expect(status).toHaveText('Status: running');
   await expect(branch).toBeDisabled();

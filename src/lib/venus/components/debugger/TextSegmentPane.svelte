@@ -115,21 +115,23 @@
             data-highlight={row.address === highlightedPC ? pcHighlight : undefined}
             aria-current={row.address === highlightedPC ? 'step' : undefined}
           >
-            <Tooltip text={desktop.breakpointsFrozen ? lockedBreakpoint : ''}>
-              {#snippet children(trigger, description)}
-                <td {@attach trigger}
-                  ><input
-                    class="mx-auto block"
-                    type="checkbox"
-                    aria-label={`Breakpoint ${Binary.intToHexString(row.address)}`}
-                    aria-describedby={description}
-                    checked={simulation.breakpoints.includes(row.address)}
-                    disabled={desktop.breakpointsFrozen}
-                    onchange={() => simulation.toggleBreakpoint(row.address)}
-                  /></td
-                >
-              {/snippet}
-            </Tooltip>
+            <td
+              ><Tooltip text={desktop.breakpointsFrozen ? lockedBreakpoint : ''}>
+                {#snippet children(trigger, description)}
+                  <span class="block" {@attach trigger}
+                    ><input
+                      class="mx-auto block"
+                      type="checkbox"
+                      aria-label={`Breakpoint ${Binary.intToHexString(row.address)}`}
+                      aria-describedby={description}
+                      checked={simulation.breakpoints.includes(row.address)}
+                      disabled={desktop.breakpointsFrozen}
+                      onchange={() => simulation.toggleBreakpoint(row.address)}
+                    /></span
+                  >
+                {/snippet}
+              </Tooltip></td
+            >
             <td class="numeric identifier">{view.formatAddress(row.address)}</td><td class="numeric"
               ><CellInput
                 aria-label={`Code ${Binary.intToHexString(row.address)}`}
