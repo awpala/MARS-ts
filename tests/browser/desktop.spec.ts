@@ -1451,3 +1451,27 @@ test('source textarea captures explicit Option W even when marked composing or A
   await expect(dialog).toHaveCount(0);
   await expect(source).toHaveValue(text);
 });
+
+test('an empty browser library prompts to create or import a source until one is saved', async ({
+  page
+}) => {
+  await openDesktop(page);
+  const prompt = page.getByText('No source files are saved in this browser yet.');
+  await expect(prompt).toBeVisible();
+  await expect(prompt).toContainText('File → New (Alt/Option+N)');
+  await expect(prompt).toContainText('File → Import ... to add .asm or .s files');
+  await page.getByRole('button', { name: 'New', exact: true }).click();
+  await expect(prompt).toBeHidden();
+  await page.getByRole('button', { name: 'Close mips1.asm', exact: true }).click();
+  await expect(prompt).toBeVisible();
+  await page.evaluate(() =>
+    localStorage.setItem(
+      'mars-ts:sources:v1',
+      JSON.stringify([{ name: 'saved.asm', source: '.text\nnop\n' }])
+    )
+  );
+  await page.reload();
+  await waitForDesktop(page);
+  await expect(page.getByText('No current edits')).toBeVisible();
+  await expect(prompt).toHaveCount(0);
+});

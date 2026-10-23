@@ -77,9 +77,60 @@ export const helpArticles: readonly HelpArticle[] = [
     loadHtml: () => import('./MarsHelpHistory.html?raw')
   },
   {
+    id: 'help-bugs',
+    label: 'Bugs/Comments',
+    title: 'Bug Reporting and General Comments',
+    loadHtml: () => import('./BugReportingHelp.html?raw')
+  },
+  {
     id: 'help-acknowledgements',
     label: 'Acknowledgements',
     title: 'Acknowledgements',
     loadHtml: () => import('./Acknowledgements.html?raw')
   }
+];
+
+/** One top-level tab of the F1 Help browser; a tab holding several articles shows a nested strip. */
+export type HelpTab = {
+  /** Stable tab identifier, unique within the browser. */
+  readonly id: string;
+  /** Visible tab caption. */
+  readonly label: string;
+  /** Ordered articles; the first is selected when the tab is first shown. */
+  readonly articles: readonly HelpArticle[];
+};
+
+function articles(...ids: string[]): HelpArticle[] {
+  return ids.map((id) => helpArticles.find((article) => article.id === id)!);
+}
+
+/** The Help command's catalog entry, which opens the tabbed browser rather than a single article. */
+export const helpBrowserArticle: HelpArticle = articles('help')[0];
+
+/**
+ * F1 Help browser tabs. The overview opens first; the remaining tabs follow the MIPS, MARS,
+ * Bugs/Comments, and Acknowledgements order and nesting of HelpHelpAction.actionPerformed for the
+ * articles bundled here.
+ */
+export const helpTabs: readonly HelpTab[] = [
+  { id: 'overview', label: 'Overview', articles: [helpBrowserArticle] },
+  {
+    id: 'mips',
+    label: 'MIPS',
+    articles: articles('help-syscalls', 'help-exceptions', 'help-macros')
+  },
+  {
+    id: 'mars',
+    label: 'MARS',
+    articles: articles(
+      'help-intro',
+      'help-debugging',
+      'help-settings',
+      'help-tools',
+      'help-limits',
+      'help-history'
+    )
+  },
+  { id: 'bugs', label: 'Bugs/Comments', articles: articles('help-bugs') },
+  { id: 'acknowledgements', label: 'Acknowledgements', articles: articles('help-acknowledgements') }
 ];

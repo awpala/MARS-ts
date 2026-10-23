@@ -14,6 +14,7 @@ function record(): DesktopSession {
     view: 'Edit',
     registerTab: 'Registers',
     messageTab: 'Mars Messages',
+    help: { open: true, tab: 'mars', articles: { mars: 'help-debugging' } },
     source: 'main.asm',
     editHistory: [{ name: 'main.asm', text: 'invalid', undo: [''], redo: [] }],
     dataView: { segment: 'data', pageOffset: 0 },
@@ -52,6 +53,9 @@ describe('desktop browser recovery storage', () => {
       '{}',
       JSON.stringify({ ...record(), selection: [-1, 0] }),
       JSON.stringify({ ...record(), programArguments: 42 }),
+      JSON.stringify({ ...record(), help: { open: 'yes', tab: 'mars', articles: {} } }),
+      JSON.stringify({ ...record(), help: { open: true, tab: 'mars', articles: ['help-intro'] } }),
+      JSON.stringify({ ...record(), help: { open: true, tab: 'mars', articles: { mars: 1 } } }),
       JSON.stringify({
         ...record(),
         editHistory: [{ name: 'main.asm', text: 'a', undo: [null], redo: [] }]
@@ -68,6 +72,8 @@ describe('desktop browser recovery storage', () => {
     expect(isDesktopSession({ ...record(), dataView: { segment: 'unknown', pageOffset: 0 } })).toBe(
       false
     );
+    // Records written before Help recovery remain valid and leave Help closed.
+    expect(isDesktopSession({ ...record(), help: undefined })).toBe(true);
   });
 
   it('reports failed writes and preserves the previous complete recovery record', () => {

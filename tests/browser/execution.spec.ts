@@ -336,7 +336,7 @@ test('Text Segment heading stays visible while following and scrolling instructi
   expect(colors).toEqual(['rgb(187, 187, 187)']);
 });
 
-test('breakpoint toolbar actions follow Reset and suspend or clear breakpoints', async ({
+test('breakpoint toolbar and Run menu actions follow Reset and suspend or clear breakpoints', async ({
   page
 }) => {
   await openDesktop(page);
@@ -353,10 +353,30 @@ test('breakpoint toolbar actions follow Reset and suspend or clear breakpoints',
   );
   await expect(clear).toBeDisabled();
   await expect(toggle).toBeDisabled();
-  await page.locator('.menubar summary').filter({ hasText: /^Run$/ }).click();
-  await expect(
-    page.locator('.menubar').getByRole('button', { name: /all breakpoints/ })
-  ).toHaveCount(0);
+  const runMenu = page.locator('.menubar summary').filter({ hasText: /^Run$/ });
+  const menu = page.locator('details[open] .menu');
+  const menuClear = menu.getByRole('button', { name: /^Clear all breakpoints/ });
+  const menuToggle = menu.getByRole('button', { name: /^Toggle all breakpoints/ });
+  await runMenu.click();
+  // As in VenusUI, the breakpoint commands form a separate group after Reset, Clear first.
+  await expect(menu.getByRole('button')).toHaveText([
+    /^Assemble/,
+    /^Go/,
+    /^Step/,
+    /^Backstep/,
+    /^Pause/,
+    /^Stop/,
+    /^Reset/,
+    /^Clear all breakpoints\s*Ctrl\+K/,
+    /^Toggle all breakpoints\s*Ctrl\+T/
+  ]);
+  await expect(menu.locator('hr')).toHaveCount(1);
+  await expect(menu.locator('button:nth-child(7) + hr + button')).toContainText(
+    'Clear all breakpoints'
+  );
+  await expect(menuClear).toBeDisabled();
+  await expect(menuToggle).toBeDisabled();
+  await runMenu.click();
   await source(page, '.text\naddiu $t0,$zero,1\naddiu $t0,$t0,1\nli $v0,10\nsyscall\n');
   await action(page, 'Assemble').click();
   const breakpoint = page.getByLabel('Breakpoint 0x00400004', { exact: true });
@@ -372,7 +392,11 @@ test('breakpoint toolbar actions follow Reset and suspend or clear breakpoints',
     'Status: terminated — breakpoints suspended'
   );
   await action(page, 'Reset').click();
-  await editBreakpoints(page, () => toggle.click());
+  await editBreakpoints(page, async () => {
+    await runMenu.click();
+    await menuToggle.click();
+  });
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
   await action(page, 'Go').click();
   await expect(page.getByLabel('Execution status')).toHaveText('Status: paused');
   await expect(page.getByLabel('pc value', { exact: true })).toHaveValue('0x00400004');
@@ -380,6 +404,15 @@ test('breakpoint toolbar actions follow Reset and suspend or clear breakpoints',
   await expect(breakpoint).not.toBeChecked();
   await expect(clear).toBeDisabled();
   await expect(toggle).toBeDisabled();
+  await action(page, 'Reset').click();
+  await editBreakpoints(page, async () => {
+    await breakpoint.check();
+    await runMenu.click();
+    await menuClear.click();
+  });
+  await expect(menu).toHaveCount(0);
+  await expect(breakpoint).not.toBeChecked();
+  await expect(clear).toBeDisabled();
 });
 
 test('Labels filters data and text and sorts names or unsigned addresses in both directions', async ({
@@ -695,6 +728,17 @@ test('breakpoints are locked at maximum run speed and change in flight at finite
   await page.locator('body').press('Control+t');
   await page.locator('body').press('Control+k');
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  const runMenu = page.locator('.menubar summary').filter({ hasText: /^Run$/ });
+  await runMenu.click();
+  await expect(
+    page.locator('details[open] .menu').getByRole('button', { name: /all breakpoints/ })
+  ).toHaveCount(2);
+  for (const entry of await page
+    .locator('details[open] .menu')
+    .getByRole('button', { name: /all breakpoints/ })
+    .all())
+    await expect(entry).toBeDisabled();
+  await runMenu.click();
   await expect(unreachable).toBeChecked();
   const tooltip = page.locator('.tooltip');
   await toggle.hover();

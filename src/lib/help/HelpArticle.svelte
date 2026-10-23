@@ -110,7 +110,7 @@
     </p>
     <p>
       The Help menu also contains Introduction, Debugging, Settings, Syscalls, Exception Handlers,
-      Macros, Tools, Limitations, Release History, and Acknowledgements articles.
+      Macros, Tools, Limitations, Release History, Bugs/Comments, and Acknowledgements articles.
     </p>
   {/if}
 </article>

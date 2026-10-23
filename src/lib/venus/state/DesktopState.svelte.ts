@@ -1,6 +1,11 @@
 import { tick } from 'svelte';
 import { Settings } from '#lib/engine/Settings.js';
-import { helpArticles, type HelpArticle } from '#lib/help/articles.js';
+import {
+  helpArticles,
+  helpBrowserArticle,
+  helpTabs,
+  type HelpArticle
+} from '#lib/help/articles.js';
 import {
   runActions,
   breakpointActions,
@@ -55,13 +60,30 @@ export class DesktopState {
   /** Search dialog state targeting this desktop's workspace. */
   readonly search = new SourceSearch(this.workspace);
   /** Browser-local recovery of the existing state graph and stable execution checkpoints. */
-  readonly persistence = new DesktopPersistence(this.workspace, this.simulation, this.display);
+  readonly persistence = new DesktopPersistence(
+    this.workspace,
+    this.simulation,
+    this.display,
+    this
+  );
   /** Whether browser restoration and machine initialization have finished. */
   ready = $state(false);
   /** Whether restored layout has been measured and can replace the loading overlay. */
   visible = $state(false);
   /** Currently displayed help article; null leaves Help closed. */
   help = $state.raw<HelpArticle | null>(null);
+  /** Help browser tab shown when Help opens; starts on the overview and is recovered with the session. */
+  helpTab = $state(helpTabs[0].id);
+  /** Nested Help browser article per top-level tab, retained across openings and recovered with the session. */
+  helpTabArticles = $state<Record<string, string>>({});
+  /** Whether the tabbed Help browser, rather than a single article or nothing, is open; recovered with the session. */
+  get helpBrowserOpen(): boolean {
+    return this.help === helpBrowserArticle;
+  }
+  set helpBrowserOpen(open: boolean) {
+    if (open) this.help = helpBrowserArticle;
+    else if (this.helpBrowserOpen) this.help = null;
+  }
   /** Whether the memory-layout settings dialog owns interaction; closed by default. */
   memoryConfigurationOpen = $state(false);
   private fileTransfers: Partial<Record<FileTransferCommand, () => void>> = {};

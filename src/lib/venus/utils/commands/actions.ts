@@ -69,7 +69,7 @@ export const runActions: readonly Action[] = [
   { label: 'Stop', icon: glyph('Stop'), command: 'stop', shortcut: 'F11' },
   { label: 'Reset', icon: glyph('Reset'), command: 'reset', shortcut: 'F12' }
 ];
-/** Breakpoint toolbar commands. */
+/** Breakpoint toolbar commands, in toolbar order; the Run menu lists them in reverse, as in VenusUI. */
 export const breakpointActions: readonly Action[] = [
   {
     label: 'Toggle all breakpoints',
@@ -163,11 +163,11 @@ export function physicalKeyAction(event: KeyboardEvent): Action | undefined {
   );
 }
 
-/** Primary menus and their shared command definitions. */
-export const menus = [
-  { name: 'File', actions: fileActions },
-  { name: 'Edit', actions: editActions },
-  { name: 'Run', actions: runActions }
+/** Primary menus and their shared command definitions, in separator-delimited groups. */
+export const menus: readonly { name: string; groups: readonly (readonly Action[])[] }[] = [
+  { name: 'File', groups: [fileActions] },
+  { name: 'Edit', groups: [editActions] },
+  { name: 'Run', groups: [runActions, [...breakpointActions].reverse()] }
 ];
 
 /** Tools that remain unavailable, in menu order. */

@@ -29,10 +29,11 @@
   const groupName = $props.id();
   let element: HTMLElement;
   function actionItem(item: Action, tooltip?: string): MenuItem {
+    const reason = commands.disabledReason(item);
     return {
       id: item.command,
       label: item.label,
-      tooltip,
+      tooltip: tooltip ?? (reason && `${item.label} — ${reason}`),
       shortcut: item.shortcut,
       disabled: !commands.isEnabled(item),
       onselect: () => void commands.execute(item.command)
@@ -99,7 +100,10 @@
   const definitions = $derived([
     ...menus.map((menu) => ({
       label: menu.name,
-      groups: [{ id: menu.name, items: menu.actions.map((action) => actionItem(action)) }]
+      groups: menu.groups.map((actions, index) => ({
+        id: `${menu.name}-${index}`,
+        items: actions.map((action) => actionItem(action))
+      }))
     })),
     { label: 'Settings', groups: settingsGroups, class: 'settings-menu' },
     {

@@ -9,6 +9,16 @@ import type { DisplayPreferences } from './DisplayPreferences.svelte.js';
 import type { SourceWorkspace } from './SourceWorkspace.svelte.js';
 import type { SimulationState } from './SimulationState.svelte.js';
 
+/** Help browser state recovered with the session; the desktop owns it and the dialog it controls. */
+export type HelpRecovery = {
+  /** Whether the tabbed Help browser is open; setting true opens it, and false closes only the browser. */
+  helpBrowserOpen: boolean;
+  /** Selected top-level Help browser tab ID. */
+  helpTab: string;
+  /** Selected nested article ID per top-level Help browser tab ID. */
+  helpTabArticles: Record<string, string>;
+};
+
 /** Per-desktop recovery boundary; effects are owned by the creating component and storage starts only after restoration. */
 export class DesktopPersistence {
   /** Visible recovery failure; in-memory work and prior successful storage remain usable. */
@@ -22,7 +32,8 @@ export class DesktopPersistence {
   constructor(
     private readonly workspace: SourceWorkspace,
     private readonly simulation: SimulationState,
-    private readonly display: DisplayPreferences
+    private readonly display: DisplayPreferences,
+    private readonly help: HelpRecovery
   ) {
     $effect(() => {
       if (!this.ready) return;
@@ -55,6 +66,11 @@ export class DesktopPersistence {
           view: display.view,
           registerTab: display.registerTab,
           messageTab: simulation.messageTab,
+          help: {
+            open: help.helpBrowserOpen,
+            tab: help.helpTab,
+            articles: { ...help.helpTabArticles }
+          },
           source: workspace.current?.name ?? null,
           editHistory: workspace.editor.captureHistory(),
           dataView: { segment: display.dataSegment, pageOffset: display.dataPageOffset | 0 },
@@ -111,6 +127,11 @@ export class DesktopPersistence {
       this.display.view = saved.view;
       this.display.registerTab = saved.registerTab;
       this.simulation.messageTab = saved.messageTab;
+      if (saved.help) {
+        this.help.helpTab = saved.help.tab;
+        this.help.helpTabArticles = saved.help.articles;
+        this.help.helpBrowserOpen = saved.help.open;
+      }
       this.simulation.breakpoints = saved.breakpoints;
       this.simulation.breakpointsEnabled = saved.breakpointsEnabled;
       if (saved.source === this.workspace.current?.name) {

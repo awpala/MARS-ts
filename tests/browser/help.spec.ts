@@ -1,5 +1,5 @@
 import { expect, test, type Route } from '@playwright/test';
-import { openDesktop } from './openDesktop.js';
+import { openDesktop, waitForDesktop } from './openDesktop.js';
 
 test('Help articles load on demand and a late response cannot replace the current article', async ({
   page
@@ -62,7 +62,7 @@ test('a failed Help article displays an error and remains dismissible', async ({
   await expect(helpMenu).toBeFocused();
 });
 
-test('Help menu opens all ten attributed articles and restores keyboard focus', async ({
+test('Help menu opens all eleven attributed articles and restores keyboard focus', async ({
   page
 }) => {
   await openDesktop(page);
@@ -83,6 +83,7 @@ test('Help menu opens all ten attributed articles and restores keyboard focus', 
     ['Tools', 'Tools — Legacy Reference', 'mars.tools.MarsTool'],
     ['Limitations', 'Requirements and Limitations', 'Historical Java limitations'],
     ['Release History', 'Release History', '23 January 2008'],
+    ['Bugs/Comments', 'Bug Reporting and General Comments', 'PSanderson@otterbein.edu'],
     ['Acknowledgements', 'Acknowledgements', 'Updated 18 August 2014']
   ];
   for (const [label, title, retainedText] of articles) {
@@ -100,6 +101,137 @@ test('Help menu opens all ten attributed articles and restores keyboard focus', 
     await expect(helpMenu).toBeFocused();
   }
   expect(page.context().pages()).toHaveLength(1);
+});
+
+test('F1 Help opens a tabbed browser on the overview, retains its tab, and leaves menu articles standalone', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await page.keyboard.press('F1');
+  const dialog = page.getByRole('dialog', { name: 'MARS Help', exact: true });
+  const topics = dialog.getByRole('group', { name: 'Help topics', exact: true });
+  const tab = (group: typeof topics, name: string) =>
+    group.getByRole('button', { name, exact: true });
+  await expect(topics.getByRole('button')).toHaveText([
+    'Overview',
+    'MIPS',
+    'MARS',
+    'Bugs/Comments',
+    'Acknowledgements'
+  ]);
+  await expect(tab(topics, 'Overview')).toHaveAttribute('aria-pressed', 'true');
+  await expect(dialog.getByRole('article', { name: 'MARS Help' })).toBeFocused();
+  await expect(dialog).toContainText('Save commits');
+  await tab(topics, 'MARS').click();
+  const mars = dialog.getByRole('group', { name: 'MARS topics', exact: true });
+  await expect(mars.getByRole('button')).toHaveText([
+    'Introduction',
+    'Debugging',
+    'Settings',
+    'Tools',
+    'Limitations',
+    'Release History'
+  ]);
+  await expect(tab(mars, 'Introduction')).toHaveAttribute('aria-pressed', 'true');
+  await expect(dialog).toContainText('Original article: Release 4.5 · August 2014');
+  await tab(mars, 'Debugging').click();
+  const panel = dialog.getByRole('region', { name: 'Interactive Debugging', exact: true });
+  await expect(panel).toContainText('2000');
+  await panel.focus();
+  await page.keyboard.press('End');
+  await expect.poll(() => panel.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  await expect(tab(mars, 'Debugging')).toBeInViewport();
+  await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeInViewport();
+  await tab(topics, 'MIPS').click();
+  const mips = dialog.getByRole('group', { name: 'MIPS topics', exact: true });
+  await expect(mips.getByRole('button')).toHaveText(['Syscalls', 'Exception Handlers', 'Macros']);
+  await expect(dialog).toContainText('Tony Brock in July 2007');
+  await tab(mips, 'Macros').click();
+  await expect(dialog.getByRole('button', { name: 'Copy code example 1' })).toBeVisible();
+  await tab(topics, 'MARS').click();
+  await expect(tab(mars, 'Debugging')).toHaveAttribute('aria-pressed', 'true');
+  await tab(topics, 'Bugs/Comments').click();
+  const bugs = dialog.getByRole('region', {
+    name: 'Bug Reporting and General Comments',
+    exact: true
+  });
+  for (const [name, href] of [
+    ['GitHub repository', 'https://github.com/awpala/MARS-ts'],
+    ['Issues page', 'https://github.com/awpala/MARS-ts/issues'],
+    ['Discussions page', 'https://github.com/awpala/MARS-ts/discussions']
+  ]) {
+    const link = bugs.getByRole('link', { name, exact: true });
+    await expect(link).toHaveAttribute('href', href);
+    await expect(link).toHaveAttribute('target', '_blank');
+  }
+  await expect(bugs).toContainText('PSanderson@otterbein.edu');
+  await tab(topics, 'Acknowledgements').click();
+  await expect(dialog.getByRole('group', { name: /topics$/ })).toHaveCount(1);
+  await expect(dialog).toContainText('Updated 18 August 2014');
+  await tab(topics, 'MIPS').click();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+
+  // Reopening returns to the last tab and its nested article rather than the overview.
+  await page.keyboard.press('F1');
+  await expect(tab(topics, 'MIPS')).toHaveAttribute('aria-pressed', 'true');
+  await expect(tab(mips, 'Macros')).toHaveAttribute('aria-pressed', 'true');
+  await expect(dialog.getByRole('article', { name: 'Macros' })).toBeFocused();
+  await tab(topics, 'MARS').click();
+  await expect(tab(mars, 'Debugging')).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.press('Escape');
+  await page
+    .locator('.menubar summary')
+    .filter({ hasText: /^Help$/ })
+    .click();
+  await page.getByRole('button', { name: 'Macros', exact: true }).click();
+  const macros = page.getByRole('dialog', { name: 'Macros', exact: true });
+  await expect(macros).toContainText('Mohammad Hossein Sekhavat');
+  await expect(macros.getByRole('group', { name: /topics$/ })).toHaveCount(0);
+});
+
+test('an open Help browser and its selection survive reload, while closed or standalone Help stays closed', async ({
+  page
+}) => {
+  await openDesktop(page);
+  const dialog = page.getByRole('dialog', { name: 'MARS Help', exact: true });
+  const topic = (name: string) =>
+    dialog.getByRole('group', { name: 'Help topics', exact: true }).getByRole('button', {
+      name,
+      exact: true
+    });
+  const marsTopic = (name: string) =>
+    dialog.getByRole('group', { name: 'MARS topics', exact: true }).getByRole('button', {
+      name,
+      exact: true
+    });
+  await page.keyboard.press('F1');
+  await topic('MARS').click();
+  await marsTopic('Settings').click();
+  await expect(dialog).toContainText('localStorage');
+  await page.reload();
+  await waitForDesktop(page);
+  await expect(dialog).toBeVisible();
+  await expect(topic('MARS')).toHaveAttribute('aria-pressed', 'true');
+  await expect(marsTopic('Settings')).toHaveAttribute('aria-pressed', 'true');
+  await expect(dialog.getByRole('article', { name: 'Configuration Settings' })).toBeFocused();
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await page.reload();
+  await waitForDesktop(page);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.keyboard.press('F1');
+  await expect(marsTopic('Settings')).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.press('Escape');
+  await page
+    .locator('.menubar summary')
+    .filter({ hasText: /^Help$/ })
+    .click();
+  await page.getByRole('button', { name: 'Macros', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Macros', exact: true })).toBeVisible();
+  await page.reload();
+  await waitForDesktop(page);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
 test('syscall reference distinguishes implemented services from legacy contracts', async ({

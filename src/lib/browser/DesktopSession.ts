@@ -51,7 +51,17 @@ export interface SavedExecution {
   labelSelection?: SavedLabelSelection | null;
 }
 
-/** Restorable desktop presentation and last stable execution; no live promises, dialogs, or timers. */
+/** Tabbed Help browser presentation; IDs are opaque here and fall back to the overview when unknown. */
+export interface SavedHelpBrowser {
+  /** Whether the tabbed Help browser was open. */
+  open: boolean;
+  /** Selected top-level tab ID. */
+  tab: string;
+  /** Selected nested article ID per top-level tab ID. */
+  articles: Record<string, string>;
+}
+
+/** Restorable desktop presentation and last stable execution; no live promises, timers, or dialogs other than the Help browser. */
 export interface DesktopSession {
   /** Argument draft for the next initial Go/Step; absent in older records, defaulting to empty. */
   programArguments?: string;
@@ -61,6 +71,8 @@ export interface DesktopSession {
   registerTab: RegisterBank;
   /** Selected message console. */
   messageTab: MessageTab;
+  /** Help browser visibility and selection; absent in older records, leaving Help closed on its overview. */
+  help?: SavedHelpBrowser;
   /** Undo/redo branches matched to recovered source identity and contents. */
   editHistory: ReturnType<Editor['captureHistory']>;
   /** Data Segment range and aligned relative page offset. */
@@ -113,6 +125,14 @@ export function isDesktopSession(value: unknown): value is DesktopSession {
     MAIN_VIEWS.includes(s.view) &&
     REGISTER_BANKS.includes(s.registerTab) &&
     MESSAGE_TABS.includes(s.messageTab) &&
+    (s.help === undefined ||
+      (!!s.help &&
+        typeof s.help.open === 'boolean' &&
+        typeof s.help.tab === 'string' &&
+        !!s.help.articles &&
+        typeof s.help.articles === 'object' &&
+        !Array.isArray(s.help.articles) &&
+        Object.values(s.help.articles).every((article) => typeof article === 'string'))) &&
     Array.isArray(s.editHistory) &&
     s.editHistory.every(
       (r) =>
