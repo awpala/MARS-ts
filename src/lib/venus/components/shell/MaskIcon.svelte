@@ -1,9 +1,12 @@
+<script module lang="ts">
+  import type { AssetPath } from '$app/types';
+  /** Basenames of the SVG files bundled under `static/icons`. */
+  export type IconName<Path = AssetPath> = Path extends `icons/${infer Name}.svg` ? Name : never;
+</script>
+
 <script lang="ts">
   import { asset } from '$app/paths';
-  import type { AssetPath } from '$app/types';
   import type { ClassValue } from 'svelte/elements';
-  /** Basenames of the SVG files bundled under `static/icons`. */
-  type IconName<Path = AssetPath> = Path extends `icons/${infer Name}.svg` ? Name : never;
   /** Decorative static icon tinted with the surrounding text color; the owning control supplies its accessible name. */
   type Props = {
     /** Required basename of a bundled SVG under `static/icons`, without its extension. */

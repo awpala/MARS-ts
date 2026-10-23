@@ -2,43 +2,16 @@
   import { tick } from 'svelte';
   import TabbedPane from '../layout/TabbedPane.svelte';
   import Button from '../controls/Button.svelte';
-  import { consoleActions } from '../../utils/commands.js';
-  import { ariaKeyShortcuts } from '../../utils/shortcuts.js';
-  /** Console view; host output and pending syscall input remain owned by the desktop. */
-  type Props = {
-    /** Required selected output tab, bindable for host-triggered selection changes. */
-    messageTab: string;
-    /** Required desktop-owned assembler/debugger output. */
-    messages: string;
-    /** Required desktop-owned program output. */
-    runIO: string;
-    /** Required indication that inline syscall input is pending. */
-    awaitingInput: boolean;
-    /** Required current input buffer owned by the host. */
-    inputText: string;
-    /** Required callback handling newline and syscall length limits. */
-    oninput: (event: Event) => void;
-    /** Required callback completing the pending input. */
-    onsubmit: () => void;
-    /** Required callback clearing selected output, or both outputs when all is true. */
-    onclear: (all?: boolean) => void;
-    /** Required callback stopping execution and releasing input. */
-    onstop: () => void;
-  };
-  let {
-    messageTab = $bindable(),
-    messages,
-    runIO,
-    awaitingInput,
-    inputText,
-    oninput,
-    onsubmit,
-    onstop,
-    onclear
-  }: Props = $props();
-  let outputText = $derived(messageTab === 'Mars Messages' ? messages : runIO);
-  const clear = consoleActions.find((action) => action.command === 'clearOutput')!;
-  const clearAll = consoleActions.find((action) => action.command === 'clearAllOutput')!;
+  import { MESSAGE_TABS } from '#lib/browser/DesktopSession.js';
+  import { getDesktop } from '../../context/desktop.js';
+  import { requireAction } from '../../utils/commands/actions.js';
+  import { ariaKeyShortcuts } from '../../utils/commands/shortcuts.js';
+  const { simulation } = getDesktop();
+  const outputText = $derived(
+    simulation.messageTab === 'Mars Messages' ? simulation.messages : simulation.runIO
+  );
+  const clear = requireAction('clearOutput');
+  const clearAll = requireAction('clearAllOutput');
 
   function followOutput(element: HTMLTextAreaElement) {
     $effect(() => {
@@ -59,37 +32,40 @@
   }
 </script>
 
-<!-- @component Output and inline syscall input composed inside the reusable pane shell. -->
+<!-- @component Output and inline syscall input composed inside the reusable pane shell. The simulation owner supplies the console text and tab, completes pending input, and stops the run; typed input reaches it one way so the owner applies the newline and length-limit rules. -->
 <TabbedPane
   class="messages"
   label="Messages and console"
-  tabs={['Mars Messages', 'Run I/O']}
-  bind:selected={messageTab}
+  tabs={MESSAGE_TABS}
+  bind:selected={simulation.messageTab}
   --pane-min-height="80px"
 >
   {#snippet actions()}
     <Button
-      class="clear mb-0.5 ml-auto rounded-none border border-(--theme-border,#aaa) px-3 py-px"
+      variant="outlined"
+      class="clear mb-0.5 ml-auto rounded-none px-3 py-px"
       tooltip="Clear selected output"
       shortcut={clear.shortcut}
       aria-keyshortcuts={ariaKeyShortcuts(clear.shortcut!)}
-      onclick={() => onclear()}>{clear.label}</Button
+      onclick={() => simulation.clearOutput()}>{clear.label}</Button
     >
 
     <Button
       tooltip="Clear all outputs"
       shortcut={clearAll.shortcut}
-      class="clear-all mb-0.5 rounded-none border border-(--theme-border,#aaa) px-3 py-px"
+      variant="outlined"
+      class="clear-all mb-0.5 rounded-none px-3 py-px"
       aria-keyshortcuts={ariaKeyShortcuts(clearAll.shortcut!)}
-      onclick={() => onclear(true)}>{clearAll.label}</Button
+      onclick={() => simulation.clearOutput(true)}>{clearAll.label}</Button
     >
   {/snippet}
-  <textarea {@attach followOutput} readonly aria-label={messageTab} value={outputText}></textarea>
-  {#if awaitingInput && messageTab === 'Run I/O'}<form
+  <textarea {@attach followOutput} readonly aria-label={simulation.messageTab} value={outputText}
+  ></textarea>
+  {#if simulation.consoleInputPending && simulation.messageTab === 'Run I/O'}<form
       class="console-input"
       onsubmit={(event) => {
         event.preventDefault();
-        onsubmit();
+        simulation.completeInput(true);
       }}
     >
       <label
@@ -97,11 +73,12 @@
           {@attach focusInput}
           aria-label="Run input"
           rows="1"
-          value={inputText}
-          {oninput}></textarea></label
-      ><Button class="border border-(--theme-border,#aaa) px-2 py-0.5" type="submit">Submit</Button
-      ><Button class="border border-(--theme-border,#aaa) px-2 py-0.5" onclick={() => onstop()}
-        >Stop</Button
+          value={simulation.inputText}
+          oninput={simulation.consoleInputChanged}></textarea></label
+      ><Button variant="outlined" class="px-2 py-0.5" type="submit">Submit</Button><Button
+        variant="outlined"
+        class="px-2 py-0.5"
+        onclick={simulation.stop}>Stop</Button
       >
     </form>{/if}
 </TabbedPane>

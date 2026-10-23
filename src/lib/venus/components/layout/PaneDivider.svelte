@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { clamp } from '../../utils/clamp.js';
+  import { clamp } from '../../utils/geometry/clamp.js';
   /** Adjustable pane boundary; all dimensions are pixels and remain owned by the caller. */
   type Props = {
     /** Required accessible description of the dimension being adjusted. */

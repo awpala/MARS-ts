@@ -1,7 +1,7 @@
 import type { Globals } from '#lib/engine/Globals.js';
 import { isMemoryState, type MemoryState } from '#lib/engine/hardware/memory/Memory.js';
 import type { ProgramStatement } from '#lib/engine/assembler/programs/ProgramStatement.js';
-import type { Settings } from '#lib/engine/Settings.js';
+import { Settings } from '#lib/engine/Settings.js';
 import type { RunState } from './RunController.js';
 
 /** Portable stable machine payload; no engine instances, pending input, or browser resources. */
@@ -76,6 +76,13 @@ export interface RunCheckpoint {
   }[];
 }
 
+/** Words in `registers`: the 32 integer registers followed by HI, LO, and PC. */
+const REGISTER_WORDS = 35;
+/** Words in `coprocessor0`: the exception registers. */
+const COPROCESSOR0_WORDS = 4;
+/** Words in `coprocessor1`: the floating registers. */
+const COPROCESSOR1_WORDS = 32;
+
 /** Validate the complete serialized payload before any restored machine mutation. */
 export function isRunCheckpoint(value: unknown): value is RunCheckpoint {
   if (!value || typeof value !== 'object') return false;
@@ -89,15 +96,15 @@ export function isRunCheckpoint(value: unknown): value is RunCheckpoint {
     typeof s.configuration === 'string' &&
     !!s.settings &&
     Array.isArray(s.settings.booleans) &&
-    s.settings.booleans.length === 21 &&
+    s.settings.booleans.length === Settings.BOOLEAN_COUNT &&
     s.settings.booleans.every((v) => typeof v === 'boolean') &&
     Array.isArray(s.settings.strings) &&
-    s.settings.strings.length === 7 &&
+    s.settings.strings.length === Settings.STRING_COUNT &&
     s.settings.strings.every((v) => typeof v === 'string') &&
     isMemoryState(s.memory) &&
-    words(s.registers, 35) &&
-    words(s.coprocessor0, 4) &&
-    words(s.coprocessor1, 32) &&
+    words(s.registers, REGISTER_WORDS) &&
+    words(s.coprocessor0, COPROCESSOR0_WORDS) &&
+    words(s.coprocessor1, COPROCESSOR1_WORDS) &&
     word(s.conditionFlags) &&
     s.conditionFlags >= 0 &&
     s.conditionFlags <= 255 &&

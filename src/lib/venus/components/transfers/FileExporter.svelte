@@ -1,7 +1,7 @@
 <script lang="ts">
   import { downloadSource, downloadSourceArchive } from '#lib/browser/download.js';
-  import { sourceBasename } from '#lib/browser/SourceLibrary.js';
   import { getDesktop } from '../../context/desktop.js';
+  import { exportFilenames } from '../../utils/sources/exportFilenames.js';
 
   /** Export behavior for the corresponding desktop command; renders no additional control. */
   type Props = {
@@ -14,16 +14,7 @@
   function exportFiles() {
     try {
       const sources = desktop.workspace.sourcesForExport(variant === 'all');
-      // eslint-disable-next-line svelte/prefer-svelte-reactivity -- Download filenames are temporary bookkeeping, never rendered state.
-      const names = new Set<string>();
-      const files = sources.map((file) => {
-        const stem = sourceBasename(file.name).replace(/\.[^.]+$/, '');
-        let name = `${stem}.asm`;
-        let suffix = 2;
-        while (names.has(name)) name = `${stem}-${suffix++}.asm`;
-        names.add(name);
-        return { name, source: file.source };
-      });
+      const files = exportFilenames(sources);
       if (variant === 'all') downloadSourceArchive(files);
       else for (const file of files) downloadSource(file.name, file.source);
     } catch (error) {

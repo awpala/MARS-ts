@@ -1,4 +1,4 @@
-<script lang="ts">
+<script lang="ts" generics="T extends string">
   import type { Snippet } from 'svelte';
   import PaneTabs from '../controls/PaneTabs.svelte';
   import Pane from './Pane.svelte';
@@ -13,11 +13,11 @@
     /** Region landmark; defaults to section, with aside available for sidebars. */
     element?: 'section' | 'aside';
     /** Required ordered tab labels. */
-    tabs: readonly string[];
+    tabs: readonly T[];
     /** Required parent-owned selected label, bindable. */
-    selected: string;
+    selected: T;
     /** Required body template, receiving the selected tab. The caller decides whether bodies remain mounted. */
-    children: Snippet<[string]>;
+    children: Snippet<[T]>;
     /** Optional controls in the tab strip; omitted by default. */
     actions?: Snippet;
   };

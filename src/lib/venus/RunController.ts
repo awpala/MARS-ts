@@ -6,16 +6,17 @@ import {
   isRunCheckpoint,
   type RunCheckpoint
 } from './RunCheckpoint.js';
-import { Settings } from '../engine/Settings.js';
-import { ProgramArgumentList } from '../engine/simulator/ProgramArgumentList.js';
-import { Globals } from '../engine/Globals.js';
-import type { MIPSprogram } from '../engine/assembler/programs/MIPSprogram.js';
-import type { ProgramStatement } from '../engine/assembler/programs/ProgramStatement.js';
-import type { ErrorList } from '../engine/diagnostics/ErrorList.js';
-import { ProcessingException } from '../engine/diagnostics/ProcessingException.js';
-import { Simulator } from '../engine/simulator/Simulator.js';
-import { SimulatorNotice } from '../engine/simulator/SimulatorNotice.js';
-import type { SimulatorAction } from '../engine/simulator/SimulatorAction.js';
+import { observesWrites } from './utils/execution/runSpeed.js';
+import { Settings } from '#lib/engine/Settings.js';
+import { ProgramArgumentList } from '#lib/engine/simulator/ProgramArgumentList.js';
+import { Globals } from '#lib/engine/Globals.js';
+import type { MIPSprogram } from '#lib/engine/assembler/programs/MIPSprogram.js';
+import type { ProgramStatement } from '#lib/engine/assembler/programs/ProgramStatement.js';
+import type { ErrorList } from '#lib/engine/diagnostics/ErrorList.js';
+import { ProcessingException } from '#lib/engine/diagnostics/ProcessingException.js';
+import { Simulator } from '#lib/engine/simulator/Simulator.js';
+import { SimulatorNotice } from '#lib/engine/simulator/SimulatorNotice.js';
+import type { SimulatorAction } from '#lib/engine/simulator/SimulatorAction.js';
 
 /** Desktop execution state; concrete registers/memory remain owned by the machine. */
 export interface RunState {
@@ -62,12 +63,14 @@ export class RunController {
   private backstepping = false;
   private backstepDelaySlot: boolean | null = null;
   private lastExecutedAddress: number | null = null;
+  private observingWrites = false;
   private disposed = false;
   private disposalPromise: Promise<void> | null = null;
   private readonly unsubscribeSimulator: () => void;
   /** Bind one GUI controller to one machine; constructor owns one simulator subscription. */
   constructor(readonly machine: Globals) {
     this.unsubscribeSimulator = machine.simulator.subscribe((notice) => {
+      this.observingWrites = observesWrites(notice);
       if (notice.getAction() === SimulatorNotice.SIMULATOR_STOP)
         this.lastExecutedAddress = notice.getProgramCounter();
       this.refresh();
@@ -215,6 +218,10 @@ export class RunController {
       }
       this.publish({ status: 'paused', started: true, reset: false, error: null, reason: 0 });
     }
+  }
+  /** Whether the running or just-started execution is stepped or finite-speed, so register and memory writes should be followed; false for unlimited-speed runs and after any stop. */
+  isObservingWrites(): boolean {
+    return this.observingWrites;
   }
   /** Whether synchronous undo writes are being delivered to debugger observers. */
   isBackStepping(): boolean {

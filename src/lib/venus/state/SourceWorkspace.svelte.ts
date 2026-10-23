@@ -1,14 +1,16 @@
 import { tick } from 'svelte';
 import { Editor, type EditPane } from '#lib/editor/Editor.js';
 import {
+  isSourceFilename,
+  SOURCE_EXTENSION_LABEL,
   SourceLibrary,
-  sourceBasename,
   sourceName,
+  sourceStem,
   type SavedSource
 } from '#lib/browser/SourceLibrary.js';
 import type { DisplayPreferences } from './DisplayPreferences.svelte.js';
-import { errorMessage } from '../utils/errorMessage.js';
-import { isSavableSource } from '../utils/savableSource.js';
+import { errorMessage } from '../utils/errors/errorMessage.js';
+import { isSavableSource } from '../utils/sources/savableSource.js';
 /** Cross-domain capabilities injected by the desktop; the workspace never creates a machine. */
 export type WorkspaceHost = {
   /** Invalidate assembly after source changes. */
@@ -38,6 +40,12 @@ export class SourceWorkspace {
     const tab = this.editor.getCurrentEditTab();
     return tab ? { ...tab, undo: [...tab.undo], redo: [...tab.redo] } : undefined;
   });
+  /** Identity, name, and unsaved state of every open buffer, in tab order. */
+  tabSummaries = $derived(
+    this.tabs.map((tab) => ({ id: tab.id, name: tab.name, dirty: this.editor.isDirty(tab) }))
+  );
+  /** Names of open buffers that differ from their saved baselines. */
+  unsavedNames = $derived(this.tabSummaries.filter((tab) => tab.dirty).map((tab) => tab.name));
   private sourceLibrary = new SourceLibrary();
   /** Last successfully read or committed source library. */
   libraryFiles = $state.raw<SavedSource[]>([]);
@@ -94,11 +102,7 @@ export class SourceWorkspace {
   /** Restore saved sources and recovery drafts; conflicting drafts disable Auto Save without discarding either version. */
   restore(): void {
     let recoveredConflict = false;
-    try {
-      this.libraryFiles = this.sourceLibrary.read();
-    } catch (error) {
-      this.fileFailure(error);
-    }
+    this.reloadLibrary();
     try {
       const drafts = this.sourceLibrary.readWorkspace();
       let selected: number | undefined;
@@ -209,11 +213,7 @@ export class SourceWorkspace {
   /** Create and initialize a new buffer synchronously; optional source records one normal edit before persistence. Returns nothing after disposal or while running. */
   createSource(source?: string): EditPane | undefined {
     if (this.disposed || this.host.running()) return;
-    try {
-      this.libraryFiles = this.sourceLibrary.read();
-    } catch (error) {
-      this.fileFailure(error);
-    }
+    this.reloadLibrary();
     const tab = this.editor.newFile(this.libraryFiles.map((file) => file.name));
     if (source !== undefined) {
       this.editor.setText(source);
@@ -334,19 +334,34 @@ export class SourceWorkspace {
     this.fileError = errorMessage(error);
     this.host.report(error);
   };
-  private showOpen = () => {
-    this.fileError = '';
-    this.selectedSources = [];
-    this.modal = 'open';
+  /** Refresh the last known committed sources, reporting a read failure instead of throwing. */
+  private reloadLibrary(): void {
     try {
       this.libraryFiles = this.sourceLibrary.read();
     } catch (error) {
       this.fileFailure(error);
     }
+  }
+  private tabById(id: number): EditPane | undefined {
+    return this.editor.getEditPanes().find((tab) => tab.id === id);
+  }
+  private tabByName(name: string): EditPane | undefined {
+    return this.editor.getEditPanes().find((tab) => tab.name === name);
+  }
+  /** Close a buffer and publish the change. */
+  private closeBuffer(id: number): void {
+    this.editor.close(id);
+    this.refresh();
+  }
+  private showOpen = () => {
+    this.fileError = '';
+    this.selectedSources = [];
+    this.modal = 'open';
+    this.reloadLibrary();
   };
   private openSources = async (sources: readonly SavedSource[]) => {
     for (const file of sources) {
-      const existing = this.editor.getEditPanes().find((tab) => tab.name === file.name);
+      const existing = this.tabByName(file.name);
       if (existing) this.editor.setCurrentEditTab(existing.id);
       else this.editor.openFile(file.name, file.source);
     }
@@ -417,13 +432,13 @@ export class SourceWorkspace {
     try {
       if (this.host.running()) throw new Error('Stop execution before importing sources.');
       for (const file of this.importSources) {
-        const tab = this.editor.getEditPanes().find((entry) => entry.name === file.name);
+        const tab = this.tabByName(file.name);
         if (tab && this.editor.isDirty(tab))
           throw new Error(`Save or close the edited "${file.name}" before replacing it.`);
       }
       this.libraryFiles = this.sourceLibrary.saveMany(this.importSources);
       for (const file of this.importSources) {
-        const tab = this.editor.getEditPanes().find((entry) => entry.name === file.name);
+        const tab = this.tabByName(file.name);
         if (tab) this.editor.close(tab.id);
       }
       this.host.invalidate();
@@ -466,7 +481,7 @@ export class SourceWorkspace {
   /** Commit an inline filename edit through Save As Rename. Invalid names keep the current buffer/library unchanged and open a warning; collisions retain explicit replacement confirmation. */
   rename = (id: number, filename: string): void => {
     if (this.disposed || this.host.running() || this.modal) return;
-    const tab = this.editor.getEditPanes().find((tab) => tab.id === id);
+    const tab = this.tabById(id);
     if (!tab || filename === tab.name) return;
     this.dismiss();
     this.select(id);
@@ -479,11 +494,13 @@ export class SourceWorkspace {
   private validateSaveName(tab: EditPane): string {
     const name = sourceName(this.filename);
     if (this.renameSource) {
-      const basename = sourceBasename(name);
-      const extension = /^(.+)\.(asm|s)$/i.exec(basename);
-      if (!extension || !extension[1].replaceAll('.', '').trim() || /[<>"|?*]/.test(name))
+      if (
+        !isSourceFilename(name) ||
+        !sourceStem(name).replaceAll('.', '').trim() ||
+        /[<>"|?*]/.test(name)
+      )
         throw new Error(
-          'Enter an assembly filename with a nonempty name and a .asm or .s extension.'
+          `Enter an assembly filename with a nonempty name and a ${SOURCE_EXTENSION_LABEL} extension.`
         );
     }
     if (this.editor.getEditPanes().some((other) => other.id !== tab.id && other.name === name))
@@ -493,7 +510,7 @@ export class SourceWorkspace {
   private nextSave = () => {
     const id = this.saveQueue.shift();
     if (id === undefined) return;
-    const tab = this.editor.getEditPanes().find((pane) => pane.id === id);
+    const tab = this.tabById(id);
     if (!tab) {
       this.nextSave();
       return;
@@ -538,8 +555,7 @@ export class SourceWorkspace {
       this.replaceSave = false;
       if (this.closingAfterSave) {
         this.closingAfterSave = false;
-        this.editor.close(this.saveTarget.id);
-        this.refresh();
+        this.closeBuffer(this.saveTarget.id);
         this.nextClose();
       } else this.nextSave();
     } catch (error) {
@@ -562,15 +578,14 @@ export class SourceWorkspace {
       this.modal = null;
       return;
     }
-    const tab = this.editor.getEditPanes().find((pane) => pane.id === id);
+    const tab = this.tabById(id);
     if (!tab) return this.nextClose();
     this.select(id);
     if (this.editor.isDirty(tab) && isSavableSource(tab)) {
       this.modal = 'close';
       return;
     }
-    this.editor.close(id);
-    this.refresh();
+    this.closeBuffer(id);
     this.nextClose();
   };
   /** Start the ordered dirty-buffer close workflow. */
@@ -580,8 +595,8 @@ export class SourceWorkspace {
   };
   /** Discard the current buffer and continue the close queue. */
   discard = () => {
-    if (this.current) this.editor.close(this.current.id);
-    this.refresh();
+    if (this.current) this.closeBuffer(this.current.id);
+    else this.refresh();
     this.nextClose();
   };
   /** Save the current buffer before continuing the close queue. */
@@ -591,25 +606,21 @@ export class SourceWorkspace {
       this.closingAfterSave = true;
       this.save(this.current);
     } else if (this.persistSource(this.current, this.current.name)) {
-      this.editor.close(this.current.id);
-      this.refresh();
+      this.closeBuffer(this.current.id);
       this.nextClose();
     }
   };
   private clipboard = async (command: string) => {
     if (!this.current) return;
+    const tab = this.current,
+      start = this.selectionStart,
+      end = this.selectionEnd;
     try {
       if (command === 'paste') {
-        const tab = this.current,
-          start = this.selectionStart,
-          end = this.selectionEnd;
         const text = await navigator.clipboard.readText();
         if (this.disposed || this.current !== tab || this.host.running()) return;
         this.edit(tab.text.slice(0, start) + text + tab.text.slice(end));
       } else {
-        const tab = this.current,
-          start = this.selectionStart,
-          end = this.selectionEnd;
         await navigator.clipboard.writeText(tab.text.slice(start, end));
         if (this.disposed) return;
         if (command === 'cut' && this.current === tab && !this.host.running())

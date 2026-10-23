@@ -2,90 +2,75 @@
   import { Settings } from '#lib/engine/Settings.js';
   import { getDesktopCommands } from '../../context/commands.js';
   import {
-    menus,
-    engineOptions,
-    popupInputOption,
-    programArgumentsOption,
-    pendingSettings,
-    settingsTooltips,
     helpActions,
-    type Action,
-    type DisplayToggle
-  } from '../../utils/commands.js';
+    memoryConfigurationAction,
+    menus,
+    unavailableTools,
+    type Action
+  } from '../../utils/commands/actions.js';
+  import {
+    clearAllOutputsOnGoOption,
+    memoryConfigurationDescription,
+    pendingSettings
+  } from '../../utils/commands/settings.js';
   import DropdownMenu, { type MenuItem, type MenuGroup } from './DropdownMenu.svelte';
   import RegisterBanksToggle from './RegisterBanksToggle.svelte';
   import ThemeToggle from './ThemeToggle.svelte';
   import GitHubLink from './GitHubLink.svelte';
-  /** Preference controls remain parent-owned; command behavior comes from the desktop context. */
+  /** Commands and setting toggles come from the desktop command capability; only these two parent-owned preferences remain props. */
   type Props = {
-    /** Required current display preferences with their owner callbacks. */
-    displayToggles: readonly DisplayToggle[];
     /** Required parent-owned visibility of the registers sidebar; bindable and shown by default in its owner. */
     showRegisters: boolean;
     /** Required parent-owned console-clearing preference; bindable and false by default in its owner. */
     clearAllOutputsOnGo: boolean;
-    /** Required current engine setting values. */
-    engineSettings: Readonly<Record<number, boolean>>;
-    /** Required execution state, used to disable engine setting changes. */
-    running: boolean;
-    /** Required callback writes settings through the parent machine. */
-    onsetting: (id: number, value: boolean) => void;
   };
-  let {
-    displayToggles,
-    engineSettings,
-    running,
-    onsetting,
-    showRegisters = $bindable(),
-    clearAllOutputsOnGo = $bindable()
-  }: Props = $props();
+  let { showRegisters = $bindable(), clearAllOutputsOnGo = $bindable() }: Props = $props();
   const commands = getDesktopCommands();
   const groupName = $props.id();
   let element: HTMLElement;
-  function actionItem(item: Action): MenuItem {
+  function actionItem(item: Action, tooltip?: string): MenuItem {
     return {
       id: item.command,
       label: item.label,
+      tooltip,
       shortcut: item.shortcut,
       disabled: !commands.isEnabled(item),
       onselect: () => void commands.execute(item.command)
     };
   }
+  /** Settings groups: the display toggles, assembly choices, execution choices, then the dialogs and pending entries. */
   const settingsGroups = $derived.by(() => {
     const groups: MenuGroup[] = [
       {
         id: 'display',
-        items: ['labels', 'args', 'input', 'addresses', 'values'].flatMap((icon) =>
-          displayToggles
-            .filter((toggle) => toggle.icon === icon)
-            .map((toggle) => ({
-              id: icon,
-              label: toggle.label + (icon === 'input' ? ' (5,6,7,8,12)' : ''),
-              tooltip: settingsTooltips[icon],
-              checked: toggle.active,
-              disabled: toggle.disabled,
-              onselect: toggle.toggle
-            }))
-        )
+        items: commands
+          .displayToggles()
+          .filter((toggle) => toggle.inSettings)
+          .map((toggle) => ({
+            id: toggle.icon,
+            label: toggle.menuLabel ?? toggle.label,
+            tooltip: toggle.description,
+            checked: toggle.active,
+            disabled: toggle.disabled,
+            onselect: toggle.toggle
+          }))
       }
     ];
     let items: MenuItem[] = [];
-    for (const option of engineOptions.filter(
-      (entry) => entry !== popupInputOption && entry !== programArgumentsOption
-    )) {
+    for (const option of commands.engineToggles()) {
       items.push({
         id: String(option.id),
         label: option.label,
-        tooltip: settingsTooltips[option.id],
-        checked: engineSettings[option.id] ?? false,
-        disabled: running,
-        onselect: () => onsetting(option.id, !engineSettings[option.id])
+        tooltip: option.description,
+        checked: option.active,
+        disabled: option.disabled,
+        onselect: option.toggle
       });
       if (option.id === Settings.START_AT_MAIN) {
         items.push({
           id: 'clearAllOutputsOnGo',
-          label: 'Clear all outputs on Go',
-          tooltip: settingsTooltips.clearAllOutputsOnGo,
+          label: clearAllOutputsOnGoOption.label,
+          tooltip: clearAllOutputsOnGoOption.description,
           checked: clearAllOutputsOnGo,
           onselect: () => (clearAllOutputsOnGo = !clearAllOutputsOnGo)
         });
@@ -99,52 +84,32 @@
       id: 'pending',
       items: [
         ...items,
-        ...pendingSettings.map((label) => ({
+        ...pendingSettings.map(({ label, description }) => ({
           id: label,
           label,
-          tooltip: settingsTooltips[label],
+          tooltip: description,
           disabled: true
         })),
-        {
-          id: 'memoryConfiguration',
-          label: 'Memory Configuration ...',
-          tooltip: settingsTooltips.memoryConfiguration,
-          disabled: !commands.isEnabled({
-            command: 'memoryConfiguration',
-            label: 'Memory Configuration ...'
-          }),
-          onselect: () => void commands.execute('memoryConfiguration')
-        }
+        actionItem(memoryConfigurationAction, memoryConfigurationDescription)
       ]
     });
     return groups;
   });
-  const tools = [
-    'BHT Simulator',
-    'Bitmap Display',
-    'Data Cache Simulator',
-    'Digital Lab Sim',
-    'Floating Point Representation',
-    'Instruction Counter',
-    'Instruction Statistics',
-    'Keyboard and Display MMIO Simulator',
-    'Memory Reference Visualization',
-    'MIPS X-Ray',
-    'Mars Bot',
-    'ScavengerHunt',
-    'Screen Magnifier',
-    'Introduction to Tools'
-  ];
 
   const definitions = $derived([
     ...menus.map((menu) => ({
       label: menu.name,
-      groups: [{ id: menu.name, items: menu.actions.map(actionItem) }]
+      groups: [{ id: menu.name, items: menu.actions.map((action) => actionItem(action)) }]
     })),
     { label: 'Settings', groups: settingsGroups, class: 'settings-menu' },
     {
       label: 'Tools',
-      groups: [{ id: 'tools', items: tools.map((label) => ({ id: label, label, disabled: true })) }]
+      groups: [
+        {
+          id: 'tools',
+          items: unavailableTools.map((label) => ({ id: label, label, disabled: true }))
+        }
+      ]
     },
     {
       label: 'Help',
@@ -153,13 +118,13 @@
           id: 'overview',
           items: helpActions
             .filter((item) => ['help', 'about'].includes(item.command))
-            .map(actionItem)
+            .map((item) => actionItem(item))
         },
         {
           id: 'articles',
           items: helpActions
             .filter((item) => !['help', 'about'].includes(item.command))
-            .map(actionItem)
+            .map((item) => actionItem(item))
         }
       ]
     }

@@ -52,6 +52,36 @@ export function sourceBasename(name: string): string {
   return name.split(/[/\\]/).at(-1) ?? name;
 }
 
+/** Assembly source extensions, lowercase and without the dot: the `Extensions` entry of the legacy Config.properties. */
+export const SOURCE_EXTENSIONS = ['asm', 's'] as const;
+
+/** The assembly extensions as readable alternatives, such as `.asm or .s`, for messages. */
+export const SOURCE_EXTENSION_LABEL = SOURCE_EXTENSIONS.map((extension) => `.${extension}`).join(
+  ' or '
+);
+
+/** The assembly extensions as the `accept` value of a native file picker. */
+export const SOURCE_FILE_ACCEPT = SOURCE_EXTENSIONS.map((extension) => `.${extension}`).join(',');
+
+/** Lowercase extension of a filename's final path segment, or undefined when there is none; ports `FilenameFinder.getExtension`, which ignores a leading or trailing dot. */
+export function sourceExtension(name: string): string | undefined {
+  const basename = sourceBasename(name);
+  const dot = basename.lastIndexOf('.');
+  return dot > 0 && dot < basename.length - 1 ? basename.slice(dot + 1).toLowerCase() : undefined;
+}
+
+/** Whether a filename carries an assembly extension, compared without regard to case as the legacy Open dialog's "Assembler Files" filter does. */
+export function isSourceFilename(name: string): boolean {
+  const extension = sourceExtension(name);
+  return extension !== undefined && (SOURCE_EXTENSIONS as readonly string[]).includes(extension);
+}
+
+/** Final path segment without its assembly extension; names lacking one are returned whole. */
+export function sourceStem(name: string): string {
+  const basename = sourceBasename(name);
+  return isSourceFilename(basename) ? basename.slice(0, basename.lastIndexOf('.')) : basename;
+}
+
 /** Owns persistent source reads/writes; failed writes never change editor saved snapshots. */
 export class SourceLibrary {
   /** Accepts an injectable browser storage provider for isolation and failure testing. */

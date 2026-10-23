@@ -2,6 +2,7 @@
   import Button from '../controls/Button.svelte';
   import MultiSelect from '../controls/MultiSelect.svelte';
   import SelectAllNone from '../controls/SelectAllNone.svelte';
+  import { SOURCE_EXTENSION_LABEL } from '#lib/browser/SourceLibrary.js';
   import { getDesktop } from '../../context/desktop.js';
   import Modal from './Modal.svelte';
   import DialogActions from './DialogActions.svelte';
@@ -34,7 +35,7 @@
       optionsClass="source-files my-2.5 min-h-[120px] max-h-[300px] overflow-auto border border-[var(--theme-border,#94a3b8)] bg-[var(--theme-canvas,white)] p-2 [--multi-select-gap:6px]"
     >
       {#snippet empty()}<p class="my-2">
-          No saved files yet. Create a source or import .asm files.
+          No saved files yet. Create a source or import {SOURCE_EXTENSION_LABEL} files.
         </p>{/snippet}
     </MultiSelect>
     <DialogError message={workspace.fileError} />

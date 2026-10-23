@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isSourceFilename,
   SourceLibrary,
+  SOURCE_EXTENSION_LABEL,
+  SOURCE_FILE_ACCEPT,
   SOURCE_LIBRARY_STORAGE_KEY,
   SOURCE_WORKSPACE_STORAGE_KEY,
   sourceBasename,
-  sourceName
+  sourceExtension,
+  sourceName,
+  sourceStem
 } from './SourceLibrary.js';
 
 function fixture() {
@@ -131,5 +136,30 @@ describe('browser source filesystem', () => {
     expect(sourceBasename('legacy\\main.s')).toBe('main.s');
     expect(sourceBasename('main.asm')).toBe('main.asm');
     expect(sourceBasename('')).toBe('');
+  });
+});
+
+describe('assembly source extensions', () => {
+  it('follow the legacy Extensions setting for pickers and messages', () => {
+    expect(SOURCE_FILE_ACCEPT).toBe('.asm,.s');
+    expect(SOURCE_EXTENSION_LABEL).toBe('.asm or .s');
+  });
+  it('read the lowercase extension of the final segment, ignoring leading and trailing dots', () => {
+    expect(sourceExtension('include/Main.ASM')).toBe('asm');
+    expect(sourceExtension('legacy.S')).toBe('s');
+    expect(sourceExtension('archive.tar.gz')).toBe('gz');
+    for (const name of ['.asm', 'asm', 'main.', 'folder.s/main', ''])
+      expect(sourceExtension(name)).toBeUndefined();
+  });
+  it('accept .asm and .s regardless of case and reject anything else', () => {
+    for (const name of ['a.asm', 'a.s', 'A.ASM', 'A.S', 'dir/a.Asm', 'a.b.s'])
+      expect(isSourceFilename(name)).toBe(true);
+    for (const name of ['a.txt', 'a.as', 'a.sx', 'a', '.s', 'a.asm.txt', 'a.'])
+      expect(isSourceFilename(name)).toBe(false);
+  });
+  it('strip only a recognized extension from the final segment', () => {
+    expect(sourceStem('dir/main.asm')).toBe('main');
+    expect(sourceStem('legacy.v2.S')).toBe('legacy.v2');
+    expect(sourceStem('notes.txt')).toBe('notes.txt');
   });
 });

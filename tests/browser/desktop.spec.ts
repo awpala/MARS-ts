@@ -1,7 +1,7 @@
+import { readArchive } from './archive.js';
 import { openDesktop, openStoredSources, waitForDesktop } from './openDesktop.js';
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
-import { execFileSync } from 'node:child_process';
 
 test('Alt and Option N create editor buffers from source and register focus', async ({ page }) => {
   await openDesktop(page);
@@ -1218,7 +1218,8 @@ test('Execute footer follows the loaded program independently of the selected Ed
   await expect(status.locator('strong')).toHaveText('paused');
   const sourceLink = page.locator('.text-segment .source-link').first();
   await sourceLink.hover();
-  await expect(sourceLink).not.toHaveAttribute('aria-describedby');
+  await expect(page.getByRole('tooltip')).toHaveText('See in source file');
+  await expect(sourceLink).toHaveAccessibleDescription('See in source file');
   await expect(sourceLink).not.toHaveAttribute('title');
   await page.getByRole('button', { name: 'Edit', exact: true }).click();
   await page.getByRole('button', { name: 'second.asm', exact: true }).click();
@@ -1248,15 +1249,6 @@ test('Execute footer follows the loaded program independently of the selected Ed
 });
 
 // Decode with an independent ZIP reader, which also verifies entry CRCs.
-function readArchive(path: string): { name: string; source: string }[] {
-  execFileSync('unzip', ['-t', path]);
-  const names = execFileSync('unzip', ['-Z1', path], { encoding: 'utf8' }).trimEnd().split('\n');
-  return names.map((name) => ({
-    name,
-    source: execFileSync('unzip', ['-p', path, name], { encoding: 'utf8' })
-  }));
-}
-
 test('new empty buffers stay unsaved until the first character, including with Auto Save', async ({
   page
 }) => {

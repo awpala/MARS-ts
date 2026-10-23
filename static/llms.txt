@@ -15,7 +15,7 @@ Use a new source buffer for experiments and preserve existing user work. Import 
 
 ## Browser workflows
 
-- New creates a source buffer. Open selects saved sources from this browser. Import reads .asm files from the user's computer.
+- New creates a source buffer. Open selects saved sources from this browser. Import reads .asm or .s files from the user's computer.
 - Assemble (F3) assembles the active source and its explicit includes. Go (F5), Step (F7), Backstep (F8), Pause (F9), Stop (F11), and Reset (F12) control simulation; execution output appears in Run I/O.
 - Inspect registers, Text Segment, Data Segment, labels, and breakpoints through the visible desktop controls.
 - Help (F1) opens the overview. The Help menu also offers Introduction, Debugging, Settings, Syscalls, Exception Handlers, Macros, Tools, Limitations, Release History, Acknowledgements, and About MARS. Articles load on demand in the current tab.

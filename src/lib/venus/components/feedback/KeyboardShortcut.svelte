@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { shortcutChords } from '../../utils/shortcuts.js';
+  import { shortcutChords } from '../../utils/commands/shortcuts.js';
   /** Presentation only; shortcut registration belongs to the owning interaction. */
   type Props = {
     /** Required shortcut text: plus-separated keys, with alternatives separated by " / ". */

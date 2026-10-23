@@ -96,8 +96,8 @@
     <p>
       New creates a source file; Open selects saved files in this browser. Save commits your source
       locally, and Auto Save commits edits automatically when enabled. Open tabs and in-progress
-      text are recovered after reload. Import reads .asm files from your computer; Export downloads
-      copies.
+      text are recovered after reload. Import reads .asm or .s files from your computer; Export
+      downloads copies.
     </p>
     <p>
       Registers remain visible beside Edit and Execute. Use the toolbar toggles to change value

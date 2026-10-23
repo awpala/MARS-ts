@@ -4,7 +4,7 @@ import {
   saveDesktopSession,
   type DesktopSession
 } from '#lib/browser/DesktopSession.js';
-import { errorMessage } from '../utils/errorMessage.js';
+import { errorMessage } from '../utils/errors/errorMessage.js';
 import type { DisplayPreferences } from './DisplayPreferences.svelte.js';
 import type { SourceWorkspace } from './SourceWorkspace.svelte.js';
 import type { SimulationState } from './SimulationState.svelte.js';
@@ -52,9 +52,9 @@ export class DesktopPersistence {
       try {
         saveDesktopSession({
           programArguments: simulation.programArguments,
-          view: display.view === 'Execute' ? 'Execute' : 'Edit',
-          registerTab: display.registerTab as 'Registers' | 'Coproc 1' | 'Coproc 0',
-          messageTab: simulation.messageTab as 'Mars Messages' | 'Run I/O',
+          view: display.view,
+          registerTab: display.registerTab,
+          messageTab: simulation.messageTab,
           source: workspace.current?.name ?? null,
           editHistory: workspace.editor.captureHistory(),
           dataView: { segment: display.dataSegment, pageOffset: display.dataPageOffset | 0 },

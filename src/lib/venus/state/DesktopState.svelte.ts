@@ -1,15 +1,16 @@
 import { tick } from 'svelte';
 import { Settings } from '#lib/engine/Settings.js';
 import { helpArticles, type HelpArticle } from '#lib/help/articles.js';
+import { runActions, breakpointActions, type Action } from '../utils/commands/actions.js';
 import {
-  runActions,
-  breakpointActions,
-  popupInputOption,
-  programArgumentsOption,
-  type Action
-} from '../utils/commands.js';
-import { runSpeedValue } from '../utils/runSpeed.js';
-import { isSavableSource } from '../utils/savableSource.js';
+  menuEngineOptions,
+  toggleSpecs,
+  type DisplayToggle,
+  type EngineMenuToggle
+} from '../utils/commands/settings.js';
+import type { RunState } from '../RunController.js';
+import { runSpeedValue } from '../utils/execution/runSpeed.js';
+import { isSavableSource } from '../utils/sources/savableSource.js';
 import { DisplayPreferences } from './DisplayPreferences.svelte.js';
 import { SourceWorkspace } from './SourceWorkspace.svelte.js';
 import { SimulationState } from './SimulationState.svelte.js';
@@ -18,6 +19,18 @@ import { SourceSearch } from './SourceSearch.svelte.js';
 
 /** Browser file-transfer capabilities supplied by mounted action components. */
 export type FileTransferCommand = 'import' | 'export' | 'exportAll';
+
+/** Footer content that depends on the selected view and the loaded program; the caret position depends on focus and stays with the renderer. */
+export type FooterState = {
+  /** Annotation before the filename, such as `Loaded: `; empty when none applies. */
+  filenamePrefix: string;
+  /** Current-view filename or empty-state message. */
+  filename: string;
+  /** Execution status to show, or null to hide it. */
+  status: RunState['status'] | null;
+  /** Whether configured breakpoints are active. */
+  breakpointsEnabled: boolean;
+};
 
 /** Per-component composition root. Coordinates domain capabilities without owning their internal workflows. */
 export class DesktopState {
@@ -64,59 +77,59 @@ export class DesktopState {
       this.simulation.inputRequest?.prompt
     );
   }
+  /** Live state of one engine setting: its value, whether execution blocks changing it, and the request to invert it. */
+  private engineState(id: number) {
+    return {
+      active: this.simulation.engineSettings[id] ?? false,
+      disabled: this.simulation.running,
+      toggle: () => this.simulation.updateEngineSetting(id, !this.simulation.engineSettings[id])
+    };
+  }
   /** Shared preference controls consumed by menu and toolbar adapters. */
-  displayToggles = $derived([
-    {
-      icon: 'labels' as const,
-      label: 'Show Labels Window',
-      active: this.display.showLabels,
-      toggle: () => (this.display.showLabels = !this.display.showLabels),
-      disabled: false
-    },
-    {
-      icon: 'args' as const,
-      label: programArgumentsOption.label,
-      active: this.simulation.engineSettings[Settings.PROGRAM_ARGUMENTS] ?? false,
-      toggle: () =>
-        this.simulation.updateEngineSetting(
-          Settings.PROGRAM_ARGUMENTS,
-          !this.simulation.engineSettings[Settings.PROGRAM_ARGUMENTS]
-        ),
-      disabled: this.simulation.running
-    },
-    {
-      icon: 'input' as const,
-      label: popupInputOption.label,
-      active: this.simulation.engineSettings[Settings.POPUP_SYSCALL_INPUT] ?? false,
-      toggle: () =>
-        this.simulation.updateEngineSetting(
-          Settings.POPUP_SYSCALL_INPUT,
-          !this.simulation.engineSettings[Settings.POPUP_SYSCALL_INPUT]
-        ),
-      disabled: this.simulation.running
-    },
-    {
-      icon: 'addresses' as const,
-      label: 'Addresses displayed in hexadecimal',
-      active: this.display.hexAddresses,
-      toggle: () => (this.display.hexAddresses = !this.display.hexAddresses),
-      disabled: false
-    },
-    {
-      icon: 'values' as const,
-      label: 'Values displayed in hexadecimal',
-      active: this.display.hexValues,
-      toggle: () => (this.display.hexValues = !this.display.hexValues),
-      disabled: false
-    },
-    {
-      icon: 'ascii' as const,
-      label: 'Display Data Segment values as ASCII',
-      active: this.display.ascii,
-      toggle: () => (this.display.ascii = !this.display.ascii),
-      disabled: false
-    }
-  ]);
+  displayToggles: readonly DisplayToggle[] = $derived(
+    toggleSpecs.map(({ target, ...spec }) => {
+      if ('display' in target) {
+        const key = target.display;
+        return {
+          ...spec,
+          active: this.display[key],
+          disabled: false,
+          toggle: () => (this.display[key] = !this.display[key])
+        };
+      }
+      return { ...spec, ...this.engineState(target.engine) };
+    })
+  );
+  /** Engine settings that only the Settings menu offers, with their live state. */
+  engineMenuToggles: readonly EngineMenuToggle[] = $derived(
+    menuEngineOptions.map(({ id, label, description }) => ({
+      id,
+      label,
+      description,
+      ...this.engineState(id)
+    }))
+  );
+  /** Footer content for the selected view: the loaded program in Execute, the selected source in Edit. */
+  footer: FooterState = $derived.by(() => {
+    const { loadedFilename, execution, breakpointsEnabled } = this.simulation;
+    const status = execution?.status;
+    if (this.display.view === 'Execute')
+      return {
+        filenamePrefix: loadedFilename ? 'Loaded: ' : '',
+        filename: loadedFilename ?? 'No program loaded',
+        status: status ?? 'idle',
+        breakpointsEnabled
+      };
+    const current = this.workspace.current;
+    return {
+      filenamePrefix: current ? 'Editing: ' : '',
+      filename: current?.name ?? 'No current edits',
+      status: status === 'error' ? status : null,
+      breakpointsEnabled
+    };
+  });
+  /** Whether source tabs may be renamed or reordered: not while a program runs or a dialog owns interaction. */
+  canEditTabs = $derived(!this.simulation.running && !this.hasModal);
 
   /** Create during Svelte component initialization; effects are released with that component. */
   constructor(private readonly closeMenus: (restoreFocus?: boolean) => void) {

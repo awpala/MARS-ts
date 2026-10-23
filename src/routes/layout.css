@@ -108,6 +108,18 @@ input[type='checkbox'] {
   accent-color: var(--theme-accent, #507b9f);
 }
 
+/* Themed floating description shared by tooltips and the source editor's instruction help. */
+.popup-surface {
+  padding: 6px 9px;
+  border: 1px solid var(--theme-border, #8d969e);
+  background: var(--theme-tooltip, #ffffe1);
+  color: var(--theme-text, #17202b);
+  box-shadow: 2px 3px 8px #0003;
+  font:
+    12px/1.4 system-ui,
+    sans-serif;
+}
+
 @media print {
   :root {
     color-scheme: light;

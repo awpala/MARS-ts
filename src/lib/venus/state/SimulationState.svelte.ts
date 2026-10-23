@@ -1,16 +1,20 @@
 /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license.
  * Settings workflows derive from mars/venus/SettingsDelayedBranchingAction.java,
  * SettingsSelfModifyingCodeAction.java, and SettingsMemoryConfigurationAction.java. */
-import type { SavedExecution, SavedLabelSelection } from '#lib/browser/DesktopSession.js';
+import type {
+  MessageTab,
+  SavedExecution,
+  SavedLabelSelection
+} from '#lib/browser/DesktopSession.js';
 import { browserEnginePreferences } from '#lib/browser/EnginePreferences.js';
 import { Globals } from '#lib/engine/Globals.js';
 import { ProcessingException } from '#lib/engine/diagnostics/ProcessingException.js';
 import { Settings } from '#lib/engine/Settings.js';
 import type { InputRequest } from '#lib/engine/io/SystemIO.js';
-import { Simulator } from '#lib/engine/simulator/Simulator.js';
 import { RunController } from '../RunController.js';
-import { engineOptions } from '../utils/commands.js';
-import { errorMessage } from '../utils/errorMessage.js';
+import { engineOption, engineOptions } from '../utils/commands/settings.js';
+import { errorMessage } from '../utils/errors/errorMessage.js';
+import { describeRunOutcome, type RunCommand } from '../utils/execution/runOutcome.js';
 import type { SourceWorkspace } from './SourceWorkspace.svelte.js';
 import type { DisplayPreferences } from './DisplayPreferences.svelte.js';
 /** Browser-owned simulation presentation, input completion, and scheduling around a framework-free RunController. */
@@ -38,8 +42,16 @@ export class SimulationState {
   private resolveInput: ((text: string) => void) | undefined = undefined;
   /** Whether the current controller snapshot is running. */
   running = $derived(this.execution?.status === 'running');
+  /** Filename of the assembled program that is loaded in the machine, independent of the Edit selection; undefined when none is loaded. */
+  loadedFilename = $derived(
+    this.execution?.programs
+      .find((program) => program === this.machine?.program && program.getMachineList() !== null)
+      ?.getFilename()
+  );
+  /** Whether a syscall is waiting for text typed into the Run I/O console rather than a popup. */
+  consoleInputPending = $derived(this.inputRequest?.prompt === null);
   /** Selected output pane. */
-  messageTab = $state('Mars Messages');
+  messageTab = $state<MessageTab>('Mars Messages');
   /** Assembler and execution diagnostics. */
   messages = $state('');
   /** Console output and echoed input. */
@@ -53,6 +65,10 @@ export class SimulationState {
     private readonly workspace: SourceWorkspace,
     private readonly display: DisplayPreferences
   ) {}
+  /** Publish a revision after a manual machine edit so execution views re-read the hardware. */
+  refresh = (): void => this.controller?.refresh();
+  /** Request Stop of the running program, releasing pending host input. */
+  stop = (): void => this.controller?.stop();
   /** Clear selected output, or both outputs when all is true, preserving selection and pending input. */
   clearOutput = (all = false): void => {
     if (all || this.messageTab === 'Mars Messages') this.messages = '';
@@ -98,7 +114,7 @@ export class SimulationState {
         }),
       printString: (text) => {
         if (!disposed) {
-          this.runIO = (this.runIO + text).slice(-Globals.maximumMessageCharacters);
+          this.appendRunIO(text);
           this.messageTab = 'Run I/O';
         }
       },
@@ -155,15 +171,7 @@ export class SimulationState {
       this.assemble();
       return;
     }
-    if (
-      ![
-        Settings.POPUP_SYSCALL_INPUT,
-        Settings.ASSEMBLE_ON_OPEN_ENABLED,
-        Settings.PROGRAM_ARGUMENTS,
-        Settings.SELF_MODIFYING_CODE_ENABLED
-      ].includes(id)
-    )
-      this.controller?.invalidate();
+    if (engineOption(id)?.invalidatesAssembly ?? true) this.controller?.invalidate();
     else this.controller?.refresh();
   };
   /** Apply a known layout while idle, persist its identifier, and rebuild loaded code as in SettingsMemoryConfigurationAction.java. */
@@ -173,8 +181,7 @@ export class SimulationState {
     const configuration = machine.memoryConfigurations.getConfigurationByName(identifier);
     if (!machine.memoryConfigurations.setCurrentConfiguration(configuration)) return;
     machine.getSettings().setMemoryConfiguration(identifier);
-    this.display.dataSegment = 'data';
-    this.display.dataPageOffset = 0;
+    this.display.resetDataView();
     if (this.hasLoadedProgram()) this.assemble();
     else this.controller?.refresh();
   };
@@ -187,9 +194,7 @@ export class SimulationState {
     const consoleInput = request.prompt === null;
     const text = this.inputText + (appendNewline && consoleInput ? '\n' : '');
     this.inputRequest = null;
-    this.runIO = (this.runIO + (consoleInput ? text : `**** user input : ${text}\n`)).slice(
-      -Globals.maximumMessageCharacters
-    );
+    this.appendRunIO(consoleInput ? text : `**** user input : ${text}\n`);
     resolve(consoleInput && request.maxLength >= 0 ? text.slice(0, request.maxLength) : text);
   };
   /** Update inline console input and complete at a newline or the syscall character limit. */
@@ -226,9 +231,7 @@ export class SimulationState {
         this.messages += `Assemble: operation completed successfully.\n\n`;
         this.breakpoints = [];
         this.breakpointsEnabled = true;
-        this.display.dataSegment = 'data';
-        this.display.dataPageOffset = 0;
-        this.display.registerTab = 'Registers';
+        this.display.resetExecuteView();
         this.display.view = 'Execute';
       } else this.messages += 'Assemble: operation completed with errors.\n';
     } catch (error) {
@@ -295,10 +298,8 @@ export class SimulationState {
       this.display.view = 'Execute';
       if (command === 'reset') {
         this.controller.reset();
-        this.display.dataSegment = 'data';
-        this.display.dataPageOffset = 0;
-        this.runIO += '\nReset: reset completed.\n\n';
-        this.display.registerTab = 'Registers';
+        this.display.resetExecuteView();
+        this.appendRunIO('\nReset: reset completed.\n\n');
         return;
       }
       if (command === 'backstep') {
@@ -306,9 +307,9 @@ export class SimulationState {
         return;
       }
       this.messageTab = 'Run I/O';
-      const name = command === 'step' ? 'Step' : 'Go';
+      const run: RunCommand = command === 'step' ? 'step' : 'go';
       const filename = this.machine?.program?.getFilename() ?? '';
-      if (command === 'step') await this.controller.step(this.programArguments);
+      if (run === 'step') await this.controller.step(this.programArguments);
       else {
         if (this.display.clearAllOutputsOnGo && !this.controller.getState().started)
           this.clearOutput(true);
@@ -320,38 +321,19 @@ export class SimulationState {
         );
       }
       if (this.disposed) return;
-      const result = this.controller.getState();
-      if (result.error) {
-        this.messages += result.error.errors()?.generateErrorReport() ?? '';
-        this.messages += `\n${name}: execution terminated with errors.\n\n`;
-        this.messageTab = 'Mars Messages';
-        this.display.registerTab = 'Coproc 0';
-      } else if (result.status === 'terminated') {
-        if (command === 'step') {
-          const cliff = result.reason === Simulator.CLIFF_TERMINATION;
-          this.messages += `\nStep: execution ${cliff ? 'terminated due to null instruction.' : 'completed successfully.'}\n\n`;
-          this.runIO += `\n-- program is finished running ${cliff ? '(dropped off bottom)' : ''} --\n\n`;
-          this.messageTab = 'Run I/O';
-        } else if (result.reason === Simulator.NORMAL_TERMINATION) {
-          this.messages += '\nGo: execution completed successfully.\n\n';
-          this.runIO += '\n-- program is finished running --\n\n';
-          this.messageTab = 'Run I/O';
-        } else if (result.reason === Simulator.CLIFF_TERMINATION) {
-          this.messages += '\nGo: execution terminated by null instruction.\n\n';
-          this.runIO += '\n-- program is finished running (dropped off bottom) --\n\n';
-          this.messageTab = 'Run I/O';
-        } else if (result.reason === Simulator.PAUSE_OR_STOP) {
-          this.messages += '\nGo: execution terminated by user.\n\n';
-          this.messageTab = 'Mars Messages';
-        }
-      } else if (command === 'go' && result.status === 'paused') {
-        this.messages += `Go: execution paused ${result.reason === Simulator.BREAKPOINT ? 'at breakpoint' : 'by user'}: ${filename}\n\n`;
-        this.messageTab = 'Mars Messages';
-      }
+      const outcome = describeRunOutcome(run, this.controller.getState(), filename);
+      this.messages += outcome.messages;
+      this.appendRunIO(outcome.runIO);
+      if (outcome.messageTab) this.messageTab = outcome.messageTab;
+      if (outcome.registerTab) this.display.registerTab = outcome.registerTab;
     } catch (error) {
       if (!this.disposed) this.report(error);
     }
   };
+  /** Append program console text, keeping only the most recent characters the console retains. */
+  private appendRunIO(text: string): void {
+    this.runIO = (this.runIO + text).slice(-Globals.maximumMessageCharacters);
+  }
   /** Append an error to Mars Messages, preserving translated processing diagnostics. */
   report = (error: unknown) => {
     this.messages += `${error instanceof ProcessingException ? (error.errors()?.generateErrorAndWarningReport() ?? '') : errorMessage(error)}\n`;

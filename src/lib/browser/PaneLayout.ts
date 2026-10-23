@@ -1,6 +1,12 @@
 /** Browser persistence key for the first version of the desktop pane dividers. */
 export const PANE_LAYOUT_STORAGE_KEY = 'mars-ts:panes:v1';
 
+/** Narrowest register width in CSS pixels that keeps its table usable. */
+export const MIN_REGISTER_WIDTH = 260;
+
+/** Shortest requested Data Segment height in CSS pixels. */
+export const MIN_DATA_SEGMENT_HEIGHT = 60;
+
 /** View-only pane preferences; they never belong to engine sessions. */
 export interface PaneLayout {
   /** Desired register width in CSS pixels; viewport constraints are applied by the presenter. */
@@ -25,11 +31,11 @@ function validate(value: unknown): PaneLayout | undefined {
     return;
   const dataSegmentHeight = data.dataSegmentHeight;
   return {
-    registerWidth: Math.max(260, Math.round(data.registerWidth)),
+    registerWidth: Math.max(MIN_REGISTER_WIDTH, Math.round(data.registerWidth)),
     editorFraction: Math.max(0, Math.min(1, data.editorFraction)),
     dataSegmentHeight:
       typeof dataSegmentHeight === 'number' && Number.isFinite(dataSegmentHeight)
-        ? Math.max(60, Math.round(dataSegmentHeight))
+        ? Math.max(MIN_DATA_SEGMENT_HEIGHT, Math.round(dataSegmentHeight))
         : null
   };
 }

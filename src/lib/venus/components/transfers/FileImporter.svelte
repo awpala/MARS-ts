@@ -1,6 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { sourceName } from '#lib/browser/SourceLibrary.js';
+  import {
+    isSourceFilename,
+    SOURCE_EXTENSION_LABEL,
+    SOURCE_FILE_ACCEPT,
+    sourceName
+  } from '#lib/browser/SourceLibrary.js';
   import { getDesktop } from '../../context/desktop.js';
   const desktop = getDesktop();
   let input: HTMLInputElement;
@@ -27,7 +32,8 @@
     try {
       const sources = await Promise.all(
         files.map(async (file) => {
-          if (!/\.asm$/i.test(file.name)) throw new Error('Import accepts .asm source files.');
+          if (!isSourceFilename(file.name))
+            throw new Error(`Import accepts ${SOURCE_EXTENSION_LABEL} source files.`);
           return { name: sourceName(file.name), source: await file.text() };
         })
       );
@@ -46,7 +52,7 @@
   class="hidden"
   type="file"
   multiple
-  accept=".asm"
+  accept={SOURCE_FILE_ACCEPT}
   bind:this={input}
   disabled={desktop.simulation.running}
   onchange={readFiles}

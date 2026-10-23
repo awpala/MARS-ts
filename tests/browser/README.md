@@ -10,7 +10,9 @@ Settings scenarios cover memory-layout preview/application, opening-selection Re
 
 [PWA scenario](pwa.spec.ts) checks that the page links a manifest and that its declared icons are served. The dev server neither bundles nor registers the service worker, so offline behavior is not covered by this suite; it is checked manually against a production build served by `vite preview` on port 6279 or higher ([ADR 0010](../../docs/adrs/0010-pwa-offline-support.md)).
 
-[Button hover scenarios](button-hover.spec.ts) exercise the shared enabled-state highlight in both themes, including Delete Sources confirmation, dialog actions, console input, source and pane tabs, and disabled controls. Selected tabs retain their resting colors.
+[Source extension scenarios](source-extensions.spec.ts) cover the legacy assembly extensions `.asm` and `.s`: the import picker's `accept` value, importing files of both extensions in any letter case with exact stored text, refusing other extensions with the visible message and no library change, and Export and Export All keeping a recognized extension in lowercase while giving other names `.asm` and numbering repeated flattened names. They decode the downloaded archive with the shared [archive reader](archive.ts), an independent ZIP reader that also verifies entry checksums and is reused by the desktop scenarios that inspect Export All.
+
+[Button hover scenarios](button-hover.spec.ts) exercise the shared enabled-state highlight in both themes, including Delete Sources confirmation, dialog actions, console input, source and pane tabs, and disabled controls. Selected tabs retain their resting colors. The execution scenarios also check that a Text Segment row's Source link fills its whole cell, so hovering or clicking the cell's far corner shows the link's highlight and "See in source file" tooltip and opens the source. A matching Labels scenario does the same for the name and address cells, including the empty side of each, and selects the label.
 
 These scenarios complement the [TypeScript suites and Java oracle](../README.md). They establish browser integration behavior, while engine parity remains supported by the corresponding oracle comparisons.
 
@@ -50,7 +52,7 @@ Most scenarios use the root route. Lifetime scenarios serve a test-owned empty p
 
 | Area                      | Observable contracts                                                                                                                                                        |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Source workflows          | Exact editor text, save and rename decisions, import/export, recovery, Auto Save, and storage failures                                                                      |
+| Source workflows          | Exact editor text, save and rename decisions, import/export of both assembly extensions, recovery, Auto Save, and storage failures                                          |
 | Execution and debugging   | Assembly, stepping and backstep, breakpoints, register and memory edits, condition flag edits during stepping and execution, labels, console input, cancellation, and reset |
 | Presentation and controls | Keyboard commands, focus, modal dismissal, tooltips, pane geometry, theme persistence, machine-table stripes and highlights, and shared settings                            |
 | Help and lifetimes        | Article availability and attribution, exact snippet transfers, clipboard feedback, stale asynchronous results, and teardown                                                 |

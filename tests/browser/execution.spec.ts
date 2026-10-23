@@ -1190,3 +1190,70 @@ for (const resume of ['step', 'backstep to start', 'breakpoint', 'recovered brea
     );
   });
 }
+
+test('Text Segment source cells are hoverable and clickable across the entire cell', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await source(
+    page,
+    '.text\nmain: nop\nnop # a deliberately long trailing comment that widens the Source column\nli $v0,10\nsyscall\n'
+  );
+  await action(page, 'Assemble').click();
+  const text = page.getByRole('region', { name: 'Text Segment', exact: true });
+  const link = text.locator('.source-link').first();
+  const cell = link.locator('xpath=ancestor::td');
+  const cellBox = (await cell.boundingBox())!;
+  const linkBox = (await link.boundingBox())!;
+  // The button spans the cell, leaving only the cell's own border outside it.
+  expect(linkBox.width).toBeGreaterThanOrEqual(cellBox.width - 2);
+  expect(linkBox.height).toBeGreaterThanOrEqual(cellBox.height - 2);
+  // The first row is much shorter than the widest, so its right edge lies beyond its text.
+  const edge = { x: cellBox.x + cellBox.width - 3, y: cellBox.y + cellBox.height - 3 };
+  await page.mouse.move(edge.x, edge.y);
+  await expect(link).toHaveCSS('cursor', 'pointer');
+  await expect(link).toHaveCSS('background-color', 'rgb(219, 232, 242)');
+  await expect(page.getByRole('tooltip')).toHaveText('See in source file');
+  await page.mouse.click(edge.x, edge.y);
+  await expect(page.getByRole('textbox', { name: 'Source mips1.asm', exact: true })).toBeFocused();
+});
+
+test('Labels name and address cells are hoverable and clickable across the entire cell', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await source(
+    page,
+    '.data\nshort: .word 1\nlong_label_name_that_widens_the_column: .word 2\n.text\nmain: nop\nli $v0,10\nsyscall\n'
+  );
+  await action(page, 'Show Labels Window').click();
+  await action(page, 'Assemble').click();
+  const labels = page.getByRole('region', { name: 'Labels', exact: true });
+  const hint = 'Click on label or address to view it in Text/Data Segment';
+  const row = labels.getByRole('row').filter({ hasText: /^short/ });
+  const name = row.getByRole('button', { name: 'short', exact: true });
+  const address = row.getByRole('button', { name: /^0x/ });
+  for (const [button, side] of [
+    [name, 'right'],
+    [address, 'left']
+  ] as const) {
+    const cellBox = (await button.locator('xpath=ancestor::td').boundingBox())!;
+    const buttonBox = (await button.boundingBox())!;
+    // The button spans the cell, leaving only the cell's own border outside it.
+    expect(buttonBox.width).toBeGreaterThanOrEqual(cellBox.width - 2);
+    expect(buttonBox.height).toBeGreaterThanOrEqual(cellBox.height - 2);
+    // The empty side of the cell: past a short name, or before a right-aligned address.
+    const edge = {
+      x: side === 'right' ? cellBox.x + cellBox.width - 3 : cellBox.x + 3,
+      y: cellBox.y + cellBox.height - 3
+    };
+    await page.mouse.move(edge.x, edge.y);
+    await expect(button).toHaveCSS('cursor', 'pointer');
+    await expect(button).toHaveCSS('background-color', 'rgb(219, 232, 242)');
+    await expect(page.getByRole('tooltip')).toHaveText(hint);
+    await page.mouse.click(edge.x, edge.y);
+    await expect(row).toHaveAttribute('data-selected', 'true');
+    await page.mouse.click(edge.x, edge.y);
+    await expect(row).not.toHaveAttribute('data-selected');
+  }
+});

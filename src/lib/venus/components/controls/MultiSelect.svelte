@@ -67,15 +67,11 @@
 
 <!-- @component Generic group of labeled checkboxes, composed from SelectorToggle. Supports editable multi-selection and disabled status groups without domain or persistence state. -->
 <div class={className} role="group" aria-labelledby={id}>
-  {#if tooltip}
-    <Tooltip text={tooltip}>
-      {#snippet children(trigger, description)}
-        <div {id} class="caption" {@attach trigger} aria-describedby={description}>{label}</div>
-      {/snippet}
-    </Tooltip>
-  {:else}
-    <div {id} class="caption">{label}</div>
-  {/if}
+  <Tooltip text={tooltip}>
+    {#snippet children(trigger, description)}
+      <div {id} class="caption" {@attach trigger} aria-describedby={description}>{label}</div>
+    {/snippet}
+  </Tooltip>
   <div class={['options', orientation, optionsClass]}>
     {#each options as option (option.value)}
       <SelectorToggle

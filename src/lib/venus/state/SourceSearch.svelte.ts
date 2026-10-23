@@ -12,13 +12,15 @@ export class SourceSearch {
   findStatus = $state('');
   /** Retain the workspace whose selected source and caret are searched. */
   constructor(private readonly workspace: SourceWorkspace) {}
+  /** Text as compared by the current case setting. */
+  private fold(text: string): string {
+    return this.caseSensitive ? text : text.toLowerCase();
+  }
   /** Select the next match, wrapping to the beginning of the active source. */
   findNext = async () => {
     if (!this.workspace.current || !this.findText) return;
-    const text = this.caseSensitive
-      ? this.workspace.current.text
-      : this.workspace.current.text.toLowerCase();
-    const query = this.caseSensitive ? this.findText : this.findText.toLowerCase();
+    const text = this.fold(this.workspace.current.text);
+    const query = this.fold(this.findText);
     let index = text.indexOf(query, this.workspace.selectionEnd);
     if (index < 0) index = text.indexOf(query);
     if (index < 0) {
@@ -37,13 +39,13 @@ export class SourceSearch {
   /** Replace the selected match or all matches through the normal source-edit workflow. */
   replace = (all = false) => {
     if (!this.workspace.current || !this.findText) return;
-    const query = this.caseSensitive ? this.findText : this.findText.toLowerCase();
+    const query = this.fold(this.findText);
     if (!all) {
       const selected = this.workspace.current.text.slice(
         this.workspace.selectionStart,
         this.workspace.selectionEnd
       );
-      if ((this.caseSensitive ? selected : selected.toLowerCase()) === query) {
+      if (this.fold(selected) === query) {
         this.workspace.edit(
           this.workspace.current.text.slice(0, this.workspace.selectionStart) +
             this.replacement +
@@ -55,7 +57,7 @@ export class SourceSearch {
       return;
     }
     const source = this.workspace.current.text,
-      comparable = this.caseSensitive ? source : source.toLowerCase();
+      comparable = this.fold(source);
     let output = '',
       offset = 0,
       count = 0,

@@ -2,8 +2,9 @@
   import Slider from '../controls/Slider.svelte';
   import Button from '../controls/Button.svelte';
   import MaskIcon from './MaskIcon.svelte';
-  import { runSpeedLabel, RUN_SPEED_MAX_POSITION } from '../../utils/runSpeed.js';
-  import { clamp } from '../../utils/clamp.js';
+  import { MAX_SPEED_POSITION } from '#lib/browser/DisplaySettings.js';
+  import { runSpeedLabel, RUN_SPEED_MAX_POSITION } from '../../utils/execution/runSpeed.js';
+  import { clamp } from '../../utils/geometry/clamp.js';
   /** Legacy-compatible run speed; the parent applies and persists the value. */
   type Props = {
     /** Required parent-owned legacy position (0–40), bindable; maximum positions 36–40 share one UI endpoint. */
@@ -17,7 +18,7 @@
   ] as const;
   function setPosition(next: number) {
     const clamped = clamp(next, 0, RUN_SPEED_MAX_POSITION);
-    value = clamped === RUN_SPEED_MAX_POSITION ? 40 : clamped;
+    value = clamped === RUN_SPEED_MAX_POSITION ? MAX_SPEED_POSITION : clamped;
   }
 </script>
 
@@ -35,7 +36,8 @@
   <div class="grid h-full shrink-0 grid-rows-2 gap-px">
     {#each steps as step (step.icon)}
       <Button
-        class="grid h-full min-h-0 w-4 place-items-center rounded-xs border border-(--theme-border,#a2aab1) bg-(--theme-surface,#fafafa) disabled:opacity-40"
+        variant="bordered"
+        class="grid h-full min-h-0 w-4 place-items-center rounded-xs disabled:opacity-40"
         aria-label={step.label}
         tooltip={step.label}
         disabled={step.delta > 0 ? position === RUN_SPEED_MAX_POSITION : position === 0}

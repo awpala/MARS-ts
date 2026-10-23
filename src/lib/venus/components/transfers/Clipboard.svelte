@@ -61,7 +61,8 @@
 <span class={['clipboard', variant]}>
   {#if variant === 'copy-code' || status}<span role="status">{status}</span>{/if}
   <Button
-    class="border border-[var(--theme-border,#94a3b8)] bg-[var(--theme-surface,#f0f0f0)] p-1 disabled:opacity-50"
+    variant="bordered"
+    class="p-1 disabled:opacity-50"
     tooltip={variant === 'transfer-to-file' && disabled
       ? 'Stop execution to open as a new file'
       : actionLabel}

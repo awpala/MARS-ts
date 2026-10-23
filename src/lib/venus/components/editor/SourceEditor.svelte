@@ -2,46 +2,19 @@
   import { highlightSource } from '#lib/editor/highlighting/MIPSTokenMarker.js';
   import { Token } from '#lib/editor/highlighting/Token.js';
   import { Directives } from '#lib/engine/assembler/directives/Directives.js';
-  import type { InstructionSet } from '#lib/engine/instructions/InstructionSet.js';
-  import type { EditPane } from '#lib/editor/Editor.js';
   import editorPreset from '#lib/editor/editor-preset.json';
+  import { getDesktop } from '../../context/desktop.js';
   import { useKeyboard } from '../../hooks/useKeyboard.js';
-  import { clamp } from '../../utils/clamp.js';
-  /** Source rendering contract. The parent owns text, history, selection, and the textarea handle used by editor commands. */
-  type Props = {
-    /** Selected parent-owned buffer; absent displays an empty editor. */
-    current?: EditPane;
-    /** Required read-only state while execution runs. */
-    running: boolean;
-    /** Required line-number visibility preference. */
-    showLines: boolean;
-    /** Required tooltip visibility gate while a dialog is open. */
-    helpEnabled: boolean;
-    /** Optional initialized instruction catalog used only for hover descriptions. */
-    instructionSet?: InstructionSet;
-    /** Optional bindable textarea handle for parent focus and selection commands; cleared on unmount. */
-    sourceInput?: HTMLTextAreaElement;
-    /** Parent-owned source viewport top offset; defaults to zero and binds scroll recovery. */
-    scrollTop?: number;
-    /** Parent-owned source viewport left offset; defaults to zero and binds scroll recovery. */
-    scrollLeft?: number;
-    /** Required callback recording edits in the parent Editor and invalidating assembly. */
-    onedit: (source: string) => void;
-    /** Required callback updating the parent's selection offsets. */
-    onselection: (start: number, end: number) => void;
-  };
-  let {
-    current,
-    running,
-    showLines,
-    helpEnabled,
-    instructionSet,
-    sourceInput = $bindable(),
-    scrollTop = $bindable(0),
-    scrollLeft = $bindable(0),
-    onedit,
-    onselection
-  }: Props = $props();
+  import { clamp } from '../../utils/geometry/clamp.js';
+  const desktop = getDesktop();
+  const { workspace, simulation, display } = desktop;
+  const current = $derived(workspace.current);
+  const running = $derived(simulation.running);
+  const showLines = $derived(display.showLines);
+  /** Instruction hover help is withheld while a dialog owns interaction. */
+  const helpEnabled = $derived(!desktop.hasModal);
+  /** Initialized instruction catalog, used only for hover descriptions. */
+  const instructionSet = $derived(simulation.machine?.instructionSet);
   const paneId = $props.id();
   const syntaxStyles = editorPreset.syntaxStyles;
   const highlighted = $derived(highlightSource(current?.text ?? ''));
@@ -69,8 +42,8 @@
     if (!(input instanceof HTMLTextAreaElement)) return;
     event.preventDefault();
     input.setRangeText('\t', input.selectionStart, input.selectionEnd, 'end');
-    onedit(input.value);
-    selection();
+    workspace.edit(input.value);
+    workspace.selection();
   }
   function hoverSource(event: PointerEvent) {
     if (!current || !instructionSet || event.buttons) {
@@ -120,11 +93,16 @@
   }
   function blurSource() {
     // Selecting reference text blurs the textarea; the popup's pointer exit owns dismissal there.
-    if (!sourceInput?.parentElement?.querySelector('.source-help:hover')) sourceHelp = null;
+    if (!workspace.sourceInput?.parentElement?.querySelector('.source-help:hover'))
+      sourceHelp = null;
   }
 
-  function selection() {
-    onselection(sourceInput?.selectionStart ?? 0, sourceInput?.selectionEnd ?? 0);
+  /** Publish the mounted textarea to the workspace for its editor commands, and withdraw it on removal. */
+  function registerInput(element: HTMLTextAreaElement) {
+    workspace.sourceInput = element;
+    return () => {
+      workspace.sourceInput = undefined;
+    };
   }
   useKeyboard(
     (event) => {
@@ -134,7 +112,7 @@
   );
 </script>
 
-<!-- @component Highlighted source surface with local scrolling and hover state; source mutations are delegated to its owner. -->
+<!-- @component Highlighted source surface with local scrolling and hover state. The source workspace owns the buffer, selection, scroll position, and the textarea handle its editor commands use; this view publishes the handle while mounted and delegates every mutation to the workspace. -->
 {#if current}<div
     class="editor-area"
     style:--editor-font={editorPreset.font}
@@ -143,7 +121,7 @@
     style:--editor-selection={`var(--theme-selection, ${editorPreset.selectionBackground})`}
   >
     {#if showLines}<div class="line-numbers" aria-hidden="true">
-        <pre style:transform={`translateY(${-scrollTop}px)`}>{Array.from(
+        <pre style:transform={`translateY(${-workspace.sourceScrollTop}px)`}>{Array.from(
             { length: current.text.split('\n').length },
             (_, i) => i + 1
           ).join('\n')}</pre>
@@ -152,7 +130,7 @@
       <pre
         class="syntax-layer"
         aria-hidden="true"
-        style:transform={`translate(${-scrollLeft}px, ${-scrollTop}px)`}>{#each highlighted as span (span.start)}<span
+        style:transform={`translate(${-workspace.sourceScrollLeft}px, ${-workspace.sourceScrollTop}px)`}>{#each highlighted as span (span.start)}<span
             data-token={span.id}
             data-help-start={span.id === Token.KEYWORD1 || span.id === Token.KEYWORD2
               ? span.start
@@ -162,29 +140,29 @@
             style:font-weight={syntaxStyles[span.id].bold ? 'bold' : 'normal'}>{span.text}</span
           >{/each}&#10;</pre>
       <textarea
-        bind:this={sourceInput}
+        {@attach registerInput}
         aria-label={`Source ${current.name}`}
         aria-describedby={visibleSourceHelp ? `${paneId}-source-help` : undefined}
         value={current.text}
         readonly={running}
         style:cursor={visibleSourceHelp && helpEnabled ? 'pointer' : 'text'}
         oninput={(event) => {
-          onedit(event.currentTarget.value);
-          selection();
+          workspace.edit(event.currentTarget.value);
+          workspace.selection();
         }}
-        onfocus={selection}
-        onclick={selection}
+        onfocus={workspace.selection}
+        onclick={workspace.selection}
         onpointermove={hoverSource}
         onpointerleave={leaveSource}
         onpointerdown={() => (sourceHelp = null)}
         onblur={blurSource}
         onkeydown={sourceKeydown}
-        onkeyup={selection}
-        onselect={selection}
+        onkeyup={workspace.selection}
+        onselect={workspace.selection}
         onscroll={(event) => {
           sourceHelp = null;
-          scrollTop = event.currentTarget.scrollTop;
-          scrollLeft = event.currentTarget.scrollLeft;
+          workspace.sourceScrollTop = event.currentTarget.scrollTop;
+          workspace.sourceScrollLeft = event.currentTarget.scrollLeft;
         }}
         spellcheck="false"
         autocapitalize="off"
@@ -193,7 +171,7 @@
       {#if visibleSourceHelp && helpEnabled}
         <div
           id={`${paneId}-source-help`}
-          class="source-help"
+          class="source-help popup-surface"
           role="tooltip"
           style:left={`${visibleSourceHelp.left}px`}
           style:top={visibleSourceHelp.above ? undefined : `${visibleSourceHelp.edge}px`}
@@ -253,14 +231,6 @@
     max-width: min(520px, calc(100vw - 16px));
     max-height: min(240px, 40vh);
     overflow: auto;
-    padding: 6px 9px;
-    border: 1px solid var(--theme-border, #8d969e);
-    background: var(--theme-tooltip, #ffffe1);
-    color: var(--theme-text, #17202b);
-    box-shadow: 2px 3px 8px #0003;
-    font:
-      12px/1.4 system-ui,
-      sans-serif;
   }
   .source-help p + p {
     margin-top: 7px;

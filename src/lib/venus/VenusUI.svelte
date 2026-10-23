@@ -6,15 +6,17 @@
    */
   import { onMount } from 'svelte';
   import { slide } from 'svelte/transition';
+  import { MAIN_VIEWS } from '#lib/browser/DesktopSession.js';
+  import { MIN_REGISTER_WIDTH } from '#lib/browser/PaneLayout.js';
   import { DesktopState } from './state/DesktopState.svelte.js';
   import { provideDesktop } from './context/desktop.js';
   import { useDesktopKeyboard } from './hooks/useDesktopKeyboard.js';
-  import { sourceLabel } from './utils/sourceLabel.js';
+  import { EDITOR_MIN_HEIGHT } from './utils/geometry/layout.js';
+  import { sourceLabel } from './utils/sources/sourceLabel.js';
   import MenuBar from './components/shell/MenuBar.svelte';
   import Toolbar from './components/shell/Toolbar.svelte';
   import Footer from './components/shell/Footer.svelte';
-  import SourceTabs from './components/editor/SourceTabs.svelte';
-  import SourceEditor from './components/editor/SourceEditor.svelte';
+  import EditorPane from './components/editor/EditorPane.svelte';
   import MessagesPane from './components/debugger/MessagesPane.svelte';
   import TabbedPane from './components/layout/TabbedPane.svelte';
   import PaneDivider from './components/layout/PaneDivider.svelte';
@@ -28,12 +30,10 @@
   let activeElement = $state<Element | null>(null);
   const desktop = provideDesktop(new DesktopState((restoreFocus) => menuBar?.close(restoreFocus)));
   const { workspace, simulation, display } = desktop;
-  const loadedFilename = $derived(
-    simulation.execution?.programs
-      .find(
-        (program) => program === simulation.machine?.program && program.getMachineList() !== null
-      )
-      ?.getFilename()
+  const position = $derived(
+    display.view === 'Edit' && workspace.current && activeElement === workspace.sourceInput
+      ? workspace.position
+      : null
   );
   const paneId = $props.id();
   const exportVariants = ['single', 'all'] as const;
@@ -76,13 +76,8 @@
       bind:this={menuBar}
       bind:showRegisters={display.showRegisters}
       bind:clearAllOutputsOnGo={display.clearAllOutputsOnGo}
-      displayToggles={desktop.displayToggles}
-      engineSettings={simulation.engineSettings}
-      running={simulation.running}
-      onsetting={simulation.updateEngineSetting}
     />
     <Toolbar
-      displayToggles={desktop.displayToggles}
       bind:showLines={display.showLines}
       bind:speed={display.speed}
       showSpeed={display.view === 'Execute'}
@@ -101,65 +96,20 @@
           id={`${paneId}-editor`}
           class="main-pane"
           label="Source and execution"
-          tabs={['Edit', 'Execute']}
+          tabs={MAIN_VIEWS}
           bind:selected={display.view}
           --pane-height="var(--editor-height, 75%)"
           --pane-flex="0 0 auto"
-          --pane-min-height="150px"
+          --pane-min-height={`${EDITOR_MIN_HEIGHT}px`}
           --pane-overflow="auto"
         >
           {#if display.view === 'Edit'}
-            <SourceTabs
-              tabs={workspace.tabs.map((tab) => ({
-                id: tab.id,
-                name: tab.name,
-                dirty: workspace.editor.isDirty(tab)
-              }))}
-              selected={workspace.current?.id}
-              onselect={workspace.select}
-              onclose={(id) => workspace.startClose([id])}
-              canRename={!simulation.running && !desktop.hasModal}
-              canReorder={!simulation.running && !desktop.hasModal}
-              onreorder={workspace.reorder}
-              onrename={workspace.rename}
-            />
-            <SourceEditor
-              current={workspace.current}
-              running={simulation.running}
-              showLines={display.showLines}
-              helpEnabled={!desktop.hasModal}
-              instructionSet={simulation.machine?.instructionSet}
-              bind:sourceInput={workspace.sourceInput}
-              bind:scrollTop={workspace.sourceScrollTop}
-              bind:scrollLeft={workspace.sourceScrollLeft}
-              onedit={workspace.edit}
-              onselection={(start, end) => {
-                workspace.selectionStart = start;
-                workspace.selectionEnd = end;
-              }}
-            />
+            <EditorPane />
           {:else}
             {#if simulation.machine && simulation.execution}<ExecutePane
                 machine={simulation.machine}
                 controller={simulation.controller!}
                 snapshot={simulation.execution}
-                bind:selectedLabel={simulation.labelSelection}
-                bind:programArguments={simulation.programArguments}
-                breakpoints={simulation.breakpoints}
-                ontogglebreakpoint={simulation.toggleBreakpoint}
-                onedit={() => simulation.controller?.refresh()}
-                onsource={workspace.showSource}
-                bind:showLabels={display.showLabels}
-                bind:showDataLabels={display.showDataLabels}
-                bind:showTextLabels={display.showTextLabels}
-                bind:labelSortState={display.labelSortState}
-                bind:ascii={display.ascii}
-                bind:hexAddresses={display.hexAddresses}
-                bind:hexValues={display.hexValues}
-                bind:dataHeight={display.dataSegmentHeight}
-                bind:segment={display.dataSegment}
-                bind:pageOffset={display.dataPageOffset}
-                onresizecommit={display.persistLayout}
               />{/if}
           {/if}
         </TabbedPane>
@@ -168,23 +118,13 @@
           label="Editor area height"
           controls={`${paneId}-editor`}
           orientation="horizontal"
-          min={150}
+          min={EDITOR_MIN_HEIGHT}
           max={display.maxEditorHeight}
           value={display.displayedEditorHeight}
           onchange={display.setEditorHeight}
           oncommit={display.persistLayout}
         />
-        <MessagesPane
-          bind:messageTab={simulation.messageTab}
-          messages={simulation.messages}
-          runIO={simulation.runIO}
-          awaitingInput={!!simulation.inputRequest && simulation.inputRequest.prompt === null}
-          inputText={simulation.inputText}
-          oninput={simulation.consoleInputChanged}
-          onclear={simulation.clearOutput}
-          onsubmit={() => simulation.completeInput(true)}
-          onstop={() => simulation.controller?.stop()}
-        />
+        <MessagesPane />
       </div>
       {#if display.showRegisters}
         <div
@@ -196,49 +136,25 @@
             label="Register panel width"
             controls={`${paneId}-registers`}
             orientation="vertical"
-            min={260}
+            min={MIN_REGISTER_WIDTH}
             max={display.maxRegisterWidth}
             value={display.displayedRegisterWidth}
             reverse
-            onchange={(width) => (display.registerWidth = Math.round(width))}
+            onchange={display.setRegisterWidth}
             oncommit={display.persistLayout}
           />
           {#if simulation.machine}<RegisterBanksPane
-              hexValues={display.hexValues}
               id={`${paneId}-registers`}
-              bind:selected={display.registerTab}
               registers={simulation.machine.registerFile}
               coprocessor0={simulation.machine.coprocessor0}
               coprocessor1={simulation.machine.coprocessor1}
               machineRevision={simulation.execution?.revision ?? 0}
               controller={simulation.controller!}
-              running={simulation.running}
-              onedit={() => simulation.controller?.refresh()}
             />{/if}
         </div>
       {/if}
     </main>
-    <Footer
-      filenamePrefix={display.view === 'Execute'
-        ? loadedFilename
-          ? 'Loaded: '
-          : ''
-        : workspace.current
-          ? 'Editing: '
-          : ''}
-      filename={display.view === 'Execute'
-        ? (loadedFilename ?? 'No program loaded')
-        : (workspace.current?.name ?? 'No current edits')}
-      position={display.view === 'Edit' &&
-      workspace.current &&
-      activeElement === workspace.sourceInput
-        ? workspace.position
-        : null}
-      status={display.view === 'Execute' || simulation.execution?.status === 'error'
-        ? (simulation.execution?.status ?? 'idle')
-        : null}
-      breakpointsEnabled={simulation.breakpointsEnabled}
-    />
+    <Footer {...desktop.footer} {position} />
   </div>
 </fieldset>
 

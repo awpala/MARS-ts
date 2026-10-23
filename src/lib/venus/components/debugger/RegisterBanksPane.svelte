@@ -1,11 +1,16 @@
 <script lang="ts">
+  import { MIN_REGISTER_WIDTH } from '#lib/browser/PaneLayout.js';
+  import { REGISTER_BANKS } from '#lib/browser/DesktopSession.js';
   import Tooltip from '../feedback/Tooltip.svelte';
+  import InlineAlert from '../feedback/InlineAlert.svelte';
   import SelectAllNone from '../controls/SelectAllNone.svelte';
   import MultiSelect from '../controls/MultiSelect.svelte';
   import TabbedPane from '../layout/TabbedPane.svelte';
-  import { formatInteger } from '../../utils/tableCells.js';
+  import { formatInteger } from '../../utils/debugger/tableCells.js';
+  import { DEFAULT_REGISTER_WIDTH } from '../../utils/geometry/layout.js';
   import MachineTable from './MachineTable.svelte';
   import CellInput from './CellInput.svelte';
+  import { registerDescriptions } from './registerDescriptions.js';
   /**
    * Ports mars/venus/RegistersPane.java, RegistersWindow.java,
    * Coprocessor0Window.java, and Coprocessor1Window.java.
@@ -17,16 +22,12 @@
   import { AccessNotice } from '#lib/engine/hardware/notices/AccessNotice.js';
   import { Binary } from '#lib/engine/formatting/Binary.js';
   import { JavaFloatingPoint } from '#lib/engine/formatting/JavaFloatingPoint.js';
-  import { SimulatorNotice } from '#lib/engine/simulator/SimulatorNotice.js';
+  import { getDesktop } from '../../context/desktop.js';
   import type { RunController } from '../../RunController.js';
-  /** Register-bank display contract; the parent session owns all hardware instances. */
+  /** Register-bank display contract; the parent session owns all hardware instances, while the selected bank, display base, and edit availability come from the desktop context. */
   type Props = {
     /** Optional parent-owned pane ID, used by the resize separator to identify its controlled region. */
     id?: string;
-    /** Parent-controlled tab; execution errors select Coproc 0 and Reset selects Registers. */
-    selected: string;
-    /** Required display base from the containing IDE; true shows hexadecimal words. */
-    hexValues: boolean;
     /** Required session-owned general registers; never replaced while a run is active. */
     registers: RegisterFile;
     /** Required session-owned exception registers. */
@@ -37,109 +38,20 @@
     machineRevision: number;
     /** Required session controller supplies assembly/reset identity and explicit backstep context for write highlighting. */
     controller: RunController;
-    /** True while executing; editing resumes at a paused or stepped boundary. */
-    running: boolean;
-    /** Notify the session after a manual register edit. */
-    onedit: () => void;
   };
-  let {
-    hexValues,
-    id,
-    selected = $bindable(),
-    registers,
-    coprocessor0,
-    coprocessor1,
-    machineRevision,
-    controller,
-    running,
-    onedit
-  }: Props = $props();
+  let { id, registers, coprocessor0, coprocessor1, machineRevision, controller }: Props = $props();
+  const { display, simulation } = getDesktop();
+  /** Selected bank; execution errors select Coproc 0 and Reset selects Registers. */
+  const selected = $derived(display.registerTab);
+  const hexValues = $derived(display.hexValues);
+  /** True while executing; editing resumes at a paused or stepped boundary. */
+  const running = $derived(simulation.running);
   const general = $derived([
     ...registers.getRegisters(),
     registers.getProgramCounterRegister(),
     registers.getHighOrderRegister(),
     registers.getLowOrderRegister()
   ]);
-  // Name-column descriptions from the three legacy register windows, in display order.
-  const nameTooltips: Record<string, readonly string[]> = {
-    Registers: [
-      'constant 0',
-      'reserved for assembler',
-      'expression evaluation and results of a function',
-      'expression evaluation and results of a function',
-      'argument 1',
-      'argument 2',
-      'argument 3',
-      'argument 4',
-      'temporary (not preserved across call)',
-      'temporary (not preserved across call)',
-      'temporary (not preserved across call)',
-      'temporary (not preserved across call)',
-      'temporary (not preserved across call)',
-      'temporary (not preserved across call)',
-      'temporary (not preserved across call)',
-      'temporary (not preserved across call)',
-      'saved temporary (preserved across call)',
-      'saved temporary (preserved across call)',
-      'saved temporary (preserved across call)',
-      'saved temporary (preserved across call)',
-      'saved temporary (preserved across call)',
-      'saved temporary (preserved across call)',
-      'saved temporary (preserved across call)',
-      'saved temporary (preserved across call)',
-      'temporary (not preserved across call)',
-      'temporary (not preserved across call)',
-      'reserved for OS kernel',
-      'reserved for OS kernel',
-      'pointer to global area',
-      'stack pointer',
-      'frame pointer',
-      'return address (used by function call)',
-      'program counter',
-      'high-order word of multiply product, or divide remainder',
-      'low-order word of multiply product, or divide quotient'
-    ],
-    'Coproc 0': [
-      'Memory address at which address exception occurred',
-      'Interrupt mask and enable bits',
-      'Exception type and pending interrupt bits',
-      'Address of instruction that caused exception'
-    ],
-    'Coproc 1': [
-      'floating point subprogram return value',
-      'should not be referenced explicitly in your program',
-      'floating point subprogram return value',
-      'should not be referenced explicitly in your program',
-      'temporary (not preserved across call)',
-      'should not be referenced explicitly in your program',
-      'temporary (not preserved across call)',
-      'should not be referenced explicitly in your program',
-      'temporary (not preserved across call)',
-      'should not be referenced explicitly in your program',
-      'temporary (not preserved across call)',
-      'should not be referenced explicitly in your program',
-      'floating point subprogram argument 1',
-      'should not be referenced explicitly in your program',
-      'floating point subprogram argument 2',
-      'should not be referenced explicitly in your program',
-      'temporary (not preserved across call)',
-      'should not be referenced explicitly in your program',
-      'temporary (not preserved across call)',
-      'should not be referenced explicitly in your program',
-      'saved temporary (preserved across call)',
-      'should not be referenced explicitly in your program',
-      'saved temporary (preserved across call)',
-      'should not be referenced explicitly in your program',
-      'saved temporary (preserved across call)',
-      'should not be referenced explicitly in your program',
-      'saved temporary (preserved across call)',
-      'should not be referenced explicitly in your program',
-      'saved temporary (preserved across call)',
-      'should not be referenced explicitly in your program',
-      'saved temporary (preserved across call)',
-      'should not be referenced explicitly in your program'
-    ]
-  };
   let revision = $state(0);
   let error = $state('');
   let changed = $state<Record<string, string>>({});
@@ -153,28 +65,22 @@
           ? coprocessor0.getRegisters()
           : coprocessor1.getRegisters()
     ).map((register, index) => ({
-      tooltip: nameTooltips[selected][index],
+      tooltip: registerDescriptions[selected][index],
       name: register.getName(),
       number: register.getNumber(),
       value: register.getValueNoNotify()
     }));
   });
   $effect(() => {
-    let trackWrites = false;
     let statements = controller.getState().statements;
     const releaseController = controller.subscribe((state) => {
       if (state.statements !== statements) changed = {};
       statements = state.statements;
     });
-    const releaseSimulator = controller.machine.simulator.subscribe((notice) => {
-      trackWrites =
-        notice.getAction() === SimulatorNotice.SIMULATOR_START &&
-        (notice.getRunSpeed() !== 40 || notice.getMaxSteps() === 1);
-    });
     const banks = [
-      { name: 'Registers', registers: general },
-      { name: 'Coproc 0', registers: coprocessor0.getRegisters() },
-      { name: 'Coproc 1', registers: coprocessor1.getRegisters() }
+      { name: 'Registers' as const, registers: general },
+      { name: 'Coproc 0' as const, registers: coprocessor0.getRegisters() },
+      { name: 'Coproc 1' as const, registers: coprocessor1.getRegisters() }
     ];
     const releases = banks.flatMap((bank) =>
       bank.registers.map((register) =>
@@ -182,10 +88,10 @@
           if (notice.getAccessType() === AccessNotice.WRITE) {
             if (
               register !== registers.getProgramCounterRegister() &&
-              (trackWrites || controller.isBackStepping())
+              (controller.isObservingWrites() || controller.isBackStepping())
             ) {
               changed[bank.name] = register.getName();
-              selected = bank.name;
+              display.registerTab = bank.name;
             }
             revision++;
           }
@@ -194,7 +100,6 @@
     );
     return () => {
       releases.forEach((release) => release());
-      releaseSimulator();
       releaseController();
     };
   });
@@ -207,7 +112,7 @@
       if (selected === 'Registers') registers.updateRegister(number, value);
       else coprocessor0.updateRegister(number, value);
       error = '';
-      onedit();
+      simulation.refresh();
     } catch {
       error = 'Invalid 32-bit integer. Use decimal or a hexadecimal value beginning with 0x.';
     }
@@ -251,7 +156,7 @@
         else coprocessor1.setRegisterToFloat(number, JavaFloatingPoint.parseFloat(text));
       }
       error = '';
-      onedit();
+      simulation.refresh();
     } catch {
       error = 'Invalid floating-point value or hexadecimal bit pattern.';
     }
@@ -282,7 +187,7 @@
       if (checked) coprocessor1.setConditionFlag(flag);
       else coprocessor1.clearConditionFlag(flag);
     }
-    onedit();
+    simulation.refresh();
   }
 </script>
 
@@ -290,11 +195,11 @@
 <TabbedPane
   element="aside"
   label="Registers"
-  tabs={['Registers', 'Coproc 1', 'Coproc 0']}
-  bind:selected
+  tabs={REGISTER_BANKS}
+  bind:selected={display.registerTab}
   --pane-flex="0 0 auto"
-  --pane-min-width="260px"
-  --pane-width="var(--register-width, 310px)"
+  --pane-min-width={`${MIN_REGISTER_WIDTH}px`}
+  --pane-width={`var(--register-width, ${DEFAULT_REGISTER_WIDTH}px)`}
   --pane-overflow="auto"
   --pane-background="var(--theme-surface, #fafafa)"
   --tab-padding="4px 9px"
@@ -369,7 +274,7 @@
       </div>
     </div>
   {/if}
-  {#if error}<p role="alert">{error}</p>{/if}
+  <InlineAlert message={error} />
 </TabbedPane>
 
 <style>
@@ -377,9 +282,5 @@
     flex: 1;
     min-height: 0;
     overflow: auto;
-  }
-  p {
-    color: var(--theme-error, #a11);
-    padding: 5px;
   }
 </style>

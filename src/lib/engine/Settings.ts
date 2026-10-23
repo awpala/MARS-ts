@@ -131,6 +131,10 @@ export class Settings {
     'EditorPopupPrefixLength'
   ];
   private static readonly defaultStrings = ['', '0 1 2 3 4', '0', '', '500', '8', '2'];
+  /** Number of boolean settings in a captured state. */
+  static readonly BOOLEAN_COUNT = Settings.booleanKeys.length;
+  /** Number of string settings in a captured state. */
+  static readonly STRING_COUNT = Settings.stringKeys.length;
   private booleans: boolean[] = [];
   private strings: string[] = [];
   private readonly observers = new Set<() => void>();

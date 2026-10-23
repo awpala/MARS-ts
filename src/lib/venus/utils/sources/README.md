@@ -1,0 +1,9 @@
+# Source presentation and export rules
+
+This directory owns small rules about how source documents are labeled, committed, and downloaded. They support the browser file workflows in [ADR 0003](../../../../../docs/adrs/0003-browser-file-workflows.md) and have no direct legacy counterpart; the workspace, editor, and browser adapters retain dirty-state tracking, persistence, and the extension rules.
+
+[sourceLabel.ts](sourceLabel.ts) prefixes a filename with the `* ` unsaved-changes marker, so the window title and source tabs show unsaved work the same way. [savableSource.ts](savableSource.ts) is the source-commit eligibility predicate: a new buffer needs at least one character before it may enter the library, while a saved source may be cleared and saved empty. Save and Save As enablement, Save All, Auto Save, close prompts, and save validation consult it; it only answers the question.
+
+[exportFilenames.ts](exportFilenames.ts) assigns each exported source a unique, flat download filename. A filename whose extension is recognized as assembly (`.asm` or `.s`, compared without regard to case) keeps it in lowercase, so an exported `.s` source imports back as `.s`; any other name receives `.asm`. Names are reduced to their final path segment, and a name that repeats within the export is numbered from `-2` before the extension, so `lib/util.s` following `util.s` becomes `util-2.s`. The extension rules themselves live with the source library in the [browser adapters](../../../browser/README.md), and the single and all variants of FileExporter share this function, so Export and the Export All archive agree.
+
+Add a rule here when it labels, filters, or names sources for presentation or download and two or more callers need it. Library reads and writes, filename normalization, and the recognized extensions belong to the browser adapters, buffers to the editor, and save, import, and close workflows to the workspace state owner.

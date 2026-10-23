@@ -4,6 +4,33 @@ import { isRunCheckpoint, type RunCheckpoint } from '#lib/venus/RunCheckpoint.js
 /** Versioned browser-local recovery record, independent of committed source files. */
 export const DESKTOP_SESSION_STORAGE_KEY = 'mars-ts:desktop-session:v1';
 
+/** Primary workspaces, in tab order. */
+export const MAIN_VIEWS = ['Edit', 'Execute'] as const;
+/** Register banks, in tab order. */
+export const REGISTER_BANKS = ['Registers', 'Coproc 1', 'Coproc 0'] as const;
+/** Message consoles, in tab order. */
+export const MESSAGE_TABS = ['Mars Messages', 'Run I/O'] as const;
+/** Ranges the Data Segment selector can show. */
+export const MEMORY_SEGMENTS = [
+  'data',
+  'extern',
+  'heap',
+  'gp',
+  'sp',
+  'text',
+  'kernel',
+  'mmio'
+] as const;
+
+/** Selected primary workspace. */
+export type MainView = (typeof MAIN_VIEWS)[number];
+/** Selected register bank. */
+export type RegisterBank = (typeof REGISTER_BANKS)[number];
+/** Selected message console. */
+export type MessageTab = (typeof MESSAGE_TABS)[number];
+/** Selected Data Segment range. */
+export type MemorySegment = (typeof MEMORY_SEGMENTS)[number];
+
 /** Identity of one selected label within its loaded program's symbol tables. */
 export interface SavedLabelSelection {
   /** Owning source filename; null identifies the global symbol table. */
@@ -29,17 +56,17 @@ export interface DesktopSession {
   /** Argument draft for the next initial Go/Step; absent in older records, defaulting to empty. */
   programArguments?: string;
   /** Selected primary workspace. */
-  view: 'Edit' | 'Execute';
+  view: MainView;
   /** Selected register bank. */
-  registerTab: 'Registers' | 'Coproc 1' | 'Coproc 0';
+  registerTab: RegisterBank;
   /** Selected message console. */
-  messageTab: 'Mars Messages' | 'Run I/O';
+  messageTab: MessageTab;
   /** Undo/redo branches matched to recovered source identity and contents. */
   editHistory: ReturnType<Editor['captureHistory']>;
   /** Data Segment range and aligned relative page offset. */
   dataView: {
     /** Named memory range used by the Data Segment selector. */
-    segment: string;
+    segment: MemorySegment;
     /** Signed aligned byte offset relative to that range's base. */
     pageOffset: number;
   };
@@ -83,9 +110,9 @@ export function isDesktopSession(value: unknown): value is DesktopSession {
     Array.isArray(v) && v.length === 2 && v.every((n) => Number.isInteger(n) && n >= 0);
   return (
     (s.programArguments === undefined || typeof s.programArguments === 'string') &&
-    ['Edit', 'Execute'].includes(s.view) &&
-    ['Registers', 'Coproc 1', 'Coproc 0'].includes(s.registerTab) &&
-    ['Mars Messages', 'Run I/O'].includes(s.messageTab) &&
+    MAIN_VIEWS.includes(s.view) &&
+    REGISTER_BANKS.includes(s.registerTab) &&
+    MESSAGE_TABS.includes(s.messageTab) &&
     Array.isArray(s.editHistory) &&
     s.editHistory.every(
       (r) =>
@@ -98,7 +125,7 @@ export function isDesktopSession(value: unknown): value is DesktopSession {
         r.redo.every((t) => typeof t === 'string')
     ) &&
     !!s.dataView &&
-    ['data', 'extern', 'heap', 'gp', 'sp', 'text', 'kernel', 'mmio'].includes(s.dataView.segment) &&
+    MEMORY_SEGMENTS.includes(s.dataView.segment) &&
     Number.isInteger(s.dataView.pageOffset) &&
     (s.dataView.pageOffset | 0) === s.dataView.pageOffset &&
     s.dataView.pageOffset % 4 === 0 &&

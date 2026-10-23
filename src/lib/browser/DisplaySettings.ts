@@ -1,6 +1,9 @@
 /** Browser preference key for the working editor/display controls. */
 export const DISPLAY_SETTINGS_STORAGE_KEY = 'mars-ts:display-settings:v1';
 
+/** Largest legacy run-speed slider position, the stored value for maximum speed. */
+export const MAX_SPEED_POSITION = 40;
+
 /** Persistent view preferences, independent of source documents and machine state. */
 export interface DisplaySettings {
   /** Commit all changed open sources automatically; defaults to false for older records. */
@@ -42,7 +45,7 @@ function validate(value: unknown): DisplaySettings | undefined {
     typeof data.speed !== 'number' ||
     !Number.isInteger(data.speed) ||
     data.speed < 0 ||
-    data.speed > 40
+    data.speed > MAX_SPEED_POSITION
   )
     return;
   if (

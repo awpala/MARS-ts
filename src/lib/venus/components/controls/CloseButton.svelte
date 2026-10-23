@@ -1,6 +1,5 @@
 <script lang="ts">
-  import Button from './Button.svelte';
-  import MaskIcon from '../shell/MaskIcon.svelte';
+  import IconButton from './IconButton.svelte';
 
   /** Shared close affordance; callers own the document or pane visibility workflow. */
   type Props = {
@@ -16,14 +15,13 @@
   let { label, shortcut, disabled = false, onclick }: Props = $props();
 </script>
 
-<!-- @component Compact close button with shared theme-aware hover styling and description. Owns no close confirmation, visibility state, or keyboard shortcut. -->
-<Button
-  class="grid size-4.5 shrink-0 place-items-center self-center border border-transparent disabled:opacity-35"
-  aria-label={label}
-  tooltip={label}
+<!-- @component Compact close button: an IconButton with the Close mark. Owns no close confirmation, visibility state, or keyboard shortcut. -->
+<IconButton
+  class="self-center"
+  size="sm"
+  icon={{ mask: 'Close' }}
+  {label}
   {shortcut}
   {disabled}
   {onclick}
->
-  <MaskIcon name="Close" size={12} />
-</Button>
+/>

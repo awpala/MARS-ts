@@ -8,9 +8,7 @@
 </script>
 
 <!-- @component Prompted syscall input; simulation context owns completion and cancellation. -->
-{#if simulation.inputRequest?.prompt}<Modal
-    title="Run Input"
-    onclose={() => simulation.controller?.stop()}
+{#if simulation.inputRequest?.prompt}<Modal title="Run Input" onclose={() => simulation.stop()}
     ><form
       onsubmit={(event) => {
         event.preventDefault();
@@ -22,9 +20,8 @@
         ><input aria-label="Syscall input" bind:value={simulation.inputText} /></DialogField
       >
       <DialogActions>
-        <Button type="submit">OK</Button><Button
-          type="button"
-          onclick={() => simulation.controller?.stop()}>Cancel</Button
+        <Button type="submit">OK</Button><Button type="button" onclick={() => simulation.stop()}
+          >Cancel</Button
         >
       </DialogActions>
     </form></Modal

@@ -302,10 +302,10 @@ test('every defined shortcut cancels browser defaults across app surfaces, inclu
   await page.getByRole('button', { name: 'New', exact: true }).click();
   await page.getByRole('button', { name: 'Help', exact: true }).click();
   const canceled = await page.evaluate(async () => {
-    const path = '/src/lib/venus/utils/commands.ts';
+    const path = '/src/lib/venus/utils/commands/actions.ts';
     const metadata = (await import(
       /* @vite-ignore */ path
-    )) as typeof import('../../src/lib/venus/utils/commands.js');
+    )) as typeof import('../../src/lib/venus/utils/commands/actions.js');
     const actions = [
       ...metadata.fileActions,
       ...metadata.editActions,

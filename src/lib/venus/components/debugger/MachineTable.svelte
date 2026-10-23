@@ -21,7 +21,7 @@
   type Props = {
     /** Required header cells (`<th>` elements) for the single sticky heading row rendered by this table. */
     header: Snippet;
-    /** Required body sections: one or more `<tbody>` elements. Rows or cells may set `data-selected="true"` for label navigation selection, independently of machine changes, and `data-highlight` to a MachineHighlight; the table owns colors and preset enablement. Body cells may add the `numeric` class to right-align monospace numbers and hexadecimal words (including CellInput values) and the `identifier` class to bold the cell naming the row, such as an address, register, or label. */
+    /** Required body sections: one or more `<tbody>` elements. Rows or cells may set `data-selected="true"` for label navigation selection, independently of machine changes, and `data-highlight` to a MachineHighlight; the table owns colors and preset enablement. Body cells may add the `numeric` class to right-align monospace numbers and hexadecimal words (including CellInput values) and the `identifier` class to bold the cell naming the row, such as an address, register, or label. A cell whose only content is one action button may add the `action` class, which moves the cell's padding into the button so the entire cell is the button's hover, focus, and click target. */
     children: Snippet;
     /** Heading typeface: `interface` (default) uses the application font, while `table` uses the preset monospace font of the cells. */
     headingFont?: 'interface' | 'table';
@@ -45,7 +45,7 @@
   }: Props = $props();
 </script>
 
-<!-- @component Striped machine-state table with a sticky heading row and the bundled highlighting preset, themed through semantic color tokens. Renders `<table>` as its root without a wrapper; callers keep any scroll container as its parent and must not pass `--custom-property` attributes, which would insert one. Callers may add layout styles to cells, while borders, padding, row or highlight colors, and the `numeric`/`identifier` cell roles belong to this table. -->
+<!-- @component Striped machine-state table with a sticky heading row and the bundled highlighting preset, themed through semantic color tokens. Renders `<table>` as its root without a wrapper; callers keep any scroll container as its parent and must not pass `--custom-property` attributes, which would insert one. Callers may add layout styles to cells, while borders, padding, row or highlight colors, and the `numeric`/`identifier`/`action` cell roles belong to this table. -->
 <table
   class={[
     'machine-table',
@@ -146,5 +146,14 @@
   }
   .machine-table :global(td.identifier) {
     font-weight: 700;
+  }
+  /* The button takes over the cell's padding, so hovering, focusing, or clicking anywhere in the cell acts on it. */
+  .machine-table :global(td.action) {
+    padding: 0;
+  }
+  .machine-table :global(td.action > button) {
+    display: block;
+    width: 100%;
+    padding: var(--cell-padding);
   }
 </style>

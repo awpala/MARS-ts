@@ -2,11 +2,11 @@
   import type { Snippet } from 'svelte';
   import type { Attachment } from 'svelte/attachments';
   import KeyboardShortcut from './KeyboardShortcut.svelte';
-  import { clamp } from '../../utils/clamp.js';
+  import { clamp } from '../../utils/geometry/clamp.js';
   /** Tooltip contract; the caller owns the trigger's label and behavior. */
   type Props = {
-    /** Required plain-text description, displayed on hover or focus. Empty text suppresses the tooltip. */
-    text: string;
+    /** Plain-text description, displayed on hover or focus. Missing or empty text suppresses the tooltip and attaches no trigger listeners. */
+    text?: string;
     /** Optional keyboard hint displayed as keycaps after the description. */
     shortcut?: string;
     /** Keep descriptions through pointer activation for toggle controls only; false by default. All descriptions hide on trigger exit. */
@@ -14,7 +14,7 @@
     /** Required trigger template. Attach the supplied attachment to one element and apply the description ID to its focusable control. */
     children: Snippet<[Attachment<HTMLElement>, string | undefined]>;
   };
-  let { text, shortcut, keepOpenOnClick = false, children }: Props = $props();
+  let { text = '', shortcut, keepOpenOnClick = false, children }: Props = $props();
   const id = $props.id();
   let visible = $state(false);
   let position = $state.raw<{ left: number; top: number; above: boolean }>();
@@ -46,6 +46,8 @@
     dismissed = true;
     hide();
   }
+  /** Attachment for a trigger whose description is empty: it registers nothing. */
+  function noTrigger() {}
   function attachTrigger(element: HTMLElement) {
     anchor = element;
     const enter = () => {
@@ -146,7 +148,7 @@
 </script>
 
 <!-- @component Theme-aware hover/focus description with viewport clamping and Escape dismissal. Owns and releases its trigger listeners, visible-only window listeners, and timers. -->
-{@render children(attachTrigger, visible ? id : undefined)}
+{@render children(text.trim() ? attachTrigger : noTrigger, visible ? id : undefined)}
 {#if visible}
   <div
     {id}
@@ -157,7 +159,7 @@
     style:top={`${position?.top ?? 0}px`}
     style:visibility={position ? 'visible' : 'hidden'}
   >
-    <div class="tooltip">
+    <div class="tooltip popup-surface">
       {text}
       {#if shortcut}<KeyboardShortcut {shortcut} />{/if}
     </div>
@@ -184,15 +186,7 @@
     max-width: min(320px, calc(100vw - 16px));
     max-height: calc(100dvh - 24px);
     overflow: auto;
-    padding: 6px 9px;
-    border: 1px solid var(--theme-border, #8d969e);
     border-radius: 3px;
-    background: var(--theme-tooltip, #ffffe1);
-    color: var(--theme-text, #17202b);
-    box-shadow: 2px 3px 8px #0003;
-    font:
-      12px/1.4 system-ui,
-      sans-serif;
     font-weight: normal;
     text-align: left;
     white-space: normal;

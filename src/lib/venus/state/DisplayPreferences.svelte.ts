@@ -1,20 +1,52 @@
-import { loadPaneLayout, savePaneLayout } from '#lib/browser/PaneLayout.js';
-import { loadDisplaySettings, saveDisplaySettings } from '#lib/browser/DisplaySettings.js';
-import { clamp } from '../utils/clamp.js';
+import { loadPaneLayout, MIN_REGISTER_WIDTH, savePaneLayout } from '#lib/browser/PaneLayout.js';
+import {
+  loadDisplaySettings,
+  MAX_SPEED_POSITION,
+  saveDisplaySettings,
+  type DisplaySettings
+} from '#lib/browser/DisplaySettings.js';
+import type { MainView, MemorySegment, RegisterBank } from '#lib/browser/DesktopSession.js';
+import { clamp } from '../utils/geometry/clamp.js';
+import {
+  DEFAULT_REGISTER_WIDTH,
+  EDITOR_MIN_HEIGHT,
+  EDITOR_RESERVED_HEIGHT,
+  REGISTER_RESERVED_SOURCE_WIDTH
+} from '../utils/geometry/layout.js';
+
+/** Persisted display fields other than Auto Save, which the source workspace owns. */
+const persistedKeys = [
+  'clearAllOutputsOnGo',
+  'showRegisters',
+  'ascii',
+  'showLabels',
+  'showDataLabels',
+  'showTextLabels',
+  'labelSortState',
+  'showLines',
+  'hexValues',
+  'hexAddresses',
+  'speed'
+] as const satisfies readonly (keyof DisplaySettings)[];
+
+function pick<T, K extends keyof T>(source: T, keys: readonly K[]): Pick<T, K> {
+  return Object.fromEntries(keys.map((key) => [key, source[key]])) as Pick<T, K>;
+}
+
 /** Per-desktop display selection, preferences, and measured pane geometry. Storage is accessed only by explicit browser lifecycle calls. */
 export class DisplayPreferences {
   /** Selected main pane; Edit by default. */
-  view = $state('Edit');
+  view = $state<MainView>('Edit');
   /** Browser-only preference to clear both consoles when Go starts a fresh program run; unselected by default. */
   clearAllOutputsOnGo = $state(false);
   /** Selected Data Segment range, recovered with the desktop session. */
-  dataSegment = $state('data');
+  dataSegment = $state<MemorySegment>('data');
   /** Relative aligned Data Segment page offset, recovered with the desktop session. */
   dataPageOffset = $state(0);
   /** Whether the register banks pane and its divider are visible; shown by default. */
   showRegisters = $state(true);
   /** Selected register bank; Registers by default. */
-  registerTab = $state('Registers');
+  registerTab = $state<RegisterBank>('Registers');
   /** Whether Execute shows the Labels pane. */
   showLabels = $state(false);
   /** Include data labels in the Labels pane. */
@@ -32,11 +64,11 @@ export class DisplayPreferences {
   /** Whether addresses display in hexadecimal. */
   hexAddresses = $state(true);
   /** Legacy run-speed slider position from zero through forty. */
-  speed = $state(40);
+  speed = $state(MAX_SPEED_POSITION);
   /** Measured available width supplied by the workspace element. */
   workspaceWidth = $state(1000);
   /** Requested register banks pane width in pixels. */
-  registerWidth = $state(310);
+  registerWidth = $state(DEFAULT_REGISTER_WIDTH);
   /** Measured height of the left pane container. */
   leftPaneHeight = $state(700);
   /** Requested Data Segment height in pixels; null keeps its natural height. */
@@ -44,13 +76,21 @@ export class DisplayPreferences {
   /** Requested editor fraction of the left pane height. */
   editorFraction = $state(0.75);
   /** Largest editor height retaining usable messages. */
-  maxEditorHeight = $derived(Math.max(150, this.leftPaneHeight - 85));
+  maxEditorHeight = $derived(
+    Math.max(EDITOR_MIN_HEIGHT, this.leftPaneHeight - EDITOR_RESERVED_HEIGHT)
+  );
   /** Clamped editor height derived from its container and saved fraction. */
   displayedEditorHeight = $derived(
-    clamp(Math.round(this.leftPaneHeight * this.editorFraction), 150, this.maxEditorHeight)
+    clamp(
+      Math.round(this.leftPaneHeight * this.editorFraction),
+      EDITOR_MIN_HEIGHT,
+      this.maxEditorHeight
+    )
   );
   /** Largest register width retaining a usable source pane. */
-  maxRegisterWidth = $derived(Math.max(260, this.workspaceWidth - 315));
+  maxRegisterWidth = $derived(
+    Math.max(MIN_REGISTER_WIDTH, this.workspaceWidth - REGISTER_RESERVED_SOURCE_WIDTH)
+  );
   /** Register width clamped to current geometry. */
   displayedRegisterWidth = $derived(Math.min(this.registerWidth, this.maxRegisterWidth));
   /** Restore browser preferences and return the saved Auto Save choice to its workspace owner. */
@@ -63,35 +103,22 @@ export class DisplayPreferences {
     }
     const settings = loadDisplaySettings();
     if (!settings) return false;
-    this.clearAllOutputsOnGo = settings.clearAllOutputsOnGo;
-    this.ascii = settings.ascii;
-    this.showRegisters = settings.showRegisters;
-    this.showLabels = settings.showLabels;
-    this.showDataLabels = settings.showDataLabels;
-    this.showTextLabels = settings.showTextLabels;
-    this.labelSortState = settings.labelSortState;
-    this.showLines = settings.showLines;
-    this.hexValues = settings.hexValues;
-    this.hexAddresses = settings.hexAddresses;
-    this.speed = settings.speed;
+    Object.assign(this, pick(settings, persistedKeys));
     return settings.autoSave;
   }
   /** Persist the display record, including the workspace owner's Auto Save choice. */
   persist(autoSave: boolean): void {
-    saveDisplaySettings({
-      autoSave,
-      clearAllOutputsOnGo: this.clearAllOutputsOnGo,
-      showRegisters: this.showRegisters,
-      ascii: this.ascii,
-      showLabels: this.showLabels,
-      showDataLabels: this.showDataLabels,
-      showTextLabels: this.showTextLabels,
-      labelSortState: this.labelSortState,
-      showLines: this.showLines,
-      hexValues: this.hexValues,
-      hexAddresses: this.hexAddresses,
-      speed: this.speed
-    });
+    saveDisplaySettings({ autoSave, ...pick(this, persistedKeys) });
+  }
+  /** Return the Data Segment to the first page of the data range, as after assembly, Reset, or a memory layout change. */
+  resetDataView(): void {
+    this.dataSegment = 'data';
+    this.dataPageOffset = 0;
+  }
+  /** Show the Execute view's initial arrangement of a freshly built machine: the first data page and the general registers. */
+  resetExecuteView(): void {
+    this.resetDataView();
+    this.registerTab = 'Registers';
   }
   /** Persist committed divider geometry through the validated layout adapter. */
   persistLayout = (): void => {
@@ -101,9 +128,13 @@ export class DisplayPreferences {
       dataSegmentHeight: this.dataSegmentHeight
     });
   };
+  /** Set the requested register sidebar width from an interactive pixel size. */
+  setRegisterWidth = (width: number) => {
+    this.registerWidth = Math.round(width);
+  };
   /** Update the editor fraction from an interactive pixel size. */
   setEditorHeight = (height: number) => {
     this.editorFraction =
-      clamp(height, 150, this.maxEditorHeight) / Math.max(1, this.leftPaneHeight);
+      clamp(height, EDITOR_MIN_HEIGHT, this.maxEditorHeight) / Math.max(1, this.leftPaneHeight);
   };
 }

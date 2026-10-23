@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Attachment } from 'svelte/attachments';
+  import { describedBy } from '../../utils/dom/describedBy.js';
   import Tooltip from '../feedback/Tooltip.svelte';
 
   /** Native checkbox and text contract; callers own selection and workflow state. */
@@ -37,32 +38,24 @@
 </script>
 
 <!-- @component Reusable native selection box with clickable text and an optional themed tooltip. Supports caller bindings or change callbacks without desktop context; --selector-gap controls spacing. -->
-{#snippet control(trigger?: Attachment<HTMLElement>, tooltipDescription?: string)}
-  <label {@attach trigger} {@attach attachment} class={className}>
-    <input
-      type="checkbox"
-      {checked}
-      {disabled}
-      aria-label={ariaLabel}
-      aria-describedby={[description, tooltipDescription].filter(Boolean).join(' ') || undefined}
-      onchange={(event) => {
-        checked = event.currentTarget.checked;
-        onchange?.(checked);
-      }}
-    />
-    <span>{label}</span>
-  </label>
-{/snippet}
-
-{#if tooltip}
-  <Tooltip text={tooltip} keepOpenOnClick>
-    {#snippet children(trigger, tooltipDescription)}
-      {@render control(trigger, tooltipDescription)}
-    {/snippet}
-  </Tooltip>
-{:else}
-  {@render control()}
-{/if}
+<Tooltip text={tooltip} keepOpenOnClick>
+  {#snippet children(trigger, tooltipDescription)}
+    <label {@attach trigger} {@attach attachment} class={className}>
+      <input
+        type="checkbox"
+        {checked}
+        {disabled}
+        aria-label={ariaLabel}
+        aria-describedby={describedBy(description, tooltipDescription)}
+        onchange={(event) => {
+          checked = event.currentTarget.checked;
+          onchange?.(checked);
+        }}
+      />
+      <span>{label}</span>
+    </label>
+  {/snippet}
+</Tooltip>
 
 <style>
   label {

@@ -13,7 +13,9 @@ export function provideDesktop(desktop: DesktopState): DesktopState {
   setDesktopCommands({
     isEnabled: desktop.enabled,
     execute: desktop.execute,
-    isPressed: desktop.isPressed
+    isPressed: desktop.isPressed,
+    displayToggles: () => desktop.displayToggles,
+    engineToggles: () => desktop.engineMenuToggles
   });
   return desktop;
 }
