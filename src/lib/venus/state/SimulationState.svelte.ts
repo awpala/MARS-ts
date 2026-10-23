@@ -29,7 +29,7 @@ export class SimulationState {
   labelSelection = $state.raw<SavedLabelSelection | null>(null);
   /** Configured instruction addresses; suspension retains this list. */
   breakpoints = $state.raw<number[]>([]);
-  /** Whether Go supplies configured breakpoints to the simulator. */
+  /** Whether Go supplies configured breakpoints to the simulator; a change during Go applies to that run. */
   breakpointsEnabled = $state(true);
   /** Reactive values of settings exposed in desktop menus. */
   engineSettings = $state<Record<number, boolean>>({});
@@ -211,12 +211,21 @@ export class SimulationState {
     )
       this.completeInput(false);
   };
-  /** Toggle one instruction address in the configured breakpoint set. */
+  /** Toggle one instruction address in the configured breakpoint set, including during Go. */
   toggleBreakpoint = (address: number) => {
     this.breakpoints = this.breakpoints.includes(address)
       ? this.breakpoints.filter((value) => value !== address)
       : [...this.breakpoints, address];
+    this.updateRunningBreakpoints();
   };
+  /** Breakpoints Go supplies to the simulator: the configured list unless suspended. */
+  private activeBreakpoints(): readonly number[] {
+    return this.breakpointsEnabled ? this.breakpoints : [];
+  }
+  /** Apply a breakpoint change to an in-flight Go at its next instruction boundary. */
+  private updateRunningBreakpoints(): void {
+    this.controller?.updateBreakpoints(this.activeBreakpoints());
+  }
   /** Assemble the active source and explicit includes, publishing diagnostics and the execution view. */
   assemble = () => {
     if (!this.controller || !this.workspace.current) return;
@@ -281,10 +290,12 @@ export class SimulationState {
       }
       if (command === 'clearBreakpoints') {
         this.breakpoints = [];
+        this.updateRunningBreakpoints();
         return;
       }
       if (command === 'toggleBreakpoints') {
         this.breakpointsEnabled = !this.breakpointsEnabled;
+        this.updateRunningBreakpoints();
         return;
       }
       if (command === 'pause') {
@@ -314,11 +325,7 @@ export class SimulationState {
         if (this.display.clearAllOutputsOnGo && !this.controller.getState().started)
           this.clearOutput(true);
         this.messages += `Go: running ${filename}\n\n`;
-        await this.controller.run(
-          this.breakpointsEnabled ? this.breakpoints : [],
-          -1,
-          this.programArguments
-        );
+        await this.controller.run(this.activeBreakpoints(), -1, this.programArguments);
       }
       if (this.disposed) return;
       const outcome = describeRunOutcome(run, this.controller.getState(), filename);

@@ -1,5 +1,6 @@
 /* Copyright (c) 2003–2010 Pete Sanderson and Kenneth Vollmar. MIT; see MARSlicense.txt.
- * Ports mars/simulator/Simulator.java; cooperative scheduling is documented in ADR 0004. */
+ * Ports mars/simulator/Simulator.java; cooperative scheduling is documented in ADR 0004,
+ * in-flight breakpoint updates in ADR 0011. */
 import { ProgramStatement } from '../assembler/programs/ProgramStatement.js';
 import { BasicInstruction } from '../instructions/BasicInstruction.js';
 import {
@@ -69,6 +70,11 @@ interface SimulationRun {
   reason: number;
 }
 
+/** Copy breakpoints into ascending order for binary search, or null when empty, as SimThread.construct does. */
+function sortedBreakpoints(points: readonly number[] | null): number[] | null {
+  return points?.length ? [...points].sort((a, b) => a - b) : null;
+}
+
 /** Canonical execution loop with per-session state and bounded, injected cooperative yields. */
 export class Simulator {
   /** No pending external device interrupt. */
@@ -127,6 +133,10 @@ export class Simulator {
     this.active.stop = true;
     this.active.stopper = actor;
     for (const listener of [...this.stopListeners]) listener(this);
+  }
+  /** Replace the active execution's breakpoints from its next instruction boundary; ignored when idle. */
+  updateBreakpoints(breakpoints: readonly number[] | null): void {
+    if (this.active) this.active.breakpoints = sortedBreakpoints(breakpoints);
   }
   /** Execute one assembled program; resolves with completion or rejects an unhandled error for a null actor. */
   async simulate(
@@ -193,8 +203,7 @@ export class Simulator {
   }
   private async construct(run: SimulationRun): Promise<void> {
     await this.host.yieldControl(0);
-    if (!run.breakpoints?.length) run.breakpoints = null;
-    else run.breakpoints.sort((a, b) => a - b);
+    run.breakpoints = sortedBreakpoints(run.breakpoints);
     this.notify(SimulatorNotice.SIMULATOR_START, run, run.startPc);
     const { registerFile, memory, delayedBranch } = this.host;
     registerFile.initializeProgramCounter(run.startPc);

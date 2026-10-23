@@ -64,6 +64,7 @@ export class RunController {
   private backstepDelaySlot: boolean | null = null;
   private lastExecutedAddress: number | null = null;
   private observingWrites = false;
+  private continuous = false;
   private disposed = false;
   private disposalPromise: Promise<void> | null = null;
   private readonly unsubscribeSimulator: () => void;
@@ -196,6 +197,11 @@ export class RunController {
   step(programArguments = ''): Promise<boolean> {
     return this.execute(true, [], 1, programArguments);
   }
+  /** Replace a running Go's breakpoints from its next instruction boundary; Step and idle machines use the next Go's list. */
+  updateBreakpoints(breakpoints: readonly number[]): void {
+    if (this.continuous && this.machine.simulator.isRunning())
+      this.machine.simulator.updateBreakpoints(breakpoints);
+  }
   /** Request pause at the next canonical instruction boundary, releasing pending host input. */
   pause(): void {
     this.machine.simulator.stopExecution({ name: 'Pause' });
@@ -299,6 +305,7 @@ export class RunController {
       );
     this.publish({ status: 'running', started: true, error: null, reason: 0 });
     if (this.disposed) throw new Error('This run controller has been disposed.');
+    this.continuous = !step;
     const action: SimulatorAction = step
       ? { name: 'Step', stepped: (done, reason, error) => this.finished(done, reason, error) }
       : {

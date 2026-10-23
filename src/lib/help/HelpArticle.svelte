@@ -105,8 +105,8 @@
     </p>
     <p>
       Assemble (F3) translates the current source. Go (F5), Step (F7), Backstep (F8), Pause (F9),
-      Stop (F11), and Reset (F12) control execution. Select breakpoints in Text Segment. Tools and
-      memory export are deferred.
+      Stop (F11), and Reset (F12) control execution. Select breakpoints in Text Segment, even while
+      Go is running. Tools and memory export are deferred.
     </p>
     <p>
       The Help menu also contains Introduction, Debugging, Settings, Syscalls, Exception Handlers,

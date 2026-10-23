@@ -378,3 +378,41 @@ it('lets an input host observe a stop requested before its read starts', async (
   expect(reasons).toEqual([Simulator.PAUSE_OR_STOP]);
   expect(m.simulator.isStopRequested()).toBe(false);
 });
+
+it('replaces the active breakpoints at the next instruction boundary and ignores updates when idle', async () => {
+  const yielded: (() => void)[] = [];
+  const m = machine({
+    yieldControl: () =>
+      new Promise<void>((resolve) => {
+        yielded.push(resolve);
+      })
+  });
+  const pendingYield = async () => {
+    while (yielded.length === 0) await Promise.resolve();
+    return yielded.shift()!;
+  };
+  m.load([0x25080001, 0x25080001, 0x25080001, 0x25080001, 0x25080001, 0x25080001]);
+  m.simulator.updateBreakpoints([T + 4]);
+  const reasons: number[] = [];
+  const action = {
+    name: 'Go',
+    paused: (_done: boolean, reason: number) => reasons.push(reason),
+    stopped: (_error: unknown, reason: number) => reasons.push(reason)
+  };
+  let running = m.simulator.simulate(m.program, T, 0, [T + 12], action);
+  (await pendingYield())();
+  const batch = await pendingYield();
+  expect(m.registers.getProgramCounter()).toBe(T + 8);
+  m.simulator.updateBreakpoints([T + 20, T + 16]);
+  batch();
+  expect(await running).toBe(false);
+  expect(m.registers.getProgramCounter()).toBe(T + 16);
+  expect(m.registers.getValue(8)).toBe(4);
+  running = m.simulator.simulate(m.program, T + 16, 0, [T + 20], action);
+  m.simulator.updateBreakpoints(null);
+  (await pendingYield())();
+  (await pendingYield())();
+  expect(await running).toBe(true);
+  expect(m.registers.getValue(8)).toBe(6);
+  expect(reasons).toEqual([Simulator.BREAKPOINT, Simulator.CLIFF_TERMINATION]);
+});

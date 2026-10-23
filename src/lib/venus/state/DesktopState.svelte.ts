@@ -212,7 +212,7 @@ export class DesktopState {
     if (action.command === 'reset')
       return !!this.simulation.execution?.statements.length && !this.simulation.running;
     if (['clearBreakpoints', 'toggleBreakpoints'].includes(action.command))
-      return this.simulation.breakpoints.length > 0 && !this.simulation.running;
+      return this.simulation.breakpoints.length > 0;
     if (helpArticles.some((article) => article.id === action.command)) return true;
     if (this.simulation.running && action.command !== 'copy') return false;
     if (['new', 'open', 'import', 'autoSave'].includes(action.command)) return true;

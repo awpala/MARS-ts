@@ -257,6 +257,49 @@ describe('production Globals and Venus RunController', () => {
     unsubscribe();
     await item.controller.dispose();
   });
+  it('applies breakpoint changes to a running Go but not to a pending Step', async () => {
+    let entered!: () => void;
+    let ready = new Promise<void>((resolve) => {
+      entered = resolve;
+    });
+    let release!: (text: string) => void;
+    const item = session('li $v0,5\nsyscall\naddiu $t0,$0,1\naddiu $t0,$0,2\nli $v0,10\nsyscall', {
+      readInput: () => {
+        entered();
+        return new Promise<string>((resolve) => {
+          release = resolve;
+        });
+      }
+    });
+    const { controller, globals } = item;
+    controller.assemble(['main.asm'], 'main.asm');
+    const base = globals.memory.textBaseAddress;
+    controller.updateBreakpoints([base + 8]);
+    let running = controller.run([base + 16]);
+    await ready;
+    controller.updateBreakpoints([base + 12]);
+    release('7');
+    await running;
+    expect(controller.getState().reason).toBe(Simulator.BREAKPOINT);
+    expect(globals.registerFile.getProgramCounter()).toBe(base + 12);
+    controller.reset();
+    ready = new Promise<void>((resolve) => {
+      entered = resolve;
+    });
+    await controller.step();
+    running = controller.step();
+    await ready;
+    controller.updateBreakpoints([base + 8]);
+    release('7');
+    await running;
+    expect(controller.getState().reason).toBe(Simulator.MAX_STEPS);
+    running = controller.run([base + 12]);
+    controller.updateBreakpoints([]);
+    await running;
+    expect(controller.getState().status).toBe('terminated');
+    expect(globals.registerFile.getValue(8)).toBe(2);
+    await controller.dispose();
+  });
   it('reserves execution before publishing and closes synchronously during disposal', async () => {
     const item = session('nop');
     item.controller.assemble(['main.asm'], 'main.asm');

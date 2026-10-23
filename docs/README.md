@@ -15,6 +15,7 @@ The [implementation guide](../IMPLEMENTATION.md) describes the current MARS-ts s
 | [GUI program arguments](adrs/0009-program-arguments.md) | Accepted | Legacy argument parsing and stack setup, shared Args toggle, and browser draft recovery |
 | [Optional output clearing on Go](adrs/0008-clear-outputs-on-go.md) | Accepted | Persisted browser preference to clear both consoles before Go |
 | [Installable, offline-capable web app](adrs/0010-pwa-offline-support.md) | Accepted | Progressive Web App installation, service-worker caching, offline startup, and update lifecycle |
+| [Breakpoint changes during Go](adrs/0011-in-flight-breakpoints.md) | Accepted | Setting, suspending, and clearing breakpoints while a program runs, applied at the next instruction boundary |
 
 The [Coolify deployment runbook](runbooks/prod-deployment.md) covers ongoing configuration maintenance, releases, smoke checks, and rollback for the live, stable service at `mars-ide.portfolio-projects.dev`.
 

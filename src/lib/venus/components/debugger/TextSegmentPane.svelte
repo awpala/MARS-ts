@@ -118,7 +118,6 @@
                 type="checkbox"
                 aria-label={`Breakpoint ${Binary.intToHexString(row.address)}`}
                 checked={simulation.breakpoints.includes(row.address)}
-                disabled={view.running}
                 onchange={() => simulation.toggleBreakpoint(row.address)}
               /></td
             >

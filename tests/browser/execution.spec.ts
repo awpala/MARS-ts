@@ -664,6 +664,54 @@ syscall
   await expect(page.getByLabel('$t0 value', { exact: true })).toHaveValue('0x00000000');
 });
 
+test('breakpoints set, suspended, or cleared during Go apply to the running program', async ({
+  page
+}) => {
+  await openDesktop(page);
+  const status = page.getByLabel('Execution status');
+  const toggle = action(page, 'Toggle all breakpoints');
+  const clear = action(page, 'Clear all breakpoints');
+  await source(page, '.text\nloop: addiu $t0,$t0,1\nb loop\n');
+  await action(page, 'Assemble').click();
+  await action(page, 'Go').click();
+  await expect(status).toHaveText('Status: running');
+  await page.getByLabel('Breakpoint 0x00400004', { exact: true }).check();
+  await expect(status).toHaveText('Status: paused');
+  await expect(page.getByLabel('pc value', { exact: true })).toHaveValue('0x00400004');
+  await page.getByRole('button', { name: 'Mars Messages', exact: true }).click();
+  await expect(page.getByLabel('Mars Messages', { exact: true })).toHaveValue(
+    /Go: execution paused at breakpoint: /
+  );
+
+  await source(page, '.text\nli $v0,5\nsyscall\naddiu $t0,$zero,1\nli $v0,10\nsyscall\n');
+  await action(page, 'Assemble').click();
+  const breakpoint = page.getByLabel('Breakpoint 0x00400008', { exact: true });
+  await breakpoint.check();
+  await action(page, 'Go').click();
+  await expect(page.getByLabel('Run input', { exact: true })).toBeVisible();
+  await expect(status).toHaveText('Status: running');
+  await expect(toggle).toBeEnabled();
+  await toggle.click();
+  await expect(status).toHaveText('Status: running — breakpoints suspended');
+  await page.getByLabel('Run input', { exact: true }).fill('1');
+  await action(page, 'Submit').click();
+  await expect(status).toHaveText('Status: terminated — breakpoints suspended');
+
+  await action(page, 'Reset').click();
+  await toggle.click();
+  await action(page, 'Go').click();
+  await expect(page.getByLabel('Run input', { exact: true })).toBeVisible();
+  await expect(breakpoint).toBeEnabled();
+  await breakpoint.uncheck();
+  await breakpoint.check();
+  await clear.click();
+  await expect(breakpoint).not.toBeChecked();
+  await page.getByLabel('Run input', { exact: true }).fill('1');
+  await action(page, 'Submit').click();
+  await expect(status).toHaveText('Status: terminated');
+  await expect(page.getByLabel('$t0 value', { exact: true })).toHaveValue('0x00000001');
+});
+
 test('console syscall input resumes execution and popup input cancels through Stop', async ({
   page
 }) => {
