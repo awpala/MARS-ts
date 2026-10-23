@@ -86,18 +86,33 @@ export class DesktopState {
   }
   /** Whether the memory-layout settings dialog owns interaction; closed by default. */
   memoryConfigurationOpen = $state(false);
-  private fileTransfers: Partial<Record<FileTransferCommand, () => void>> = {};
+  /** Status text of the file transfer currently blocking interaction, such as `Exporting…`; null when none is pending. */
+  transferStatus = $state<string | null>(null);
+  private transferToken = 0;
+  private fileTransfers: Partial<Record<FileTransferCommand, () => void | Promise<void>>> = {};
 
   /** Register a mounted file-transfer behavior and return teardown that removes only that registration. */
-  registerFileTransfer(command: FileTransferCommand, action: () => void): () => void {
+  registerFileTransfer(
+    command: FileTransferCommand,
+    action: () => void | Promise<void>
+  ): () => void {
     this.fileTransfers[command] = action;
     return () => {
       if (this.fileTransfers[command] === action) delete this.fileTransfers[command];
     };
   }
-  /** Whether a desktop dialog currently owns interaction. */
+  /** Block interaction behind a transfer status until the returned release runs; a later transfer supersedes this one, whose release then does nothing. */
+  beginTransfer(status: string): () => void {
+    const token = ++this.transferToken;
+    this.transferStatus = status;
+    return () => {
+      if (this.transferToken === token) this.transferStatus = null;
+    };
+  }
+  /** Whether a desktop dialog or pending file transfer currently owns interaction. */
   get hasModal(): boolean {
     return !!(
+      this.transferStatus !== null ||
       this.workspace.modal ||
       this.help ||
       this.memoryConfigurationOpen ||
@@ -285,7 +300,7 @@ export class DesktopState {
     }
     const transfer = this.fileTransfers[command as FileTransferCommand];
     if (transfer) {
-      transfer();
+      await transfer();
       return;
     }
     if ([...runActions, ...breakpointActions].some((entry) => entry.command === command)) {

@@ -9,12 +9,16 @@ test('Import offers and accepts both legacy assembly extensions regardless of ca
 }) => {
   await openDesktop(page);
   const picker = page.getByLabel('Import assembly files', { exact: true });
-  await expect(picker).toHaveAttribute('accept', '.asm,.s');
+  await expect(picker).toHaveAttribute('accept', '.asm,.s,.zip');
   await picker.setInputFiles([
     { name: 'legacy.s', mimeType: 'text/plain', buffer: Buffer.from('.text\nnop\n') },
     { name: 'UPPER.ASM', mimeType: 'text/plain', buffer: Buffer.from('.data\n.word 7\n') },
     { name: 'Mixed.S', mimeType: 'text/plain', buffer: Buffer.from('# mixed\n') }
   ]);
+  await page
+    .getByRole('dialog', { name: 'Import sources', exact: true })
+    .getByRole('button', { name: 'Import', exact: true })
+    .click();
   await expect(page.getByRole('textbox', { name: 'Source Mixed.S', exact: true })).toHaveValue(
     '# mixed\n'
   );
@@ -29,14 +33,40 @@ test('Import offers and accepts both legacy assembly extensions regardless of ca
   );
 });
 
-test('Import refuses other extensions without changing the library', async ({ page }) => {
+test('Import skips other extensions with a warning and imports only the assembly sources', async ({
+  page
+}) => {
   await openDesktop(page);
   await page.getByLabel('Import assembly files', { exact: true }).setInputFiles([
     { name: 'good.s', mimeType: 'text/plain', buffer: Buffer.from('nop\n') },
     { name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('not assembly\n') }
   ]);
-  const dialog = page.getByRole('dialog', { name: 'Replace imported sources?', exact: true });
-  await expect(dialog.getByRole('alert')).toHaveText('Import accepts .asm or .s source files.');
+  const dialog = page.getByRole('dialog', { name: 'Import sources', exact: true });
+  await expect(dialog).toContainText('1 item is not an importable source and will be skipped:');
+  await expect(dialog.getByRole('list', { name: 'Skipped' })).toHaveText(
+    /notes\.txt\s*Not an assembly source \(\.asm or \.s\) or ZIP archive\./
+  );
+  expect(await page.evaluate(() => localStorage.getItem('mars-ts:sources:v1'))).toBeNull();
+  await dialog.getByRole('button', { name: 'Import', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: 'Source good.s', exact: true })).toHaveValue(
+    'nop\n'
+  );
+  expect(
+    await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+  ).toEqual([{ name: 'good.s', source: 'nop\n' }]);
+});
+
+test('Import offers nothing to commit when every selected file is skipped', async ({ page }) => {
+  await openDesktop(page);
+  await page
+    .getByLabel('Import assembly files', { exact: true })
+    .setInputFiles([
+      { name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('not assembly\n') }
+    ]);
+  const dialog = page.getByRole('dialog', { name: 'Import sources', exact: true });
+  await expect(dialog).toContainText('No sources in this selection can be imported.');
+  await expect(dialog.getByRole('button', { name: 'Import', exact: true })).toBeDisabled();
+  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
   expect(await page.evaluate(() => localStorage.getItem('mars-ts:sources:v1'))).toBeNull();
 });
 

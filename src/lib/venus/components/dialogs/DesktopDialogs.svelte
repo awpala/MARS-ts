@@ -12,6 +12,7 @@
   import FindReplaceDialog from './FindReplaceDialog.svelte';
   import MemoryConfigurationDialog from './MemoryConfigurationDialog.svelte';
   import HelpDialog from './HelpDialog.svelte';
+  import TransferStatusDialog from './TransferStatusDialog.svelte';
   const desktop = getDesktop();
   const { workspace } = desktop;
   const dialogs = {
@@ -33,3 +34,4 @@
 <HelpDialog />
 
 {#if desktop.memoryConfigurationOpen}<MemoryConfigurationDialog />{/if}
+{#if desktop.transferStatus !== null}<TransferStatusDialog status={desktop.transferStatus} />{/if}

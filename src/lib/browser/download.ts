@@ -1,9 +1,75 @@
-/** Initiates a source download in this tab, then releases its temporary URL. Does not overwrite an opened native file. */
-export function downloadSource(name: string, source: string): void {
-  downloadBlob(name, new Blob([source], { type: 'text/plain;charset=utf-8' }));
+import { whenPageActive } from './pageFocus.js';
+import { writeZip } from './zip.js';
+
+/** How long a handed-off download keeps its object URL; the browser may still be reading it after the click returns. */
+const OBJECT_URL_LIFETIME_MS = 60_000;
+
+/** Default filename of the Export All archive. */
+export const EXPORT_ALL_FILENAME = 'mars-asm-src-files.zip';
+
+/** A file chosen in the browser's save picker, ready to be written. */
+export interface SaveTarget {
+  /** Opens the chosen file for writing. */
+  createWritable: () => Promise<{
+    write: (data: Blob) => Promise<void>;
+    close: () => Promise<void>;
+  }>;
 }
 
-function downloadBlob(name: string, blob: Blob): void {
+/** The Chromium File System Access save picker, typed locally because it is not part of the standard DOM library. */
+type SaveFilePicker = (options: {
+  suggestedName: string;
+  types: { description: string; accept: Record<string, string[]> }[];
+}) => Promise<SaveTarget>;
+
+/** One source's text as a downloadable file body. */
+export function sourceBlob(source: string): Blob {
+  return new Blob([source], { type: 'text/plain' });
+}
+
+/** UTF-8 sources as one uncompressed ZIP; callers supply unique, flat filenames. */
+export function sourceArchiveBlob(files: readonly { name: string; source: string }[]): Blob {
+  const encoder = new TextEncoder();
+  return writeZip(files.map((file) => ({ name: file.name, data: encoder.encode(file.source) })));
+}
+
+/**
+ * Opens the browser's save picker where one exists (Chromium) and resolves with the chosen file, or `canceled` when the picker
+ * reports cancellation. Resolves undefined when there is no picker or the browser refuses it (for example after user activation
+ * has expired), so the caller falls back to `downloadBlob`. Call it synchronously from the user's action, before other awaits.
+ */
+export async function requestSaveTarget(
+  name: string,
+  blob: Blob,
+  description: string
+): Promise<SaveTarget | 'canceled' | undefined> {
+  const picker = (window as Window & { showSaveFilePicker?: SaveFilePicker }).showSaveFilePicker;
+  if (!picker) return undefined;
+  try {
+    return await picker.call(window, {
+      suggestedName: name,
+      types: [{ description, accept: { [blob.type]: [name.slice(name.lastIndexOf('.'))] } }]
+    });
+  } catch (error) {
+    if (!(error instanceof DOMException)) throw error;
+    return error.name === 'AbortError' ? 'canceled' : undefined;
+  }
+}
+
+/** Writes a blob to a file chosen in the save picker. */
+export async function writeSaveTarget(target: SaveTarget, blob: Blob): Promise<void> {
+  const writable = await target.createWritable();
+  await writable.write(blob);
+  await writable.close();
+}
+
+/**
+ * Clicks a temporary download link and resolves once the page is active again; a save prompt that has already taken focus is
+ * waited out, and one that opens later is the caller's to guard. The browser does not report whether its prompt was confirmed
+ * or canceled. The temporary link is removed at once; its object URL is released in the background after a minute, without
+ * holding the caller.
+ */
+export async function downloadBlob(name: string, blob: Blob): Promise<void> {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -13,64 +79,7 @@ function downloadBlob(name: string, blob: Blob): void {
     link.click();
   } finally {
     link.remove();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), OBJECT_URL_LIFETIME_MS);
   }
-}
-
-const EXPORT_ALL_BLOB_FILENAME = 'mars-asm-src-files.zip';
-
-/** Downloads UTF-8 sources as one uncompressed ZIP; callers supply unique, flat filenames and may override the default archive filename. */
-export function downloadSourceArchive(
-  files: readonly { name: string; source: string }[],
-  filename: string = EXPORT_ALL_BLOB_FILENAME
-): void {
-  const encoder = new TextEncoder();
-  const entries: BlobPart[] = [];
-  const directory: BlobPart[] = [];
-  let offset = 0;
-  let directorySize = 0;
-  if (files.length > 0xffff) throw new Error('Too many sources for a ZIP archive.');
-  for (const file of files) {
-    const name = encoder.encode(file.name);
-    const source = encoder.encode(file.source);
-    if (name.length > 0xffff || offset + 30 + name.length + source.length > 0xffffffff) {
-      throw new Error('Sources exceed the ZIP archive size limit.');
-    }
-    let crc = 0xffffffff;
-    for (const byte of source) {
-      crc ^= byte;
-      for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
-    }
-    crc = (crc ^ 0xffffffff) >>> 0;
-    const local = new DataView(new ArrayBuffer(30));
-    local.setUint32(0, 0x04034b50, true);
-    local.setUint16(4, 20, true);
-    local.setUint16(6, 0x0800, true); // UTF-8 names; stored entries need no compression.
-    local.setUint16(12, 0x0021, true); // January 1, 1980, the DOS date epoch.
-    local.setUint32(14, crc, true);
-    local.setUint32(18, source.length, true);
-    local.setUint32(22, source.length, true);
-    local.setUint16(26, name.length, true);
-    entries.push(local.buffer, name, source);
-    const central = new DataView(new ArrayBuffer(46));
-    central.setUint32(0, 0x02014b50, true);
-    central.setUint16(4, 0x0314, true); // Unix origin prevents DOS filename recoding by ZIP readers.
-    new Uint8Array(central.buffer, 6, 26).set(new Uint8Array(local.buffer, 4, 26));
-    central.setUint32(42, offset, true);
-    directory.push(central.buffer, name);
-    directorySize += 46 + name.length;
-    offset += 30 + name.length + source.length;
-  }
-  if (offset + directorySize > 0xffffffff)
-    throw new Error('Sources exceed the ZIP archive size limit.');
-  const end = new DataView(new ArrayBuffer(22));
-  end.setUint32(0, 0x06054b50, true);
-  end.setUint16(8, files.length, true);
-  end.setUint16(10, files.length, true);
-  end.setUint32(12, directorySize, true);
-  end.setUint32(16, offset, true);
-  downloadBlob(
-    filename,
-    new Blob([...entries, ...directory, end.buffer], { type: 'application/zip' })
-  );
+  await whenPageActive();
 }

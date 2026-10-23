@@ -57,7 +57,8 @@ describe('command catalog', () => {
   it('marks only the file-creating and closing shortcuts as non-repeating', () => {
     expect(allActions.filter((action) => action.noRepeat).map((action) => action.command)).toEqual([
       'new',
-      'close'
+      'close',
+      'closeAll'
     ]);
   });
   it('gives every toolbar action an icon', () => {
@@ -94,6 +95,12 @@ describe('keyboardAction', () => {
     expect(keyboardAction(key({ key: 'n', altKey: true }))?.command).toBe('new');
     expect(keyboardAction(key({ key: 'z', ctrlKey: true, shiftKey: true }))?.command).toBe('redo');
   });
+  it('distinguishes Close from Close All by Shift', () => {
+    expect(keyboardAction(key({ key: 'w', altKey: true }))?.command).toBe('close');
+    expect(keyboardAction(key({ key: 'W', altKey: true, shiftKey: true }))?.command).toBe(
+      'closeAll'
+    );
+  });
 });
 
 describe('physicalKeyAction', () => {
@@ -105,6 +112,14 @@ describe('physicalKeyAction', () => {
       'clearAllOutput'
     );
     expect(physicalKeyAction(key({ key: '∑', code: 'KeyW', altKey: true }))?.command).toBe('close');
+  });
+  it('resolves Alt+Shift+letter shortcuts by physical key, requiring Shift to match the chord', () => {
+    expect(
+      physicalKeyAction(key({ key: '„', code: 'KeyW', altKey: true, shiftKey: true }))?.command
+    ).toBe('closeAll');
+    expect(physicalKeyAction(key({ key: '∑', code: 'KeyW', altKey: true }))?.command).not.toBe(
+      'closeAll'
+    );
   });
   it('ignores other modifiers, plain keys, and keys without an Alt shortcut', () => {
     expect(physicalKeyAction(key({ code: 'KeyN' }))).toBeUndefined();

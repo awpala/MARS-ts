@@ -35,7 +35,8 @@
       "Bash(tail *)",
       "Bash(grep *)",
       "Bash(rg *)",
-      "Bash(find . -type *)"
+      "Bash(find . -type *)",
+      "Bash(sed -i 's#save/import/export \\(both assembly extensions\\)/delete/rename decisions#save/import \\(both assembly extensions and ZIP archives, with skipped-item summaries\\)/export \\(with the blocking transfer status\\)/delete/rename decisions#' IMPLEMENTATION.md)"
     ],
     "deny": [
       "Bash(rm -rf /)",

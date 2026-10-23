@@ -39,7 +39,13 @@ export const fileActions: readonly Action[] = [
   },
   { label: 'Open ...', icon: image('Open'), command: 'open', shortcut: 'Ctrl+O' },
   { label: 'Close', command: 'close', shortcut: 'Alt+W / Option+W', noRepeat: true },
-  { label: 'Close All', icon: glyph('CloseAll'), command: 'closeAll' },
+  {
+    label: 'Close All',
+    icon: glyph('CloseAll'),
+    command: 'closeAll',
+    shortcut: 'Alt+Shift+W / Option+Shift+W',
+    noRepeat: true
+  },
   { label: 'Save', icon: image('Save'), command: 'save', shortcut: 'Ctrl+S' },
   { label: 'Save as ...', icon: image('SaveAs'), command: 'saveAs', shortcut: 'Ctrl+Shift+S' },
   { label: 'Save All', command: 'saveAll' },
@@ -145,21 +151,25 @@ export function keyboardAction(event: KeyboardEvent): Action | undefined {
 }
 
 /**
- * Resolve a displayed Alt/Option+letter shortcut by its physical key, which survives the dead-key and composition
- * characters Option produces on macOS before an input consumes the event.
+ * Resolve a displayed Alt/Option+letter or Alt/Option+Shift+letter shortcut by its physical key, which survives the dead-key
+ * and composition characters Option produces on macOS before an input consumes the event. Shift must match the chord exactly.
  */
 export function physicalKeyAction(event: KeyboardEvent): Action | undefined {
-  if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+  if (!event.altKey || event.ctrlKey || event.metaKey) return;
   return allActions.find(
     (action) =>
       action.shortcut !== undefined &&
-      shortcutChords(action.shortcut.toLowerCase()).some(
-        ([modifier, letter, ...rest]) =>
-          (modifier === 'alt' || modifier === 'option') &&
-          letter?.length === 1 &&
-          rest.length === 0 &&
+      shortcutChords(action.shortcut.toLowerCase()).some((keys) => {
+        const letter = keys.at(-1)!;
+        const modifiers = keys.slice(0, -1);
+        return (
+          (modifiers[0] === 'alt' || modifiers[0] === 'option') &&
+          (modifiers.length === 1 || (modifiers.length === 2 && modifiers[1] === 'shift')) &&
+          modifiers.includes('shift') === event.shiftKey &&
+          letter.length === 1 &&
           event.code === `Key${letter.toUpperCase()}`
-      )
+        );
+      })
   );
 }
 

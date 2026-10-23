@@ -190,7 +190,8 @@
     {#if !workspace.libraryFiles.length}
       <p class="empty-library">
         No source files are saved in this browser yet. Use File → New (Alt/Option+N) to create one,
-        or File → Import ... to add {SOURCE_EXTENSION_LABEL} files from your computer.
+        or File → Import ... to add {SOURCE_EXTENSION_LABEL} files, or ZIP archives of them, from your
+        computer.
       </p>
     {/if}
   </div>{/if}

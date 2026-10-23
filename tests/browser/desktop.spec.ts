@@ -1,5 +1,13 @@
-import { readArchive } from './archive.js';
-import { openDesktop, openStoredSources, waitForDesktop } from './openDesktop.js';
+import { deflatedArchive, readArchive } from './archive.js';
+import {
+  losePageFocus,
+  openDesktop,
+  openStoredSources,
+  recordTransferStatuses,
+  restorePageFocus,
+  stubSavePicker,
+  waitForDesktop
+} from './openDesktop.js';
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
@@ -496,6 +504,65 @@ test('Close All confirms from the toolbar or File menu before resolving every bu
   ]);
 });
 
+test('Alt+Shift+W / Option+Shift+W asks to close all files through the same confirmation', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await openStoredSources(page, [
+    { name: 'one.asm', source: 'one\n' },
+    { name: 'two.asm', source: 'two\n' }
+  ]);
+  const closeAll = page
+    .getByLabel('Toolbar', { exact: true })
+    .getByRole('button', { name: 'Close All', exact: true });
+  await closeAll.hover();
+  await expect(closeAll).toHaveAccessibleDescription(/Alt\+Shift\+W \/ Option\+Shift\+W/);
+  // The label and its keycaps fit on one line instead of the label splitting across lines.
+  const tooltip = page.getByRole('tooltip').locator('.tooltip');
+  expect(
+    await tooltip.evaluate((element) => {
+      const [label, keys] = [...element.children] as HTMLElement[];
+      const [text, shortcut] = [label, keys].map((child) => child.getBoundingClientRect());
+      return [
+        label.getClientRects().length,
+        shortcut.top < text.bottom && text.top < shortcut.bottom
+      ];
+    })
+  ).toEqual([1, true]);
+  await page.keyboard.press('Escape');
+  const source = page.getByRole('textbox', { name: 'Source two.asm', exact: true });
+  await source.press('Alt+Shift+W');
+  const confirm = page.getByRole('dialog', { name: 'Close all files?', exact: true });
+  await expect(confirm).toContainText('Close all 2 open files?');
+  await expect(source).toHaveValue('two\n');
+  await confirm.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(confirm).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^Close (one|two)\.asm$/ })).toHaveCount(2);
+  // macOS Option+Shift+W can emit a character rather than the letter W; a held repeat does nothing.
+  for (const repeat of [true, false]) {
+    expect(
+      await source.evaluate(
+        (element, repeat) =>
+          element.dispatchEvent(
+            new KeyboardEvent('keydown', {
+              key: '„',
+              code: 'KeyW',
+              altKey: true,
+              shiftKey: true,
+              repeat,
+              bubbles: true,
+              cancelable: true
+            })
+          ),
+        repeat
+      )
+    ).toBe(false);
+    await expect(confirm).toHaveCount(repeat ? 0 : 1);
+  }
+  await confirm.getByRole('button', { name: 'Close All', exact: true }).click();
+  await expect(page.getByRole('button', { name: /^Close (one|two)\.asm$/ })).toHaveCount(0);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+});
 test('menus dismiss outside and retain usable actions inside', async ({ page }) => {
   await openDesktop(page);
   await expect(page.getByRole('button', { name: 'New', exact: true })).toBeEnabled();
@@ -811,6 +878,11 @@ test('Import reads multiple assembly files into local sources and confirms clean
     { name: 'one.asm', mimeType: 'text/plain', buffer: Buffer.from('.text\nnop\n') },
     { name: 'two.asm', mimeType: 'text/plain', buffer: Buffer.from('.data\n.word 42\n') }
   ]);
+  const confirm = page.getByRole('dialog', { name: 'Import sources', exact: true });
+  await expect(confirm.getByRole('list', { name: 'Sources to import' })).toHaveText(
+    /one\.asm\s*two\.asm/
+  );
+  await confirm.getByRole('button', { name: 'Import', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Source two.asm', exact: true })).toHaveValue(
     '.data\n.word 42\n'
   );
@@ -828,13 +900,14 @@ test('Import reads multiple assembly files into local sources and confirms clean
     buffer: Buffer.from('.data\n.word 99\n')
   };
   await picker.setInputFiles([replacement]);
-  const confirm = page.getByRole('dialog', { name: 'Replace imported sources?', exact: true });
+  await expect(confirm).toContainText('1 replaces a saved source with the same name.');
+  await expect(confirm.getByRole('listitem')).toHaveText(/two\.asm\s*replaces saved source/);
   await confirm.getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Source two.asm', exact: true })).toHaveValue(
     '.data\n.word 42\n'
   );
   await picker.setInputFiles([replacement]);
-  await confirm.getByRole('button', { name: 'Replace', exact: true }).click();
+  await confirm.getByRole('button', { name: 'Import', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Source two.asm', exact: true })).toHaveValue(
     '.data\n.word 99\n'
   );
@@ -885,11 +958,12 @@ test('Import refuses to overwrite a dirty open source and retains its full recov
     .setInputFiles([
       { name: 'working.asm', mimeType: 'text/plain', buffer: Buffer.from('imported replacement\n') }
     ]);
-  const confirm = page.getByRole('dialog', { name: 'Replace imported sources?', exact: true });
-  await confirm.getByRole('button', { name: 'Replace', exact: true }).click();
+  const confirm = page.getByRole('dialog', { name: 'Import sources', exact: true });
   await expect(confirm.getByRole('alert')).toHaveText(
-    'Save or close the edited "working.asm" before replacing it.'
+    'An open source has unsaved edits. Save or close it before importing.'
   );
+  await expect(confirm.getByRole('listitem')).toHaveText(/working\.asm\s*open with unsaved edits/);
+  await expect(confirm.getByRole('button', { name: 'Import', exact: true })).toBeDisabled();
   await confirm.getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(source).toHaveValue('irreplaceable in-progress source\n');
   expect(
@@ -900,6 +974,197 @@ test('Import refuses to overwrite a dirty open source and retains its full recov
   await waitForDesktop(page);
   await expect(source).toHaveValue('irreplaceable in-progress source\n');
   await expect(page).toHaveTitle('* working.asm - MARS');
+});
+
+test('Import expands ZIP archives under their folder paths, summarizes skipped entries, and keeps includes resolvable', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await page.getByLabel('Import assembly files', { exact: true }).setInputFiles([
+    { name: 'solo.asm', mimeType: 'text/plain', buffer: Buffer.from('# solo\n') },
+    {
+      name: 'project.zip',
+      mimeType: 'application/zip',
+      buffer: deflatedArchive({
+        'proj/': '',
+        'proj/README.md': '# not assembly',
+        'proj/lib/consts.s': '.eqv ANSWER 42\n',
+        'proj/main.asm':
+          '.include "lib/consts.s"\n.text\nli $a0,ANSWER\nli $v0,1\nsyscall\nli $v0,10\nsyscall\n'
+      })
+    },
+    { name: 'broken.zip', mimeType: 'application/zip', buffer: Buffer.from('not an archive') }
+  ]);
+  const dialog = page.getByRole('dialog', { name: 'Import sources', exact: true });
+  await expect(dialog).toContainText('Import 3 sources into this browser and open them?');
+  await expect(dialog.getByRole('list', { name: 'Sources to import' })).toHaveText(
+    /solo\.asm\s*proj\/lib\/consts\.s\s*from project\.zip\s*proj\/main\.asm\s*from project\.zip/
+  );
+  await expect(dialog).toContainText('2 items are not an importable source and will be skipped:');
+  await expect(dialog.getByRole('list', { name: 'Skipped' })).toHaveText(
+    /project\.zip › proj\/README\.md\s*Not an assembly source \(\.asm or \.s\)\.\s*broken\.zip\s*Not a readable ZIP archive\./
+  );
+  await dialog.getByRole('button', { name: 'Import', exact: true }).click();
+  await expect(dialog).toBeHidden();
+  expect(
+    await page.evaluate(() => JSON.parse(localStorage.getItem('mars-ts:sources:v1')!))
+  ).toEqual([
+    { name: 'solo.asm', source: '# solo\n' },
+    { name: 'proj/lib/consts.s', source: '.eqv ANSWER 42\n' },
+    {
+      name: 'proj/main.asm',
+      source:
+        '.include "lib/consts.s"\n.text\nli $a0,ANSWER\nli $v0,1\nsyscall\nli $v0,10\nsyscall\n'
+    }
+  ]);
+  await expect(page).toHaveTitle('proj/main.asm - MARS');
+  await page.getByRole('button', { name: 'Assemble', exact: true }).click();
+  await page.getByRole('button', { name: 'Go', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: 'Run I/O', exact: true })).toHaveValue(
+    /42\n-- program is finished running --/
+  );
+});
+
+test('Import covers the desktop while the picker is open and relays only the reported outcome', async ({
+  page
+}) => {
+  await openDesktop(page);
+  const statuses = await recordTransferStatuses(page);
+  const waiting = page.getByRole('dialog', { name: 'Waiting for file selection…', exact: true });
+  const picker = page.getByLabel('Import assembly files', { exact: true });
+  const chosen = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Import ...', exact: true }).click();
+  await chosen;
+  await expect(waiting).toBeVisible();
+  await expect(waiting.getByRole('status')).toHaveText('Waiting for file selection…');
+  // The picker closes as canceled while the OS still holds focus; only the cancellation is relayed.
+  await losePageFocus(page);
+  await picker.dispatchEvent('cancel');
+  const canceling = page.getByRole('dialog', { name: 'Canceling import…', exact: true });
+  await expect(canceling.getByRole('status')).toHaveText('Canceling import…');
+  await page.keyboard.press('Escape');
+  await expect(canceling).toBeVisible();
+  await restorePageFocus(page);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  expect(await statuses()).toEqual(['Waiting for file selection…', 'Canceling import…']);
+  await page.getByRole('button', { name: 'New', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: /^Source mips\d+\.asm$/ })).toBeVisible();
+});
+
+test('Import relays a selection as Attempting import until focus returns, never as Canceling', async ({
+  page
+}) => {
+  await openDesktop(page);
+  const statuses = await recordTransferStatuses(page);
+  const chosen = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Import ...', exact: true }).click();
+  const fileChooser = await chosen;
+  await losePageFocus(page);
+  await fileChooser.setFiles([
+    { name: 'chosen.asm', mimeType: 'text/plain', buffer: Buffer.from('# chosen\n') }
+  ]);
+  const attempting = page.getByRole('dialog', { name: 'Attempting import…', exact: true });
+  await expect(attempting.getByRole('status')).toHaveText('Attempting import…');
+  await restorePageFocus(page);
+  const summary = page.getByRole('dialog', { name: 'Import sources', exact: true });
+  await expect(summary).toBeVisible();
+  await expect(attempting).toHaveCount(0);
+  expect(await statuses()).toEqual(['Waiting for file selection…', 'Attempting import…']);
+});
+
+test('Export covers the desktop during a download-link save prompt until focus returns', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await openStoredSources(page, [{ name: 'prompted.asm', source: '# prompted\n' }]);
+  // Simulate a browser save prompt that takes system focus as the download link is activated.
+  await page.evaluate(() =>
+    document.addEventListener(
+      'click',
+      (event) => {
+        if (event.target instanceof HTMLAnchorElement && event.target.download)
+          Object.defineProperty(document, 'hasFocus', { configurable: true, value: () => false });
+      },
+      true
+    )
+  );
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  const status = page.getByRole('dialog', { name: 'Exporting…', exact: true });
+  await expect(status.getByRole('status')).toHaveText('Exporting…');
+  expect((await download).suggestedFilename()).toBe('prompted.asm');
+  await page.keyboard.press('Escape');
+  await expect(status).toBeVisible();
+  await restorePageFocus(page);
+  await expect(status).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Export', exact: true })).toBeFocused();
+  await page.getByRole('button', { name: 'New', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: /^Source mips\d+\.asm$/ })).toBeVisible();
+});
+
+test('Export saves through the browser save picker and relays a canceled picker only as Canceling export', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await openStoredSources(page, [{ name: 'picked.s', source: '# picked\n' }]);
+  const downloads: string[] = [];
+  page.on('download', (download) => downloads.push(download.suggestedFilename()));
+  await stubSavePicker(page, 'save');
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { savedFiles: unknown[] }).savedFiles))
+    .toEqual([{ name: 'picked.s', text: '# picked\n' }]);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await stubSavePicker(page, 'cancel');
+  const statuses = await recordTransferStatuses(page);
+  await losePageFocus(page);
+  await page.getByRole('button', { name: 'Export All', exact: true }).click();
+  const canceling = page.getByRole('dialog', { name: 'Canceling export…', exact: true });
+  await expect(canceling.getByRole('status')).toHaveText('Canceling export…');
+  await restorePageFocus(page);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  expect(await statuses()).not.toContain('Exporting…');
+  expect(
+    await page.evaluate(
+      () => (window as unknown as { savePickerRequests: string[] }).savePickerRequests
+    )
+  ).toEqual(['mars-asm-src-files.zip']);
+  expect(downloads).toEqual([]);
+  await page.getByRole('button', { name: 'New', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: /^Source mips\d+\.asm$/ })).toBeVisible();
+});
+
+test('a save prompt that opens after the download hand-off brings the export status back until focus returns', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await openStoredSources(page, [{ name: 'late.asm', source: '# late\n' }]);
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  await download;
+  const status = page.getByRole('dialog', { name: 'Exporting…', exact: true });
+  await expect(status).toBeHidden();
+  await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+  await expect(status).toBeVisible();
+  await page.waitForTimeout(500);
+  await expect(status).toBeVisible();
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(status).toBeHidden();
+});
+
+test('Export All releases the desktop as soon as the download is handed off without a prompt', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await openStoredSources(page, [{ name: 'quick.asm', source: '# quick\n' }]);
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export All', exact: true }).click();
+  expect(readArchive((await (await download).path())!)).toEqual([
+    { name: 'quick.asm', source: '# quick\n' }
+  ]);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.getByRole('button', { name: 'New', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: /^Source mips\d+\.asm$/ })).toBeVisible();
 });
 
 test('Auto Save commits all working buffers, persists its setting, and disabling retains draft recovery', async ({

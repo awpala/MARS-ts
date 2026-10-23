@@ -160,7 +160,7 @@
     style:visibility={position ? 'visible' : 'hidden'}
   >
     <div class="tooltip popup-surface">
-      {text}
+      <span>{text}</span>
       {#if shortcut}<KeyboardShortcut {shortcut} />{/if}
     </div>
   </div>
@@ -178,12 +178,14 @@
     padding-top: 0;
     padding-bottom: 8px;
   }
+  /* Text and keycaps share one line while they fit; otherwise the keycaps wrap below rather than splitting the text. */
   .tooltip {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
+    gap: 4px 8px;
     width: max-content;
-    max-width: min(320px, calc(100vw - 16px));
+    max-width: min(480px, calc(100vw - 16px));
     max-height: calc(100dvh - 24px);
     overflow: auto;
     border-radius: 3px;

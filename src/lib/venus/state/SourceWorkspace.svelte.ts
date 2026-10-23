@@ -8,6 +8,7 @@ import {
   sourceStem,
   type SavedSource
 } from '#lib/browser/SourceLibrary.js';
+import type { SourceImportPlan } from '#lib/browser/sourceImport.js';
 import type { DisplayPreferences } from './DisplayPreferences.svelte.js';
 import { errorMessage } from '../utils/errors/errorMessage.js';
 import { isSavableSource } from '../utils/sources/savableSource.js';
@@ -24,6 +25,9 @@ export type WorkspaceHost = {
   /** Request assembly after opening when configured. */
   assemble: () => void;
 };
+/** Import summary with nothing staged. */
+const EMPTY_IMPORT: SourceImportPlan = { sources: [], skipped: [] };
+
 /** Per-desktop source buffers, local-library workflows, selection, and recovery persistence. */
 export class SourceWorkspace {
   /** Framework-free editor model owned by this workspace. */
@@ -51,8 +55,8 @@ export class SourceWorkspace {
   libraryFiles = $state.raw<SavedSource[]>([]);
   /** Names selected by the Open/Delete dialogs. */
   selectedSources = $state<string[]>([]);
-  /** Pending exact source records awaiting import confirmation. */
-  importSources = $state.raw<SavedSource[]>([]);
+  /** Pending import summary: exact sources awaiting confirmation and the skipped files and entries. */
+  importPlan = $state.raw<SourceImportPlan>(EMPTY_IMPORT);
   /** Current file-dialog error; a failed write never clears dirty state. */
   fileError = $state('');
   /** Recoverable workspace-backup failure shown by the desktop. */
@@ -327,7 +331,7 @@ export class SourceWorkspace {
     this.renameSource = false;
     this.fileError = '';
     this.replaceSave = false;
-    this.importSources = [];
+    this.importPlan = EMPTY_IMPORT;
   };
   private fileFailure = (error: unknown) => {
     this.fileError = errorMessage(error);
@@ -408,41 +412,37 @@ export class SourceWorkspace {
       this.fileFailure(error);
     }
   };
-  /** Stage exact imported sources and request confirmation for existing library names. */
-  acceptImport = (sources: SavedSource[]): void => {
+  /** Stage a read selection and show its summary; nothing is committed until confirmation. */
+  acceptImport = (plan: SourceImportPlan): void => {
     this.fileError = '';
-    this.importSources = sources;
-    try {
-      this.libraryFiles = this.sourceLibrary.read();
-      this.modal = 'import';
-      if (!sources.some((file) => this.libraryFiles.some((saved) => saved.name === file.name)))
-        this.confirmImport();
-    } catch (error) {
-      this.importFailure(error);
-    }
+    this.importPlan = plan;
+    this.modal = 'import';
+    this.reloadLibrary();
   };
   /** Show a recoverable import/read error without committing any sources. */
   importFailure = (error: unknown): void => {
     this.modal = 'import';
     this.fileFailure(error);
   };
-  /** Commit pending imports and open them, preserving dirty-buffer safeguards. */
+  /** Commit the pending plan's valid sources and open them, preserving dirty-buffer safeguards; skipped items are never committed. */
   confirmImport = () => {
     try {
       if (this.host.running()) throw new Error('Stop execution before importing sources.');
-      for (const file of this.importSources) {
+      const sources = this.importPlan.sources.map(({ name, source }) => ({ name, source }));
+      if (!sources.length) throw new Error('The selection contains no sources to import.');
+      for (const file of sources) {
         const tab = this.tabByName(file.name);
         if (tab && this.editor.isDirty(tab))
           throw new Error(`Save or close the edited "${file.name}" before replacing it.`);
       }
-      this.libraryFiles = this.sourceLibrary.saveMany(this.importSources);
-      for (const file of this.importSources) {
+      this.libraryFiles = this.sourceLibrary.saveMany(sources);
+      for (const file of sources) {
         const tab = this.tabByName(file.name);
         if (tab) this.editor.close(tab.id);
       }
       this.host.invalidate();
-      void this.openSources(this.importSources);
-      this.importSources = [];
+      void this.openSources(sources);
+      this.importPlan = EMPTY_IMPORT;
     } catch (error) {
       this.fileFailure(error);
     }

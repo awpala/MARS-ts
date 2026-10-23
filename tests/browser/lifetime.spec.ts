@@ -52,6 +52,10 @@ for (const staleResult of ['success', 'error'] as const) {
     await picker.setInputFiles(file);
     await picker.setInputFiles(file);
     await page.evaluate(() => (window as LifetimeWindow).fileReads[1].resolve('# newer'));
+    await page
+      .getByRole('dialog', { name: 'Import sources', exact: true })
+      .getByRole('button', { name: 'Import', exact: true })
+      .click();
     await expect(page.getByRole('textbox', { name: 'Source same.asm', exact: true })).toHaveValue(
       '# newer'
     );
@@ -141,11 +145,6 @@ test('unmount releases pending work and remounts do not duplicate keyboard comma
   page.on('pageerror', (error) => errors.push(error.message));
   await openIsolatedDesktop(page);
   await deferFileReads(page);
-  await page.getByLabel('Import assembly files', { exact: true }).setInputFiles({
-    name: 'late.asm',
-    mimeType: 'text/plain',
-    buffer: Buffer.from('ignored')
-  });
   await page.getByRole('button', { name: 'New', exact: true }).click();
   const source = page.getByRole('textbox', { name: 'Source mips1.asm', exact: true });
   await source.fill('# retained');
@@ -164,6 +163,13 @@ test('unmount releases pending work and remounts do not duplicate keyboard comma
     .filter({ hasText: /^Edit$/ })
     .click();
   await page.locator('details[open]').getByRole('button', { name: 'Paste', exact: true }).click();
+  // The pending read blocks the desktop behind its status, so it starts after the other pending work.
+  await page.getByLabel('Import assembly files', { exact: true }).setInputFiles({
+    name: 'late.asm',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('ignored')
+  });
+  await expect(page.getByRole('dialog', { name: 'Attempting import…', exact: true })).toBeVisible();
   await page.evaluate(() => (window as LifetimeWindow).releaseDesktop());
   await mountDesktop(page);
   await page.evaluate(() => {
