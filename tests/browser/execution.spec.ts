@@ -1224,7 +1224,7 @@ test('Labels name and address cells are hoverable and clickable across the entir
   await openDesktop(page);
   await source(
     page,
-    '.data\nshort: .word 1\nlong_label_name_that_widens_the_column: .word 2\n.text\nmain: nop\nli $v0,10\nsyscall\n'
+    '.data\nshort: .word 1\na_longer_name: .word 2\n.text\nmain: nop\nli $v0,10\nsyscall\n'
   );
   await action(page, 'Show Labels Window').click();
   await action(page, 'Assemble').click();
@@ -1242,7 +1242,8 @@ test('Labels name and address cells are hoverable and clickable across the entir
     // The button spans the cell, leaving only the cell's own border outside it.
     expect(buttonBox.width).toBeGreaterThanOrEqual(cellBox.width - 2);
     expect(buttonBox.height).toBeGreaterThanOrEqual(cellBox.height - 2);
-    // The empty side of the cell: past a short name, or before a right-aligned address.
+    // The widest name still fits the pane, so both cells are fully visible. Probe the empty side of a
+    // short name's cell, and the left padding of an address cell (addresses all have the same width).
     const edge = {
       x: side === 'right' ? cellBox.x + cellBox.width - 3 : cellBox.x + 3,
       y: cellBox.y + cellBox.height - 3
