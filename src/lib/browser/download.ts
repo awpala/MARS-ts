@@ -9,10 +9,11 @@ export const EXPORT_ALL_FILENAME = 'mars-asm-src-files.zip';
 
 /** A file chosen in the browser's save picker, ready to be written. */
 export interface SaveTarget {
-  /** Opens the chosen file for writing. */
+  /** Opens the chosen file for writing; the caller closes the stream, or aborts it after a failure. */
   createWritable: () => Promise<{
     write: (data: Blob) => Promise<void>;
     close: () => Promise<void>;
+    abort: (reason?: unknown) => Promise<void>;
   }>;
 }
 
@@ -56,11 +57,19 @@ export async function requestSaveTarget(
   }
 }
 
-/** Writes a blob to a file chosen in the save picker. */
+/**
+ * Writes a blob to a file chosen in the save picker. A failed write or close aborts the stream, so the browser discards
+ * its pending data and temporary file instead of holding them until garbage collection, then rethrows the failure.
+ */
 export async function writeSaveTarget(target: SaveTarget, blob: Blob): Promise<void> {
   const writable = await target.createWritable();
-  await writable.write(blob);
-  await writable.close();
+  try {
+    await writable.write(blob);
+    await writable.close();
+  } catch (error) {
+    await writable.abort(error).catch(() => undefined);
+    throw error;
+  }
 }
 
 /**

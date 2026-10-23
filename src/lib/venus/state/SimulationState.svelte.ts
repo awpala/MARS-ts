@@ -352,15 +352,16 @@ export class SimulationState {
       if (outcome.messageTab) this.messageTab = outcome.messageTab;
       if (outcome.registerTab) this.display.registerTab = outcome.registerTab;
     } catch (error) {
-      if (!this.disposed) this.report(error);
+      this.report(error);
     }
   };
   /** Append program console text, keeping only the most recent characters the console retains. */
   private appendRunIO(text: string): void {
     this.runIO = (this.runIO + text).slice(-Globals.maximumMessageCharacters);
   }
-  /** Append an error to Mars Messages, preserving translated processing diagnostics. */
+  /** Append an error to Mars Messages, preserving translated processing diagnostics; after teardown, late reports from runs, transfers, and source workflows are ignored. */
   report = (error: unknown) => {
+    if (this.disposed) return;
     this.messages += `${error instanceof ProcessingException ? (error.errors()?.generateErrorAndWarningReport() ?? '') : errorMessage(error)}\n`;
     this.messageTab = 'Mars Messages';
   };

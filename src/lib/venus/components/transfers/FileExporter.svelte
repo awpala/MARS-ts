@@ -25,6 +25,7 @@
   /** How long after a download-link hand-off a late browser save prompt may still take focus from the page. */
   const LATE_PROMPT_MS = 3000;
   let stopLatePromptGuard: (() => void) | undefined;
+  let disposed = false;
 
   /** Show the export status if the browser's save prompt takes focus after the hand-off, until the page is active again. */
   function guardLatePrompt() {
@@ -68,7 +69,8 @@
       } else if (target) await writeSaveTarget(target, blob);
       else {
         await downloadBlob(name, blob);
-        guardLatePrompt();
+        // A hand-off settling after teardown has no desktop left to cover.
+        if (!disposed) guardLatePrompt();
       }
       await whenPageActive();
     } catch (error) {
@@ -82,7 +84,10 @@
     // Re-register if a caller changes scope, and release the previous capability.
     return desktop.registerFileTransfer(variant === 'all' ? 'exportAll' : 'export', exportFiles);
   });
-  onDestroy(() => stopLatePromptGuard?.());
+  onDestroy(() => {
+    disposed = true;
+    stopLatePromptGuard?.();
+  });
 </script>
 
-<!-- @component Single/all source-export behavior registered with the current desktop. Menus and toolbars share its command. In browsers with a save picker, the desktop is covered by "Waiting for save location…" from the moment the picker opens; its outcome adds "Exporting…" while the file is written or "Canceling export…" for a canceled picker. Elsewhere "Exporting…" covers the download-link hand-off, and a save prompt that opens shortly after it brings the status back. Every status is released as soon as the page has focus again. Teardown removes the capability and the late-prompt guard. -->
+<!-- @component Single/all source-export behavior registered with the current desktop. Menus and toolbars share its command. In browsers with a save picker, the desktop is covered by "Waiting for save location…" from the moment the picker opens; its outcome adds "Exporting…" while the file is written or "Canceling export…" for a canceled picker. Elsewhere "Exporting…" covers the download-link hand-off, and a save prompt that opens shortly after it brings the status back. Every status is released as soon as the page has focus again. Teardown removes the capability and the late-prompt guard; an export settling afterwards installs no guard, and the disposed desktop ignores its failure report. -->

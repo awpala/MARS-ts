@@ -23,8 +23,9 @@
   const content = $derived(article.loadHtml?.());
 
   // Preserve valid article HTML; each injected control is a Svelte component with explicit teardown.
+  // Controls read the open permission through a getter, so a run starting or stopping updates them
+  // instead of re-running this attachment and replacing their focus and feedback.
   function enhanceExamples(element: HTMLElement) {
-    const enabled = canOpen;
     const cleanup: (() => void)[] = [];
     for (const [index, pre] of [...element.querySelectorAll('pre')].entries()) {
       const source = pre.textContent ?? '';
@@ -41,7 +42,9 @@
           variant: 'transfer-to-file',
           source,
           label: `Open code example ${index + 1} as new file`,
-          disabled: !enabled,
+          get disabled() {
+            return !canOpen;
+          },
           ontransfer: (source) => onopen(source)
         }
       });

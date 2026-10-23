@@ -147,7 +147,9 @@ test('F1 Help opens a tabbed browser on the overview, retains its tab, and leave
   await expect(mips.getByRole('button')).toHaveText(['Syscalls', 'Exception Handlers', 'Macros']);
   await expect(dialog).toContainText('Tony Brock in July 2007');
   await tab(mips, 'Macros').click();
-  await expect(dialog.getByRole('button', { name: 'Copy code example 1' })).toBeVisible();
+  await expect(
+    dialog.getByRole('button', { name: 'Copy code example 1', exact: true })
+  ).toBeVisible();
   await tab(topics, 'MARS').click();
   await expect(tab(mars, 'Debugging')).toHaveAttribute('aria-pressed', 'true');
   await tab(topics, 'Bugs/Comments').click();

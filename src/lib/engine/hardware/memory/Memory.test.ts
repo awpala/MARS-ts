@@ -310,6 +310,44 @@ it('matches every Java Memory probe across layouts, endian modes, boundaries, he
   expect(visited.size).toBe(expected.size);
 });
 
+it('removes released observer records, deferring removal during dispatch, while deleteObserver retains them', () => {
+  const m = new Memory({ decodeStatement: statement });
+  const d = m.dataBaseAddress;
+  // Mounting and removing a view repeatedly must not leave records for every access to scan.
+  for (let mount = 0; mount < 3; mount++) m.addObserver(() => {})();
+  expect(m.countObservers()).toBe(0);
+  const events: string[] = [];
+  const releaseSelf = m.addObserver(() => {
+    events.push('self');
+    releaseSelf();
+    releaseOther();
+  }, d);
+  const releaseOther = m.addObserver(() => events.push('other'), d);
+  m.getByte(d);
+  expect(events).toEqual(['self']);
+  expect(m.countObservers()).toBe(0);
+  releaseSelf();
+  m.getByte(d);
+  expect(events).toEqual(['self']);
+  const retained = () => events.push('retained');
+  m.addObserver(retained, d);
+  m.deleteObserver(retained);
+  m.getByte(d);
+  expect(events).toEqual(['self']);
+  expect(m.countObservers()).toBe(1);
+  m.deleteObservers();
+  // A dispatch that ends in ConcurrentModificationException still lets a later release remove its record at once.
+  m.addObserver(() => {
+    m.addObserver(() => {}, d);
+  }, d);
+  expect(() => m.getByte(d)).toThrow(
+    expect.objectContaining({ name: 'ConcurrentModificationException' })
+  );
+  m.deleteObservers();
+  m.addObserver(() => {}, d)();
+  expect(m.countObservers()).toBe(0);
+});
+
 it('isolates sessions, injects decoding/backstep/debug services, and releases observers', () => {
   const records: string[] = [];
   const decoded: [number, number][] = [];

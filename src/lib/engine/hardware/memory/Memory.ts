@@ -82,7 +82,13 @@ export interface MemoryHost<Statement extends MemoryStatement> {
 export type MemoryObserver = (notice: MemoryAccessNotice) => void;
 type WordTable = (Int32Array | null)[];
 type StatementTable<S> = ((S | null)[] | null)[];
-type MemorySubscription = { observer: MemoryObserver | null; low: number; high: number };
+/** One range registration; `released` marks one whose returned teardown has run, which Java's record-retaining `deleteObserver` never sets. */
+type MemorySubscription = {
+  observer: MemoryObserver | null;
+  low: number;
+  high: number;
+  released: boolean;
+};
 
 /** Session-owned MIPS memory, retaining Java's sparse block tables and access algorithms. */
 export class Memory<Statement extends MemoryStatement = MemoryStatement> {
@@ -105,6 +111,10 @@ export class Memory<Statement extends MemoryStatement = MemoryStatement> {
   private textBlockTable: StatementTable<Statement> = [];
   private kernelTextBlockTable: StatementTable<Statement> = [];
   private observables: MemorySubscription[] = [];
+  /** Nesting depth of observer dispatch; released records stay in place until the outermost dispatch ends. */
+  private dispatchDepth = 0;
+  /** Whether a teardown ran during dispatch and its records still await removal. */
+  private releasePending = false;
   private readonly floatBits = new DataView(new ArrayBuffer(8));
   /** Signed configured textBaseAddress address. */
   textBaseAddress = 0;
@@ -681,7 +691,10 @@ export class Memory<Statement extends MemoryStatement = MemoryStatement> {
     address |= 0;
     return address >= this.memoryMapBaseAddress && address < this.kernelHighAddress;
   }
-  /** Registers all memory, one word, or an inclusive word-address range; caller must release the returned teardown. */
+  /**
+   * Registers all memory, one word, or an inclusive word-address range; caller must release the returned teardown.
+   * The teardown stops notification at once and removes this registration's records, after any dispatch in progress.
+   */
   addObserver(observer: MemoryObserver, startAddress?: number, endAddress?: number): () => void {
     if (startAddress === undefined) {
       const low = this.addObserver(observer, 0, 0x7ffffffc);
@@ -699,13 +712,11 @@ export class Memory<Statement extends MemoryStatement = MemoryStatement> {
       throw new AddressErrorException('range cannot cross 0x8000000; please split it up', 4, start);
     if (end < start)
       throw new AddressErrorException('end address of range < start address of range ', 4, start);
-    const subscription: MemorySubscription = { observer, low: start, high: end };
+    const subscription: MemorySubscription = { observer, low: start, high: end, released: false };
     this.observables.push(subscription);
-    return () => {
-      subscription.observer = null;
-    };
+    return () => this.release(subscription);
   }
-  /** Returns range-record count, including records whose observer has been removed, as Java does. */
+  /** Returns range-record count, including records emptied by `deleteObserver` as Java does; released teardowns no longer count once dispatch ends. */
   countObservers(): number {
     return this.observables.length;
   }
@@ -724,27 +735,44 @@ export class Memory<Statement extends MemoryStatement = MemoryStatement> {
     error.name = 'UnsupportedOperationException';
     throw error;
   }
+  /** Stop notifying a registration, then remove its record unless a dispatch is traversing the list. */
+  private release(subscription: MemorySubscription): void {
+    subscription.observer = null;
+    subscription.released = true;
+    if (this.dispatchDepth > 0) this.releasePending = true;
+    else this.discardReleased();
+  }
+  private discardReleased(): void {
+    this.releasePending = false;
+    this.observables = this.observables.filter((record) => !record.released);
+  }
   private notifyAnyObservers(type: number, address: number, length: number, value: number): void {
     if (this.host.notificationsEnabled?.() === false || this.observables.length === 0) return;
     const records = this.observables;
     const originalLength = records.length;
-    for (let index = 0; index < records.length; index++) {
-      if (records.length !== originalLength) {
-        const error = new Error();
-        error.name = 'ConcurrentModificationException';
-        throw error;
+    this.dispatchDepth++;
+    try {
+      for (let index = 0; index < records.length; index++) {
+        if (records.length !== originalLength) {
+          const error = new Error();
+          error.name = 'ConcurrentModificationException';
+          throw error;
+        }
+        const record = records[index];
+        // An emptied record has no one to notify, so it gets no notice.
+        if (record.observer && address >= record.low && address <= ((record.high - 1 + 4) | 0)) {
+          const notice = new MemoryAccessNotice(
+            type,
+            address,
+            length,
+            value,
+            this.host.getAccessOrigin?.() ?? 'other'
+          );
+          record.observer?.(notice);
+        }
       }
-      const record = records[index];
-      if (address >= record.low && address <= ((record.high - 1 + 4) | 0)) {
-        const notice = new MemoryAccessNotice(
-          type,
-          address,
-          length,
-          value,
-          this.host.getAccessOrigin?.() ?? 'other'
-        );
-        record.observer?.(notice);
-      }
+    } finally {
+      if (--this.dispatchDepth === 0 && this.releasePending) this.discardReleased();
     }
   }
   private arrayIndex(index: number, length: number): void {

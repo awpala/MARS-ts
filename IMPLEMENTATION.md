@@ -122,11 +122,11 @@ The [library architecture guide](src/lib/README.md) expands these relationships 
 
 Each desktop mounts one editor, one machine, and one run controller. Machine state is not a module singleton and is not created as shared SSR state. Immutable metadata may be shared, but mutable register banks, memory tables, symbol tables, instruction collaborators, and execution history belong to their session.
 
-Hardware access notices are synchronous and preserve the observable Java ordering. Consumers receive unsubscribe functions. Inspection uses non-notifying reads where appropriate so painting a register does not masquerade as executing an instruction. An explicit access origin replaces dependence on Java thread identity.
+Hardware access notices are synchronous and preserve the observable Java ordering. Consumers receive unsubscribe functions; a released memory registration leaves no inactive range record, while Java's `deleteObserver` keeps its retained-record behavior. Inspection uses non-notifying reads where appropriate so painting a register does not masquerade as executing an instruction. An explicit access origin replaces dependence on Java thread identity.
 
 A simulation retains ownership until its promise settles, including while it waits for input. Svelte teardown releases subscriptions and initiates controller disposal without blocking DOM removal. Disposal requests Stop and releases pending input and scheduler waits; the controller retains the old machine until its run settles asynchronously, then releases its resources. Reset and replacement assembly cannot race an active simulation. These rules are part of correctness, not merely UI cleanup.
 
-[ADR 0006](docs/adrs/0006-object-lifetime-management.md) records the ownership and lifetime audit, including browser resource release, operation-specific validity checks, and the distinction between isolated runtime objects and origin-wide persistence. Its browser regressions exercise superseded imports, delayed clipboard mutations, source creation, pending work across unmount, and repeated mounting.
+[ADR 0006](docs/adrs/0006-object-lifetime-management.md) records the ownership and lifetime audit, including browser resource release, operation-specific validity checks, and the distinction between isolated runtime objects and origin-wide persistence. Its browser regressions exercise superseded imports, delayed clipboard mutations, source creation, pending work across unmount, repeated mounting, Help code controls across run-state changes, and export completion after unmount; engine and adapter tests cover released memory-observer records and aborted save-picker writes.
 
 ### Java behavior on JavaScript numbers
 

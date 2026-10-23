@@ -46,7 +46,7 @@ The shared [desktop helpers](openDesktop.ts) distinguish navigation from a usabl
 
 `openStoredSources(page, sources, selectedNames)` seeds committed records in `mars-ts:sources:v1`, then selects the requested names through the real Open dialog. It opens all supplied names by default. Call it after the desktop is ready; source selection and editor initialization remain application workflows. Tests of restoration, malformed preferences, or unavailable storage install their setup before navigation when the failure must affect mounting.
 
-Most scenarios use the root route. Lifetime scenarios serve a test-owned empty page and load the [desktop mounting helper](../../src/lib/venus/mountDesktop.browser-test.ts), which mounts the production component and returns its actual teardown. Deferred file and clipboard operations let those tests control completion order, unmount during pending work, and verify that stale results cannot mutate a newer session or duplicate keyboard handling.
+Most scenarios use the root route. Lifetime scenarios serve a test-owned empty page and load the [desktop mounting helper](../../src/lib/venus/mountDesktop.browser-test.ts), which mounts the production component and returns its actual teardown. Deferred file, clipboard, and save-picker operations let those tests control completion order, unmount during pending work, and verify that stale results cannot mutate a newer session, duplicate keyboard handling, or install listeners for a removed desktop. They also keep Help's injected code controls, with their focus and feedback, across a run-state change.
 
 ## Coverage and extension
 

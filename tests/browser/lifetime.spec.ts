@@ -10,6 +10,10 @@ type LifetimeWindow = Window &
     fileReads: { resolve: (source: string) => void; reject: (error: Error) => void }[];
     /** Completes a deliberately suspended clipboard request. */
     completeClipboard: (text: string) => void;
+    /** Refuses a deliberately suspended save picker, sending Export down its download-link path. */
+    refuseSavePicker: () => void;
+    /** Window blur listeners registered since recording began. */
+    blurListeners: number;
   };
 
 async function mountDesktop(page: Page) {
@@ -136,6 +140,86 @@ test('Help initializes its own new source before a subsequent command selects an
   await expect(page.getByRole('textbox', { name: 'Source mips1.asm', exact: true })).toHaveValue(
     example!
   );
+});
+
+test('Help code controls keep their focus and feedback when execution stops', async ({ page }) => {
+  await openIsolatedDesktop(page);
+  await page.getByRole('button', { name: 'New', exact: true }).click();
+  await page
+    .getByRole('textbox', { name: 'Source mips1.asm', exact: true })
+    .fill('.text\nloop: b loop\n');
+  await page.getByRole('button', { name: 'Assemble', exact: true }).click();
+  await page.getByRole('button', { name: 'Go', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeEnabled();
+  await page.evaluate(() =>
+    Object.defineProperty(navigator.clipboard, 'writeText', {
+      configurable: true,
+      value: async () => undefined
+    })
+  );
+  await page
+    .locator('.menubar summary')
+    .filter({ hasText: /^Help$/ })
+    .click();
+  await page.getByRole('button', { name: 'Exception Handlers', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Exception Handlers', exact: true });
+  const copy = dialog.getByRole('button', { name: 'Copy code example 1', exact: true });
+  const open = dialog.getByRole('button', {
+    name: 'Open code example 1 as new file',
+    exact: true
+  });
+  await expect(open).toBeDisabled();
+  await copy.click();
+  await expect(dialog.getByRole('status')).toHaveText('Copied');
+  await copy.focus();
+  await copy.evaluate((button) => button.setAttribute('data-original-control', ''));
+  // Help keeps the toolbar inert, so end the run the way a program reaching its end would: without leaving the dialog.
+  await page.evaluate(() =>
+    document.querySelector<HTMLButtonElement>('button[aria-label="Stop"]')!.click()
+  );
+  await expect(open).toBeEnabled();
+  await expect(copy).toHaveAttribute('data-original-control', '');
+  await expect(copy).toBeFocused();
+  await expect(dialog.getByRole('status')).toHaveText('Copied');
+});
+
+test('an export settling after unmount installs no late save-prompt guard', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await openIsolatedDesktop(page);
+  await page.getByRole('button', { name: 'New', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Source mips1.asm', exact: true }).fill('# exported');
+  await page.evaluate(() => {
+    const target = window as LifetimeWindow;
+    Object.defineProperty(window, 'showSaveFilePicker', {
+      configurable: true,
+      value: () =>
+        new Promise((_, reject) => {
+          target.refuseSavePicker = () =>
+            reject(new DOMException('User activation is required.', 'NotAllowedError'));
+        })
+    });
+  });
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  await expect(
+    page.getByRole('dialog', { name: 'Waiting for save location…', exact: true })
+  ).toBeVisible();
+  await page.evaluate(() => (window as LifetimeWindow).releaseDesktop());
+  await page.evaluate(() => {
+    const target = window as LifetimeWindow;
+    const add = window.addEventListener.bind(window);
+    target.blurListeners = 0;
+    window.addEventListener = ((...args: Parameters<typeof add>) => {
+      if (args[0] === 'blur') target.blurListeners++;
+      add(...args);
+    }) as typeof window.addEventListener;
+  });
+  const download = page.waitForEvent('download');
+  await page.evaluate(() => (window as LifetimeWindow).refuseSavePicker());
+  await download;
+  // The download-link fallback settles in the refusal's microtasks, before this later task runs.
+  expect(await page.evaluate(() => (window as LifetimeWindow).blurListeners)).toBe(0);
+  expect(errors).toEqual([]);
 });
 
 test('unmount releases pending work and remounts do not duplicate keyboard commands', async ({

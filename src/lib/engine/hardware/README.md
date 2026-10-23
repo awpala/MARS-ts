@@ -101,13 +101,13 @@ sequenceDiagram
 
 Java `Observable` becomes synchronous subscriptions, but register and memory dispatch retain different algorithms. A common notice base does not imply one shared event bus.
 
-| Behavior                    | Registers                                                     | Memory                                                                                   |
-| --------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Dispatch                    | Reverse registration order over a callback snapshot           | Registration-order traversal of range records                                            |
-| Read/write timing           | Read notifies before returning; write stores before notifying | Access methods retain their method-specific suppression and partial-access behavior      |
-| Duplicate callback identity | A register's observer set deduplicates it                     | Separate registrations remain separate range records                                     |
-| Unsubscribe                 | Remove callback identity from the register                    | Null the callback while retaining the range record                                       |
-| Count after removal         | No inactive register subscription remains                     | `countObservers()` still counts inactive records until `deleteObservers()` discards them |
+| Behavior                    | Registers                                                     | Memory                                                                                                                         |
+| --------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Dispatch                    | Reverse registration order over a callback snapshot           | Registration-order traversal of range records                                                                                  |
+| Read/write timing           | Read notifies before returning; write stores before notifying | Access methods retain their method-specific suppression and partial-access behavior                                            |
+| Duplicate callback identity | A register's observer set deduplicates it                     | Separate registrations remain separate range records                                                                           |
+| Unsubscribe                 | Remove callback identity from the register                    | Returned teardown removes its range records once any dispatch in progress ends                                                 |
+| Count after removal         | No inactive register subscription remains                     | Java's `deleteObserver` retains emptied records, which `countObservers()` still counts until `deleteObservers()` discards them |
 
 Every subscriber owns the returned teardown. The [notice guide](notices/README.md) explains payload and origin; the [memory guide](memory/README.md) explains signed ranges and dispatch edge cases. Rendering should use non-notifying APIs where available. `getStatementNoNotify()` can still generate data-read notices when self-modifying-code execution fetches from data; its name does not promise silence on every path.
 
