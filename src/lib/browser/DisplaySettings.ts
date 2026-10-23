@@ -10,6 +10,8 @@ export interface DisplaySettings {
   autoSave: boolean;
   /** Clear both console buffers when Go starts a fresh program run; defaults to false for older records. */
   clearAllOutputsOnGo: boolean;
+  /** Confirm Clear all breakpoints in a dialog; defaults to false for older records. */
+  promptClearBreakpoints: boolean;
   /** Render Data Segment bytes as ASCII; defaults to false for older records. */
   ascii: boolean;
   /** Whether the registers sidebar is shown; defaults to true for older records. */
@@ -51,6 +53,8 @@ function validate(value: unknown): DisplaySettings | undefined {
   if (
     (data.showRegisters !== undefined && typeof data.showRegisters !== 'boolean') ||
     (data.clearAllOutputsOnGo !== undefined && typeof data.clearAllOutputsOnGo !== 'boolean') ||
+    (data.promptClearBreakpoints !== undefined &&
+      typeof data.promptClearBreakpoints !== 'boolean') ||
     (data.autoSave !== undefined && typeof data.autoSave !== 'boolean') ||
     (data.ascii !== undefined && typeof data.ascii !== 'boolean') ||
     (data.showDataLabels !== undefined && typeof data.showDataLabels !== 'boolean') ||
@@ -65,6 +69,7 @@ function validate(value: unknown): DisplaySettings | undefined {
   return {
     autoSave: data.autoSave ?? false,
     clearAllOutputsOnGo: data.clearAllOutputsOnGo ?? false,
+    promptClearBreakpoints: data.promptClearBreakpoints ?? false,
     showRegisters: data.showRegisters ?? true,
     ascii: data.ascii ?? false,
     showLabels: data.showLabels,

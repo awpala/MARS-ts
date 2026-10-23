@@ -86,6 +86,8 @@ export class DesktopState {
   }
   /** Whether the memory-layout settings dialog owns interaction; closed by default. */
   memoryConfigurationOpen = $state(false);
+  /** Whether the Clear all breakpoints confirmation, enabled by its display preference, owns interaction; closed by default. */
+  clearBreakpointsOpen = $state(false);
   /** Status text of the file transfer currently blocking interaction, such as `Exporting…`; null when none is pending. */
   transferStatus = $state<string | null>(null);
   private transferToken = 0;
@@ -116,6 +118,7 @@ export class DesktopState {
       this.workspace.modal ||
       this.help ||
       this.memoryConfigurationOpen ||
+      this.clearBreakpointsOpen ||
       this.simulation.inputRequest?.prompt
     );
   }
@@ -288,7 +291,12 @@ export class DesktopState {
       return;
     }
     const article = helpArticles.find((entry) => entry.id === command);
-    this.closeMenus(!!article || command === 'memoryConfiguration');
+    const confirmClear = command === 'clearBreakpoints' && this.display.promptClearBreakpoints;
+    this.closeMenus(!!article || command === 'memoryConfiguration' || confirmClear);
+    if (confirmClear) {
+      this.clearBreakpointsOpen = true;
+      return;
+    }
     if (command === 'memoryConfiguration') {
       if (this.simulation.machine && !this.simulation.controller?.isBusy())
         this.memoryConfigurationOpen = true;
@@ -309,6 +317,11 @@ export class DesktopState {
     }
     if (command === 'find') this.search.findStatus = '';
     await this.workspace.execute(command);
+  };
+  /** Clear breakpoints after confirmation, unless maximum speed locked them while the dialog was open. */
+  confirmClearBreakpoints = async (): Promise<void> => {
+    this.clearBreakpointsOpen = false;
+    if (!this.breakpointsFrozen) await this.simulation.runCommand('clearBreakpoints');
   };
   /** Dismiss Help without resetting source-workflow queues. */
   closeHelp = (): void => {

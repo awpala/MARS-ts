@@ -173,7 +173,7 @@ test('every Settings item has a themed description, including disabled settings 
   await openDesktop(page);
   await settings(page).click();
   const items = menu(page).locator('label, button');
-  expect(await items.count()).toBe(14);
+  expect(await items.count()).toBe(15);
   for (const item of await items.all()) {
     await item.hover();
     const tooltip = page.getByRole('tooltip');
@@ -182,6 +182,10 @@ test('every Settings item has a themed description, including disabled settings 
     if ((await item.textContent())?.includes('Clear all outputs on Go'))
       await expect(tooltip).toHaveText(
         'If set, clear Mars Messages and Run I/O when Go starts a fresh program run; resuming preserves output.'
+      );
+    if ((await item.textContent())?.includes('Prompt to clear all breakpoints'))
+      await expect(tooltip).toHaveText(
+        'If set, ask for confirmation before Clear all breakpoints removes them; otherwise clear immediately.'
       );
     if ((await item.textContent())?.includes('Delayed branching'))
       await expect(tooltip).toHaveText(

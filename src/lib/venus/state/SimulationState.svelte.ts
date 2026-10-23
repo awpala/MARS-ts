@@ -59,6 +59,8 @@ export class SimulationState {
   /** Exact virtual sources read for the loaded assembly, independent of later Edit selection. */
   checkpointSources: Record<string, string> = Object.create(null);
   private recoverySources: Record<string, string> | null = null;
+  /** Machine code of the most recent successful build, or null before one; an identical rebuild keeps breakpoints. */
+  private buildSignature: string | null = null;
   private disposed = false;
   /** Compose the machine host with source resolution and display navigation owned by this desktop. */
   constructor(
@@ -238,8 +240,12 @@ export class SimulationState {
       if (diagnostics) this.messages += diagnostics.generateErrorAndWarningReport();
       if (this.controller.getState().status === 'assembled') {
         this.messages += `Assemble: operation completed successfully.\n\n`;
-        this.breakpoints = [];
-        this.breakpointsEnabled = true;
+        const signature = this.loadedBuildSignature();
+        if (signature !== this.buildSignature) {
+          this.breakpoints = [];
+          this.breakpointsEnabled = true;
+        }
+        this.buildSignature = signature;
         this.display.resetExecuteView();
         this.display.view = 'Execute';
       } else this.messages += 'Assemble: operation completed with errors.\n';
@@ -249,6 +255,17 @@ export class SimulationState {
     }
     this.messageTab = 'Mars Messages';
   };
+  /** Filenames, addresses, and binary statements of every loaded program, in assembly order. */
+  private loadedBuildSignature(): string {
+    return (this.controller?.getState().programs ?? [])
+      .map(
+        (program) =>
+          `${program.getFilename()}\n${(program.getMachineList() ?? [])
+            .map((statement) => `${statement.getAddress()}:${statement.getBinaryStatement()}`)
+            .join('\n')}`
+      )
+      .join('\n\n');
+  }
   private hasLoadedProgram(): boolean {
     const state = this.execution;
     return !!state && state.status !== 'idle' && (state.status !== 'error' || state.started);
@@ -264,6 +281,7 @@ export class SimulationState {
     this.checkpointSources = Object.create(null);
     try {
       this.controller!.restoreCheckpoint(saved.machine);
+      this.buildSignature = this.loadedBuildSignature();
       const selection = saved.labelSelection;
       if (selection) {
         const table =

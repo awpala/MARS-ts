@@ -93,6 +93,13 @@ export const clearAllOutputsOnGoOption = {
     'If set, clear Mars Messages and Run I/O when Go starts a fresh program run; resuming preserves output.'
 };
 
+/** Browser-specific Settings entry that confirms Clear all breakpoints before removing them. */
+export const promptClearBreakpointsOption = {
+  label: 'Prompt to clear all breakpoints',
+  description:
+    'If set, ask for confirmation before Clear all breakpoints removes them; otherwise clear immediately.'
+};
+
 /** Hover description of the Settings entry that opens the memory-layout dialog. */
 export const memoryConfigurationDescription =
   'View and modify memory segment base addresses for simulated MIPS.';

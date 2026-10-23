@@ -11,20 +11,27 @@
   import {
     clearAllOutputsOnGoOption,
     memoryConfigurationDescription,
-    pendingSettings
+    pendingSettings,
+    promptClearBreakpointsOption
   } from '../../utils/commands/settings.js';
   import DropdownMenu, { type MenuItem, type MenuGroup } from './DropdownMenu.svelte';
   import RegisterBanksToggle from './RegisterBanksToggle.svelte';
   import ThemeToggle from './ThemeToggle.svelte';
   import GitHubLink from './GitHubLink.svelte';
-  /** Commands and setting toggles come from the desktop command capability; only these two parent-owned preferences remain props. */
+  /** Commands and setting toggles come from the desktop command capability; only these parent-owned preferences remain props. */
   type Props = {
     /** Required parent-owned visibility of the registers sidebar; bindable and shown by default in its owner. */
     showRegisters: boolean;
     /** Required parent-owned console-clearing preference; bindable and false by default in its owner. */
     clearAllOutputsOnGo: boolean;
+    /** Required parent-owned Clear all breakpoints confirmation preference; bindable and false by default in its owner. */
+    promptClearBreakpoints: boolean;
   };
-  let { showRegisters = $bindable(), clearAllOutputsOnGo = $bindable() }: Props = $props();
+  let {
+    showRegisters = $bindable(),
+    clearAllOutputsOnGo = $bindable(),
+    promptClearBreakpoints = $bindable()
+  }: Props = $props();
   const commands = getDesktopCommands();
   const groupName = $props.id();
   let element: HTMLElement;
@@ -74,6 +81,13 @@
           tooltip: clearAllOutputsOnGoOption.description,
           checked: clearAllOutputsOnGo,
           onselect: () => (clearAllOutputsOnGo = !clearAllOutputsOnGo)
+        });
+        items.push({
+          id: 'promptClearBreakpoints',
+          label: promptClearBreakpointsOption.label,
+          tooltip: promptClearBreakpointsOption.description,
+          checked: promptClearBreakpoints,
+          onselect: () => (promptClearBreakpoints = !promptClearBreakpoints)
         });
       }
       if ([Settings.START_AT_MAIN, Settings.SELF_MODIFYING_CODE_ENABLED].includes(option.id)) {

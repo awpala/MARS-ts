@@ -73,7 +73,8 @@ test('tooltips support disabled controls, hover, focus, dismissal, themes, and k
 
   const create = page.getByRole('button', { name: 'New', exact: true });
   await create.focus();
-  await expect(create).toHaveAccessibleDescription('New Alt+N / Option+N');
+  await expect(create).toHaveAccessibleDescription('New Alt/Option+N');
+  await expect(tooltip.locator('kbd')).toHaveText(['Alt/Option', 'N']);
   await page.keyboard.press('Escape');
   await expect(tooltip).toBeHidden();
   await expect(create).toBeFocused();
@@ -118,12 +119,16 @@ test('keyboard commands work in text inputs and respect disabled commands and di
   const plus = page.getByRole('button', { name: 'Increase run speed', exact: true });
   await minus.click();
   await breakpoint.check();
-  await breakpoint.press('Control+t');
+  await breakpoint.press('Alt+t');
   await expect(toggle).toHaveAttribute('aria-pressed', 'false');
   await expect(breakpoint).toBeChecked();
+  // Ctrl/Meta+T stay with the browser.
+  await toggle.press('Control+t');
   await toggle.press('Meta+t');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await toggle.press('Alt+t');
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-  await toggle.press('Control+Shift+t');
+  await toggle.press('Alt+Shift+t');
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
 
   await page.getByLabel('$t0 value', { exact: true }).press('Control+k');
@@ -134,7 +139,7 @@ test('keyboard commands work in text inputs and respect disabled commands and di
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(breakpoint).toBeChecked();
   await page.keyboard.press('Escape');
-  await toggle.press('Control+t');
+  await toggle.press('Alt+t');
   await plus.click();
   await expect(toggle).toBeDisabled();
   await page.getByLabel('$t0 value', { exact: true }).press('F5');
@@ -203,7 +208,7 @@ test('shared clear buttons retain independent and combined console clearing', as
   const clearAll = page.getByRole('button', { name: 'Clear All', exact: true });
   await clearAll.press('Shift+Tab');
   await page.keyboard.press('Tab');
-  await expect(clearAll).toHaveAccessibleDescription('Clear all outputs Alt+L / Option+L');
+  await expect(clearAll).toHaveAccessibleDescription('Clear all outputs Alt/Option+L');
   await clearAll.press('Enter');
   await expect(output).toHaveValue('');
   await page.getByRole('button', { name: 'Mars Messages', exact: true }).click();

@@ -120,7 +120,7 @@
                 {#snippet children(trigger, description)}
                   <span class="block" {@attach trigger}
                     ><input
-                      class="mx-auto block"
+                      class={['mx-auto block', { suspended: !simulation.breakpointsEnabled }]}
                       type="checkbox"
                       aria-label={`Breakpoint ${Binary.intToHexString(row.address)}`}
                       aria-describedby={description}
@@ -155,6 +155,11 @@
 </SegmentPane>
 
 <style>
+  /* Suspended breakpoints gray out as in legacy CheckBoxTableCellRenderer, but stay editable. */
+  .suspended {
+    filter: grayscale(1);
+    opacity: 0.5;
+  }
   .program-arguments {
     display: flex;
     flex-shrink: 0;

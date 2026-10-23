@@ -14,6 +14,8 @@
     element?: 'section' | 'aside';
     /** Required ordered tab labels. */
     tabs: readonly T[];
+    /** Optional hover/focus descriptions keyed by tab label; tabs without one have no tooltip. */
+    tooltips?: Partial<Record<T, string>>;
     /** Required parent-owned selected label, bindable. */
     selected: T;
     /** Required body template, receiving the selected tab. The caller decides whether bodies remain mounted. */
@@ -27,6 +29,7 @@
     class: className = '',
     element = 'section',
     tabs,
+    tooltips = {},
     selected = $bindable(),
     children,
     actions
@@ -36,7 +39,7 @@
 <!-- @component Tabbed specialization of Pane. Composes the generic tab strip with caller-owned selection and body content; geometry remains with the container. -->
 <Pane {element} {id} {label} class={className}>
   <PaneTabs
-    tabs={tabs.map((label) => ({ id: label, label }))}
+    tabs={tabs.map((label) => ({ id: label, label, tooltip: tooltips[label] }))}
     {selected}
     onselect={(tab) => (selected = tab)}
     {actions}

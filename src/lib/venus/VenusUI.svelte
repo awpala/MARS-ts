@@ -38,6 +38,12 @@
   );
   const paneId = $props.id();
   const exportVariants = ['single', 'all'] as const;
+  /** Main tab descriptions from MainPane.java. */
+  const mainViewTooltips = {
+    Edit: 'Text editor for composing MIPS programs.',
+    Execute:
+      'View and control assembly language program execution.  Enabled upon successful assemble.'
+  } as const;
   useDesktopKeyboard(() => menuBar?.close());
   onMount(desktop.mount);
 </script>
@@ -74,6 +80,7 @@
       bind:this={menuBar}
       bind:showRegisters={display.showRegisters}
       bind:clearAllOutputsOnGo={display.clearAllOutputsOnGo}
+      bind:promptClearBreakpoints={display.promptClearBreakpoints}
     />
     <Toolbar
       bind:showLines={display.showLines}
@@ -95,6 +102,7 @@
           class="main-pane"
           label="Source and execution"
           tabs={MAIN_VIEWS}
+          tooltips={mainViewTooltips}
           bind:selected={display.view}
           --pane-height="var(--editor-height, 75%)"
           --pane-flex="0 0 auto"

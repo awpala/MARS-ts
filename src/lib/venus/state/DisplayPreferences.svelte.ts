@@ -17,6 +17,7 @@ import {
 /** Persisted display fields other than Auto Save, which the source workspace owns. */
 const persistedKeys = [
   'clearAllOutputsOnGo',
+  'promptClearBreakpoints',
   'showRegisters',
   'ascii',
   'showLabels',
@@ -39,6 +40,8 @@ export class DisplayPreferences {
   view = $state<MainView>('Edit');
   /** Browser-only preference to clear both consoles when Go starts a fresh program run; unselected by default. */
   clearAllOutputsOnGo = $state(false);
+  /** Browser-only preference to confirm Clear all breakpoints in a dialog; unselected by default, clearing immediately as in MARS 4.5. */
+  promptClearBreakpoints = $state(false);
   /** Selected Data Segment range, recovered with the desktop session. */
   dataSegment = $state<MemorySegment>('data');
   /** Relative aligned Data Segment page offset, recovered with the desktop session. */

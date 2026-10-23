@@ -8,6 +8,7 @@ import {
 const settings = {
   autoSave: false,
   clearAllOutputsOnGo: true,
+  promptClearBreakpoints: true,
   showRegisters: false,
   ascii: false,
   showLabels: true,
@@ -40,6 +41,7 @@ describe('working display preference persistence', () => {
       { ...settings, showLines: 'false' },
       { ...settings, autoSave: 'true' },
       { ...settings, clearAllOutputsOnGo: 'true' },
+      { ...settings, promptClearBreakpoints: 'true' },
       { ...settings, showRegisters: 'false' },
       { ...settings, ascii: 'true' },
       { ...settings, speed: -1 },
@@ -79,6 +81,13 @@ describe('working display preference persistence', () => {
     expect(
       loadDisplaySettings(() => ({ getItem: () => JSON.stringify(older), setItem: () => {} }))
     ).toEqual({ ...older, clearAllOutputsOnGo: false });
+  });
+  it('defaults the Clear all breakpoints prompt to unselected for older preferences', () => {
+    const { promptClearBreakpoints, ...older } = settings;
+    void promptClearBreakpoints;
+    expect(
+      loadDisplaySettings(() => ({ getItem: () => JSON.stringify(older), setItem: () => {} }))
+    ).toEqual({ ...older, promptClearBreakpoints: false });
   });
   it('tolerates denied storage access and quota failures', () => {
     const denied = () => {

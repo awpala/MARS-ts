@@ -34,16 +34,16 @@ export const fileActions: readonly Action[] = [
     label: 'New',
     icon: image('New'),
     command: 'new',
-    shortcut: 'Alt+N / Option+N',
+    shortcut: 'Alt/Option+N',
     noRepeat: true
   },
   { label: 'Open ...', icon: image('Open'), command: 'open', shortcut: 'Ctrl+O' },
-  { label: 'Close', command: 'close', shortcut: 'Alt+W / Option+W', noRepeat: true },
+  { label: 'Close', command: 'close', shortcut: 'Alt/Option+W', noRepeat: true },
   {
     label: 'Close All',
     icon: glyph('CloseAll'),
     command: 'closeAll',
-    shortcut: 'Alt+Shift+W / Option+Shift+W',
+    shortcut: 'Alt/Option+Shift+W',
     noRepeat: true
   },
   { label: 'Save', icon: image('Save'), command: 'save', shortcut: 'Ctrl+S' },
@@ -81,7 +81,7 @@ export const breakpointActions: readonly Action[] = [
     label: 'Toggle all breakpoints',
     icon: glyph('Breakpoints'),
     command: 'toggleBreakpoints',
-    shortcut: 'Ctrl+T'
+    shortcut: 'Alt/Option+T'
   },
   {
     label: 'Clear all breakpoints',
@@ -95,7 +95,7 @@ export const frozenBreakpointsHint = 'lower the run speed to change breakpoints'
 /** Console commands available throughout the desktop. */
 export const consoleActions: readonly Action[] = [
   { label: 'Clear', command: 'clearOutput', shortcut: 'Ctrl+L' },
-  { label: 'Clear All', command: 'clearAllOutput', shortcut: 'Alt+L / Option+L' }
+  { label: 'Clear All', command: 'clearAllOutput', shortcut: 'Alt/Option+L' }
 ];
 /** Help commands derived from the article catalog. */
 export const helpActions: readonly Action[] = helpArticles.map((article) => ({
@@ -145,7 +145,7 @@ export function keyboardAction(event: KeyboardEvent): Action | undefined {
           keys.at(-1) === event.key.toLowerCase() &&
           keys.includes('ctrl') === (event.ctrlKey || event.metaKey) &&
           keys.includes('shift') === event.shiftKey &&
-          (keys.includes('alt') || keys.includes('option')) === event.altKey
+          keys.includes('alt/option') === event.altKey
       )
   );
 }
@@ -163,7 +163,7 @@ export function physicalKeyAction(event: KeyboardEvent): Action | undefined {
         const letter = keys.at(-1)!;
         const modifiers = keys.slice(0, -1);
         return (
-          (modifiers[0] === 'alt' || modifiers[0] === 'option') &&
+          modifiers[0] === 'alt/option' &&
           (modifiers.length === 1 || (modifiers.length === 2 && modifiers[1] === 'shift')) &&
           modifiers.includes('shift') === event.shiftKey &&
           letter.length === 1 &&

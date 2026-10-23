@@ -368,7 +368,7 @@ test('breakpoint toolbar and Run menu actions follow Reset and suspend or clear 
     /^Stop/,
     /^Reset/,
     /^Clear all breakpoints\s*Ctrl\+K/,
-    /^Toggle all breakpoints\s*Ctrl\+T/
+    /^Toggle all breakpoints\s*Alt\/Option\+T/
   ]);
   await expect(menu.locator('hr')).toHaveCount(1);
   await expect(menu.locator('button:nth-child(7) + hr + button')).toContainText(
@@ -413,6 +413,96 @@ test('breakpoint toolbar and Run menu actions follow Reset and suspend or clear 
   await expect(menu).toHaveCount(0);
   await expect(breakpoint).not.toBeChecked();
   await expect(clear).toBeDisabled();
+});
+
+test('Prompt to clear all breakpoints defaults off, persists, and syncs with the confirmation checkbox', async ({
+  page
+}) => {
+  await openDesktop(page);
+  const settingsMenu = page.locator('.menubar summary').filter({ hasText: /^Settings$/ });
+  const prompt = page.getByLabel('Prompt to clear all breakpoints', { exact: true });
+  await settingsMenu.click();
+  await expect(prompt).not.toBeChecked();
+  const placement = await prompt.evaluate((input) => {
+    const row = input.closest('label')!;
+    return [row.previousElementSibling?.textContent?.trim(), row.nextElementSibling?.tagName];
+  });
+  expect(placement).toEqual(['Clear all outputs on Go', 'HR']);
+  await settingsMenu.click();
+  await source(page, '.text\naddiu $t0,$zero,1\naddiu $t0,$t0,1\nli $v0,10\nsyscall\n');
+  await action(page, 'Assemble').click();
+  const clear = action(page, 'Clear all breakpoints');
+  const breakpoint = page.getByLabel('Breakpoint 0x00400004', { exact: true });
+  const dialog = page.getByRole('dialog', { name: 'Clear all breakpoints?', exact: true });
+  const keepShowing = dialog.getByRole('checkbox', { name: 'Keep showing this warning' });
+  // Off by default, Clear removes breakpoints immediately, as in MARS 4.5.
+  await editBreakpoints(page, async () => {
+    await breakpoint.check();
+    await clear.click();
+  });
+  await expect(dialog).toHaveCount(0);
+  await expect(breakpoint).not.toBeChecked();
+
+  await settingsMenu.click();
+  await prompt.check();
+  await settingsMenu.click();
+  await page.reload();
+  await waitForDesktop(page);
+  await editBreakpoints(page, async () => {
+    await breakpoint.check();
+    await clear.click();
+    await expect(dialog).toContainText('Remove all 1 breakpoint?');
+    await expect(dialog.locator('strong')).toHaveText('1');
+    await expect(keepShowing).toBeChecked();
+    // The checkbox sits at the lower left, opposite the right-aligned buttons.
+    const switchBox = (await keepShowing.boundingBox())!;
+    const cancel = dialog.getByRole('button', { name: 'Cancel', exact: true });
+    expect(switchBox.x).toBeLessThan((await cancel.boundingBox())!.x);
+    await cancel.click();
+    await expect(dialog).toHaveCount(0);
+    await expect(breakpoint).toBeChecked();
+    await clear.click();
+    await keepShowing.uncheck();
+    await dialog.getByRole('button', { name: 'Clear breakpoints', exact: true }).click();
+  });
+  await expect(breakpoint).not.toBeChecked();
+  await settingsMenu.click();
+  await expect(prompt).not.toBeChecked();
+  await settingsMenu.click();
+  await editBreakpoints(page, async () => {
+    await breakpoint.check();
+    await page.keyboard.press('Control+k');
+  });
+  await expect(dialog).toHaveCount(0);
+  await expect(breakpoint).not.toBeChecked();
+});
+
+test('an identical rebuild keeps breakpoints and a changed build clears them', async ({ page }) => {
+  await openDesktop(page);
+  const program = '.text\naddiu $t0,$zero,1\naddiu $t0,$t0,1\nli $v0,10\nsyscall\n';
+  await source(page, program);
+  await action(page, 'Assemble').click();
+  const toggle = action(page, 'Toggle all breakpoints');
+  const breakpoint = page.getByLabel('Breakpoint 0x00400004', { exact: true });
+  await editBreakpoints(page, async () => {
+    await breakpoint.check();
+    await toggle.click();
+  });
+  await action(page, 'Assemble').click();
+  await expect(breakpoint).toBeChecked();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  // Suspended checkboxes gray out, as in the legacy renderer, without becoming read-only.
+  await expect(breakpoint).toHaveCSS('opacity', '0.5');
+  await expect(breakpoint).toBeEnabled();
+  // A comment changes the source but not the assembled machine code.
+  await source(page, `# unchanged build\n${program}`);
+  await action(page, 'Assemble').click();
+  await expect(breakpoint).toBeChecked();
+  await source(page, program.replace('$zero,1', '$zero,2'));
+  await action(page, 'Assemble').click();
+  await expect(breakpoint).not.toBeChecked();
+  await expect(toggle).toBeDisabled();
+  await expect(breakpoint).toHaveCSS('opacity', '1');
 });
 
 test('Labels filters data and text and sorts names or unsigned addresses in both directions', async ({
@@ -725,7 +815,7 @@ test('breakpoints are locked at maximum run speed and change in flight at finite
   await expect(unreachable).toBeChecked();
   await expect(toggle).toBeDisabled();
   await expect(clear).toBeDisabled();
-  await page.locator('body').press('Control+t');
+  await page.locator('body').press('Alt+t');
   await page.locator('body').press('Control+k');
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
   const runMenu = page.locator('.menubar summary').filter({ hasText: /^Run$/ });
@@ -1241,7 +1331,7 @@ test('Clear all outputs on Go defaults off, persists, and clears only on a fresh
     const row = input.closest('label')!;
     return [row.previousElementSibling?.textContent?.trim(), row.nextElementSibling?.tagName];
   });
-  expect(placement).toEqual(['Initialize Program Counter to global main if defined', 'HR']);
+  expect(placement).toEqual(['Initialize Program Counter to global main if defined', 'LABEL']);
   await settingsMenu.click();
   await source(page, '.text\nli $a0,73\nli $v0,1\nsyscall\nli $v0,10\nsyscall\n');
   await action(page, 'Assemble').click();

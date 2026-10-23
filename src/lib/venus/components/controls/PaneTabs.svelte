@@ -5,6 +5,8 @@
     id: T;
     /** Visible label, including any caller-owned dirty marker. */
     label: string;
+    /** Optional hover/focus description; omitted by default. */
+    tooltip?: string;
   };
 </script>
 
@@ -54,6 +56,7 @@
         variant === 'pane' && selected === tab.id && 'bg-[var(--theme-canvas,white)] font-semibold'
       ]}
       aria-pressed={selected === tab.id}
+      tooltip={tab.tooltip}
       onclick={() => onselect(tab.id)}>{tab.label}</Button
     >
   {/if}

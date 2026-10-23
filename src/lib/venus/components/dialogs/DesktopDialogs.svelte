@@ -11,6 +11,7 @@
   import CloseAllSourcesDialog from './CloseAllSourcesDialog.svelte';
   import FindReplaceDialog from './FindReplaceDialog.svelte';
   import MemoryConfigurationDialog from './MemoryConfigurationDialog.svelte';
+  import ClearBreakpointsDialog from './ClearBreakpointsDialog.svelte';
   import HelpDialog from './HelpDialog.svelte';
   import TransferStatusDialog from './TransferStatusDialog.svelte';
   const desktop = getDesktop();
@@ -34,4 +35,5 @@
 <HelpDialog />
 
 {#if desktop.memoryConfigurationOpen}<MemoryConfigurationDialog />{/if}
+{#if desktop.clearBreakpointsOpen}<ClearBreakpointsDialog />{/if}
 {#if desktop.transferStatus !== null}<TransferStatusDialog status={desktop.transferStatus} />{/if}

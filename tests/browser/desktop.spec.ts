@@ -194,7 +194,7 @@ test('working display settings and run speed survive reload', async ({ page }) =
   await expect(page.locator('.settings-menu').getByRole('separator')).toHaveCount(3);
   for (const label of [
     'Values displayed in hexadecimal',
-    'Clear all outputs on Go',
+    'Prompt to clear all breakpoints',
     'Self-modifying code'
   ]) {
     const item = page.locator('.settings-menu label').filter({ hasText: label });
@@ -487,7 +487,10 @@ test('Close All confirms from the toolbar or File menu before resolving every bu
     .locator('.menubar summary')
     .filter({ hasText: /^File$/ })
     .click();
-  await page.locator('.menubar').getByRole('button', { name: 'Close All', exact: true }).click();
+  await page
+    .locator('.menubar')
+    .getByRole('button', { name: /^Close All/ })
+    .click();
   await confirm.getByRole('button', { name: 'Close All', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Save changes?', exact: true })
@@ -504,7 +507,7 @@ test('Close All confirms from the toolbar or File menu before resolving every bu
   ]);
 });
 
-test('Alt+Shift+W / Option+Shift+W asks to close all files through the same confirmation', async ({
+test('Alt/Option+Shift+W asks to close all files through the same confirmation', async ({
   page
 }) => {
   await openDesktop(page);
@@ -516,7 +519,7 @@ test('Alt+Shift+W / Option+Shift+W asks to close all files through the same conf
     .getByLabel('Toolbar', { exact: true })
     .getByRole('button', { name: 'Close All', exact: true });
   await closeAll.hover();
-  await expect(closeAll).toHaveAccessibleDescription(/Alt\+Shift\+W \/ Option\+Shift\+W/);
+  await expect(closeAll).toHaveAccessibleDescription(/Alt\/Option\+Shift\+W/);
   // The label and its keycaps fit on one line instead of the label splitting across lines.
   const tooltip = page.getByRole('tooltip').locator('.tooltip');
   expect(
@@ -1611,7 +1614,7 @@ test('Alt W and Option W close the current source through the dirty-buffer workf
   const close = page.getByRole('button', { name: 'Close one.asm', exact: true });
   await close.hover();
   await expect(page.getByRole('tooltip')).toBeVisible();
-  await expect(close).toHaveAccessibleDescription('Close one.asm Alt+W / Option+W');
+  await expect(close).toHaveAccessibleDescription('Close one.asm Alt/Option+W');
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'one.asm', exact: true }).click();
   const source = page.getByRole('textbox', { name: 'Source one.asm', exact: true });
@@ -1739,4 +1742,15 @@ test('an empty browser library prompts to create or import a source until one is
   await waitForDesktop(page);
   await expect(page.getByText('No current edits')).toBeVisible();
   await expect(prompt).toHaveCount(0);
+});
+
+test('Edit and Execute tabs describe themselves with the MainPane tooltips', async ({ page }) => {
+  await openDesktop(page);
+  const tooltip = page.getByRole('tooltip');
+  await page.getByRole('button', { name: 'Edit', exact: true }).hover();
+  await expect(tooltip).toHaveText('Text editor for composing MIPS programs.');
+  await page.getByRole('button', { name: 'Execute', exact: true }).hover();
+  await expect(tooltip).toHaveText(
+    'View and control assembly language program execution. Enabled upon successful assemble.'
+  );
 });
