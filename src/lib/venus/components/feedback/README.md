@@ -8,4 +8,6 @@ The loading spinner supplies an accessible status while its parent owns loading 
 
 The source editor's keyword reference documents are the rich-content exception: their token hit-testing, scrollable reference entries, placement, and hover interaction remain owned by the editor view. They do not use the standard short-description Tooltip component.
 
+The desktop persistence alert renders the caller-selected backup, autosave, or settings persistence error with a themed warning background. Its caller owns error precedence and clearing; empty text renders nothing.
+
 These browser presentation primitives support the menus, toolbar, debugger, dialogs, and transfer controls described in the [Venus guide](../../README.md). They replace browser-native title hints without moving command policy into feedback. Add reusable status or descriptive interaction here; feature-specific messages and decisions stay with their view or state owner.

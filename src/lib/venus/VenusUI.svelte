@@ -21,6 +21,7 @@
   import TabbedPane from './components/layout/TabbedPane.svelte';
   import PaneDivider from './components/layout/PaneDivider.svelte';
   import LoadingSpinner from './components/feedback/LoadingSpinner.svelte';
+  import BackupError from './components/feedback/BackupError.svelte';
   import ExecutePane from './components/debugger/ExecutePane.svelte';
   import RegisterBanksPane from './components/debugger/RegisterBanksPane.svelte';
   import DesktopDialogs from './components/dialogs/DesktopDialogs.svelte';
@@ -66,12 +67,9 @@
   <FileImporter />
   {#each exportVariants as variant (variant)}<FileExporter {variant} />{/each}
   <div class="desktop flex h-dvh min-h-120 flex-col overflow-hidden text-[12px]">
-    {#if workspace.backupError || workspace.autoSaveError || desktop.persistence.error}<p
-        class="backup-error"
-        role="alert"
-      >
-        {workspace.backupError || workspace.autoSaveError || desktop.persistence.error}
-      </p>{/if}
+    <BackupError
+      message={workspace.backupError || workspace.autoSaveError || desktop.persistence.error}
+    />
     <MenuBar
       bind:this={menuBar}
       bind:showRegisters={display.showRegisters}
@@ -177,11 +175,6 @@
     color: var(--theme-text, #17202b);
     font-size: 14px;
   }
-  .backup-error {
-    padding: 6px 10px;
-    color: var(--theme-error, #8b1a1a);
-    background: var(--theme-warning, #fff1db);
-  }
   .application-controls {
     display: contents;
   }
@@ -206,9 +199,6 @@
     flex: 1;
     min-width: 300px;
     min-height: 0;
-  }
-  p {
-    margin: 8px 0;
   }
 
   .print-source {
