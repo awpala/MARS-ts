@@ -34,7 +34,8 @@ flowchart TB
     Instructions["InstructionSet<br/>basic descriptors and pseudo templates"] --> Tokenizer
     Instructions --> Second
     Second --> Statements["ProgramStatement<br/>basic text and machine encoding"]
-    Statements --> Memory["Actual session text/data memory"]
+    First --> Memory["Actual session text/data memory"]
+    Statements --> Memory
     Statements --> Results["Program machine list<br/>and fresh undo history"]
     Tokenizer --> Errors["Source-mapped ErrorList"]
     First --> Errors

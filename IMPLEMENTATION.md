@@ -64,7 +64,7 @@ flowchart TB
         Route["Static SvelteKit route"] --> Desktop["VenusUI: renderer and context lifetime"]
         Desktop --> Components["Components: panes, tabs, menus, toolbar, dialogs"]
         Desktop --> State["Per-desktop state: workspace, simulation, preferences, search"]
-        State --> Commands["Typed desktop and command context"]
+        Commands["Typed desktop and command context"] -->|references| State
         Components --> Commands
         State --> Adapters["Browser adapters: sources, preferences, downloads"]
         Adapters --> Storage[("localStorage")]

@@ -18,20 +18,24 @@ flowchart TB
     Root --> State["Per-desktop state<br/>coordination and workflow owners"]
     Root --> Context["Typed contexts<br/>desktop and command capabilities"]
     Context -->|references| State
-    Root --> Views["Browser components<br/>shell, editor, debugger, dialogs"]
+    Root --> Views["Browser components<br/>shell, editor, debugger, dialogs,<br/>file transfers"]
     Views -->|commands and workflow access| Context
-    Views --> Primitives["Controls, layout, feedback, and transfer composition"]
+    Views --> Primitives["Generic controls, layout, and feedback"]
     Root --> Hooks["Keyboard and unload bindings"]
     Hooks --> Context
     Views --> Utilities["Stateless presentation rules<br/>commands, debugger, dom, errors,<br/>execution, geometry, sources"]
     Hooks --> Utilities
     State --> Utilities
-    State --> Editor["Editor<br/>buffers and history"]
-    State --> Browser["Browser adapters<br/>source library and preferences"]
-    Views -->|"typed vocabularies and extension rules"| Browser
-    State --> Controller["RunController<br/>execution coordination"]
+    State --> Editor["Editor<br/>buffers, history, and highlighting"]
+    Views -->|syntax highlighting| Editor
+    State --> Browser["Browser adapters<br/>source library, preferences,<br/>recovery, downloads"]
+    Views -->|"vocabularies, extension rules,<br/>downloads, theme storage"| Browser
+    State --> Controller["RunController<br/>execution coordination and checkpoints"]
+    Browser -->|"recovery checkpoint validation"| Controller
     Controller --> Engine["Globals and engine<br/>assembly, hardware, simulation"]
     Controller -->|"write-observation rule"| Utilities
+    Views -->|"public hardware, numeric,<br/>and instruction APIs"| Engine
+    State -->|constructs per-desktop machine| Engine
     State -.->|supplies host callbacks| Engine
 ```
 
@@ -112,10 +116,12 @@ sequenceDiagram
     participant View as Debugger and messages
     Input->>Desktop: Read enablement and execute Assemble
     Desktop->>Simulation: Route assembly action
-    Simulation->>Run: Active source and include resolution
+    Simulation->>Run: Assemble the active source
     Run->>Engine: Assemble through public APIs
+    Engine->>Simulation: Read lead source and includes via host callback
+    Simulation-->>Engine: Workspace text: open buffer, else committed source
     Engine-->>Run: Statements, symbols, memory, diagnostics
-    Run-->>Simulation: Publish snapshot and revision
+    Run-->>Simulation: Return diagnostics, publish snapshot and revision
     Simulation-->>View: Reactive state and pane props
 ```
 

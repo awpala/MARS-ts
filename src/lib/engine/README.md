@@ -100,7 +100,8 @@ flowchart TB
     Pass1 --> Pass2["Pseudo expansion and encoding<br/>ProgramStatement machine representations"]
     Instructions["InstructionSet<br/>basic definitions and pseudo templates"] --> Tokens
     Instructions --> Pass2
-    Pass2 --> Memory["Initialized data and text memory"]
+    Pass1 --> Memory["Initialized data and text memory"]
+    Pass2 --> Memory
     Pass2 --> MachineList["Machine statement list<br/>and fresh program undo history"]
     Tokens --> Diagnostics["Source-mapped warnings and errors"]
     Pass1 --> Diagnostics

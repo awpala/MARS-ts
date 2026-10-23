@@ -8,7 +8,7 @@ The [root route](../routes/+page.svelte) opens the desktop directly. SvelteKit p
 
 ### Library relationships
 
-The subgraphs follow library modules and their responsibility-specific submodules. Solid arrows show composition, API use, or data access, not an exhaustive import graph. The dashed arrow is an engine call through an injected host interface; the engine does not import its Venus implementation. The route and browser APIs sit outside the library modules.
+The subgraphs follow library modules and their responsibility-specific submodules. Solid arrows show composition, API use, or data access, not an exhaustive import graph. An arrow to or from a subgraph boundary relates to that module as a whole rather than one of its submodules. The dashed arrow is an engine call through an injected host interface; the engine does not import its Venus implementation. The route and browser APIs sit outside the library modules.
 
 ```mermaid
 flowchart TB
@@ -17,34 +17,66 @@ flowchart TB
 
     subgraph VenusModule["Venus · venus/"]
         Root["VenusUI<br/>desktop renderer and lifetime"]
-        Controller["RunController<br/>framework-free run workflows"]
+        Controller["RunController<br/>framework-free run workflows<br/>and checkpoints"]
         subgraph ComponentsModule["components/"]
-            Components["Component groups<br/>shell, controls, layout, editor,<br/>debugger, feedback, transfers, dialogs"]
+            subgraph ShellModule["shell/"]
+                Shell["Menus, toolbar, footer,<br/>speed and theme controls"]
+            end
+            subgraph EditorViewsModule["editor/"]
+                EditorViews["Edit pane, source editor,<br/>and document tabs"]
+            end
+            subgraph DebuggerModule["debugger/"]
+                Debugger["Execute, register,<br/>and message panes"]
+            end
+            subgraph DialogsModule["dialogs/"]
+                Dialogs["Modal shell and<br/>workflow variants"]
+            end
+            subgraph TransfersModule["transfers/"]
+                Transfers["Clipboard and<br/>file import/export"]
+            end
+            subgraph LayoutModule["layout/"]
+                Layout["Pane shells and dividers"]
+            end
+            subgraph ControlsModule["controls/"]
+                Controls["Buttons, links, selectors,<br/>tabs, sliders, switches"]
+            end
+            subgraph FeedbackModule["feedback/"]
+                Feedback["Loading, tooltips,<br/>keycaps, inline errors"]
+            end
+            Shell & EditorViews & Debugger & Dialogs & Transfers --> Controls
+            Debugger --> Layout
+            Layout --> Controls
+            Shell & Debugger & Controls --> Feedback
+            Controls -->|toolbar glyphs| Shell
         end
         subgraph ContextModule["context/"]
             Context["Typed desktop and command contexts"]
         end
         subgraph HooksModule["hooks/"]
-            Hooks["Keyboard bindings"]
+            Hooks["Keyboard and unload bindings"]
         end
         subgraph UtilitiesModule["utils/"]
             Utilities["Stateless presentation rules"]
         end
         subgraph StateModule["state/"]
-            State["Desktop state owners<br/>workspace, simulation, preferences, search"]
+            State["Desktop state owners<br/>workspace, simulation, preferences,<br/>search, recovery"]
             Host["Simulation host callbacks<br/>source lookup, console, input,<br/>scheduling, preferences"]
             State --> Host
         end
-        Root --> Components
+        Root --> ComponentsModule
         Root --> Context
         Root --> Hooks
         Root --> State
-        Components --> Context
+        Shell -->|command capability| Context
+        EditorViews & Debugger & Dialogs & Transfers --> Context
+        EditorViews --> Hooks
         Hooks --> Context
-        Components --> Utilities
+        ComponentsModule --> Utilities
         Hooks --> Utilities
+        State --> Utilities
         Context -->|references existing owners| State
         State --> Controller
+        Controller -->|write-observation rule| Utilities
     end
 
     subgraph EditorModule["Editor · editor/"]
@@ -55,7 +87,7 @@ flowchart TB
     end
 
     subgraph BrowserModule["Browser · browser/"]
-        Browser["Browser adapters<br/>source library, preferences, downloads"]
+        Browser["Browser adapters<br/>source library, preferences,<br/>recovery records, downloads"]
     end
 
     subgraph EngineModule["Engine · engine/"]
@@ -91,11 +123,13 @@ flowchart TB
         Globals --> Syscalls
         Globals --> IO
         Assembly --> Instructions
+        Assembly --> Hardware
         Assembly --> Diagnostics
         Assembly --> Formatting
         Simulation --> Instructions
         Simulation --> Hardware
         Simulation --> Diagnostics
+        Instructions --> Hardware
         Instructions --> Syscalls
         Syscalls --> Hardware
         Syscalls --> IO
@@ -105,22 +139,31 @@ flowchart TB
     Route --> Root
     State --> Editor
     State --> Browser
-    Components --> Highlighting
-    Components -->|file and clipboard interactions| Platform
+    EditorViews --> Highlighting
+    EditorViews -->|instruction hover metadata| Instructions
+    EditorViews -->|directive hover metadata| Assembly
+    Shell -->|theme storage| Browser
+    Debugger -->|stored vocabularies and limits| Browser
+    Transfers -->|extension rules and downloads| Browser
+    Transfers -->|file and clipboard interactions| Platform
+    State -->|editor clipboard actions| Platform
     Browser --> Platform
+    Browser -->|recovery checkpoint validation| Controller
     Host --> Platform
     Host -->|source resolution through workspace| Editor
-    Host -->|committed source lookup through workspace| Browser
+    Host -->|committed sources through workspace,<br/>engine preference storage| Browser
+    State -->|constructs machine with host| Globals
     Controller --> Globals
-    Components -->|public inspection and edit APIs| Hardware
-    Components -->|instruction hover metadata| Instructions
+    Debugger -->|public inspection and edit APIs| Hardware
+    Debugger -->|Java-compatible numeric conversion| Formatting
     Highlighting -->|directive and token metadata| Assembly
+    Highlighting -->|register names| Hardware
     Globals -.->|calls supplied interfaces| Host
 ```
 
 Venus composes the browser desktop and owns its session lifecycle. Editor and RunController remain framework-free models even though Venus uses them in the browser. Engine remains a separate portable module with an injected host boundary; the deployed application executes it in the browser too. Host callbacks belong to Venus simulation state and resolve source through the existing workspace, whose editor buffers take precedence over committed browser-library sources.
 
-Help is composed into Venus dialogs and uses the reusable clipboard/transfer controls for code examples. Its source-transfer callback delegates to the existing workspace; Help owns neither a machine nor an editor. The component-group node represents several independent responsibilities, not a single component implementing every browser interaction.
+Help is composed into Venus dialogs and uses the reusable clipboard/transfer controls for code examples. Its source-transfer callback delegates to the existing workspace; Help owns neither a machine nor an editor. Within components, the feature groups (shell, editor, debugger, dialogs, and transfers) compose the generic controls, layout, and feedback groups, which read no desktop context; controls borrow only the shell's leaf toolbar glyphs.
 
 ### Module responsibilities
 
