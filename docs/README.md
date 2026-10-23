@@ -2,6 +2,8 @@
 
 The [implementation guide](../IMPLEMENTATION.md) describes the current MARS-ts system, its architecture, browser adaptations, supported behavior, and remaining limitations. These decision records explain its plan, environment, and consequential design choices.
 
+The [deviation catalog](deviations.md) compares implemented UI and Engine behavior with final MARS 4.5, separating browser/platform adaptations and excluding unfinished features. It remains a living comparison until the human-owned MARS-ts 1.0 release cut.
+
 | Decision                                                                          | Status                    | Scope                                                                                                                    |
 | --------------------------------------------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | [Port plan](adrs/0000-port-plan.md)                                               | Accepted (P0–P2 complete) | Scope, stack, legacy-to-target mapping, parity strategy, milestones, open decisions                                      |
@@ -15,7 +17,8 @@ The [implementation guide](../IMPLEMENTATION.md) describes the current MARS-ts s
 | [GUI program arguments](adrs/0009-program-arguments.md) | Accepted | Legacy argument parsing and stack setup, shared Args toggle, and browser draft recovery |
 | [Optional output clearing on Go](adrs/0008-clear-outputs-on-go.md) | Accepted | Persisted browser preference to clear both consoles before Go |
 | [Installable, offline-capable web app](adrs/0010-pwa-offline-support.md) | Accepted | Progressive Web App installation, service-worker caching, offline startup, and update lifecycle |
-| [Breakpoint changes during Go](adrs/0011-in-flight-breakpoints.md) | Accepted | Setting, suspending, and clearing breakpoints while a program runs, applied at the next instruction boundary |
+| [Breakpoint changes during Go](adrs/0011-in-flight-breakpoints.md) | Accepted | Live breakpoint replacement, finite-speed UI editing, maximum-speed lock, and post-instruction checks |
+| [Behavioral baseline and deviation catalog](adrs/0012-deviation-baseline.md) | Accepted; release baseline open | Current UI/Engine deviations, separate browser/platform adaptations, evidence, ongoing maintenance, and the 1.0 release freeze |
 
 The [Coolify deployment runbook](runbooks/prod-deployment.md) covers ongoing configuration maintenance, releases, smoke checks, and rollback for the live, stable service at `mars-ide.portfolio-projects.dev`.
 

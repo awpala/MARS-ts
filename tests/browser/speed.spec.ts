@@ -47,8 +47,18 @@ test('speed buttons step through distinct evenly spaced settings with maximum on
   await expect(slider).toHaveValue('36');
   await expect(page.locator('.speed')).toHaveText('Run speed at max (no interaction)');
   await expect(plus).toBeDisabled();
+  const fill = () => slider.evaluate((input) => getComputedStyle(input).accentColor);
+  await expect.poll(fill).toBe('rgb(196, 102, 31)');
+  const theme = await page.locator('html').getAttribute('data-theme');
+  await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+  await expect.poll(fill).toBe('rgb(232, 166, 93)');
+  await page.evaluate((value) => {
+    if (value === null) document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', value);
+  }, theme);
   await minus.click();
   await expect(slider).toHaveValue('35');
+  await expect.poll(fill).toBe('auto');
   await page.reload();
   await waitForDesktop(page);
   await expect(slider).toHaveValue('35');

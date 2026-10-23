@@ -114,6 +114,9 @@ test('keyboard commands work in text inputs and respect disabled commands and di
   const breakpoint = page.getByLabel('Breakpoint 0x00400004', { exact: true });
   const toggle = page.getByRole('button', { name: 'Toggle all breakpoints', exact: true });
   const clear = page.getByRole('button', { name: 'Clear all breakpoints', exact: true });
+  const minus = page.getByRole('button', { name: 'Decrease run speed', exact: true });
+  const plus = page.getByRole('button', { name: 'Increase run speed', exact: true });
+  await minus.click();
   await breakpoint.check();
   await breakpoint.press('Control+t');
   await expect(toggle).toHaveAttribute('aria-pressed', 'false');
@@ -132,11 +135,15 @@ test('keyboard commands work in text inputs and respect disabled commands and di
   await expect(breakpoint).toBeChecked();
   await page.keyboard.press('Escape');
   await toggle.press('Control+t');
+  await plus.click();
+  await expect(toggle).toBeDisabled();
   await page.getByLabel('$t0 value', { exact: true }).press('F5');
   await expect(toggle).toBeDisabled();
   await page.keyboard.press('Control+k');
   await expect(breakpoint).toBeChecked();
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
+  await expect(clear).toBeDisabled();
+  await minus.click();
   await expect(clear).toBeEnabled();
   await clear.press('Control+k');
   await expect(breakpoint).not.toBeChecked();

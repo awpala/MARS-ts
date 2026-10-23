@@ -8,7 +8,7 @@ The worker is one part of the installable-app surface. [manifest.webmanifest](..
 
 ## Behavior
 
-At install, the worker precaches the prerendered pages, the hashed Vite output, and the files from `static/` under a per-release cache named `mars-ts-<version>`. Manifest paths are relative to the deployment base, so the worker resolves them against its own registration scope; the app therefore works from a domain root or a subpath. On activation it deletes caches from other releases.
+At install, the worker precaches the prerendered pages, the hashed Vite output, and the files from `static/` under a per-release cache named `mars-ts-<version>`. Manifest paths are relative to the deployment base, so the worker resolves them against its own registration scope; the app therefore works from a domain root or a subpath. On activation it deletes every other CacheStorage cache on the origin, including names outside the MARS prefix, as recorded in [ADR 0010](../../docs/adrs/0010-pwa-offline-support.md) and the [platform deviation catalog](../../docs/deviations.md#ui-p0007-installable-offline-application-and-release-activation).
 
 Requests are handled as follows:
 

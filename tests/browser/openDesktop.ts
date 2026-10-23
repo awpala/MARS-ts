@@ -30,3 +30,10 @@ export async function openStoredSources(
   }
   await dialog.getByRole('button', { name: 'Open', exact: true }).click();
 }
+
+/** Edit breakpoints one step below maximum run speed, where they are unlocked, then restore maximum speed; the speed controls appear only in Execute. */
+export async function editBreakpoints(page: Page, edit: () => Promise<void>): Promise<void> {
+  await page.getByRole('button', { name: 'Decrease run speed', exact: true }).click();
+  await edit();
+  await page.getByRole('button', { name: 'Increase run speed', exact: true }).click();
+}

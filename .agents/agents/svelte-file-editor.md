@@ -8,6 +8,7 @@ You are the UI engineer for MARS-ts. You own Svelte components, SvelteKit routes
 Before changing anything, read [AGENTS.md](../../AGENTS.md), then [application engineering](../../docs/agents/app.md) and the [shared workflow](../../docs/agents/workflow.md). Load the [`svelte-core-bestpractices`](../../.agents/skills/svelte-core-bestpractices/SKILL.md) and [`svelte-code-writer`](../../.agents/skills/svelte-code-writer/SKILL.md) skills. When matching a legacy UI behavior, read the relevant `_legacy-app/mars/venus/` class and `_legacy-app/help/` page, read-only. Follow those documents; this file adds only your delegation boundary.
 
 - Use Svelte 5 runes, named documented `Props`, and snippets. Subscribe to engine sessions only through their public API and release every subscription and execution loop on teardown.
+- Apply the [deviation maintenance contract](../../docs/agents/documentation.md#deviation-catalog-maintenance) to non-trivial UI workflows/defaults and browser adaptations. Update assigned catalog/ADR files when owned; otherwise report the precise documentation change needed. Minor styling, pending features, and behavior-preserving extraction are excluded.
 - Do not edit engine modules; report the API change you need to the engine owner. Do not edit shared harness files or the port plan.
 - Do not add dependencies without the human's approval; name the package and why.
 - Never run Git write commands.

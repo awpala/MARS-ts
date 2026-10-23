@@ -26,10 +26,12 @@ Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSl
     losing them; Clear all breakpoints (Ctrl+K) removes them. Command is accepted in place of Ctrl
     on macOS when the browser delivers the shortcut to the page. Breakpoint suspension was
     introduced in Java Release 3.8. Unlike the original, which read breakpoints only when Go
-    started, MARS-ts lets you set, clear, suspend, or restore breakpoints while Go is running; the
-    change applies from the next instruction, so checking a breakpoint ahead of the current
-    instruction pauses there. At unlimited speed, up to 1,000 more instructions can run before the
-    change takes effect. A pending Step is unaffected.
+    started, MARS-ts lets you set, clear, suspend, or restore breakpoints while Go is running at a
+    finite speed; the change applies from the next instruction, so checking a breakpoint ahead of
+    the current instruction pauses there. A pending Step is unaffected. At unlimited speed (the
+    default) the program simply runs, without step-by-step display, so breakpoint controls are
+    locked, even while execution is stopped; the breakpoints already set still apply. Lower the run
+    speed to set or change breakpoints, even while the program runs.
   </li>
   <li>
     <strong>Pause (F9)</strong> requests a pause; <strong>Stop (F11)</strong> requests termination.
@@ -85,6 +87,6 @@ Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSl
 </p>
 <p class="notice">
   Unlike the original Swing article’s live-editing workflow, MARS-ts disables machine edits during
-  execution. Pause or Step before changing registers or memory. Breakpoints and condition flags
-  remain editable while the program runs.
+  execution. Pause or Step before changing registers or memory. Condition flags remain editable
+  while the program runs, and so do breakpoints at any speed below unlimited.
 </p>

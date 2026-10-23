@@ -1,4 +1,4 @@
-import { openDesktop, openStoredSources, waitForDesktop } from './openDesktop.js';
+import { editBreakpoints, openDesktop, openStoredSources, waitForDesktop } from './openDesktop.js';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
@@ -54,7 +54,9 @@ test('execution holds the opening page, then centers the PC and pins the final p
   await action(page, 'Backstep').click();
   await expect.poll(centerError).toBeLessThanOrEqual(1);
 
-  await page.getByLabel('Breakpoint 0x00400190', { exact: true }).check();
+  await editBreakpoints(page, () =>
+    page.getByLabel('Breakpoint 0x00400190', { exact: true }).check()
+  );
   await action(page, 'Go').click();
   await expect(page.getByLabel('Execution status')).toHaveText('Status: paused');
   const bottomGap = () =>
@@ -288,7 +290,7 @@ test('Text Segment heading stays visible while following and scrolling instructi
   const heading = text.getByRole('heading', { name: 'Text Segment', exact: true });
   await expect(heading).toBeInViewport();
   const breakpoint = page.getByLabel('Breakpoint 0x004000c8', { exact: true });
-  await breakpoint.check();
+  await editBreakpoints(page, () => breakpoint.check());
   const offset = await breakpoint.evaluate((box) => {
     const input = box.getBoundingClientRect();
     const cell = box.parentElement!.getBoundingClientRect();
@@ -358,21 +360,23 @@ test('breakpoint toolbar actions follow Reset and suspend or clear breakpoints',
   await source(page, '.text\naddiu $t0,$zero,1\naddiu $t0,$t0,1\nli $v0,10\nsyscall\n');
   await action(page, 'Assemble').click();
   const breakpoint = page.getByLabel('Breakpoint 0x00400004', { exact: true });
-  await breakpoint.check();
-  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-  await toggle.click();
-  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await editBreakpoints(page, async () => {
+    await breakpoint.check();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  });
   await expect(breakpoint).toBeChecked();
   await action(page, 'Go').click();
   await expect(page.getByLabel('Execution status')).toHaveText(
     'Status: terminated — breakpoints suspended'
   );
   await action(page, 'Reset').click();
-  await toggle.click();
+  await editBreakpoints(page, () => toggle.click());
   await action(page, 'Go').click();
   await expect(page.getByLabel('Execution status')).toHaveText('Status: paused');
   await expect(page.getByLabel('pc value', { exact: true })).toHaveValue('0x00400004');
-  await clear.click();
+  await editBreakpoints(page, () => clear.click());
   await expect(breakpoint).not.toBeChecked();
   await expect(clear).toBeDisabled();
   await expect(toggle).toBeDisabled();
@@ -646,7 +650,9 @@ syscall
   await action(page, 'Backstep').click();
   await expect(page.getByLabel('$t0 value', { exact: true })).toHaveValue('0x00000000');
   await expect(page.getByLabel('pc value', { exact: true })).toHaveValue('0x00400000');
-  await page.getByLabel('Breakpoint 0x00400008', { exact: true }).check();
+  await editBreakpoints(page, () =>
+    page.getByLabel('Breakpoint 0x00400008', { exact: true }).check()
+  );
   await action(page, 'Go').click();
   await expect(page.getByLabel('Execution status')).toHaveText('Status: paused');
   await expect(page.getByLabel('$t0 value', { exact: true })).toHaveValue('0x00000007');
@@ -664,18 +670,51 @@ syscall
   await expect(page.getByLabel('$t0 value', { exact: true })).toHaveValue('0x00000000');
 });
 
-test('breakpoints set, suspended, or cleared during Go apply to the running program', async ({
+test('breakpoints are locked at maximum run speed and change in flight at finite speeds', async ({
   page
 }) => {
   await openDesktop(page);
   const status = page.getByLabel('Execution status');
   const toggle = action(page, 'Toggle all breakpoints');
   const clear = action(page, 'Clear all breakpoints');
-  await source(page, '.text\nloop: addiu $t0,$t0,1\nb loop\n');
+  const minus = action(page, 'Decrease run speed');
+  const plus = action(page, 'Increase run speed');
+  await source(page, '.text\nloop: addiu $t0,$t0,1\nb loop\nli $v0,10\n');
   await action(page, 'Assemble').click();
+  const unreachable = page.getByLabel('Breakpoint 0x00400008', { exact: true });
+  const branch = page.getByLabel('Breakpoint 0x00400004', { exact: true });
+  await expect(branch).toBeDisabled();
+  await minus.click();
+  await unreachable.check();
+  await plus.click();
+  await expect(branch).toBeDisabled();
+  await expect(unreachable).toBeDisabled();
+  await expect(unreachable).toBeChecked();
+  await expect(toggle).toBeDisabled();
+  await expect(clear).toBeDisabled();
+  await page.locator('body').press('Control+t');
+  await page.locator('body').press('Control+k');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await expect(unreachable).toBeChecked();
+  const tooltip = page.locator('.tooltip');
+  await toggle.hover();
+  await expect(tooltip).toHaveText(
+    /^Toggle all breakpoints — lower the run speed to change breakpoints/
+  );
+  await branch.hover();
+  await expect(tooltip).toHaveText(
+    'Breakpoint locked at maximum run speed — lower the run speed to change breakpoints'
+  );
+  await expect(branch).toHaveAccessibleDescription(/lower the run speed/);
   await action(page, 'Go').click();
   await expect(status).toHaveText('Status: running');
-  await page.getByLabel('Breakpoint 0x00400004', { exact: true }).check();
+  await expect(branch).toBeDisabled();
+  await expect(toggle).toBeDisabled();
+  await minus.click();
+  await expect(branch).toBeEnabled();
+  await expect(branch).not.toHaveAccessibleDescription(/lower the run speed/);
+  await expect(toggle).toBeEnabled();
+  await branch.check();
   await expect(status).toHaveText('Status: paused');
   await expect(page.getByLabel('pc value', { exact: true })).toHaveValue('0x00400004');
   await page.getByRole('button', { name: 'Mars Messages', exact: true }).click();
@@ -702,8 +741,6 @@ test('breakpoints set, suspended, or cleared during Go apply to the running prog
   await action(page, 'Go').click();
   await expect(page.getByLabel('Run input', { exact: true })).toBeVisible();
   await expect(breakpoint).toBeEnabled();
-  await breakpoint.uncheck();
-  await breakpoint.check();
   await clear.click();
   await expect(breakpoint).not.toBeChecked();
   await page.getByLabel('Run input', { exact: true }).fill('1');
@@ -1213,7 +1250,9 @@ for (const resume of ['step', 'backstep to start', 'breakpoint', 'recovered brea
     await page.getByLabel('Clear all outputs on Go', { exact: true }).check();
     await settingsMenu.click();
     if (resume.includes('breakpoint')) {
-      await page.getByLabel('Breakpoint 0x0040000c', { exact: true }).check();
+      await editBreakpoints(page, () =>
+        page.getByLabel('Breakpoint 0x0040000c', { exact: true }).check()
+      );
       await action(page, 'Go').click();
     } else {
       await action(page, 'Step').click();

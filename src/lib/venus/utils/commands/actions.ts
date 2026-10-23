@@ -84,6 +84,8 @@ export const breakpointActions: readonly Action[] = [
     shortcut: 'Ctrl+K'
   }
 ];
+/** Advice shown on breakpoint controls locked at unlimited run speed. */
+export const frozenBreakpointsHint = 'lower the run speed to change breakpoints';
 /** Console commands available throughout the desktop. */
 export const consoleActions: readonly Action[] = [
   { label: 'Clear', command: 'clearOutput', shortcut: 'Ctrl+L' },

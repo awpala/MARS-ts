@@ -12,6 +12,7 @@ export function provideDesktop(desktop: DesktopState): DesktopState {
   setDesktop(desktop);
   setDesktopCommands({
     isEnabled: desktop.enabled,
+    disabledReason: desktop.disabledReason,
     execute: desktop.execute,
     isPressed: desktop.isPressed,
     displayToggles: () => desktop.displayToggles,

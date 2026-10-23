@@ -46,4 +46,6 @@ Both tools declare the first-party `svelte` MCP server; [tooling policy](tooling
 
 ## Maintaining the harness
 
+Behavioral comparison policy lives in the [documentation contract](documentation.md#deviation-catalog-maintenance), with the public baseline in [docs/deviations.md](../deviations.md). Port, UI, analyst, and review roles route there rather than maintaining separate catalogs. Roles limited to assigned code or read-only analysis report needed entry/ADR updates to their coordinating owner; those ownership limits do not make catalog maintenance optional for the overall change. Keep this routing in the canonical skills and their Claude mirror when adjusting the baseline workflow.
+
 When moving guidance, update incoming links, section anchors, and plain-text routing hints in `AGENTS.md`, the guides, the roles, and the skills. Link checks alone do not prove that useful instructions survived a move. When the port reaches a milestone that changes a standing fact (P1 creates the app, P5 removes the legacy tree), update [project scope](project.md), the "current state" lines in `AGENTS.md` and [application engineering](app.md), and the role definitions in the same change.

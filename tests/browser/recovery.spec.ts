@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openDesktop, openStoredSources, waitForDesktop } from './openDesktop.js';
+import { editBreakpoints, openDesktop, openStoredSources, waitForDesktop } from './openDesktop.js';
 
 const action = (page: import('@playwright/test').Page, name: string) =>
   page.getByRole('button', { name, exact: true });
@@ -22,7 +22,9 @@ test('reload restores Edit selection independently of the exact loaded machine, 
   await expect(page.getByLabel('Run I/O', { exact: true })).toHaveValue('42');
   await page.getByLabel('Memory 0x10010000', { exact: true }).fill('99');
   await page.getByLabel('Memory 0x10010000', { exact: true }).press('Enter');
-  await page.getByLabel('Breakpoint 0x00400014', { exact: true }).check();
+  await editBreakpoints(page, () =>
+    page.getByLabel('Breakpoint 0x00400014', { exact: true }).check()
+  );
   await action(page, 'Edit').click();
   await action(page, 'editing.asm').click();
   await page.getByRole('textbox', { name: 'Source editing.asm', exact: true }).press('Control+End');
@@ -41,7 +43,9 @@ test('reload restores Edit selection independently of the exact loaded machine, 
   await action(page, 'Backstep').click();
   await expect(page.getByLabel('pc value', { exact: true })).toHaveValue('0x0040000c');
   await expect(page.getByLabel('Run I/O', { exact: true })).toHaveValue('42');
-  await page.getByLabel('Breakpoint 0x00400014', { exact: true }).uncheck();
+  await editBreakpoints(page, () =>
+    page.getByLabel('Breakpoint 0x00400014', { exact: true }).uncheck()
+  );
   await action(page, 'Go').click();
   await expect(page.getByLabel('Execution status')).toHaveText('Status: terminated');
   const output = await page.getByLabel('Run I/O', { exact: true }).inputValue();

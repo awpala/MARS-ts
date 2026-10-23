@@ -33,7 +33,8 @@ Work one unit at a time and finish each with evidence. A unit is small enough th
 ## 4. Prove parity
 
 - Add focused Vitest unit tests for edge cases the fixtures do not reach.
-- Run the fixtures through the engine's parity runner and Vitest. Every difference is either a port defect (fix it) or a deliberate divergence (stop and ask for an ADR).
+- Run the fixtures through the engine's parity runner and Vitest. Investigate each difference: fix port defects within the assigned scope, or document an authorized deliberate divergence with its ADR and regression. Do not treat an unexplained mismatch as an approved enhancement.
+- Follow the [deviation maintenance contract](../../../docs/agents/documentation.md#deviation-catalog-maintenance): update the relevant Engine behavior or browser/platform entry in the [catalog](../../../docs/deviations.md), reconcile affected ADRs with `src/`, and distinguish unimplemented features from implemented differences. If documentation is outside the delegated ownership, report the exact update needed. Oracle-conforming refactors need no deviation entry.
 - Run `run-checks app`, and `run-checks legacy` when fixtures changed.
 
 ## 5. Report

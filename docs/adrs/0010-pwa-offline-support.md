@@ -11,7 +11,7 @@ MARS-ts is a static application: the simulator runs entirely in the browser, per
 
 Make the existing static build an installable Progressive Web App with SvelteKit's built-in service-worker support, adding no runtime dependency.
 
-- [`src/service-worker/`](../../src/service-worker/README.md) is bundled and registered automatically by SvelteKit. It precaches the prerendered page, the hashed build output, and everything under `static/` in a cache named for the release version, and removes caches from other releases on activation.
+- [`src/service-worker/`](../../src/service-worker/README.md) is bundled and registered automatically by SvelteKit. It precaches the prerendered page, the hashed build output, and everything under `static/` in a cache named for the release version. On activation, the current implementation deletes every other Cache Storage name visible at that origin, not only names carrying the MARS prefix; this also removes prior release caches.
 - Precached files are served cache-first. Other same-origin GET requests go to the network first and fall back to the cache; an offline navigation falls back to the cached desktop page. SvelteKit's `_app/version.json` update probe always bypasses the cache.
 - The worker does not call `skipWaiting`. A new release takes over only after every tab on the previous release closes, so a running page never lazy-loads a chunk (such as a Help article) from a different release.
 - [`static/manifest.webmanifest`](../../static/manifest.webmanifest) declares standalone display, relative `start_url` and `scope`, and 192 and 512 pixel PNG icons. The root layout links it. The PNG icons are generated from the retained MARS favicon.

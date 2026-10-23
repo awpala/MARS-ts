@@ -212,7 +212,7 @@ The [hardware guide](hardware/README.md) explains register access, storage, and 
 
 `SyscallLoader` uses explicit factories instead of Java classpath reflection. It constructs session-owned services and preserves override matching, number reassignment, and collision checks. New services enter through this registry with their real algorithms and host contracts.
 
-Popup presentation for an implemented console read is separate from the deferred dialog syscall family. Browser source import/export and the local source library likewise do not implement runtime file descriptors. Remaining GUI settings, device Tools, and memory dump formats need their own implementations and evidence. The web port excludes `MarsLaunch`, a TypeScript CLI, and program-argument controls; the Java command line remains oracle infrastructure only.
+Popup presentation for an implemented console read is separate from the deferred dialog syscall family. Browser source import/export and the local source library likewise do not implement runtime file descriptors. Remaining GUI settings, device Tools, and memory dump formats need their own implementations and evidence. The web port excludes `MarsLaunch` and a TypeScript CLI; GUI program arguments and their engine setup are implemented under [ADR 0009](../../../docs/adrs/0009-program-arguments.md). The Java command line remains oracle infrastructure only. The [deviation catalog](../../../docs/deviations.md#engine-subset) separates implemented engine differences from host adaptations and pending work.
 
 ## Evidence and integration entry points
 

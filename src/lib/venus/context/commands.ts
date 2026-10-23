@@ -6,6 +6,8 @@ import type { DisplayToggle, EngineMenuToggle } from '../utils/commands/settings
 export type DesktopCommands = {
   /** Read current enablement, tracking the provider's reactive session state. */
   isEnabled: (action: Action) => boolean;
+  /** Read why an action is disabled, for its tooltip, or undefined when no explanation applies. */
+  disabledReason: (action: Action) => string | undefined;
   /** Execute a command through the provider, including menu dismissal and async work. */
   execute: (command: string) => void | Promise<void>;
   /** Read toggle state for a command, or undefined for a momentary action. */

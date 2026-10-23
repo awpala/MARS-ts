@@ -22,9 +22,10 @@
   {@const icon = item.icon!}
   {@const suspended =
     'glyph' in icon && icon.glyph === 'Breakpoints' && !commands.isPressed(item.command)}
+  {@const reason = item.unavailable ? 'not yet available' : commands.disabledReason(item)}
   <IconButton
     label={item.label}
-    tooltip={item.unavailable ? `${item.label} — not yet available` : item.label}
+    tooltip={reason ? `${item.label} — ${reason}` : item.label}
     shortcut={item.shortcut}
     pressed={commands.isPressed(item.command)}
     disabled={!commands.isEnabled(item)}

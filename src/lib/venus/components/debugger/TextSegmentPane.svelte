@@ -6,6 +6,7 @@
   import { Binary } from '#lib/engine/formatting/Binary.js';
   import { Settings } from '#lib/engine/Settings.js';
   import { centerBelowHeading, endsWithinViewport } from '../../utils/dom/scrollReveal.js';
+  import { frozenBreakpointsHint } from '../../utils/commands/actions.js';
   import { UNLIMITED_SPEED } from '../../utils/execution/runSpeed.js';
   import Button from '../controls/Button.svelte';
   import CloseButton from '../controls/CloseButton.svelte';
@@ -15,7 +16,9 @@
   import { getExecuteView } from './ExecuteView.svelte.js';
   import MachineTable, { type MachineHighlight } from './MachineTable.svelte';
   import SegmentPane from './SegmentPane.svelte';
-  const { simulation, workspace } = getDesktop();
+  const desktop = getDesktop();
+  const { simulation, workspace } = desktop;
+  const lockedBreakpoint = `Breakpoint locked at maximum run speed — ${frozenBreakpointsHint}`;
   const view = getExecuteView();
   const selfModifying = $derived.by(() => {
     void view.snapshot.revision;
@@ -112,15 +115,21 @@
             data-highlight={row.address === highlightedPC ? pcHighlight : undefined}
             aria-current={row.address === highlightedPC ? 'step' : undefined}
           >
-            <td
-              ><input
-                class="mx-auto block"
-                type="checkbox"
-                aria-label={`Breakpoint ${Binary.intToHexString(row.address)}`}
-                checked={simulation.breakpoints.includes(row.address)}
-                onchange={() => simulation.toggleBreakpoint(row.address)}
-              /></td
-            >
+            <Tooltip text={desktop.breakpointsFrozen ? lockedBreakpoint : ''}>
+              {#snippet children(trigger, description)}
+                <td {@attach trigger}
+                  ><input
+                    class="mx-auto block"
+                    type="checkbox"
+                    aria-label={`Breakpoint ${Binary.intToHexString(row.address)}`}
+                    aria-describedby={description}
+                    checked={simulation.breakpoints.includes(row.address)}
+                    disabled={desktop.breakpointsFrozen}
+                    onchange={() => simulation.toggleBreakpoint(row.address)}
+                  /></td
+                >
+              {/snippet}
+            </Tooltip>
             <td class="numeric identifier">{view.formatAddress(row.address)}</td><td class="numeric"
               ><CellInput
                 aria-label={`Code ${Binary.intToHexString(row.address)}`}

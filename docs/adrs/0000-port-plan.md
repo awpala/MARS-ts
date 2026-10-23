@@ -57,7 +57,7 @@ Port correctness is measured against the legacy app, not against reading of its 
 2. **Golden fixtures (P1).** A committed corpus of MIPS programs with stdin, MARS options, and the oracle's stdout, stderr, and exit status. A regeneration script runs the oracle; the fixtures are the durable artifact, so tests keep working after the JDK is removed.
 3. **Parity runner (P2).** Vitest calls engine APIs directly with explicit fixture settings and injected I/O, then compares results to the committed goldens. Test adapters interpret fixture metadata; they do not port the `MarsLaunch` parser or ship a CLI in the web application. CLI-only cases remain reference captures and are excluded explicitly from the web parity gate.
 4. **Nondeterminism is declared, not tolerated silently.** Fixtures avoid or mask the time syscall (30), unseeded random syscalls, `sleep`, MIDI, and dialogs. Seeded random syscalls must match, which requires porting the `java.util.Random` algorithm exactly.
-5. **Deliberate divergence** from MARS (a bug fix, a browser limitation) needs an ADR naming the fixture that records the new behavior.
+5. **Deliberate divergence** from MARS (a bug fix, a browser limitation) needs an ADR naming the fixture/regression that records the new behavior and an entry in the [deviation catalog](../deviations.md). [ADR 0012](0012-deviation-baseline.md) separates implemented UI/Engine behavior from browser/platform adaptations, excludes pending work and behavior-preserving refactors, and defines the living port baseline followed by the frozen 1.0 release comparison. Retrospective source observations disclose evidence gaps rather than claiming parity.
 
 ## 5. Proposed layout
 
@@ -90,7 +90,7 @@ These Java behaviors differ from TypeScript defaults and are the expected source
 Each becomes an ADR when it is decided.
 
 - Execution model resolved in [ADR 0004](0004-cooperative-simulation.md): cooperative execution through an injected scheduler and asynchronous input services.
-- Editor component for P3.
+- The current editor uses a native textarea with the translated MIPS highlighter, bundled presets, and an instance-owned buffer/history model ([ADR 0002](0002-port-fidelity.md), [current behavioral differences](../deviations.md#ui-subset)). Remaining editor parity work does not imply that the existing component selection is still undecided.
 - Implementation order of the bundled tools.
 - Deployment target and public origin resolved in [ADR 0005](0005-coolify-deployment.md): live, stable static hosting on Coolify at `https://mars-ide.portfolio-projects.dev` through the corresponding GitHub App.
 

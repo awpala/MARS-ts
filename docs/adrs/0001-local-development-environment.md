@@ -47,7 +47,7 @@ Ordering matters. The feature commands are verified before anything depends on t
 | `__logs/local/` | Ignored; timestamped `run-app` logs with a latest symlink |
 | `/tmp/setup-env-debug.log` | Container-local setup diagnostics |
 
-No `.env` file is loaded: the port has no configuration yet, and requiring an env file before first launch would only add a failure mode. Add `--env-file` together with the first real variable and a `sample.env`.
+No `.env` file is required by container provisioning: the static application has no required runtime secrets or server configuration. The existing `MARS_VALIDATION` build/test switch is supplied by validation commands and does not require an env file. Add `--env-file` together with a real provisioning requirement and a `sample.env`, rather than making first launch depend on an unused file.
 
 The container publishes and forwards port `6277` (phoneword "MARS") for the SvelteKit dev and preview servers. The app's Vite configuration owns the listener; `kill-app` targets only that port.
 

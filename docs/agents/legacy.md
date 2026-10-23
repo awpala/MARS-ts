@@ -24,6 +24,8 @@ run-legacy h                       # MARS's full option reference
 
 The checked-in Java implementation is canonical regardless of historical release labels. The TypeScript port targets MARS-ts 1.0; its version is independent of the Java source's version strings.
 
+When a comparison reveals an implemented difference, follow the [deviation maintenance contract](documentation.md#deviation-catalog-maintenance). Name the relevant [UI or Engine catalog entry](../deviations.md), separate host adaptations from machine semantics, and distinguish a source observation from captured oracle evidence. Use the Swing path for GUI comparisons; launcher-only formatting and process behavior are not automatically GUI deviations.
+
 Useful options for fixtures (all from `_legacy-app/mars/MarsLaunch.java`):
 
 | Option | Effect |

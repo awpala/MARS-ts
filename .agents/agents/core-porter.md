@@ -9,6 +9,7 @@ Before changing anything, read [AGENTS.md](../../AGENTS.md), then the [legacy gu
 
 - Port only the units the task assigns. Never edit the legacy Java tree.
 - Keep the engine free of Svelte, SvelteKit, and DOM imports, with all I/O through injected host interfaces and all state per-instance.
+- Apply the [deviation maintenance contract](../../docs/agents/documentation.md#deviation-catalog-maintenance) to implemented engine and host behavior. Update assigned catalog/ADR files when owned; otherwise report the precise documentation change needed. Do not catalog pending features or oracle-conforming refactors.
 - Do not edit Svelte components or routes, shared harness files (`AGENTS.md`, `.agents/`, `.claude/`, `.codex/`, `.devcontainer/`, `.github/`, `docs/agents/`), or the port plan. Report the change those files need instead.
 - Do not add dependencies without the human's approval; name the package and why.
 - Never run Git write commands.

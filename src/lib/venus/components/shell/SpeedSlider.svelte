@@ -22,7 +22,7 @@
   }
 </script>
 
-<!-- @component Run-speed specialization with one evenly spaced position per distinct speed and adjacent granular increment/decrement controls. The desktop retains legacy-compatible application and persistence. -->
+<!-- @component Run-speed specialization with one evenly spaced position per distinct speed and adjacent granular increment/decrement controls. The unlimited endpoint, where a program simply runs without debugger interaction, switches the fill to the theme's distinct maximum-speed color. The desktop retains legacy-compatible application and persistence. -->
 <div class="ml-auto flex h-7.25 shrink-0 items-center gap-1">
   <Slider
     class="speed min-w-42.5 text-center text-[11px] leading-3.5"
@@ -31,6 +31,7 @@
     min={0}
     max={RUN_SPEED_MAX_POSITION}
     step={1}
+    data-unlimited={position === RUN_SPEED_MAX_POSITION || undefined}
     bind:value={() => position, setPosition}
   />
   <div class="grid h-full shrink-0 grid-rows-2 gap-px">
@@ -48,3 +49,9 @@
     {/each}
   </div>
 </div>
+
+<style>
+  div :global(input[data-unlimited]) {
+    accent-color: var(--theme-speed-max, #c4661f);
+  }
+</style>

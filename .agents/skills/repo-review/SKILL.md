@@ -12,6 +12,7 @@ Read [AGENTS.md](../../../AGENTS.md), the changed modules and their callers, and
 Prioritize observable defects:
 
 - **Parity.** Ported behavior that differs from the legacy Java without an ADR; parity claims without an oracle fixture; hand-edited expected outputs; nondeterministic syscalls in exact-match fixtures. Probe disputed behavior with `run-legacy` in a temporary directory.
+- **Deviation baseline.** Missing/stale entries in the [catalog](../../../docs/deviations.md), ADR prose that disagrees with current `src/`, browser adaptations mislabeled as UI/engine semantic changes, or pending features and behavior-preserving refactors listed as deviations. Apply the [maintenance contract](../../../docs/agents/documentation.md#deviation-catalog-maintenance), including the distinction between retrospective source observations, verified evidence, and the frozen 1.0 baseline. Report corrections; remain read-only.
 - **Java semantics.** Missing 32-bit normalization, 64-bit values routed through `number`, float bit-pattern or float-printing shortcuts, a non-Java random generator ([semantics rules](../../../docs/agents/legacy.md#java-to-typescript-semantics)).
 - **Boundaries and lifetime.** Engine imports of Svelte, SvelteKit, or DOM; I/O bypassing host interfaces; module-level mutable simulator state; subscriptions, execution loops, Workers, or timers without teardown; SSR-shared module state.
 - **Legacy tree changes.** Any edit to `_legacy-app/Mars.java`, `_legacy-app/mars/`, legacy resources, `_legacy-app/help/`, or the Javadoc is a blocking defect.

@@ -1,7 +1,12 @@
 import { tick } from 'svelte';
 import { Settings } from '#lib/engine/Settings.js';
 import { helpArticles, type HelpArticle } from '#lib/help/articles.js';
-import { runActions, breakpointActions, type Action } from '../utils/commands/actions.js';
+import {
+  runActions,
+  breakpointActions,
+  frozenBreakpointsHint,
+  type Action
+} from '../utils/commands/actions.js';
 import {
   menuEngineOptions,
   toggleSpecs,
@@ -9,7 +14,7 @@ import {
   type EngineMenuToggle
 } from '../utils/commands/settings.js';
 import type { RunState } from '../RunController.js';
-import { runSpeedValue } from '../utils/execution/runSpeed.js';
+import { runSpeedValue, UNLIMITED_SPEED } from '../utils/execution/runSpeed.js';
 import { isSavableSource } from '../utils/sources/savableSource.js';
 import { DisplayPreferences } from './DisplayPreferences.svelte.js';
 import { SourceWorkspace } from './SourceWorkspace.svelte.js';
@@ -128,6 +133,8 @@ export class DesktopState {
       breakpointsEnabled
     };
   });
+  /** Whether breakpoint edits are locked because run speed is unlimited; the breakpoints already set still apply. */
+  breakpointsFrozen = $derived(runSpeedValue(this.display.speed) === UNLIMITED_SPEED);
   /** Whether source tabs may be renamed or reordered: not while a program runs or a dialog owns interaction. */
   canEditTabs = $derived(!this.simulation.running && !this.hasModal);
 
@@ -212,7 +219,7 @@ export class DesktopState {
     if (action.command === 'reset')
       return !!this.simulation.execution?.statements.length && !this.simulation.running;
     if (['clearBreakpoints', 'toggleBreakpoints'].includes(action.command))
-      return this.simulation.breakpoints.length > 0;
+      return this.simulation.breakpoints.length > 0 && !this.breakpointsFrozen;
     if (helpArticles.some((article) => article.id === action.command)) return true;
     if (this.simulation.running && action.command !== 'copy') return false;
     if (['new', 'open', 'import', 'autoSave'].includes(action.command)) return true;
@@ -224,6 +231,11 @@ export class DesktopState {
     if (action.command === 'redo') return this.workspace.current.redo.length > 0;
     return true;
   };
+  /** Explain why an action is disabled, for its tooltip, or undefined when no explanation applies. */
+  disabledReason = (action: Action): string | undefined =>
+    this.breakpointsFrozen && breakpointActions.some((entry) => entry.command === action.command)
+      ? frozenBreakpointsHint
+      : undefined;
   /** Read toggle state for command presentation, or undefined for a momentary command. */
   isPressed = (command: string): boolean | undefined =>
     command === 'autoSave'

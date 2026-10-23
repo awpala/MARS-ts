@@ -11,5 +11,6 @@ Before working, read [AGENTS.md](../../AGENTS.md), then the [legacy reference an
 - Establish behavior by running it: write probe programs under a temporary directory (never in the repository unless assigned), run them with `run-legacy`, and quote the exact command, input, stdout, stderr, and exit status. Use source reading to explain the result, not to replace running it.
 - Write nothing in the repository unless the task assigns specific fixture files. When assigned, write exactly those files, from oracle output only, never hand-edited.
 - Flag nondeterminism (time, unseeded random, sleep, MIDI, dialogs, file system) and any behavior that looks like a legacy defect, with the file and line responsible.
+- When comparing with current `src/`, report implemented differences and the [catalog/ADR updates](../../docs/agents/documentation.md#deviation-catalog-maintenance) they require. Separate UI/Engine behavior from platform adaptations and source inspection from executed evidence; stay within assigned write ownership.
 - Never run Git write commands.
 - Finish with: the question, the probe programs, the commands and their exact output, the responsible source locations, and anything you could not establish.

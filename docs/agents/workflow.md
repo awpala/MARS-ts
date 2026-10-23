@@ -7,6 +7,7 @@ Read this guide for implementation, refactoring, and code review. It holds the s
 - **The legacy Java tree is read-only** ([legacy guide](legacy.md#the-legacy-tree-is-read-only)). Port work reads it and runs it; it never changes it.
 - **Every exported declaration and public API member is documented, without exceptions.** Use JSDoc for TypeScript declarations and public members, and Svelte `@component` documentation and documented props for components. Documentation describes the actual contract, including state ownership and teardown where applicable. When a unit ports a legacy class, name the Java source it ports (`Ports mars/mips/hardware/Memory.java`) so reviewers can compare. Source provenance in ported headers and copied assets uses paths relative to `_legacy-app/`; repository Markdown links resolve to the full relocated path.
 - **Parity claims need evidence.** A ported behavior is "matching" only when a golden fixture produced by the oracle passes against it. Say "untested against the oracle" otherwise.
+- **Observable differences stay cataloged.** Apply the [deviation maintenance contract](documentation.md#deviation-catalog-maintenance) to engine behavior, UI workflows/defaults, and browser adaptations. Update the [catalog](../deviations.md) and corresponding ADRs with the implementation; pending work and behavior-preserving refactors are not deviations.
 - **Project identifiers have distinct roles.** `MARS` is the display name, `mars-ts` the machine slug, `awpala` the repository owner. Keep the local port `6277` aligned across Vite, the devcontainer, and `kill-app` ([project scope](project.md#identity)).
 - **Never run a `git` write command** (add, commit, push, branch, switch, checkout, merge, rebase, reset, restore, tag, stash, clean) unless the human explicitly asks in that turn. Git history is human-owned.
 
@@ -17,7 +18,7 @@ These are hard constraints at review time; a change containing one is blocked un
 - **Process-wide simulator state.** Porting a Java static (`Globals`, `RegisterFile`, `Memory`) as a module-level mutable singleton. Impact: two sessions, two tabs' worth of SSR renders, or two tests share one machine state.
 - **Engine imports of UI or platform.** Engine code importing Svelte, SvelteKit, or DOM APIs, or calling `console`, `prompt`, `fetch`, timers, or audio directly instead of through an injected host interface. Impact: the engine can no longer run in Vitest, the parity runner, or a Web Worker.
 - **Unreleased subscriptions.** Registering memory, register, or simulator listeners without returning and calling an unsubscribe. Impact: duplicate updates and leaked sessions after navigation or reset.
-- **Unexplained divergence.** Changing observable behavior relative to MARS without an ADR and a fixture recording it.
+- **Unexplained divergence.** Changing observable behavior relative to MARS without an ADR, a catalog entry, and an appropriate fixture/regression recording it. A retrospective source audit may document existing behavior with an explicit evidence gap; it must not represent that gap as verified parity or authorize an unrelated behavior change.
 
 ## Module organization
 
@@ -42,3 +43,5 @@ Subfolders name a responsibility (`assembler/`, `hardware/`, `instructions/`, `s
 ## Commands and completion evidence
 
 Run the affected gates within the user's environment limits: `run-checks` (or one tier: `harness`, `docs`, `legacy`, `app`), defined in [development operations](operations.md). Report each command and its result, every skipped tier, and anything you could not validate. A skipped tier is not a passed tier.
+
+**Run tests only against completed work.** This concerns test timing, not Git; Git staging and every other Git write remain forbidden without explicit human instruction. Finish every code, test, documentation, and Help edit first. Then run the fast gates (`npm run format`, `npm run lint`, `npm run check`) and fix anything they report. Only then start long-running validation: browser scenarios, full `run-checks`, or large Vitest runs. A long run confirms finished work; do not start one partway through a change, and do not edit files it depends on while it runs. If an edit becomes necessary, stop the run, finish the change, rerun the fast gates, and restart it.
