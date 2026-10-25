@@ -50,8 +50,8 @@ export class DisplayPreferences {
   showRegisters = $state(true);
   /** Selected register bank; Registers by default. */
   registerTab = $state<RegisterBank>('Registers');
-  /** Whether Execute shows the Labels pane. */
-  showLabels = $state(false);
+  /** Whether Execute shows the Labels pane; shown by default. */
+  showLabels = $state(true);
   /** Include data labels in the Labels pane. */
   showDataLabels = $state(true);
   /** Include text labels in the Labels pane. */

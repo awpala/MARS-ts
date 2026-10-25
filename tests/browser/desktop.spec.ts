@@ -230,6 +230,7 @@ test('working display settings and run speed survive reload', async ({ page }) =
     await checkbox.click();
     await expect(button).toHaveAttribute('aria-pressed', String(checked));
   }
+  await expect(menu.getByRole('checkbox', { name: 'Show Labels Window' })).toBeChecked();
   await settings.click();
   await expect(toggles.getByRole('button')).toHaveCount(6);
   const editing = page.locator('.toolbar .toolgroup').filter({
@@ -253,6 +254,7 @@ test('working display settings and run speed survive reload', async ({ page }) =
     await expect(button).toHaveAccessibleDescription(label);
     await button.click();
   }
+  await toggles.getByRole('button', { name: 'Show Labels Window', exact: true }).click();
   await settings.click();
   for (const label of sharedLabels) {
     const button = toggles.getByRole('button', { name: label, exact: true });
@@ -1176,6 +1178,13 @@ test('Auto Save commits all working buffers, persists its setting, and disabling
   await openDesktop(page);
   const autoSave = page.getByRole('button', { name: 'Auto Save', exact: true });
   await expect(autoSave).toHaveAttribute('aria-pressed', 'false');
+  const autoSaveMenu = page.getByRole('checkbox', { name: 'Auto Save', exact: true });
+  await expect(autoSaveMenu).not.toBeChecked();
+  await autoSaveMenu.click();
+  await expect(autoSave).toHaveAttribute('aria-pressed', 'true');
+  await expect(autoSaveMenu).toBeChecked();
+  await autoSave.click();
+  await expect(autoSaveMenu).not.toBeChecked();
   await page.getByRole('button', { name: 'New', exact: true }).click();
   await page.getByRole('textbox', { name: 'Source mips1.asm', exact: true }).fill('first draft\n');
   await page.getByRole('button', { name: 'New', exact: true }).click();

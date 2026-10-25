@@ -43,6 +43,7 @@
       tooltip: tooltip ?? (reason && `${item.label} — ${reason}`),
       shortcut: item.shortcut,
       disabled: !commands.isEnabled(item),
+      ...(item.command === 'autoSave' ? { checked: commands.isPressed(item.command)! } : {}),
       onselect: () => void commands.execute(item.command)
     };
   }
