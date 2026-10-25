@@ -292,7 +292,8 @@ export class DesktopState {
     }
     const article = helpArticles.find((entry) => entry.id === command);
     const confirmClear = command === 'clearBreakpoints' && this.display.promptClearBreakpoints;
-    this.closeMenus(!!article || command === 'memoryConfiguration' || confirmClear);
+    if (command !== 'autoSave')
+      this.closeMenus(!!article || command === 'memoryConfiguration' || confirmClear);
     if (confirmClear) {
       this.clearBreakpointsOpen = true;
       return;

@@ -1181,6 +1181,7 @@ test('Auto Save commits all working buffers, persists its setting, and disabling
   const autoSaveMenu = page.getByRole('checkbox', { name: 'Auto Save', exact: true });
   await expect(autoSaveMenu).not.toBeChecked();
   await autoSaveMenu.click();
+  await expect(autoSaveMenu).toBeVisible();
   await expect(autoSave).toHaveAttribute('aria-pressed', 'true');
   await expect(autoSaveMenu).toBeChecked();
   await autoSave.click();
