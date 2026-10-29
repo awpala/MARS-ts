@@ -1,3 +1,5 @@
+import { RandomStreams } from '#lib/engine/syscalls/RandomStreams.js';
+import { DialogIO } from '#lib/engine/io/DialogIO.js';
 import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
 import { Simulator, type SimulatorHost } from './Simulator.js';
@@ -105,6 +107,8 @@ function machine(
     coprocessor1: cp1,
     memory,
     systemIO: io,
+    randomStreams: new RandomStreams(() => 0n),
+    dialogs: new DialogIO(),
     exceptionHost
   });
   loader.loadSyscalls();

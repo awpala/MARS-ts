@@ -18,6 +18,8 @@ import { Coprocessor0 } from './hardware/registers/Coprocessor0.js';
 import { Coprocessor1 } from './hardware/registers/Coprocessor1.js';
 import { InstructionSet } from './instructions/InstructionSet.js';
 import { SystemIO, type InputRequest } from './io/SystemIO.js';
+import { RandomStreams } from './syscalls/RandomStreams.js';
+import { DialogIO, type DialogIOHost } from './io/DialogIO.js';
 import { JavaFloatingPoint } from './formatting/JavaFloatingPoint.js';
 import { BackStepper } from './simulator/BackStepper.js';
 import { DelayedBranch } from './simulator/DelayedBranch.js';
@@ -39,9 +41,13 @@ export interface GlobalsHost {
   readInput(request: InputRequest): string | Promise<string>;
   /** Append exact syscall output to the owning console. */
   printString(text: string): void;
+  /** Entropy for newly used unseeded streams; seeded services never require this capability. */
+  randomSeed?(): bigint;
+  /** Same-tab or test dialog capability; required only when executing dialog services. */
+  dialogs?: DialogIOHost;
   /** Cooperatively yield or wait using the platform's scheduler. */
   yieldControl(milliseconds: number): Promise<void>;
-  /** Release pending input when the simulator requests pause or stop. */
+  /** Release pending console/dialog input when the simulator requests pause or stop. */
   releaseInput?(): void;
   /** Close host-owned program files when assembly or simulation resets descriptors. */
   resetFiles?(): void;
@@ -101,6 +107,10 @@ export class Globals {
   readonly simulator: Simulator;
   /** Session-owned platform console. */
   readonly systemIO: SystemIO;
+  /** Session-owned random streams; Reset and Backstep do not rewind their seeds. */
+  readonly randomStreams: RandomStreams;
+  /** Session-owned platform dialog boundary. */
+  readonly dialogs: DialogIO;
   /** Session-owned service registry. */
   readonly syscallLoader: SyscallLoader;
   private readonly settings: Settings;
@@ -215,13 +225,20 @@ export class Globals {
     });
     const diagnostic = (message: string) =>
       host.writeDiagnostic ? host.writeDiagnostic(message) : host.printString(message);
+    this.randomStreams = new RandomStreams(() => {
+      if (!host.randomSeed) throw new Error('Unseeded random syscalls require a random seed host');
+      return host.randomSeed();
+    });
+    this.dialogs = new DialogIO(host.dialogs);
     this.syscallLoader = new SyscallLoader(
       {
         registerFile: this.registerFile,
         coprocessor1: this.coprocessor1,
         memory: this.memory,
         systemIO: this.systemIO,
-        exceptionHost
+        exceptionHost,
+        randomStreams: this.randomStreams,
+        dialogs: this.dialogs
       },
       host.syscallRegistrations,
       host.syscallOverrides,

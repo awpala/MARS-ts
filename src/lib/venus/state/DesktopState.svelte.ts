@@ -125,6 +125,7 @@ export class DesktopState {
       this.exceptionHandlerOpen ||
       this.dumpOpen ||
       this.clearBreakpointsOpen ||
+      this.simulation.dialogRequest ||
       this.simulation.inputRequest?.prompt
     );
   }

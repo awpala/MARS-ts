@@ -1,3 +1,4 @@
+import { isRandomStreamsState } from '#lib/engine/syscalls/RandomStreams.js';
 import type { Globals } from '#lib/engine/Globals.js';
 import { isMemoryState, type MemoryState } from '#lib/engine/hardware/memory/Memory.js';
 import type { ProgramStatement } from '#lib/engine/assembler/programs/ProgramStatement.js';
@@ -16,6 +17,8 @@ export interface RunCheckpoint {
   configuration: string;
   /** Sparse raw memory and live instruction words. */
   memory: MemoryState;
+  /** Session stream IDs and internal 48-bit seeds; absent in older checkpoints. */
+  randomStreams?: [number, number][];
   /** Integer registers followed by HI, LO, and PC. */
   registers: number[];
   /** Exception register raw words, in hardware register order. */
@@ -107,6 +110,7 @@ export function isRunCheckpoint(value: unknown): value is RunCheckpoint {
     s.settings.strings.length === Settings.STRING_COUNT &&
     s.settings.strings.every((v) => typeof v === 'string') &&
     isMemoryState(s.memory) &&
+    (s.randomStreams === undefined || isRandomStreamsState(s.randomStreams)) &&
     words(s.registers, REGISTER_WORDS) &&
     words(s.coprocessor0, COPROCESSOR0_WORDS) &&
     words(s.coprocessor1, COPROCESSOR1_WORDS) &&
@@ -198,6 +202,7 @@ export function captureRunCheckpoint(
       .getCurrentConfiguration()
       .getConfigurationIdentifier(),
     memory: machine.memory.captureState(),
+    randomStreams: machine.randomStreams.captureState(),
     registers: checkpointRegisters(machine).map((r) => r.getValueNoNotify()),
     coprocessor0: machine.coprocessor0.getRegisters().map((r) => r.getValueNoNotify()),
     coprocessor1: machine.coprocessor1.getRegisters().map((r) => r.getValueNoNotify()),
@@ -226,6 +231,7 @@ export function captureRunCheckpoint(
 /** Apply validated hardware after the controller reassembles captured sources; no code is executed or output replayed. */
 export function restoreRunHardware(machine: Globals, checkpoint: RunCheckpoint): void {
   machine.memory.restoreState(checkpoint.memory);
+  machine.randomStreams.restoreState(checkpoint.randomStreams ?? []);
   checkpointRegisters(machine).forEach((r, i) => r.setValue(checkpoint.registers[i]));
   machine.coprocessor0.getRegisters().forEach((r, i) => r.setValue(checkpoint.coprocessor0[i]));
   machine.coprocessor1.getRegisters().forEach((r, i) => r.setValue(checkpoint.coprocessor1[i]));

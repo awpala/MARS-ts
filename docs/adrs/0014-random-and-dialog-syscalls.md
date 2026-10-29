@@ -1,0 +1,23 @@
+# ADR 0014: Random streams and syscall dialogs
+
+Status: Accepted
+
+## Context
+
+Services 40–44 use the static map in legacy `RandomStreams` and the specified `java.util.Random` generator. Services 50–59 call `JOptionPane` directly, with distinct Cancel/empty/invalid statuses and byte-level memory effects. The engine must remain platform-free, and the browser must remain responsive while the current instruction awaits a dialog. Existing exception-handler dispatch must also receive syscall and address errors from these services.
+
+## Decision
+
+Retain each legacy syscall class and metadata in the [syscall module](../../src/lib/engine/syscalls/README.md). A session owns its stream map; `JavaRandom` implements the specified 48-bit LCG, integer rejection sampling, and single/double draw construction with exact integer arithmetic. Explicit `$a1` seeds sign-extend from 32 bits. First use of an unseeded stream obtains a seed from an injected host; the browser uses `crypto.getRandomValues`. Its unseeded values are intentionally nondeterministic and do not reproduce Java's clock/seed-uniquifier startup values. Stream IDs remain signed integers. Assembly, Reset, and Backstep leave the stream map alone, matching Java's static-map lifetime within a session. Separate sessions have independent maps. Stable desktop checkpoints serialize internal 48-bit seeds as exact JSON-safe numbers; older checkpoints without stream state restore an empty map. Random-state advancement is not added to undo history.
+
+An injected [DialogIO](../../src/lib/engine/io/DialogIO.ts) replaces direct `JOptionPane` calls. The shared dialog base extracts repeated message reading and numeric input while preserving register-write ordering, untrimmed integer input, Java floating conversion, null/empty/parse statuses, UTF-16 byte writes, truncation, newline/NUL placement, partial writes, and CP0 address errors. The range error for zero and negative bounds retains the legacy wording and syscall exception cause. No simulator exception-dispatch algorithm changes are needed.
+
+The [browser dialog](../../src/lib/venus/components/dialogs/SyscallDialog.svelte) uses the existing same-tab modal shell, focus containment/restoration, and a fresh mount for every request. Services 50–59 always open independently of console-popup settings and produce no console input echo. Confirmation buttons return Yes 0, No 1, and Cancel 2; window close, Escape, and backdrop dismissal return -1 as Swing window close does. Input cancellation returns null to the engine, producing status -2; empty OK remains -3. Message acknowledgment/dismissal has no register result. Message type 0 is error, 1 information, 2 warning, 3 question, and all others plain, following the actual source rather than inconsistent source comments. Browser message headings name these types instead of reproducing Swing's blank message-window title and platform icons. Message strings render as plain text, without interpreting Swing's optional HTML-label markup.
+
+An explicit Stop button is available inside each blocking modal. It requests simulator termination and releases the host operation with a close/cancel response. The in-flight syscall completes before the simulator applies its existing Stop/Pause checks. Cancel alone resumes execution. Teardown releases pending console/dialog input and scheduling resources before controller disposal settles. Pending dialogs and typed drafts are never serialized as active execution.
+
+## Evidence and consequences
+
+The [method probe](../../tests/oracle/platform-syscalls/README.md) captures actual legacy service execution, using fixed seeds headlessly and automated real Swing responses under Xvfb. It records exact raw registers, buffer memory, CP0, diagnostic text, message text, and message types. The source tree remains read-only. Xvfb/xauth, AWT X11 libraries, and fonts are provisional validation dependencies installed with the environment and CI, removed with the JDK at P5. The shared probe runner's default remains headless for every existing capture.
+
+[Engine comparisons](../../src/lib/engine/syscalls/platform-syscalls.test.ts) consume those captures and exercise entropy ownership, rejected host operations, suspension, stream isolation, and checkpoint continuation. All whole-program corpus cases now include seeded randomness. [Browser scenarios](../../tests/browser/syscalls.spec.ts) exercise all dialog families, initial focus, Cancel/close/Stop, no echo, seeded output, and random-range exception-handler dispatch. These tests establish machine contracts and browser behavior, not Swing pixel parity or identical unseeded startup values. [UI-P0003 and ENG-P0004](../deviations.md) record the host adaptations.

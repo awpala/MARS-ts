@@ -11,6 +11,7 @@ import { browserEnginePreferences } from '#lib/browser/EnginePreferences.js';
 import { Globals } from '#lib/engine/Globals.js';
 import { ProcessingException } from '#lib/engine/diagnostics/ProcessingException.js';
 import { Settings } from '#lib/engine/Settings.js';
+import type { DialogRequest } from '#lib/engine/io/DialogIO.js';
 import type { InputRequest } from '#lib/engine/io/SystemIO.js';
 import { RunController } from '../RunController.js';
 import { engineOption, engineOptions } from '../utils/commands/settings.js';
@@ -39,6 +40,11 @@ export class SimulationState {
   programArguments = $state('');
   /** Pending syscall request, or null when no input is owed. */
   inputRequest = $state.raw<InputRequest | null>(null);
+  /** Pending service 50–59 modal, independent of optional console-input popups. */
+  dialogRequest = $state.raw<DialogRequest | null>(null);
+  /** Draft dialog value; the engine receives it without console trimming, bounds, or echo. */
+  dialogText = $state('');
+  private resolveDialog: ((value: string | number | null) => void) | undefined;
   /** Current pending input buffer. */
   inputText = $state('');
   private resolveInput: ((text: string) => void) | undefined = undefined;
@@ -116,6 +122,32 @@ export class SimulationState {
           this.resolveInput = resolve;
           this.messageTab = 'Run I/O';
         }),
+      randomSeed: () => {
+        const words = crypto.getRandomValues(new Uint32Array(2));
+        return (BigInt(words[0]) << 32n) | BigInt(words[1]);
+      },
+      dialogs: {
+        showConfirmDialog: async (message) => {
+          const value = await this.requestDialog(
+            { kind: 'confirm', message, messageType: 3 },
+            disposed || session.simulator.isStopRequested()
+          );
+          return typeof value === 'number' ? value : -1;
+        },
+        showInputDialog: async (message) => {
+          const value = await this.requestDialog(
+            { kind: 'input', message, messageType: 3 },
+            disposed || session.simulator.isStopRequested()
+          );
+          return typeof value === 'string' ? value : null;
+        },
+        showMessageDialog: async (message, messageType) => {
+          await this.requestDialog(
+            { kind: 'message', message, messageType },
+            disposed || session.simulator.isStopRequested()
+          );
+        }
+      },
       printString: (text) => {
         if (!disposed) {
           this.appendRunIO(text);
@@ -132,6 +164,7 @@ export class SimulationState {
         }),
       releaseInput: () => {
         this.completeInput(false);
+        this.completeDialog(null);
         wake();
       },
       refresh: () => this.controller?.refresh(),
@@ -200,6 +233,22 @@ export class SimulationState {
     settings.setBooleanSetting(Settings.EXCEPTION_HANDLER_ENABLED, enabled);
     if (settings.getExceptionHandler() !== name) settings.setExceptionHandler(name);
     this.controller?.refresh();
+  };
+  private requestDialog(request: DialogRequest, stopped: boolean): Promise<string | number | null> {
+    if (stopped) return Promise.resolve(null);
+    this.dialogText = '';
+    this.dialogRequest = request;
+    return new Promise((resolve) => {
+      this.resolveDialog = resolve;
+    });
+  }
+  /** Resolve the active dialog once; Cancel and dismissal resume execution, while Stop separately requests simulator termination. */
+  completeDialog = (value: string | number | null): void => {
+    const resolve = this.resolveDialog;
+    if (!resolve) return;
+    this.resolveDialog = undefined;
+    this.dialogRequest = null;
+    resolve(value);
   };
   /** Resolve the pending syscall once, preserving echo, newline, and maximum-length rules. */
   completeInput = (appendNewline: boolean) => {

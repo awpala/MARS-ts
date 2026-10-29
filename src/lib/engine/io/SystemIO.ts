@@ -57,22 +57,9 @@ export class SystemIO {
     const input = this.trim(
       await this.request(serviceNumber, `Enter an integer value (syscall ${serviceNumber})`, -1)
     );
-    let i = 0,
-      sign = 1;
-    if (input[0] === '-' || input[0] === '+') {
-      if (input[0] === '-') sign = -1;
-      i++;
-    }
-    if (i === input.length) throw new NumberFormatException();
-    let value = 0;
-    for (; i < input.length; i++) {
-      const digit = JavaCharacter.decimalDigitValue(input[i]);
-      if (digit < 0) throw new NumberFormatException();
-      value = value * 10 + digit;
-      if (value > (sign < 0 ? 2147483648 : 2147483647)) throw new NumberFormatException();
-    }
-    return (value * sign) | 0;
+    return parseInteger(input);
   }
+
   /** Read a float using Java syntax and direct single-precision rounding. */
   async readFloat(serviceNumber: number): Promise<number> {
     return this.host.parseFloat(
@@ -130,4 +117,23 @@ export class SystemIO {
     while (end > start && text.charCodeAt(end - 1) <= 32) end--;
     return text.slice(start, end);
   }
+}
+
+/** Parse Integer.parseInt decimal syntax without trimming; console reads trim before calling, dialog reads do not. */
+export function parseInteger(input: string): number {
+  let i = 0,
+    sign = 1;
+  if (input[0] === '-' || input[0] === '+') {
+    if (input[0] === '-') sign = -1;
+    i++;
+  }
+  if (i === input.length) throw new NumberFormatException();
+  let value = 0;
+  for (; i < input.length; i++) {
+    const digit = JavaCharacter.decimalDigitValue(input[i]);
+    if (digit < 0) throw new NumberFormatException();
+    value = value * 10 + digit;
+    if (value > (sign < 0 ? 2147483648 : 2147483647)) throw new NumberFormatException();
+  }
+  return (value * sign) | 0;
 }

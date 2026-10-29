@@ -1,3 +1,5 @@
+import { RandomStreams } from '#lib/engine/syscalls/RandomStreams.js';
+import { DialogIO } from '#lib/engine/io/DialogIO.js';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ProgramStatement } from '../assembler/programs/ProgramStatement.js';
@@ -64,7 +66,15 @@ function machine() {
     getProgramCounter: () => registerFile.getProgramCounter(),
     setRegisters: (cause: number, address?: number) => exceptions.setRegisters(cause, address)
   };
-  const syscallHost = { registerFile, coprocessor1, memory, exceptionHost, systemIO };
+  const syscallHost = {
+    registerFile,
+    coprocessor1,
+    memory,
+    exceptionHost,
+    systemIO,
+    randomStreams: new RandomStreams(() => 0n),
+    dialogs: new DialogIO()
+  };
   const loader = new SyscallLoader(syscallHost);
   const context = {
     registerFile,

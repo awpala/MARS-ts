@@ -20,6 +20,7 @@ The [deviation catalog](deviations.md) compares implemented UI and Engine behavi
 | [Breakpoint changes during Go](adrs/0011-in-flight-breakpoints.md) | Accepted | Live breakpoint replacement, finite-speed UI editing, maximum-speed lock, and post-instruction checks |
 | [Behavioral baseline and deviation catalog](adrs/0012-deviation-baseline.md) | Accepted; release baseline open | Current UI/Engine deviations, separate browser/platform adaptations, evidence, ongoing maintenance, and the 1.0 release freeze |
 | [Automatic exception-handler selection](adrs/0013-exception-handler-workflow.md) | Accepted | Saved-library handler selection, legacy commit rules, assembly notices, and loaded-handler recovery |
+| [Random streams and syscall dialogs](adrs/0014-random-and-dialog-syscalls.md) | Accepted | Java-compatible random streams, same-tab dialog contracts, entropy ownership, checkpoints, and Swing oracle evidence |
 
 The [Coolify deployment runbook](runbooks/prod-deployment.md) covers ongoing configuration maintenance, releases, smoke checks, and rollback for the live, stable service at `mars-ide.portfolio-projects.dev`.
 

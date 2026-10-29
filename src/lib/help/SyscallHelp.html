@@ -1,11 +1,20 @@
 <!-- Derived from help/SyscallHelp.html.
 Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt. -->
 <p class="notice">
-  <strong>MARS-ts availability:</strong> services 1–12, 17, and 34–36 are implemented. File services
-  13–16, time/MIDI/sleep 30–33, random 40–44, and dialogs 50–59 are not yet implemented and raise an
-  unsupported-service exception. Popup input for the implemented console reads is available
-  separately. The full legacy service contract is retained below; unavailable services are marked in
+  <strong>MARS-ts availability:</strong> services 1–12, 17, 34–36, random 40–44, and dialogs 50–59
+  are implemented. File services 13–16 and time/MIDI/sleep 30–33 remain unavailable and raise an
+  unsupported-service exception. Dialog services always open in the current tab, independently of
+  the console popup-input setting. Cancel resumes the program with the documented status; Stop ends
+  execution. The full legacy service contract is retained below; unavailable services are marked in
   the table.
+</p>
+
+<p>
+  Seeded streams reproduce Java's random sequence. Unseeded streams receive browser entropy on first
+  use. Streams survive assembly, Reset, and Backstep; re-seed with service 40 to repeat a sequence.
+  Confirmation window close or Escape returns -1. Integer dialog input is parsed without trimming;
+  surrounding spaces produce status -1. InputDialogString preserves legacy newline, truncation, and
+  small-buffer rules; reserve at least two bytes for useful string input.
 </p>
 
 <header>
@@ -275,7 +284,7 @@ Step 4. Retrieve return values, if any, from result registers as specified.<br /
           No values are returned. Sets the seed of the corresponding underlying Java pseudorandom
           number generator (<code>java.util.Random</code>). <i>See note below table</i>
         </td>
-        <td>Not yet available</td>
+        <td>Available</td>
       </tr>
       <tr>
         <td>random int</td>
@@ -285,7 +294,7 @@ Step 4. Retrieve return values, if any, from result registers as specified.<br /
           $a0 contains the next pseudorandom, uniformly distributed int value from this random
           number generator's sequence. <i>See note below table</i>
         </td>
-        <td>Not yet available</td>
+        <td>Available</td>
       </tr>
       <tr>
         <td>random int range</td>
@@ -299,7 +308,7 @@ Step 4. Retrieve return values, if any, from result registers as specified.<br /
           [upper bound], drawn from this random number generator's sequence.
           <i>See note below table</i>
         </td>
-        <td>Not yet available</td>
+        <td>Available</td>
       </tr>
       <tr>
         <td>random float</td>
@@ -309,7 +318,7 @@ Step 4. Retrieve return values, if any, from result registers as specified.<br /
           $f0 contains the next pseudorandom, uniformly distributed float value in the range 0.0
           &lt;= f &lt; 1.0 from this random number generator's sequence. <i>See note below table</i>
         </td>
-        <td>Not yet available</td>
+        <td>Available</td>
       </tr>
       <tr>
         <td>random double</td>
@@ -319,7 +328,7 @@ Step 4. Retrieve return values, if any, from result registers as specified.<br /
           $f0 contains the next pseudorandom, uniformly distributed double value in the range 0.0
           &lt;= f &lt; 1.0 from this random number generator's sequence. <i>See note below table</i>
         </td>
-        <td>Not yet available</td>
+        <td>Available</td>
       </tr>
       <tr>
         <td>(not used)</td>
@@ -332,8 +341,11 @@ Step 4. Retrieve return values, if any, from result registers as specified.<br /
         <td>ConfirmDialog</td>
         <td>50</td>
         <td>$a0 = address of null-terminated string that is the message to user</td>
-        <td>$a0 contains value of user-chosen option<br />0: Yes<br />1: No<br />2: Cancel</td>
-        <td>Not yet available</td>
+        <td>
+          $a0 contains value of user-chosen option<br />0: Yes<br />1: No<br />2: Cancel<br />-1:
+          closed
+        </td>
+        <td>Available</td>
       </tr>
       <tr>
         <td>InputDialogInt</td>
@@ -344,7 +356,7 @@ Step 4. Retrieve return values, if any, from result registers as specified.<br /
           cannot be correctly parsed<br />-2: Cancel was chosen<br />-3: OK was chosen but no data
           had been input into field
         </td>
-        <td>Not yet available</td>
+        <td>Available</td>
       </tr>
       <tr>
         <td>InputDialogFloat</td>
@@ -355,7 +367,7 @@ Step 4. Retrieve return values, if any, from result registers as specified.<br /
           data cannot be correctly parsed<br />-2: Cancel was chosen<br />-3: OK was chosen but no
           data had been input into field
         </td>
-        <td>Not yet available</td>
+        <td>Available</td>
       </tr>
       <tr>
         <td>InputDialogDouble</td>
@@ -366,7 +378,7 @@ Step 4. Retrieve return values, if any, from result registers as specified.<br /
           data cannot be correctly parsed<br />-2: Cancel was chosen<br />-3: OK was chosen but no
           data had been input into field
         </td>
-        <td>Not yet available</td>
+        <td>Available</td>
       </tr>
       <tr>
         <td>InputDialogString</td>
@@ -382,7 +394,7 @@ Step 4. Retrieve return values, if any, from result registers as specified.<br /
           length of the input string exceeded the specified maximum. Buffer contains the maximum
           allowable input string plus a terminating null.
         </td>
-        <td>Not yet available</td>
+        <td>Available</td>
       </tr>
       <tr>
         <td>MessageDialog</td>
@@ -397,7 +409,7 @@ Step 4. Retrieve return values, if any, from result registers as specified.<br /
           other: plain message (no icon displayed)
         </td>
         <td>N/A</td>
-        <td>Not yet available</td>
+        <td>Available</td>
       </tr>
       <tr>
         <td>MessageDialogInt</td>
@@ -407,7 +419,7 @@ Step 4. Retrieve return values, if any, from result registers as specified.<br /
           = int value to display in string form after the first string
         </td>
         <td>N/A</td>
-        <td>Not yet available</td>
+        <td>Available</td>
       </tr>
       <tr>
         <td>MessageDialogFloat</td>
@@ -417,7 +429,7 @@ Step 4. Retrieve return values, if any, from result registers as specified.<br /
           = float value to display in string form after the first string
         </td>
         <td>N/A</td>
-        <td>Not yet available</td>
+        <td>Available</td>
       </tr>
       <tr>
         <td>MessageDialogDouble</td>
@@ -427,7 +439,7 @@ Step 4. Retrieve return values, if any, from result registers as specified.<br /
           = double value to display in string form after the first string
         </td>
         <td>N/A</td>
-        <td>Not yet available</td>
+        <td>Available</td>
       </tr>
       <tr>
         <td>MessageDialogString</td>
@@ -437,7 +449,7 @@ Step 4. Retrieve return values, if any, from result registers as specified.<br /
           = address of null-terminated string to display after the first string
         </td>
         <td>N/A</td>
-        <td>Not yet available</td>
+        <td>Available</td>
       </tr>
     </tbody>
   </table>
@@ -477,9 +489,9 @@ Step 4. Retrieve return values, if any, from result registers as specified.<br /
   </li>
   <li><b>Services 31,33</b> - Simulate MIDI output through sound card. Details below.</li>
   <li>
-    <b>Services 40-44 (legacy reference)</b>
-    use underlying Java pseudorandom number generators provided by the
-    <code>java.util.Random</code> class. Each stream (identified by $a0 contents) is modeled by a
+    <b>Services 40-44</b>
+    reproduce the pseudorandom generator algorithm specified by
+    <code>java.util.Random</code>. Each stream (identified by $a0 contents) is modeled by a
     different <code>Random</code> object. There are no default seed values, so use the Set Seed
     service (40) if replicated random sequences are desired.
   </li>

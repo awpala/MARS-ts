@@ -39,14 +39,26 @@ function checked(command, args, options = {}) {
     maxBuffer: 16 * 1024 * 1024,
     ...options
   });
-  if (result.error) throw result.error;
+  if (result.error)
+    throw new Error(
+      `${result.error.message}\n${result.stderr ?? ''}\n${result.stdout?.slice(-3000) ?? ''}`
+    );
   if (result.signal || result.status !== 0)
-    throw new Error(`${command} failed (${result.status ?? result.signal}): ${result.stderr}`);
+    throw new Error(
+      `${command} failed (${result.status ?? result.signal}): ${result.stderr}\n${result.stdout?.slice(-2000) ?? ''}`
+    );
   return result;
 }
 
 /** Compile an external probe against the already-built immutable oracle and capture exact streams/status. */
-export function captureProbe({ source, className, golden, check = false, legacySources = [] }) {
+export function captureProbe({
+  source,
+  className,
+  golden,
+  check = false,
+  legacySources = [],
+  gui = false
+}) {
   const temporary = mkdtempSync(join(tmpdir(), 'mars-unit-oracle-'));
   try {
     const javac = checked('javac', ['-version']).stdout.trim();
@@ -96,19 +108,23 @@ export function captureProbe({ source, className, golden, check = false, legacyS
       encoding: 'utf8'
     });
     const command = [
-      '-Djava.awt.headless=true',
+      `-Djava.awt.headless=${!gui}`,
       `-Djava.util.prefs.userRoot=${user}`,
       `-Djava.util.prefs.systemRoot=${system}`,
       '-cp',
       `${classes}:${jar}`,
       className
     ];
-    const execution = checked('java', command, {
-      cwd: root,
-      input: '',
-      encoding: 'utf8',
-      maxBuffer: 16 * 1024 * 1024
-    });
+    const execution = checked(
+      gui ? 'xvfb-run' : 'java',
+      gui ? ['-a', 'java', ...command] : command,
+      {
+        cwd: root,
+        input: '',
+        encoding: 'utf8',
+        maxBuffer: 16 * 1024 * 1024
+      }
+    );
     const hashes = Object.fromEntries(
       [source, ...legacySources].map((path) => [
         path,
@@ -123,8 +139,9 @@ export function captureProbe({ source, className, golden, check = false, legacyS
           jdkMajor: 21,
           legacySourceSha256: sourceDigest.digest('hex'),
           command: [
+            ...(gui ? ['xvfb-run', '-a'] : []),
             'java',
-            '-Djava.awt.headless=true',
+            `-Djava.awt.headless=${!gui}`,
             '-Djava.util.prefs.userRoot=<fresh-user>',
             '-Djava.util.prefs.systemRoot=<fresh-system>',
             '-cp',

@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Component } from 'svelte';
   import { getDesktop } from '../../context/desktop.js';
+  import SyscallDialog from './SyscallDialog.svelte';
   import RunInputDialog from './RunInputDialog.svelte';
   import OpenSourcesDialog from './OpenSourcesDialog.svelte';
   import DeleteSourcesDialog from './DeleteSourcesDialog.svelte';
@@ -41,3 +42,5 @@
 {#if desktop.exceptionHandlerOpen}<ExceptionHandlerDialog />{/if}
 {#if desktop.clearBreakpointsOpen}<ClearBreakpointsDialog />{/if}
 {#if desktop.transferStatus !== null}<TransferStatusDialog status={desktop.transferStatus} />{/if}
+
+<SyscallDialog />

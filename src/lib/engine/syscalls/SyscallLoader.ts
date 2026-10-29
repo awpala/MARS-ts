@@ -20,6 +20,22 @@ import { SyscallPrintIntHex } from './SyscallPrintIntHex.js';
 import { SyscallPrintIntBinary } from './SyscallPrintIntBinary.js';
 import { SyscallPrintIntUnsigned } from './SyscallPrintIntUnsigned.js';
 
+import { SyscallRandSeed } from './SyscallRandSeed.js';
+import { SyscallRandInt } from './SyscallRandInt.js';
+import { SyscallRandIntRange } from './SyscallRandIntRange.js';
+import { SyscallRandFloat } from './SyscallRandFloat.js';
+import { SyscallRandDouble } from './SyscallRandDouble.js';
+import { SyscallConfirmDialog } from './SyscallConfirmDialog.js';
+import { SyscallInputDialogInt } from './SyscallInputDialogInt.js';
+import { SyscallInputDialogFloat } from './SyscallInputDialogFloat.js';
+import { SyscallInputDialogDouble } from './SyscallInputDialogDouble.js';
+import { SyscallInputDialogString } from './SyscallInputDialogString.js';
+import { SyscallMessageDialog } from './SyscallMessageDialog.js';
+import { SyscallMessageDialogInt } from './SyscallMessageDialogInt.js';
+import { SyscallMessageDialogFloat } from './SyscallMessageDialogFloat.js';
+import { SyscallMessageDialogDouble } from './SyscallMessageDialogDouble.js';
+import { SyscallMessageDialogString } from './SyscallMessageDialogString.js';
+
 /** An explicitly linked module replaces Java classpath discovery without changing service lookup rules. */
 export interface SyscallRegistration {
   /** Canonical class filename used for deduplication and initialization diagnostics. */
@@ -37,7 +53,7 @@ export interface SyscallOverride {
 /** Session-local loader retaining canonical duplicate detection, override ordering, and last-match lookup. */
 export class SyscallLoader {
   private syscallList: Syscall[] | null = null;
-  /** Core console services currently translated; absent families resolve to null, never placeholder behavior. */
+  /** Implemented console, random, and dialog services; absent families resolve to null. */
   static readonly CORE_REGISTRATIONS: readonly SyscallRegistration[] = Object.freeze([
     Object.freeze({
       className: 'SyscallPrintInt.class',
@@ -102,6 +118,66 @@ export class SyscallLoader {
     Object.freeze({
       className: 'SyscallPrintIntUnsigned.class',
       create: (host: SyscallHost) => new SyscallPrintIntUnsigned(host)
+    }),
+    Object.freeze({
+      className: 'SyscallRandSeed.class',
+      create: (host: SyscallHost) => new SyscallRandSeed(host)
+    }),
+    Object.freeze({
+      className: 'SyscallRandInt.class',
+      create: (host: SyscallHost) => new SyscallRandInt(host)
+    }),
+    Object.freeze({
+      className: 'SyscallRandIntRange.class',
+      create: (host: SyscallHost) => new SyscallRandIntRange(host)
+    }),
+    Object.freeze({
+      className: 'SyscallRandFloat.class',
+      create: (host: SyscallHost) => new SyscallRandFloat(host)
+    }),
+    Object.freeze({
+      className: 'SyscallRandDouble.class',
+      create: (host: SyscallHost) => new SyscallRandDouble(host)
+    }),
+    Object.freeze({
+      className: 'SyscallConfirmDialog.class',
+      create: (host: SyscallHost) => new SyscallConfirmDialog(host)
+    }),
+    Object.freeze({
+      className: 'SyscallInputDialogInt.class',
+      create: (host: SyscallHost) => new SyscallInputDialogInt(host)
+    }),
+    Object.freeze({
+      className: 'SyscallInputDialogFloat.class',
+      create: (host: SyscallHost) => new SyscallInputDialogFloat(host)
+    }),
+    Object.freeze({
+      className: 'SyscallInputDialogDouble.class',
+      create: (host: SyscallHost) => new SyscallInputDialogDouble(host)
+    }),
+    Object.freeze({
+      className: 'SyscallInputDialogString.class',
+      create: (host: SyscallHost) => new SyscallInputDialogString(host)
+    }),
+    Object.freeze({
+      className: 'SyscallMessageDialog.class',
+      create: (host: SyscallHost) => new SyscallMessageDialog(host)
+    }),
+    Object.freeze({
+      className: 'SyscallMessageDialogInt.class',
+      create: (host: SyscallHost) => new SyscallMessageDialogInt(host)
+    }),
+    Object.freeze({
+      className: 'SyscallMessageDialogFloat.class',
+      create: (host: SyscallHost) => new SyscallMessageDialogFloat(host)
+    }),
+    Object.freeze({
+      className: 'SyscallMessageDialogDouble.class',
+      create: (host: SyscallHost) => new SyscallMessageDialogDouble(host)
+    }),
+    Object.freeze({
+      className: 'SyscallMessageDialogString.class',
+      create: (host: SyscallHost) => new SyscallMessageDialogString(host)
     })
   ]);
   /** Bind explicit service factories and parsed overrides; configuration failures print then throw instead of exiting the browser. */

@@ -255,10 +255,22 @@ test('syscall reference distinguishes implemented services from legacy contracts
       .getByRole('row')
       .filter({ has: page.getByRole('cell', { name: 'print integer', exact: true }) })
   ).toContainText('Available');
-  for (const service of ['open file', 'set seed', 'MIDI out', 'ConfirmDialog']) {
+  for (const service of ['open file', 'MIDI out']) {
     await expect(
       table.getByRole('row').filter({ has: page.getByRole('cell', { name: service, exact: true }) })
     ).toContainText('Not yet available');
+  }
+  for (const service of [
+    'set seed',
+    'random int',
+    'random float',
+    'ConfirmDialog',
+    'InputDialogString',
+    'MessageDialogString'
+  ]) {
+    await expect(
+      table.getByRole('row').filter({ has: page.getByRole('cell', { name: service, exact: true }) })
+    ).toContainText('Available');
   }
   await expect(
     dialog.getByRole('heading', { name: 'Legacy example of File I/O (not yet available)' })

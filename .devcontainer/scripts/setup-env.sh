@@ -167,8 +167,12 @@ echo "--- Refreshing package metadata ---"
 apt-get update
 echo
 echo "--- Installing search, diagnostics, lint, and build tools ---"
+# Provisional Swing dialog oracle support: Xvfb provides an isolated display,
+# xvfb-run requires xauth, and AWT needs X11 libraries and fonts. Remove these
+# alongside the JDK and oracle helpers at P5 offboarding.
 apt-get install --yes --no-install-recommends \
-  ca-certificates curl gnupg ripgrep iproute2 shellcheck build-essential
+  ca-certificates curl gnupg ripgrep iproute2 shellcheck build-essential \
+  xvfb xauth libxtst6 libxi6 libxrender1 fontconfig fonts-dejavu-core
 
 # ---------------------------------------------------------------------------
 # Toolchain report

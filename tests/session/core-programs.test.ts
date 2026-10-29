@@ -12,9 +12,6 @@ import { RunController } from '#lib/venus/RunController.js';
 
 const rootPrefix = resolve('.') + '/';
 const normalize = (text: string) => Buffer.from(text.replaceAll(rootPrefix, '<repo>/'), 'utf8');
-const deferred: Record<string, string> = {
-  'seeded-random': 'random services await the P4 syscall implementation and Java Random parity'
-};
 
 /** Read expected machine values from the Java display, without implementing a CLI. */
 function capturedState(text: string) {
@@ -55,10 +52,6 @@ function capturedDiagnostics(text: string, severity: 'Error' | 'Warning'): Buffe
 
 describe('original Java corpus through production Globals and RunController', () => {
   for (const entry of manifest.cases) {
-    if (deferred[entry.id]) {
-      it.skip(`${entry.id}: ${deferred[entry.id]}`, () => {});
-      continue;
-    }
     it(
       entry.id,
       async () => {

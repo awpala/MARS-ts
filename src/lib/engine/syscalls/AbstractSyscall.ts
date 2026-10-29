@@ -6,6 +6,8 @@ import type { Coprocessor1 } from '../hardware/registers/Coprocessor1.js';
 import type { Memory } from '../hardware/memory/Memory.js';
 import type { RegisterFile } from '../hardware/registers/RegisterFile.js';
 import type { SystemIO } from '../io/SystemIO.js';
+import type { RandomStreams } from './RandomStreams.js';
+import type { DialogIO } from '../io/DialogIO.js';
 import type { Syscall } from './Syscall.js';
 /** Hardware and GUI console services owned by the machine running this service. */
 export interface SyscallHost {
@@ -17,6 +19,10 @@ export interface SyscallHost {
   readonly memory: Memory<ProgramStatement>;
   /** Injected console and floating runtime services. */
   readonly systemIO: SystemIO;
+  /** Session-local Java random stream collection. */
+  readonly randomStreams: RandomStreams;
+  /** Injected asynchronous dialog capability. */
+  readonly dialogs: DialogIO;
   /** Session exception-register updates and current PC. */
   readonly exceptionHost: ProcessingExceptionHost;
 }

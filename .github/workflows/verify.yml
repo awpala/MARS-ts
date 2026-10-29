@@ -27,8 +27,9 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
-      - name: Install shellcheck
-        run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends shellcheck
+      # Xvfb/xauth are provisional oracle dependencies for actual Swing dialog probes.
+      - name: Install harness and Swing oracle dependencies
+        run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends shellcheck xvfb xauth libxtst6 libxi6 libxrender1 fontconfig fonts-dejavu-core
       # Installs app dependencies only once the SvelteKit app is scaffolded;
       # until then checks.sh reports the app tier as skipped.
       - name: Install app dependencies

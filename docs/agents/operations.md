@@ -47,6 +47,8 @@ The app launcher keeps timestamped output with a latest symlink, records the sou
 
 Keep provisioning comments explaining order, dependencies, failures, recovery, ownership, and what is provisional. Required installs fail loudly; never paper over a broken lockfile with `npm install`. No tracing or environment dumps during setup. Setup success means tools are ready, not that any gate passed.
 
-The Java feature, `build-legacy.sh`, `run-legacy.sh`, the `legacy` tier, the `$legacy` export, the Java extension and settings, and the CI Java step are **provisional**. They are removed together at offboarding (milestone P5 of the [port plan](../adrs/0000-port-plan.md#6-milestones)); do not remove part of the set early or leave any of it behind.
+The random/dialog method probe additionally runs actual Swing services through `xvfb-run` with isolated preferences and automated responses; it requires the provisioned Xvfb/xauth, AWT X11 libraries, and fonts. The ordinary CLI oracle remains headless.
+
+The provisional Swing display/font packages, Java feature, `build-legacy.sh`, `run-legacy.sh`, the `legacy` tier, the `$legacy` export, the Java extension and settings, and the CI Java step are **provisional**. They are removed together at offboarding (milestone P5 of the [port plan](../adrs/0000-port-plan.md#6-milestones)); do not remove part of the set early or leave any of it behind.
 
 `cleanup.sh` runs on the host and removes the `mars-ts-dev-env` container; `cleanup.sh --volumes` also deletes this project's dependency caches and CLI credentials. It never removes the bind-mounted checkout. MARS-ts is live and stable at `mars-ide.portfolio-projects.dev` through the corresponding GitHub App in Coolify. The [Coolify runbook](../runbooks/prod-deployment.md) owns maintenance, routine release checks, configuration changes, and recovery for that existing deployment.
