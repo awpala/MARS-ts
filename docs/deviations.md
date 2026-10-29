@@ -172,6 +172,12 @@ The JAR runs as a local Java application. MARS-ts ships static web assets, can b
 
 Decisions: [ADR 0005](adrs/0005-coolify-deployment.md) and [ADR 0010](adrs/0010-pwa-offline-support.md). Implementation: [service worker](../src/service-worker/index.ts) and [root layout](../src/routes/+layout.svelte), with the [manifest](../static/manifest.webmanifest). Evidence: [PWA browser scenario](../tests/browser/pwa.spec.ts) covers the manifest/icons only; ADR 0010 records production-preview and deployed-site manual offline checks, not a committed automated offline guarantee.
 
+#### UI-P0008: Memory dump files
+
+Legacy [FileDumpMemoryAction](../_legacy-app/mars/venus/FileDumpMemoryAction.java) uses a Swing segment/format dialog and native file chooser. MARS-ts uses its existing same-tab modal and opens the browser/OS save picker for each dump, with a download-link fallback whose destination and cancellation reporting depend on browser settings. Picker cancellation preserves the selections; write failures abort the stream and remain visible for retry. No file handle or source-library record is retained. The suggested filename uses the assembled build’s source basename plus its segment and output extension (for example, `main.text.hex`), even when another source is selected in Edit. Binary suggests `.bin`, hexadecimal text and Intel HEX `.hex`, and other text formats `.txt`; legacy only specifies Intel HEX's extension. Text is deterministic UTF-8/LF instead of Java host defaults. The same populated `.text`/`.data` ranges and six enabled formats are offered, with an empty-state message when neither range is populated; the Java dialog assumes at least one range exists. Output reflects live idle memory after assembly or execution.
+
+Decision: [ADR 0003](adrs/0003-browser-file-workflows.md). Implementation: [dump encoders](../src/lib/engine/dump/README.md), [dump dialog](../src/lib/venus/components/dialogs/DumpMemoryDialog.svelte), and [save lifecycle](../src/lib/browser/FileDownload.ts). Evidence: [Java byte fixtures](../tests/oracle/dump-units/README.md), [encoder comparisons](../src/lib/engine/dump/dump.test.ts), and [browser scenarios](../tests/browser/dump.spec.ts) cover all format selections, raw binary download, picker cancellation, write failure/retry, dismissal, and live post-execution data. Native OS dialogs are represented by picker stubs; download fallback is exercised through Playwright's actual download event.
+
 ## Engine subset
 
 ### Behavioral and functional deviations

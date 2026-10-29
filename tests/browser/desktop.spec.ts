@@ -836,6 +836,10 @@ test('Export and Export All download exact working source and closed library fil
     'aria-label',
     'Export All'
   );
+  await expect(exportAll.locator('xpath=following-sibling::button[1]')).toHaveAttribute(
+    'aria-label',
+    'Dump Memory ...'
+  );
   const downloaded = page.waitForEvent('download');
   await exportButton.click();
   const single = await downloaded;

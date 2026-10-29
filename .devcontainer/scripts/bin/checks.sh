@@ -141,6 +141,8 @@ check_legacy() {
   run_gate "legacy: simulator probes" node "${WORKSPACE_DIR}/tests/oracle/simulator-units/run.mjs" --check
   # GUI argument parsing and stack initialization remain pinned to the untouched Java implementation.
   run_gate "legacy: program argument probes" node "${WORKSPACE_DIR}/tests/oracle/program-arguments-units/run.mjs" --check
+  # All six canonical dump writers and populated GUI ranges are checked against the immutable Java classes.
+  run_gate "legacy: dump format probes" node "${WORKSPACE_DIR}/tests/oracle/dump-units/run.mjs" --check
   run_gate "legacy: settings probes" node "${WORKSPACE_DIR}/tests/oracle/settings-units/run.mjs" --check
 }
 

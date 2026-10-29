@@ -244,7 +244,7 @@ SVG toolbar controls use [prepared assets](../../../static/README.md); the favic
 
 ### Current scope and evidence
 
-Controls remain disabled until hydration attaches handlers. Tools, File → Dump Memory, and exception-handler configuration remain disabled; no complete desktop parity is claimed. Core browser scenarios exercise assembly, step/backstep, breakpoints, console/modal input, pause/stop, reset, active-source assembly with unsaved and saved includes, and floating-register edits; results are reported by the validation run rather than inferred from component compilation.
+Controls remain disabled until hydration attaches handlers. Tools and exception-handler configuration remain disabled; File → Dump Memory and its toolbar action offer all six legacy formats through the existing modal/save infrastructure; no complete desktop parity is claimed. Core browser scenarios exercise assembly, step/backstep, breakpoints, console/modal input, pause/stop, reset, active-source assembly with unsaved and saved includes, and floating-register edits; results are reported by the validation run rather than inferred from component compilation.
 
 The [browser scenarios](../../../tests/browser/) cover source persistence and failure recovery, dialog cancellation and focus, menu/toolbar consistency, keyboard restrictions, themed tooltips, exact code/file transfer, real engine execution, and appearance changes. The [oracle fixtures](../../../tests/oracle/README.md) and engine tests establish translated behavior independently of UI composition. A successful Svelte compilation validates neither unsaved-source preservation nor Java parity.
 

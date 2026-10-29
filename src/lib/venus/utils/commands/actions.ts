@@ -51,7 +51,7 @@ export const fileActions: readonly Action[] = [
   { label: 'Save All', command: 'saveAll' },
   { label: 'Auto Save', icon: glyph('AutoSave'), command: 'autoSave' },
   { label: 'Import ...', icon: glyph('Import'), command: 'import' },
-  { label: 'Dump Memory ...', command: 'dump', unavailable: true },
+  { label: 'Dump Memory ...', icon: glyph('Dump'), command: 'dump' },
   { label: 'Export', icon: glyph('Export'), command: 'export' },
   { label: 'Export All', icon: glyph('ExportAll'), command: 'exportAll' }
 ];
@@ -203,7 +203,10 @@ export const toolbarGroups = [
   {
     id: 'file',
     label: 'File actions',
-    actions: fileActions.filter((item) => item.icon)
+    actions: [
+      ...fileActions.filter((item) => item.icon && item.command !== 'dump'),
+      requireAction('dump')
+    ]
   },
   { id: 'edit', label: 'Editing actions', actions: editActions.filter((item) => item.icon) },
   { id: 'run', label: 'Execution actions', actions: [...runActions, ...breakpointActions] }

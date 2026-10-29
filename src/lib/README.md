@@ -255,7 +255,7 @@ The Java sources under `_legacy-app/` are read-only behavioral references. Brows
 
 [Oracle fixtures](../../tests/oracle/README.md) and engine tests compare translated behavior with Java. [Browser scenarios](../../tests/browser/) exercise the adaptation: unsaved-source preservation, persistence failures, command availability, dialog focus/cancellation, execution and input, imports/exports, clipboard controls, and appearance. Type checking, lint, formatting, unit/parity tests, and the static build complement those checks; compilation alone establishes neither Java parity nor correct browser workflows.
 
-Core assembly, simulation, deterministic console syscalls, and desktop debugging are implemented. Remaining platform syscalls, Tools, several configuration dialogs, and memory dump formats remain unfinished. The [port plan](../../docs/adrs/0000-port-plan.md) and [implementation guide](../../IMPLEMENTATION.md) distinguish intended scope from implemented behavior.
+Core assembly, simulation, deterministic console syscalls, and desktop debugging are implemented. The six enabled legacy memory dump formats are implemented. Remaining platform syscalls, Tools, and several configuration dialogs remain unfinished. The [port plan](../../docs/adrs/0000-port-plan.md) and [implementation guide](../../IMPLEMENTATION.md) distinguish intended scope from implemented behavior.
 
 ### Choosing an extension boundary
 

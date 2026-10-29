@@ -4,6 +4,7 @@
     | 'AutoSave'
     | 'CloseAll'
     | 'Import'
+    | 'Dump'
     | 'Export'
     | 'ExportAll'
     | 'Assemble'

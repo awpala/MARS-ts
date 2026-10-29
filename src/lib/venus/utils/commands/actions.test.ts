@@ -76,7 +76,8 @@ describe('command catalog', () => {
       'autoSave',
       'import',
       'export',
-      'exportAll'
+      'exportAll',
+      'dump'
     ]);
   });
 });

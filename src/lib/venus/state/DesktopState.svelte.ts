@@ -86,6 +86,8 @@ export class DesktopState {
   }
   /** Whether the memory-layout settings dialog owns interaction; closed by default. */
   memoryConfigurationOpen = $state(false);
+  /** Whether the memory-dump selection dialog owns interaction; closed by default. */
+  dumpOpen = $state(false);
   /** Whether the Clear all breakpoints confirmation, enabled by its display preference, owns interaction; closed by default. */
   clearBreakpointsOpen = $state(false);
   /** Status text of the file transfer currently blocking interaction, such as `Exporting…`; null when none is pending. */
@@ -118,6 +120,7 @@ export class DesktopState {
       this.workspace.modal ||
       this.help ||
       this.memoryConfigurationOpen ||
+      this.dumpOpen ||
       this.clearBreakpointsOpen ||
       this.simulation.inputRequest?.prompt
     );
@@ -256,6 +259,12 @@ export class DesktopState {
         !this.simulation.running &&
         this.simulation.execution?.status !== 'idle'
       );
+    if (action.command === 'dump')
+      return (
+        !!this.simulation.loadedFilename &&
+        !this.simulation.controller?.isBusy() &&
+        this.simulation.execution?.status !== 'idle'
+      );
     if (action.command === 'reset')
       return !!this.simulation.execution?.statements.length && !this.simulation.running;
     if (['clearBreakpoints', 'toggleBreakpoints'].includes(action.command))
@@ -293,9 +302,15 @@ export class DesktopState {
     const article = helpArticles.find((entry) => entry.id === command);
     const confirmClear = command === 'clearBreakpoints' && this.display.promptClearBreakpoints;
     if (command !== 'autoSave')
-      this.closeMenus(!!article || command === 'memoryConfiguration' || confirmClear);
+      this.closeMenus(
+        !!article || command === 'memoryConfiguration' || command === 'dump' || confirmClear
+      );
     if (confirmClear) {
       this.clearBreakpointsOpen = true;
+      return;
+    }
+    if (command === 'dump') {
+      if (this.enabled({ command, label: 'Dump Memory' })) this.dumpOpen = true;
       return;
     }
     if (command === 'memoryConfiguration') {

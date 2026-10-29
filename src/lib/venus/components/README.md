@@ -43,3 +43,5 @@ FileImporter owns file-picker reads and releases its command registration on unm
 This is a browser composition of the responsibilities historically implemented by `mars/venus/VenusUI.java`, `MainPane.java`, `MessagesPane.java`, `ExecutePane.java`, the Text Segment, Data Segment, and Labels windows, the register windows, and the editor UI. The [module guide](../README.md) records behavior and adaptations, and [ADR 0002](../../../../docs/adrs/0002-port-fidelity.md) governs fidelity.
 
 Add a component when it owns a cohesive view, interaction lifetime, or reusable rendering contract. Place it with the responsibility it extends; retain engine algorithms in the engine, workflows in their state owners, and desktop composition in VenusUI.
+
+The [memory-dump dialog](dialogs/DumpMemoryDialog.svelte) delegates range discovery and serialization to the engine and shares the browser save lifecycle with FileExporter through FileDownload. It renders the existing Modal, DialogField, DialogError, and DialogActions; no separate modal framework or source-library record is introduced.

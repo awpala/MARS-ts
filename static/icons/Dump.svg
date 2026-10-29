@@ -26,7 +26,22 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 (MIT license, http://www.opensource.org/licenses/mit-license.html)
 -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" role="img" aria-labelledby="title">
-  <title id="title">Dump memory</title>
-  <path fill="#dce4e7" stroke="#71818a" d="M2 14h20v8H2z"/><path stroke="#70868b" d="M5 16v4m3-4v4m3-4v4m3-4v4m3-4v4m3-4v4"/><path fill="#5294b7" stroke="#37647d" d="M5 3c6-4 12 0 12 7h4l-7 7-7-7h4C11 5 9 3 5 3z"/>
+<!-- ToolbarIcon references #icon so the memory bank and dump arrow follow the page theme. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22">
+  <g
+    id="icon"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path stroke="var(--theme-muted, #64748b)" d="M2 14h20v8H2z" />
+    <path stroke="var(--theme-muted, #64748b)" d="M5 16v4m3-4v4m3-4v4m3-4v4m3-4v4m3-4v4" />
+    <path
+      fill="var(--theme-icon-blue, #236ba5)"
+      stroke="var(--theme-icon-blue, #236ba5)"
+      d="M5 3c6-4 12 0 12 7h4l-7 7-7-7h4C11 5 9 3 5 3z"
+    />
+  </g>
 </svg>

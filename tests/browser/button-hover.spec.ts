@@ -27,7 +27,7 @@ async function checkHover(page: Page, button: Locator, theme: string, highlight 
 async function checkDialog(page: Page, dialog: Locator, theme: string) {
   await expect(dialog).toBeVisible();
   for (const button of await dialog.getByRole('button').all())
-    await checkHover(page, button, theme);
+    await checkHover(page, button, theme, (await button.getAttribute('aria-pressed')) !== 'true');
 }
 
 for (const theme of ['light', 'dark']) {

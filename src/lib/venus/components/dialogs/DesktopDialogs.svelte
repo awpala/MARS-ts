@@ -10,6 +10,7 @@
   import CloseSourceDialog from './CloseSourceDialog.svelte';
   import CloseAllSourcesDialog from './CloseAllSourcesDialog.svelte';
   import FindReplaceDialog from './FindReplaceDialog.svelte';
+  import DumpMemoryDialog from './DumpMemoryDialog.svelte';
   import MemoryConfigurationDialog from './MemoryConfigurationDialog.svelte';
   import ClearBreakpointsDialog from './ClearBreakpointsDialog.svelte';
   import HelpDialog from './HelpDialog.svelte';
@@ -34,6 +35,7 @@
 {#if WorkspaceDialog}<WorkspaceDialog />{/if}
 <HelpDialog />
 
+{#if desktop.dumpOpen}<DumpMemoryDialog />{/if}
 {#if desktop.memoryConfigurationOpen}<MemoryConfigurationDialog />{/if}
 {#if desktop.clearBreakpointsOpen}<ClearBreakpointsDialog />{/if}
 {#if desktop.transferStatus !== null}<TransferStatusDialog status={desktop.transferStatus} />{/if}
