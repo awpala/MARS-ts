@@ -27,6 +27,8 @@ export interface EditPane {
   savedText: string;
   /** True until the first named save. */
   isNew: boolean;
+  /** Whether this is a protected reference buffer; false when omitted. Mutations and saving are unavailable. */
+  readOnly?: boolean;
   /** Prior source revisions, owned by Editor. */
   undo: string[];
   /** Undone revisions, owned by Editor. */
@@ -73,9 +75,18 @@ export class Editor {
     } while (reservedNames.includes(name) || this.documents.some((tab) => tab.name === name));
     return this.openFile(name, '', true);
   }
-  /** Adds source text; the presenter selects existing library tabs instead of reopening them. */
-  openFile(name: string, text: string, isNew = false): EditPane {
-    const tab = { id: this.nextId++, name, text, savedText: text, isNew, undo: [], redo: [] };
+  /** Adds source text, optionally as a read-only reference; the presenter selects existing tabs instead of reopening them. */
+  openFile(name: string, text: string, isNew = false, readOnly = false): EditPane {
+    const tab: EditPane = {
+      id: this.nextId++,
+      name,
+      text,
+      savedText: text,
+      isNew,
+      undo: [],
+      redo: [],
+      ...(readOnly ? { readOnly: true } : {})
+    };
     this.documents.push(tab);
     this.selectedId = tab.id;
     return tab;
@@ -89,7 +100,7 @@ export class Editor {
   /** Records one source edit and discards the redo branch. */
   setText(text: string): void {
     const tab = this.getCurrentEditTab();
-    if (!tab || tab.text === text) return;
+    if (!tab || tab.readOnly || tab.text === text) return;
     tab.undo.push(tab.text);
     tab.text = text;
     tab.redo = [];
@@ -106,6 +117,7 @@ export class Editor {
   /** Recover history only for an exact source identity/text match, leaving conflicting drafts untouched. */
   restoreHistory(records: readonly EditHistory[]): void {
     for (const tab of this.documents) {
+      if (tab.readOnly) continue;
       const record = records.find((r) => r.name === tab.name && r.text === tab.text);
       if (record) {
         tab.undo = [...record.undo];
@@ -116,6 +128,7 @@ export class Editor {
   /** Restores the preceding source revision when available. */
   undo(): void {
     const tab = this.getCurrentEditTab();
+    if (tab?.readOnly) return;
     const previous = tab?.undo.pop();
     if (tab && previous !== undefined) {
       tab.redo.push(tab.text);
@@ -125,6 +138,7 @@ export class Editor {
   /** Reapplies an undone source revision when available. */
   redo(): void {
     const tab = this.getCurrentEditTab();
+    if (tab?.readOnly) return;
     const next = tab?.redo.pop();
     if (tab && next !== undefined) {
       tab.undo.push(tab.text);
@@ -133,12 +147,12 @@ export class Editor {
   }
   /** Reports edits since open/save, including unsaved new buffers. */
   isDirty(tab: EditPane): boolean {
-    return tab.isNew || tab.text !== tab.savedText;
+    return !tab.readOnly && (tab.isNew || tab.text !== tab.savedText);
   }
   /** Records a successful persistent library save and its filename. */
   markSaved(id: number, name: string): void {
     const tab = this.documents.find((pane) => pane.id === id);
-    if (tab) {
+    if (tab && !tab.readOnly) {
       tab.name = name;
       tab.savedText = tab.text;
       tab.isNew = false;

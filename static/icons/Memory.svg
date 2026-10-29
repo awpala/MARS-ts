@@ -1,0 +1,10 @@
+<!-- Original theme-aware RAM-module glyph for memory configuration. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22">
+  <g id="icon" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M2 5h20v11h-8v2h-4v-2H2Z" />
+    <path d="M5 16v3m3-3v3m8-3v3m3-3v3" />
+    <rect x="5" y="8" width="3" height="5" rx=".4" />
+    <rect x="10.5" y="8" width="3" height="5" rx=".4" />
+    <rect x="16" y="8" width="3" height="5" rx=".4" />
+  </g>
+</svg>

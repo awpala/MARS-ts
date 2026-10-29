@@ -121,17 +121,40 @@ Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSl
   without applying it. Applying a different layout resets memory and registers and automatically
   reassembles a loaded program. The selected layout persists in localStorage.
 </p>
+<h3>Exception Handler</h3>
+<p>
+  Settings → Exception Handler ... opens the automatic handler dialog. Enable exception handler is
+  off by default. Browse selects one saved source from this browser’s library and displays its
+  filename beside the button. Browse and the filename appear only for the custom choice. While
+  inclusion is off, both radio choices are disabled and dimmed, and Browse is disabled; the selected
+  source is retained. Save or import a handler before selecting it; never-saved buffers are not
+  listed. When the handler is open, assembly uses its current text, including unsaved edits. The
+  enabled handler is assembled first.
+</p>
+<p>
+  The switch enables or disables inclusion of the selected file without clearing the selection. OK
+  saves both the enabled flag and filename, even when disabled; both are restored after reopening or
+  reloading the app. Cancel, Escape, or closing the dialog discards changes. An enabled empty
+  selection adds nothing, and missing sources fail only when assembling. The dialog remains
+  available during execution; changes apply to future assemblies without changing loaded code or
+  Reset.
+</p>
+<p>
+  Use SPIM default exceptions handler selects the bundled handler and startup code instead of a
+  custom library source. It requires a global <code>main</code> label and the default memory layout;
+  its unsupported directives produce assembler warnings. Open default
+  <code><strong>exceptions.s</strong></code> in editor closes without applying changes and displays
+  a locked read-only reference. Copy to new file makes an editable copy with its license intact. The
+  reference remains protected after reload and is excluded from library saves and Export All.
+  Exceptions ends the runtime/debug toolbar group; Memory Configuration follows ASCII in the display
+  group. These buttons open the same dialogs as Settings.
+</p>
 <h3>Legacy settings without a current browser control</h3>
 <ul>
   <li>
     <strong>Editor dialog</strong> (Java Release 3.3) and <strong>Highlighting dialog</strong> (Java
     Release 3.6): the port uses bundled editor/highlighting presets instead of font and color
     dialogs. Toolbar display settings and the appearance switch remain available.
-  </li>
-  <li>
-    <strong>Exception Handler dialog</strong> (Java Release 3.2, automatic inclusion originally
-    off): not yet available. Place the handler in the program or reference its source with an
-    explicit <code>.include</code> directive.
   </li>
 </ul>
 <p>

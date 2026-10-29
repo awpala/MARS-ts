@@ -115,7 +115,8 @@ test('localStorage retains label selection with the loaded program across Edit s
     { name: 'editing.asm', source: '.text\nmain: nop\nselected: nop\n' }
   ]);
   await action(page, 'loaded.asm').click();
-  await action(page, 'Show Labels Window').click();
+  const showLabels = action(page, 'Show Labels Window');
+  if ((await showLabels.getAttribute('aria-pressed')) !== 'true') await showLabels.click();
   await action(page, 'Assemble').click();
   const labels = page.getByRole('region', { name: 'Labels', exact: true });
   const selected = labels.getByRole('button', { name: 'selected', exact: true });
@@ -164,7 +165,8 @@ test('global label selection restores and invalid stored label identity leaves t
   await openStoredSources(page, [
     { name: 'global.asm', source: '.data\n.globl shared\nshared: .word 11\n.text\nnop\n' }
   ]);
-  await action(page, 'Show Labels Window').click();
+  const showLabels = action(page, 'Show Labels Window');
+  if ((await showLabels.getAttribute('aria-pressed')) !== 'true') await showLabels.click();
   await action(page, 'Assemble').click();
   const label = page
     .getByRole('region', { name: 'Labels', exact: true })

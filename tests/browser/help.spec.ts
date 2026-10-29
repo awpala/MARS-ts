@@ -383,3 +383,33 @@ test('F1 overview and long articles remain usable in dark mode at a smaller view
   await dialog.getByRole('button', { name: 'Close dialog' }).click();
   await expect(dialog).toBeHidden();
 });
+
+test('exception handler help describes automatic library selection and future-assembly behavior', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await page.keyboard.press('F1');
+  const dialog = page.getByRole('dialog', { name: 'MARS Help', exact: true });
+  await dialog
+    .getByRole('group', { name: 'Help topics', exact: true })
+    .getByRole('button', { name: 'MARS', exact: true })
+    .click();
+  await dialog
+    .getByRole('group', { name: 'MARS topics', exact: true })
+    .getByRole('button', { name: 'Settings', exact: true })
+    .click();
+  await expect(dialog).toContainText(
+    'Settings → Exception Handler ... opens the automatic handler dialog.'
+  );
+  await expect(dialog).toContainText('changes apply to future assemblies');
+  await dialog
+    .getByRole('group', { name: 'Help topics', exact: true })
+    .getByRole('button', { name: 'MIPS', exact: true })
+    .click();
+  await dialog
+    .getByRole('group', { name: 'MIPS topics', exact: true })
+    .getByRole('button', { name: 'Exception Handlers', exact: true })
+    .click();
+  await expect(dialog).toContainText('choose Settings → Exception Handler ...');
+  await expect(dialog).not.toContainText('The legacy Exception Handler dialog');
+});

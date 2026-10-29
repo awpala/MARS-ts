@@ -106,7 +106,14 @@ export const helpActions: readonly Action[] = helpArticles.map((article) => ({
 /** Settings command opening the memory-layout dialog. */
 export const memoryConfigurationAction: Action = {
   label: 'Memory Configuration ...',
+  icon: glyph('Memory'),
   command: 'memoryConfiguration'
+};
+/** Settings command opening the automatic exception-handler selection dialog. */
+export const exceptionHandlerAction: Action = {
+  label: 'Exception Handler ...',
+  icon: glyph('Exceptions'),
+  command: 'exceptionHandler'
 };
 
 const allActions: readonly Action[] = [
@@ -116,7 +123,8 @@ const allActions: readonly Action[] = [
   ...breakpointActions,
   ...consoleActions,
   ...helpActions,
-  memoryConfigurationAction
+  memoryConfigurationAction,
+  exceptionHandlerAction
 ];
 const actionsByCommand = new Map(allActions.map((action) => [action.command, action]));
 
@@ -209,5 +217,9 @@ export const toolbarGroups = [
     ]
   },
   { id: 'edit', label: 'Editing actions', actions: editActions.filter((item) => item.icon) },
-  { id: 'run', label: 'Execution actions', actions: [...runActions, ...breakpointActions] }
+  {
+    id: 'run',
+    label: 'Execution actions',
+    actions: [...runActions, ...breakpointActions, exceptionHandlerAction]
+  }
 ] as const;

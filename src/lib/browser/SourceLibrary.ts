@@ -1,3 +1,5 @@
+import { bundledSource } from './BundledSources.js';
+
 /** JSON-array storage key for explicitly saved assembly sources. */
 export const SOURCE_LIBRARY_STORAGE_KEY = 'mars-ts:sources:v1';
 
@@ -174,7 +176,7 @@ export class SourceLibrary {
         typeof entry.selected !== 'boolean'
       )
         throw new Error('The source workspace contains an invalid buffer.');
-      const name = sourceName(entry.name);
+      const name = bundledSource(entry.name)?.name ?? sourceName(entry.name);
       if (names.has(name))
         throw new Error(`The source workspace contains duplicate name "${name}".`);
       names.add(name);

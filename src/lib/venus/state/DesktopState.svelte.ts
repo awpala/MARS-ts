@@ -86,6 +86,8 @@ export class DesktopState {
   }
   /** Whether the memory-layout settings dialog owns interaction; closed by default. */
   memoryConfigurationOpen = $state(false);
+  /** Whether the automatic exception-handler settings dialog owns interaction; closed by default. */
+  exceptionHandlerOpen = $state(false);
   /** Whether the memory-dump selection dialog owns interaction; closed by default. */
   dumpOpen = $state(false);
   /** Whether the Clear all breakpoints confirmation, enabled by its display preference, owns interaction; closed by default. */
@@ -120,6 +122,7 @@ export class DesktopState {
       this.workspace.modal ||
       this.help ||
       this.memoryConfigurationOpen ||
+      this.exceptionHandlerOpen ||
       this.dumpOpen ||
       this.clearBreakpointsOpen ||
       this.simulation.inputRequest?.prompt
@@ -242,10 +245,14 @@ export class DesktopState {
     // History and program ownership mutate inside the raw engine; subscribe before short-circuiting.
     void this.simulation.execution?.revision;
     if (action.unavailable) return false;
+    if (action.command === 'exceptionHandler') return !!this.simulation.machine;
     if (action.command === 'memoryConfiguration')
       return !!this.simulation.machine && !this.simulation.controller?.isBusy();
     if (['clearOutput', 'clearAllOutput'].includes(action.command)) return true;
-    if (action.command === 'assemble') return !!this.workspace.current && !this.simulation.running;
+    if (action.command === 'assemble')
+      return (
+        !!this.workspace.current && !this.workspace.current.readOnly && !this.simulation.running
+      );
     if (['pause', 'stop'].includes(action.command)) return this.simulation.running;
     if (['go', 'step'].includes(action.command))
       return (
@@ -273,8 +280,15 @@ export class DesktopState {
     if (this.simulation.running && action.command !== 'copy') return false;
     if (['new', 'open', 'import', 'autoSave'].includes(action.command)) return true;
     if (action.command === 'exportAll')
-      return this.workspace.tabs.length > 0 || this.workspace.libraryFiles.length > 0;
+      return (
+        this.workspace.tabs.some((tab) => !tab.readOnly) || this.workspace.libraryFiles.length > 0
+      );
     if (!this.workspace.current) return false;
+    if (
+      this.workspace.current.readOnly &&
+      ['cut', 'paste', 'undo', 'redo', 'save', 'saveAs'].includes(action.command)
+    )
+      return false;
     if (['save', 'saveAs'].includes(action.command)) return isSavableSource(this.workspace.current);
     if (action.command === 'undo') return this.workspace.current.undo.length > 0;
     if (action.command === 'redo') return this.workspace.current.redo.length > 0;
@@ -303,7 +317,11 @@ export class DesktopState {
     const confirmClear = command === 'clearBreakpoints' && this.display.promptClearBreakpoints;
     if (command !== 'autoSave')
       this.closeMenus(
-        !!article || command === 'memoryConfiguration' || command === 'dump' || confirmClear
+        !!article ||
+          command === 'memoryConfiguration' ||
+          command === 'exceptionHandler' ||
+          command === 'dump' ||
+          confirmClear
       );
     if (confirmClear) {
       this.clearBreakpointsOpen = true;
@@ -316,6 +334,10 @@ export class DesktopState {
     if (command === 'memoryConfiguration') {
       if (this.simulation.machine && !this.simulation.controller?.isBusy())
         this.memoryConfigurationOpen = true;
+      return;
+    }
+    if (command === 'exceptionHandler') {
+      if (this.simulation.machine) this.exceptionHandlerOpen = true;
       return;
     }
     if (article) {

@@ -42,3 +42,7 @@ After the cut, preserve the frozen 1.0-to-4.5 comparison. Subsequent ADRs identi
 The catalog makes non-trivial UI choices and host adaptations reviewable alongside engine parity. Existing source comparisons without focused regressions stay visible instead of borrowing the credibility of unrelated passing tests. It adds no application behavior, dependency, or milestone, and does not make minor restyling or oracle-conforming refactors require deviation entries.
 
 The [documentation contract](../agents/documentation.md#deviation-catalog-maintenance), [shared workflow](../agents/workflow.md), and canonical port/UI/review skills route ongoing work through this catalog. Harness mirrors and role adapters retain their existing ownership rules. Documentation and harness gates validate discoverability, relative links, ADR indexing, and mirrored skills; they cannot by themselves verify the behavioral assertions. Those assertions retain the source and behavioral evidence linked in each catalog entry.
+
+## Subsequent reconciliation
+
+[ADR 0013](0013-exception-handler-workflow.md) restores the legacy assembly filename-list preamble and implements automatic handler selection. The catalog retires that omission while retaining console clearing and retention differences; handler source selection and diagnostics are documented under the existing virtual-working-text adaptation.

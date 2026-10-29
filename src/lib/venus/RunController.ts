@@ -57,6 +57,7 @@ export class RunController {
   };
   private readonly observers = new Set<RunStateObserver>();
   private programs: MIPSprogram[] | null = null;
+  private assemblyExceptionHandler: string | null = null;
   private extended = true;
   private warnings = false;
   private pending: Promise<boolean> | null = null;
@@ -114,7 +115,10 @@ export class RunController {
       this.machine.program.getMachineList() === null
     )
       return null;
-    return captureRunCheckpoint(this.machine, this.state, this.lastExecutedAddress);
+    return {
+      ...captureRunCheckpoint(this.machine, this.state, this.lastExecutedAddress),
+      assemblyExceptionHandler: this.assemblyExceptionHandler
+    };
   }
   /** Rebuild source metadata before restoring an exact stable machine, without executing instructions. */
   restoreCheckpoint(checkpoint: RunCheckpoint): void {
@@ -126,7 +130,13 @@ export class RunController {
     if (!configuration) throw new TypeError('Unknown checkpoint memory configuration');
     this.machine.getSettings().restoreState(checkpoint.settings);
     this.machine.memoryConfigurations.setCurrentConfiguration(configuration);
-    this.assemble([checkpoint.filename], checkpoint.filename);
+    this.assembleWithHandler(
+      [checkpoint.filename],
+      checkpoint.filename,
+      checkpoint.assemblyExceptionHandler === undefined
+        ? this.configuredExceptionHandler()
+        : checkpoint.assemblyExceptionHandler
+    );
     this.machine.withGuiAccess(() => restoreRunHardware(this.machine, checkpoint));
     this.lastExecutedAddress = checkpoint.lastExecutedAddress ?? null;
     this.publish({
@@ -137,8 +147,31 @@ export class RunController {
       error: checkpoint.error ? new ProcessingException() : null
     });
   }
-  /** Read current virtual buffers and assemble either the lead file or explicitly supplied open files. */
-  assemble(openFilenames: readonly string[], leadFilename: string): ErrorList | null {
+  /** Read current virtual buffers and assemble the selected sources; optional onPrepared receives names after reading/tokenization succeeds and before assembly, for desktop messages. */
+  assemble(
+    openFilenames: readonly string[],
+    leadFilename: string,
+    onPrepared?: (filenames: readonly string[]) => void
+  ): ErrorList | null {
+    return this.assembleWithHandler(
+      openFilenames,
+      leadFilename,
+      this.configuredExceptionHandler(),
+      onPrepared
+    );
+  }
+  private configuredExceptionHandler(): string | null {
+    const settings = this.machine.getSettings();
+    return settings.getExceptionHandlerEnabled() && settings.getExceptionHandler().length > 0
+      ? settings.getExceptionHandler()
+      : null;
+  }
+  private assembleWithHandler(
+    openFilenames: readonly string[],
+    leadFilename: string,
+    exceptionHandler: string | null,
+    onPrepared?: (filenames: readonly string[]) => void
+  ): ErrorList | null {
     this.requireIdle();
     this.backstepDelaySlot = null;
     this.lastExecutedAddress = null;
@@ -146,15 +179,13 @@ export class RunController {
     this.extended = settings.getExtendedAssemblerEnabled();
     this.warnings = settings.getWarningsAreErrors();
     const filenames = settings.getAssembleAllEnabled() ? [...openFilenames] : [leadFilename];
-    const exceptionHandler =
-      settings.getExceptionHandlerEnabled() && settings.getExceptionHandler().length > 0
-        ? settings.getExceptionHandler()
-        : null;
     const program = this.machine.createProgram();
     this.machine.program = program;
     this.programs = null;
     try {
       this.programs = program.prepareFilesForAssembly(filenames, leadFilename, exceptionHandler);
+      this.assemblyExceptionHandler = exceptionHandler;
+      onPrepared?.(this.programs.map((prepared) => prepared.getFilename()!));
       const diagnostics = program.assemble(this.programs, this.extended, this.warnings);
       this.resetRegisters();
       this.machine.systemIO.resetFiles();

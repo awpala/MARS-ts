@@ -15,9 +15,11 @@
   ><SelectorToggle bind:checked={search.caseSensitive} label="Case sensitive" />
   <DialogActions>
     <Button disabled={!search.findText} onclick={search.findNext}>Find Next</Button><Button
-      disabled={!search.findText}
+      disabled={!search.findText || workspace.current?.readOnly}
       onclick={() => search.replace()}>Replace</Button
-    ><Button disabled={!search.findText} onclick={() => search.replace(true)}>Replace All</Button
+    ><Button
+      disabled={!search.findText || workspace.current?.readOnly}
+      onclick={() => search.replace(true)}>Replace All</Button
     ><Button onclick={workspace.dismiss}>Close</Button>
   </DialogActions>
   <p class="my-2" role="status">{search.findStatus}</p></Modal

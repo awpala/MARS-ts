@@ -3,6 +3,7 @@
   import { getDesktopCommands } from '../../context/commands.js';
   import {
     helpActions,
+    exceptionHandlerAction,
     memoryConfigurationAction,
     menus,
     unavailableTools,
@@ -11,7 +12,7 @@
   import {
     clearAllOutputsOnGoOption,
     memoryConfigurationDescription,
-    pendingSettings,
+    exceptionHandlerDescription,
     promptClearBreakpointsOption
   } from '../../utils/commands/settings.js';
   import DropdownMenu, { type MenuItem, type MenuGroup } from './DropdownMenu.svelte';
@@ -47,7 +48,7 @@
       onselect: () => void commands.execute(item.command)
     };
   }
-  /** Settings groups: the display toggles, assembly choices, execution choices, then the dialogs and pending entries. */
+  /** Settings groups: the display toggles, assembly choices, execution choices, then the dialogs. */
   const settingsGroups = $derived.by(() => {
     const groups: MenuGroup[] = [
       {
@@ -97,15 +98,10 @@
       }
     }
     groups.push({
-      id: 'pending',
+      id: 'dialogs',
       items: [
         ...items,
-        ...pendingSettings.map(({ label, description }) => ({
-          id: label,
-          label,
-          tooltip: description,
-          disabled: true
-        })),
+        actionItem(exceptionHandlerAction, exceptionHandlerDescription),
         actionItem(memoryConfigurationAction, memoryConfigurationDescription)
       ]
     });

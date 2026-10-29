@@ -2,6 +2,7 @@
   import PaneTabs from '../controls/PaneTabs.svelte';
   import Button from '../controls/Button.svelte';
   import CloseButton from '../controls/CloseButton.svelte';
+  import MaskIcon from '../icons/MaskIcon.svelte';
   import { getDesktop } from '../../context/desktop.js';
   import { requireAction } from '../../utils/commands/actions.js';
   import { sourceLabel } from '../../utils/sources/sourceLabel.js';
@@ -67,7 +68,7 @@
 
   function beginRename(id: number) {
     const tab = tabs.find((tab) => tab.id === id);
-    if (!tab || !editable) return;
+    if (!tab || tab.readOnly || !editable) return;
     workspace.select(id);
     filename = tab.name;
     editing = id;
@@ -139,6 +140,9 @@
           ondragstart={(event) => startDrag(event, tab.id)}
           ondragend={clearDrag}
           aria-pressed={selected === tab.id}
+          aria-label={tabs.find((item) => item.id === tab.id)?.readOnly
+            ? `${tab.label} (read-only)`
+            : undefined}
           attachment={(button) => {
             if (focusAfterRename === tab.id) {
               focusAfterRename = undefined;
@@ -153,7 +157,13 @@
               event.preventDefault();
               beginRename(tab.id);
             }
-          }}>{tab.label}</Button
+          }}
+        >
+          {#if tabs.find((item) => item.id === tab.id)?.readOnly}<MaskIcon
+              name="Lock"
+              size={12}
+            />{/if}
+          {tab.label}</Button
         >
       {/if}
       <CloseButton

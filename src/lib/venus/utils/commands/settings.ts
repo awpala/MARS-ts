@@ -104,14 +104,9 @@ export const promptClearBreakpointsOption = {
 export const memoryConfigurationDescription =
   'View and modify memory segment base addresses for simulated MIPS.';
 
-/** Settings entries whose dialogs are not implemented. */
-export const pendingSettings: readonly { label: string; description: string }[] = [
-  {
-    label: 'Exception Handler ...',
-    description:
-      'If set, the specified exception handler file will be included in all Assemble operations.'
-  }
-];
+/** Hover description of the automatic exception-handler settings dialog. */
+export const exceptionHandlerDescription =
+  'If set, the specified exception handler file will be included in all Assemble operations.';
 
 /** DisplayPreferences booleans that can back a display toggle. */
 export type DisplayToggleKey = 'showLabels' | 'hexAddresses' | 'hexValues' | 'ascii';

@@ -144,6 +144,8 @@ check_legacy() {
   # All six canonical dump writers and populated GUI ranges are checked against the immutable Java classes.
   run_gate "legacy: dump format probes" node "${WORKSPACE_DIR}/tests/oracle/dump-units/run.mjs" --check
   run_gate "legacy: settings probes" node "${WORKSPACE_DIR}/tests/oracle/settings-units/run.mjs" --check
+  # The headless Venus probe pins handler commits, assembly notices, and trap/eret execution.
+  run_gate "legacy: exception handler probes" node "${WORKSPACE_DIR}/tests/oracle/exception-handler/run.mjs" --check
 }
 
 # Run each app gate independently so the summary names every failed command.

@@ -53,10 +53,17 @@ Some essential facts about writing and using exception handlers include:
     </ol>
   </li>
   <li>
-    Include a handler in the same source as the program (as below), use <code>.include</code> to
-    insert a handler from the browser source library. Opening a handler in another tab alone does
-    not include it in assembly. The legacy Exception Handler dialog for automatically adding a
-    handler to every assembly is not yet available.
+    Include a handler in the same source as the program (as below), use <code>.include</code>, or
+    choose Settings → Exception Handler ... to add a handler automatically to every assembly. Use
+    Enable exception handler, select Use a custom exception handler, then Browse to choose a saved
+    browser-library source and press OK. Browse and its filename appear only for the custom choice.
+    Turning inclusion off disables and grays out both radio choices and disables Browse, retaining
+    the selected source. Automatic inclusion defaults to off. The handler is assembled before the
+    program, using its current open-buffer text when available. Opening a handler in another tab
+    alone does not include it. Cancel or Escape discards dialog changes; turning inclusion off
+    retains the chosen file. OK saves the selected filename and enabled state independently,
+    including a file chosen before disabling, and both survive app reload. Changes affect future
+    assemblies, including when made during execution. A missing source is reported at assembly time.
   </li>
   <li>
     If there is no instruction at location <code>0x80000180</code>, MARS will terminate the MIPS
@@ -119,7 +126,18 @@ msg:
 </pre>
 
 <h3>Widely Used Exception Handler</h3>
-The original guide identifies SPIM’s <code>exceptions.s</code> as a compatible handler. It is not
-bundled with MARS-ts; import a handler source to use it. The MARS assembler will generate warnings
-because this program contains directives that it does not recognize, but as long as the setting
-"Assembler warnings are considered errors" is <i>not</i> set this will not cause any problems.
+<p>
+  Settings → Exception Handler ... offers <strong>Use SPIM default exceptions handler</strong>. This
+  bundled source includes startup code that calls a user-defined global <code>main</code> label and
+  assumes the default memory configuration. Its original <code>.set</code> directives produce MARS
+  warnings; leave “Assembler warnings are considered errors” off to assemble it.
+</p>
+<p>
+  Open default <code><strong>exceptions.s</strong></code> in editor closes the dialog without
+  applying draft settings and opens a locked, read-only reference. You can select, copy, and search
+  its text. Copy to new file creates an editable source containing the full text and James R.
+  Larus’s BSD license notice, which must be retained in copies. Save the modified copy and choose it
+  with Browse to use a customized handler. The original remains read-only after reload. The
+  Exceptions toolbar button opens the same dialog; Memory Configuration is immediately after the
+  ASCII display toggle.
+</p>

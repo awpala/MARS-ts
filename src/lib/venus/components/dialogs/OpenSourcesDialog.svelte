@@ -4,17 +4,13 @@
   import SelectAllNone from '../controls/SelectAllNone.svelte';
   import { SOURCE_EXTENSION_LABEL } from '#lib/browser/SourceLibrary.js';
   import { getDesktop } from '../../context/desktop.js';
+  import { compareSourceNames } from '../../utils/sources/compareSourceNames.js';
   import Modal from './Modal.svelte';
   import DialogActions from './DialogActions.svelte';
   import DialogError from './DialogError.svelte';
   const { workspace } = getDesktop();
   const files = $derived(
-    workspace.libraryFiles.toSorted((left, right) => {
-      const a = left.name.toLowerCase();
-      const b = right.name.toLowerCase();
-      if (a !== b) return a < b ? -1 : 1;
-      return left.name < right.name ? -1 : left.name > right.name ? 1 : 0;
-    })
+    workspace.libraryFiles.toSorted((left, right) => compareSourceNames(left.name, right.name))
   );
 </script>
 

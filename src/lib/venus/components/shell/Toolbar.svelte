@@ -1,6 +1,11 @@
 <script lang="ts">
   import { getDesktopCommands } from '../../context/commands.js';
-  import { helpActions, toolbarGroups, type Action } from '../../utils/commands/actions.js';
+  import {
+    helpActions,
+    toolbarGroups,
+    memoryConfigurationAction,
+    type Action
+  } from '../../utils/commands/actions.js';
   import IconButton from '../controls/IconButton.svelte';
   import SpeedSlider from './SpeedSlider.svelte';
   import ToolbarGroup from './ToolbarGroup.svelte';
@@ -57,6 +62,7 @@
         onclick={toggle.toggle}
       />
     {/each}
+    {@render commandButton(memoryConfigurationAction)}
   </ToolbarGroup>
   <ToolbarGroup label="Help actions">{@render commandButton(helpActions[0])}</ToolbarGroup>
   {#if showSpeed}<SpeedSlider bind:value={speed} />{/if}

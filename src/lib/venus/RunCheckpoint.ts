@@ -8,8 +8,10 @@ import type { RunState } from './RunController.js';
 export interface RunCheckpoint {
   /** Original lead source identity; sources are supplied separately by the browser owner. */
   filename: string;
-  /** Engine settings used by both assembly and subsequent simulation. */
+  /** Live engine settings, including handler preferences for future assemblies. */
   settings: ReturnType<Settings['captureState']>;
+  /** Handler used by the loaded assembly, or null; older checkpoints fall back to their saved settings. Changing future assembly preferences never changes loaded code. */
+  assemblyExceptionHandler?: string | null;
   /** Configured address-layout identity. */
   configuration: string;
   /** Sparse raw memory and live instruction words. */
@@ -93,6 +95,9 @@ export function isRunCheckpoint(value: unknown): value is RunCheckpoint {
   return (
     typeof s.filename === 'string' &&
     s.filename.length > 0 &&
+    (s.assemblyExceptionHandler === undefined ||
+      s.assemblyExceptionHandler === null ||
+      typeof s.assemblyExceptionHandler === 'string') &&
     typeof s.configuration === 'string' &&
     !!s.settings &&
     Array.isArray(s.settings.booleans) &&

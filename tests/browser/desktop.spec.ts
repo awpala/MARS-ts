@@ -232,7 +232,7 @@ test('working display settings and run speed survive reload', async ({ page }) =
   }
   await expect(menu.getByRole('checkbox', { name: 'Show Labels Window' })).toBeChecked();
   await settings.click();
-  await expect(toggles.getByRole('button')).toHaveCount(6);
+  await expect(toggles.getByRole('button')).toHaveCount(7);
   const editing = page.locator('.toolbar .toolgroup').filter({
     has: page.getByRole('button', { name: 'Undo', exact: true })
   });
@@ -1182,14 +1182,19 @@ test('Auto Save commits all working buffers, persists its setting, and disabling
   await openDesktop(page);
   const autoSave = page.getByRole('button', { name: 'Auto Save', exact: true });
   await expect(autoSave).toHaveAttribute('aria-pressed', 'false');
+  const fileMenu = page.locator('.menubar summary').filter({ hasText: /^File$/ });
+  await fileMenu.click();
   const autoSaveMenu = page.getByRole('checkbox', { name: 'Auto Save', exact: true });
   await expect(autoSaveMenu).not.toBeChecked();
   await autoSaveMenu.click();
   await expect(autoSaveMenu).toBeVisible();
   await expect(autoSave).toHaveAttribute('aria-pressed', 'true');
   await expect(autoSaveMenu).toBeChecked();
+  await fileMenu.click();
   await autoSave.click();
+  await fileMenu.click();
   await expect(autoSaveMenu).not.toBeChecked();
+  await fileMenu.click();
   await page.getByRole('button', { name: 'New', exact: true }).click();
   await page.getByRole('textbox', { name: 'Source mips1.asm', exact: true }).fill('first draft\n');
   await page.getByRole('button', { name: 'New', exact: true }).click();

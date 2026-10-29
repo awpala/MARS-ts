@@ -2,6 +2,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vitest/config';
 import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { readFileSync } from 'node:fs';
 
 // Port 6277 belongs exclusively to the human developer. Browser tests isolate their server and generated files on 6278;
 // ad hoc agent servers reuse that isolation with `--mode browser-test --port 6279` or higher.
@@ -17,6 +18,12 @@ export default defineConfig(({ mode }) => {
     },
     preview: { host: '0.0.0.0', port: browserTest ? 6278 : 6277, strictPort: true },
     cacheDir: browserTest ? 'node_modules/.vite-browser-test' : 'node_modules/.vite',
+    // Embed the canonical static source without importing through SvelteKit's static-file middleware.
+    define: {
+      __MARS_SPIM_EXCEPTIONS__: JSON.stringify(
+        readFileSync(new URL('./static/sources/exceptions.s', import.meta.url), 'utf8')
+      )
+    },
     plugins: [
       tailwindcss(),
       sveltekit({

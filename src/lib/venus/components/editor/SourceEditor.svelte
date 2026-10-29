@@ -35,6 +35,7 @@
   );
   function sourceKeydown(event: KeyboardEvent) {
     sourceHelp = null;
+    if (running || current?.readOnly) return;
     // JEditTextArea only intercepts unmodified Tab; insert_tab replaces the selection
     // with one literal tab. Shift+Tab remains available for keyboard focus traversal.
     if (event.key !== 'Tab' || event.shiftKey || event.ctrlKey || event.altKey || event.metaKey)
@@ -145,7 +146,7 @@
         aria-label={`Source ${current.name}`}
         aria-describedby={visibleSourceHelp ? `${paneId}-source-help` : undefined}
         value={current.text}
-        readonly={running}
+        readonly={running || current.readOnly}
         style:cursor={visibleSourceHelp && helpEnabled ? 'pointer' : 'text'}
         oninput={(event) => {
           workspace.edit(event.currentTarget.value);

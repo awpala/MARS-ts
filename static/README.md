@@ -20,6 +20,10 @@ Pass theme-independent SVGs through as external images with an empty `alt` when 
 
 [manifest.webmanifest](manifest.webmanifest) makes the application installable ([ADR 0010](../docs/adrs/0010-pwa-offline-support.md)); the root layout links it. Its [icons/mars-192.png](icons/mars-192.png) and [icons/mars-512.png](icons/mars-512.png) are enlargements of the unchanged favicon rendered in Chromium, so they are soft; replace them with higher-resolution artwork when available. The service worker precaches every file in this directory, so keep assets here small.
 
+[icons/Exceptions.svg](icons/Exceptions.svg), [icons/Memory.svg](icons/Memory.svg), and [icons/Lock.svg](icons/Lock.svg) are original theme-aware glyphs for the exception dialog, memory configuration, and protected reference tabs. Memory depicts a RAM module with chips and edge contacts. The toolbar adds Exceptions after the runtime/debug controls and Memory after the ASCII display toggle.
+
+[sources/](sources/README.md) holds bundled assembly references. Its SPIM `exceptions.s` retains James R. Larus’s BSD three-clause notice; it is not covered by the MARS artwork attribution above.
+
 The [GUI port mapping](../docs/gui-port.md) records the source owners, initial desktop layout, remaining work, and browser adaptations.
 
 Preparation checks parsed the legacy-derived SVGs as XML and confirmed their view boxes and absence of raster image or script elements. Byte comparisons confirmed the favicon and bundled license match their sources. Browser tests exercise the application with these files; rendered appearance is not compared pixel by pixel against the legacy rasters.

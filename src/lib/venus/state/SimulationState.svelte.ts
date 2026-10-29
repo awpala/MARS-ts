@@ -1,6 +1,7 @@
 /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license.
  * Settings workflows derive from mars/venus/SettingsDelayedBranchingAction.java,
- * SettingsSelfModifyingCodeAction.java, and SettingsMemoryConfigurationAction.java. */
+ * SettingsSelfModifyingCodeAction.java, SettingsMemoryConfigurationAction.java,
+ * and SettingsExceptionHandlerAction.java. */
 import type {
   MessageTab,
   SavedExecution,
@@ -15,6 +16,7 @@ import { RunController } from '../RunController.js';
 import { engineOption, engineOptions } from '../utils/commands/settings.js';
 import { errorMessage } from '../utils/errors/errorMessage.js';
 import { describeRunOutcome, type RunCommand } from '../utils/execution/runOutcome.js';
+import { buildFileNameList } from '../utils/execution/buildFileNameList.js';
 import type { SourceWorkspace } from './SourceWorkspace.svelte.js';
 import type { DisplayPreferences } from './DisplayPreferences.svelte.js';
 /** Browser-owned simulation presentation, input completion, and scheduling around a framework-free RunController. */
@@ -187,6 +189,18 @@ export class SimulationState {
     if (this.hasLoadedProgram()) this.assemble();
     else this.controller?.refresh();
   };
+  /** Persist handler enablement and selection independently; disabling keeps the selected file, and changes affect only future assemblies, even during execution. */
+  updateExceptionHandler = (enabled: boolean, name: string): void => {
+    const settings = this.machine?.getSettings();
+    if (
+      !settings ||
+      (settings.getExceptionHandlerEnabled() === enabled && settings.getExceptionHandler() === name)
+    )
+      return;
+    settings.setBooleanSetting(Settings.EXCEPTION_HANDLER_ENABLED, enabled);
+    if (settings.getExceptionHandler() !== name) settings.setExceptionHandler(name);
+    this.controller?.refresh();
+  };
   /** Resolve the pending syscall once, preserving echo, newline, and maximum-length rules. */
   completeInput = (appendNewline: boolean) => {
     const resolve = this.resolveInput;
@@ -230,13 +244,15 @@ export class SimulationState {
   }
   /** Assemble the active source and explicit includes, publishing diagnostics and the execution view. */
   assemble = () => {
-    if (!this.controller || !this.workspace.current) return;
+    const filename = this.workspace.current?.readOnly
+      ? this.loadedFilename
+      : this.workspace.current?.name;
+    if (!this.controller || !filename) return;
     try {
       this.checkpointSources = Object.create(null);
-      const diagnostics = this.controller.assemble(
-        [this.workspace.current.name],
-        this.workspace.current.name
-      );
+      const diagnostics = this.controller.assemble([filename], filename, (filenames) => {
+        this.messages += buildFileNameList('Assemble: assembling ', filenames);
+      });
       if (diagnostics) this.messages += diagnostics.generateErrorAndWarningReport();
       if (this.controller.getState().status === 'assembled') {
         this.messages += `Assemble: operation completed successfully.\n\n`;
@@ -275,12 +291,20 @@ export class SimulationState {
       engineOptions.map((option) => [option.id, machine.getSettings().getBooleanSetting(option.id)])
     );
   }
-  /** Rebuild captured sources without changing Edit buffers, then restore stable hardware and history. */
+  /** Rebuild captured sources without changing Edit buffers, then restore stable hardware and history while retaining current handler preferences for future assemblies. */
   restoreExecution(saved: SavedExecution): void {
     this.recoverySources = saved.sources;
     this.checkpointSources = Object.create(null);
     try {
+      const settings = this.machine!.getSettings();
+      const handlerEnabled = settings.getExceptionHandlerEnabled();
+      const handlerName = settings.getExceptionHandler();
       this.controller!.restoreCheckpoint(saved.machine);
+      // Handler preferences can change during a run while recovery retains the preceding stable machine.
+      const restoredSettings = settings.captureState();
+      restoredSettings.booleans[Settings.EXCEPTION_HANDLER_ENABLED] = handlerEnabled;
+      restoredSettings.strings[Settings.EXCEPTION_HANDLER] = handlerName;
+      settings.restoreState(restoredSettings);
       this.buildSignature = this.loadedBuildSignature();
       const selection = saved.labelSelection;
       if (selection) {

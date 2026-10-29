@@ -26,7 +26,9 @@
     | 'Ascii'
     | 'Values'
     | 'Lines'
-    | 'Input';
+    | 'Input'
+    | 'Exceptions'
+    | 'Memory';
 </script>
 
 <script lang="ts">

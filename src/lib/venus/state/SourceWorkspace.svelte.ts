@@ -1,5 +1,6 @@
 import { tick } from 'svelte';
 import { Editor, type EditPane } from '#lib/editor/Editor.js';
+import { bundledSource } from '#lib/browser/BundledSources.js';
 import {
   isSourceFilename,
   SOURCE_EXTENSION_LABEL,
@@ -46,7 +47,12 @@ export class SourceWorkspace {
   });
   /** Identity, name, and unsaved state of every open buffer, in tab order. */
   tabSummaries = $derived(
-    this.tabs.map((tab) => ({ id: tab.id, name: tab.name, dirty: this.editor.isDirty(tab) }))
+    this.tabs.map((tab) => ({
+      id: tab.id,
+      name: tab.name,
+      dirty: this.editor.isDirty(tab),
+      readOnly: tab.readOnly ?? false
+    }))
   );
   /** Names of open buffers that differ from their saved baselines. */
   unsavedNames = $derived(this.tabSummaries.filter((tab) => tab.dirty).map((tab) => tab.name));
@@ -111,6 +117,12 @@ export class SourceWorkspace {
       const drafts = this.sourceLibrary.readWorkspace();
       let selected: number | undefined;
       for (const draft of drafts) {
+        const bundled = bundledSource(draft.name);
+        if (bundled) {
+          const tab = this.editor.openFile(bundled.name, bundled.source, false, true);
+          if (draft.selected) selected = tab.id;
+          continue;
+        }
         const saved = this.libraryFiles.find((file) => file.name === draft.name);
         const clean = !draft.isNew && draft.source === draft.savedSource;
         const matchesSaved = saved?.source === draft.source;
@@ -145,8 +157,10 @@ export class SourceWorkspace {
     this.ready = false;
     this.sourceInput = undefined;
   }
-  /** Resolve assembly includes from open buffers first, then committed browser sources. */
+  /** Resolve immutable bundled identities first; user sources prefer open buffers over committed library text. */
   readSource = (name: string): string => {
+    const bundled = bundledSource(name);
+    if (bundled) return bundled.source;
     const tab = this.findOpenSource(name);
     if (tab) return tab.text;
     const saved = this.sourceLibrary
@@ -158,6 +172,11 @@ export class SourceWorkspace {
   /** Execute source/file actions against this workspace, preserving normal dirty-buffer workflows. */
   execute = async (command: string): Promise<void> => {
     if (this.disposed) return;
+    if (
+      this.current?.readOnly &&
+      ['cut', 'paste', 'undo', 'redo', 'save', 'saveAs'].includes(command)
+    )
+      return;
     switch (command) {
       case 'new': {
         const tab = this.createSource();
@@ -226,6 +245,23 @@ export class SourceWorkspace {
     this.display.view = 'Edit';
     return tab;
   }
+  /** Open a bundled source once as a protected reference; viewing never assembles or invalidates the loaded program. */
+  openBundledSource = async (name: string): Promise<void> => {
+    if (this.disposed) return;
+    const source = bundledSource(name);
+    if (!source) return;
+    const tab = this.tabByName(name) ?? this.editor.openFile(name, source.source, false, true);
+    this.select(tab.id);
+    this.display.view = 'Edit';
+    await this.focusSource(tab);
+  };
+  /** Make an editable, independently named new buffer from the current source, retaining its license and leaving the original untouched. */
+  copyToNewFile = async (): Promise<void> => {
+    const source = this.current;
+    if (!source) return;
+    const tab = this.createSource(source.text);
+    if (tab) await this.focusSource(tab);
+  };
   /** Focus after rendering only while the requested buffer still belongs to the active editor view. */
   focusSource = async (tab: EditPane): Promise<void> => {
     await tick();
@@ -242,7 +278,13 @@ export class SourceWorkspace {
   };
   private findOpenSource = (name: string): EditPane | undefined => {
     const path = this.normalizePath(name);
-    return this.editor.getEditPanes().find((entry) => this.normalizePath(entry.name) === path);
+    return this.editor
+      .getEditPanes()
+      .find((entry) =>
+        entry.readOnly
+          ? entry.name === name
+          : !bundledSource(name) && this.normalizePath(entry.name) === path
+      );
   };
   /** Select a source location from Execute and focus the matching editor line. */
   showSource = async (name: string, line: number) => {
@@ -313,6 +355,7 @@ export class SourceWorkspace {
   };
   /** Record source edits, invalidate assembly, and persist according to workspace policy. */
   edit = (text: string) => {
+    if (this.disposed || this.host.running() || this.current?.readOnly) return;
     this.editor.setText(text);
     this.host.invalidate();
     this.refresh(true);
@@ -481,7 +524,7 @@ export class SourceWorkspace {
   rename = (id: number, filename: string): void => {
     if (this.disposed || this.host.running() || this.modal) return;
     const tab = this.tabById(id);
-    if (!tab || filename === tab.name) return;
+    if (!tab || tab.readOnly || filename === tab.name) return;
     this.dismiss();
     this.select(id);
     this.saveTarget = tab;
@@ -565,9 +608,11 @@ export class SourceWorkspace {
   sourcesForExport(all: boolean): SavedSource[] {
     const sources: SavedSource[] = all ? this.sourceLibrary.read() : [];
     for (const tab of all ? this.editor.getEditPanes() : this.current ? [this.current] : []) {
+      if (all && tab.readOnly) continue;
       const index = sources.findIndex((file) => file.name === tab.name);
-      if (index < 0) sources.push({ name: tab.name, source: tab.text });
-      else sources[index] = { name: tab.name, source: tab.text };
+      const name = tab.readOnly ? sourceStem(tab.name) + '.s' : tab.name;
+      if (index < 0) sources.push({ name, source: tab.text });
+      else sources[index] = { name, source: tab.text };
     }
     return sources;
   }
@@ -616,6 +661,7 @@ export class SourceWorkspace {
   };
   private clipboard = async (command: string) => {
     if (!this.current) return;
+    if (this.current.readOnly && command !== 'copy') return;
     const tab = this.current,
       start = this.selectionStart,
       end = this.selectionEnd;

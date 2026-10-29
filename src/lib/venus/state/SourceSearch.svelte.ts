@@ -38,7 +38,7 @@ export class SourceSearch {
   };
   /** Replace the selected match or all matches through the normal source-edit workflow. */
   replace = (all = false) => {
-    if (!this.workspace.current || !this.findText) return;
+    if (!this.workspace.current || this.workspace.current.readOnly || !this.findText) return;
     const query = this.fold(this.findText);
     if (!all) {
       const selected = this.workspace.current.text.slice(

@@ -44,3 +44,5 @@ This is a first corpus, not exhaustive instruction coverage. Expand it alongside
 The probe programs and runner are newly authored test infrastructure, not translations of MARS source. The reference implementation remains copyright Pete Sanderson and Kenneth Vollmar under [MARSlicense.txt](../../MARSlicense.txt). The checked-in Java implementation is the behavioral authority for the MARS-ts 1.0 target. See the [backend port analysis](../../docs/backend-port.md) for the intended translation order and remaining evidence.
 
 The [dump format probe](dump-units/README.md) captures all six enabled Java writers and populated GUI ranges; run its `--update` command to regenerate expected bytes or `--check` to verify them. The legacy validation tier includes this probe, and Vitest consumes the checked-in capture without a JDK.
+
+The [exception-handler workflow probe](exception-handler/README.md) captures legacy dialog commits, assembly filename-list formatting, missing-file diagnostics, and two-source trap/`eret` execution. The legacy validation tier checks it; session and browser tests cover the port workflow and its documented library adaptations.

@@ -1,0 +1,26 @@
+{
+  "jdkMajor": 21,
+  "legacySourceSha256": "49c6b8ae0d9f66f355f741b86d812aef135b6fb915c7305874290d355c0938b6",
+  "command": [
+    "java",
+    "-Djava.awt.headless=true",
+    "-Djava.util.prefs.userRoot=<fresh-user>",
+    "-Djava.util.prefs.systemRoot=<fresh-system>",
+    "-cp",
+    "<probe-classes>:__build/legacy/Mars.jar",
+    "ExceptionHandlerProbe"
+  ],
+  "stdin": "",
+  "stdout": "message\t\tQXNzZW1ibGU6IGFzc2VtYmxpbmcgCgo=\nmessage\tlead.asm\tQXNzZW1ibGU6IGFzc2VtYmxpbmcgbGVhZC5hc20KCg==\nmessage\thandler.asm,lead.asm\tQXNzZW1ibGU6IGFzc2VtYmxpbmcgaGFuZGxlci5hc20sIGxlYWQuYXNtCgo=\nmessage\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\tQXNzZW1ibGU6IGFzc2VtYmxpbmcgeHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4Cgo=\nmessage\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\tQXNzZW1ibGU6IGFzc2VtYmxpbmcgeHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eAoK\nmessage\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,lead.asm\tQXNzZW1ibGU6IGFzc2VtYmxpbmcgeHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eCwgCmxlYWQuYXNtCgo=\nmessage\txxxxxxxxxxxxxxxxxxx,yyyyyyyyyyyyyyyyyyyy\tQXNzZW1ibGU6IGFzc2VtYmxpbmcgeHh4eHh4eHh4eHh4eHh4eHh4eCwgeXl5eXl5eXl5eXl5eXl5eXl5eXkKCg==\nmessage\txxxxxxxxxxxxxxxxxxx,yyyyyyyyyyyyyyyyyyyyy\tQXNzZW1ibGU6IGFzc2VtYmxpbmcgeHh4eHh4eHh4eHh4eHh4eHh4eCwgeXl5eXl5eXl5eXl5eXl5eXl5eXl5Cgo=\nmessage\txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\tQXNzZW1ibGU6IGFzc2VtYmxpbmcgeHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eCwgCnl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXkKCg==\nmessage\tlead.asm,lead.asm\tQXNzZW1ibGU6IGFzc2VtYmxpbmcgbGVhZC5hc20sIGxlYWQuYXNtCgo=\nmissing\tRXJyb3IgaW4gOiBqYXZhLmlvLkZpbGVOb3RGb3VuZEV4Y2VwdGlvbjogbWlzc2luZy1leGNlcHRpb24taGFuZGxlci5hc20gKE5vIHN1Y2ggZmlsZSBvciBkaXJlY3RvcnkpCg==\ncommit\tfalse\tfalse\told.asm\tfalse\told.asm\t0\ncommit\tfalse\tfalse\tnew.asm\tfalse\told.asm\t0\ncommit\tfalse\tfalse\t\tfalse\told.asm\t0\ncommit\tfalse\ttrue\told.asm\ttrue\told.asm\t1\ncommit\tfalse\ttrue\tnew.asm\ttrue\tnew.asm\t1\ncommit\tfalse\ttrue\t\ttrue\t\t1\ncommit\ttrue\tfalse\told.asm\tfalse\told.asm\t1\ncommit\ttrue\tfalse\tnew.asm\tfalse\told.asm\t1\ncommit\ttrue\tfalse\t\tfalse\told.asm\t1\ncommit\ttrue\ttrue\told.asm\ttrue\told.asm\t0\ncommit\ttrue\ttrue\tnew.asm\ttrue\tnew.asm\t0\ncommit\ttrue\ttrue\t\ttrue\t\t0\nexecution\t42\t7\t65297\t52\t4194308\n",
+  "stderr": "",
+  "status": 0,
+  "hashes": {
+    "tests/oracle/exception-handler/ExceptionHandlerProbe.java": "7642edff059a2040b22d562a72651cd526d1d604094646c98d9f3ab5800a6434",
+    "mars/venus/RunAssembleAction.java": "9f6053b170c3a16cccce3498dcf79063dd0778d82e5cfab5e169394c83f93e9c",
+    "mars/venus/SettingsExceptionHandlerAction.java": "80b8517da687963aaeaea8af345f46f00062ed9d163a69cd2a8a297f8758437f",
+    "mars/MIPSprogram.java": "58c55398924e839fbf760287ba25b478ff532785e171ed90ecdd84181c05b389",
+    "mars/Settings.java": "2cae07784f0fa934f98186817b90788b088e0f92c3e12f3caf3eea0a691df922",
+    "tests/oracle/exception-handler/sources/lead.asm": "39d5cee5b38ad1efaed41e8895a79205d4e03424a6f55e9b7bef4a6d53fbd430",
+    "tests/oracle/exception-handler/sources/handler.asm": "3036e5a49ee6d9e4133d069e8f582389b71dde37e00dcc947a7f712333608f64"
+  }
+}

@@ -2,6 +2,32 @@ import { describe, expect, it } from 'vitest';
 import { Editor } from './Editor.js';
 
 describe('browser editor buffer lifecycle', () => {
+  it('protects reference text, identity, and history while allowing an independent editable copy', () => {
+    const editor = new Editor();
+    const reference = editor.openFile('/SPIM:/exceptions.s', '# Licensed reference', false, true);
+    editor.setText('changed');
+    editor.restoreHistory([
+      { name: reference.name, text: reference.text, undo: ['injected'], redo: ['injected'] }
+    ]);
+    editor.undo();
+    editor.redo();
+    editor.markSaved(reference.id, 'renamed.asm');
+    expect(reference).toMatchObject({
+      name: '/SPIM:/exceptions.s',
+      text: '# Licensed reference',
+      savedText: '# Licensed reference',
+      undo: [],
+      redo: [],
+      readOnly: true
+    });
+    expect(editor.isDirty(reference)).toBe(false);
+    const copy = editor.newFile();
+    editor.setText(reference.text);
+    editor.setText('# Edited copy');
+    expect(copy.readOnly).not.toBe(true);
+    expect(editor.isDirty(copy)).toBe(true);
+    expect(reference.text).toBe('# Licensed reference');
+  });
   it('restores exact draft text and dirty baseline while avoiding persisted default names', () => {
     const editor = new Editor();
     const restored = editor.restoreFile('mips1.asm', 'draft', 'saved', false);
