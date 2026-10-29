@@ -1,55 +1,43 @@
 /* Copyright (c) 2003–2006 Pete Sanderson and Kenneth Vollmar. MIT license.
  * Ports mars/mips/instructions/SyscallLoader.java; see MARSlicense.txt.
  * Original loader adapted from Bret Barker's GameServer class (Developing Games in Java). */
-import type { SyscallHost } from './AbstractSyscall.js';
+import type { SyscallHost } from './SyscallHost.js';
 import type { Syscall } from './Syscall.js';
-import { SyscallPrintInt } from './SyscallPrintInt.js';
-import { SyscallPrintFloat } from './SyscallPrintFloat.js';
-import { SyscallPrintDouble } from './SyscallPrintDouble.js';
-import { SyscallPrintString } from './SyscallPrintString.js';
-import { SyscallReadInt } from './SyscallReadInt.js';
-import { SyscallReadFloat } from './SyscallReadFloat.js';
-import { SyscallReadDouble } from './SyscallReadDouble.js';
-import { SyscallReadString } from './SyscallReadString.js';
-import { SyscallSbrk } from './SyscallSbrk.js';
-import { SyscallExit } from './SyscallExit.js';
-import { SyscallPrintChar } from './SyscallPrintChar.js';
-import { SyscallReadChar } from './SyscallReadChar.js';
-import { SyscallExit2 } from './SyscallExit2.js';
-import { SyscallPrintIntHex } from './SyscallPrintIntHex.js';
-import { SyscallPrintIntBinary } from './SyscallPrintIntBinary.js';
-import { SyscallPrintIntUnsigned } from './SyscallPrintIntUnsigned.js';
+import type { SyscallRegistration } from './SyscallRegistration.js';
+import type { SyscallOverride } from './SyscallOverride.js';
+import { SyscallPrintInt } from './console/SyscallPrintInt.js';
+import { SyscallPrintFloat } from './console/SyscallPrintFloat.js';
+import { SyscallPrintDouble } from './console/SyscallPrintDouble.js';
+import { SyscallPrintString } from './console/SyscallPrintString.js';
+import { SyscallReadInt } from './console/SyscallReadInt.js';
+import { SyscallReadFloat } from './console/SyscallReadFloat.js';
+import { SyscallReadDouble } from './console/SyscallReadDouble.js';
+import { SyscallReadString } from './console/SyscallReadString.js';
+import { SyscallSbrk } from './heap/SyscallSbrk.js';
+import { SyscallExit } from './termination/SyscallExit.js';
+import { SyscallPrintChar } from './console/SyscallPrintChar.js';
+import { SyscallReadChar } from './console/SyscallReadChar.js';
+import { SyscallExit2 } from './termination/SyscallExit2.js';
+import { SyscallPrintIntHex } from './console/SyscallPrintIntHex.js';
+import { SyscallPrintIntBinary } from './console/SyscallPrintIntBinary.js';
+import { SyscallPrintIntUnsigned } from './console/SyscallPrintIntUnsigned.js';
 
-import { SyscallRandSeed } from './SyscallRandSeed.js';
-import { SyscallRandInt } from './SyscallRandInt.js';
-import { SyscallRandIntRange } from './SyscallRandIntRange.js';
-import { SyscallRandFloat } from './SyscallRandFloat.js';
-import { SyscallRandDouble } from './SyscallRandDouble.js';
-import { SyscallConfirmDialog } from './SyscallConfirmDialog.js';
-import { SyscallInputDialogInt } from './SyscallInputDialogInt.js';
-import { SyscallInputDialogFloat } from './SyscallInputDialogFloat.js';
-import { SyscallInputDialogDouble } from './SyscallInputDialogDouble.js';
-import { SyscallInputDialogString } from './SyscallInputDialogString.js';
-import { SyscallMessageDialog } from './SyscallMessageDialog.js';
-import { SyscallMessageDialogInt } from './SyscallMessageDialogInt.js';
-import { SyscallMessageDialogFloat } from './SyscallMessageDialogFloat.js';
-import { SyscallMessageDialogDouble } from './SyscallMessageDialogDouble.js';
-import { SyscallMessageDialogString } from './SyscallMessageDialogString.js';
+import { SyscallRandSeed } from './random/SyscallRandSeed.js';
+import { SyscallRandInt } from './random/SyscallRandInt.js';
+import { SyscallRandIntRange } from './random/SyscallRandIntRange.js';
+import { SyscallRandFloat } from './random/SyscallRandFloat.js';
+import { SyscallRandDouble } from './random/SyscallRandDouble.js';
+import { SyscallConfirmDialog } from './dialogs/SyscallConfirmDialog.js';
+import { SyscallInputDialogInt } from './dialogs/SyscallInputDialogInt.js';
+import { SyscallInputDialogFloat } from './dialogs/SyscallInputDialogFloat.js';
+import { SyscallInputDialogDouble } from './dialogs/SyscallInputDialogDouble.js';
+import { SyscallInputDialogString } from './dialogs/SyscallInputDialogString.js';
+import { SyscallMessageDialog } from './dialogs/SyscallMessageDialog.js';
+import { SyscallMessageDialogInt } from './dialogs/SyscallMessageDialogInt.js';
+import { SyscallMessageDialogFloat } from './dialogs/SyscallMessageDialogFloat.js';
+import { SyscallMessageDialogDouble } from './dialogs/SyscallMessageDialogDouble.js';
+import { SyscallMessageDialogString } from './dialogs/SyscallMessageDialogString.js';
 
-/** An explicitly linked module replaces Java classpath discovery without changing service lookup rules. */
-export interface SyscallRegistration {
-  /** Canonical class filename used for deduplication and initialization diagnostics. */
-  className: string;
-  /** Construct a fresh service bound to the supplied session. */
-  create(host: SyscallHost): Syscall;
-}
-/** Parsed number override supplied by session configuration. */
-export interface SyscallOverride {
-  /** Case-sensitive service name. */
-  getName(): string;
-  /** Signed service number. */
-  getNumber(): number;
-}
 /** Session-local loader retaining canonical duplicate detection, override ordering, and last-match lookup. */
 export class SyscallLoader {
   private syscallList: Syscall[] | null = null;

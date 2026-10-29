@@ -18,18 +18,16 @@ import { Coprocessor0 } from './hardware/registers/Coprocessor0.js';
 import { Coprocessor1 } from './hardware/registers/Coprocessor1.js';
 import { InstructionSet } from './instructions/InstructionSet.js';
 import { SystemIO, type InputRequest } from './io/SystemIO.js';
-import { RandomStreams } from './syscalls/RandomStreams.js';
+import { RandomStreams } from './syscalls/random/RandomStreams.js';
 import { DialogIO, type DialogIOHost } from './io/DialogIO.js';
 import { JavaFloatingPoint } from './formatting/JavaFloatingPoint.js';
 import { BackStepper } from './simulator/BackStepper.js';
 import { DelayedBranch } from './simulator/DelayedBranch.js';
 import { Exceptions } from './simulator/Exceptions.js';
 import { Simulator } from './simulator/Simulator.js';
-import {
-  SyscallLoader,
-  type SyscallOverride,
-  type SyscallRegistration
-} from './syscalls/SyscallLoader.js';
+import { SyscallLoader } from './syscalls/SyscallLoader.js';
+import type { SyscallOverride } from './syscalls/SyscallOverride.js';
+import type { SyscallRegistration } from './syscalls/SyscallRegistration.js';
 
 /** Browser/test services needed to own one independent MARS machine; no DOM or process globals enter the engine. */
 export interface GlobalsHost {

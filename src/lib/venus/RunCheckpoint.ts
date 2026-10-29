@@ -1,4 +1,4 @@
-import { isRandomStreamsState } from '#lib/engine/syscalls/RandomStreams.js';
+import { isRandomStreamsState } from '#lib/engine/syscalls/random/RandomStreams.js';
 import type { Globals } from '#lib/engine/Globals.js';
 import { isMemoryState, type MemoryState } from '#lib/engine/hardware/memory/Memory.js';
 import type { ProgramStatement } from '#lib/engine/assembler/programs/ProgramStatement.js';

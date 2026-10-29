@@ -4,7 +4,7 @@ import { Globals, type GlobalsHost } from '../Globals.js';
 import { ProgramStatement } from '../assembler/programs/ProgramStatement.js';
 import { TokenList } from '../assembler/tokenization/TokenList.js';
 import { ProcessingException } from '../diagnostics/ProcessingException.js';
-import { RandomStreams, isRandomStreamsState } from './RandomStreams.js';
+import { RandomStreams, isRandomStreamsState } from './random/RandomStreams.js';
 import { RunController } from '#lib/venus/RunController.js';
 import { isRunCheckpoint } from '#lib/venus/RunCheckpoint.js';
 

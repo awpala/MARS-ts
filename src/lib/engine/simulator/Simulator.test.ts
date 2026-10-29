@@ -1,4 +1,4 @@
-import { RandomStreams } from '#lib/engine/syscalls/RandomStreams.js';
+import { RandomStreams } from '#lib/engine/syscalls/random/RandomStreams.js';
 import { DialogIO } from '#lib/engine/io/DialogIO.js';
 import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';

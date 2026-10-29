@@ -1,4 +1,4 @@
-import { RandomStreams } from '#lib/engine/syscalls/RandomStreams.js';
+import { RandomStreams } from '#lib/engine/syscalls/random/RandomStreams.js';
 import { DialogIO } from '#lib/engine/io/DialogIO.js';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
@@ -15,8 +15,8 @@ import { ProcessingException } from '../diagnostics/ProcessingException.js';
 import { InstructionSet } from '../instructions/InstructionSet.js';
 import { SystemIO, type InputRequest } from '../io/SystemIO.js';
 import { SyscallLoader } from './SyscallLoader.js';
-import { SyscallPrintInt } from './SyscallPrintInt.js';
-import { SyscallReadInt } from './SyscallReadInt.js';
+import { SyscallPrintInt } from './console/SyscallPrintInt.js';
+import { SyscallReadInt } from './console/SyscallReadInt.js';
 import { JavaFloatingPoint } from '../formatting/JavaFloatingPoint.js';
 
 const fixture = JSON.parse(readFileSync('tests/oracle/core-syscalls/golden.json', 'utf8')) as {
