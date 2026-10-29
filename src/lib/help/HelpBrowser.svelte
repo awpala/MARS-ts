@@ -4,8 +4,9 @@
    * Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt.
    */
   import PaneTabs from '#lib/venus/components/controls/PaneTabs.svelte';
+  import type { Snippet } from 'svelte';
   import HelpArticle from './HelpArticle.svelte';
-  import { helpTabs } from './articles.js';
+  import { helpTabs, type HelpArticle as Article } from './articles.js';
 
   /** Presentation contract; the desktop owns dialog state, dismissal, and the retained tab selection. */
   type Props = {
@@ -17,8 +18,16 @@
     onopen: (source: string) => void;
     /** Required desktop permission; false while execution prevents creating an editor source. */
     canOpen: boolean;
+    /** Required caller-owned action row, rendered below scrolling content with the selected article. */
+    actions: Snippet<[Article]>;
   };
-  let { tab: tabId = $bindable(), articleIds = $bindable(), onopen, canOpen }: Props = $props();
+  let {
+    tab: tabId = $bindable(),
+    articleIds = $bindable(),
+    onopen,
+    canOpen,
+    actions
+  }: Props = $props();
   const tab = $derived(helpTabs.find((entry) => entry.id === tabId) ?? helpTabs[0]);
   // Like Swing's nested JTabbedPanes, each tab keeps its own article selection.
   const article = $derived(
@@ -48,6 +57,7 @@
     </div>
   {/key}
 </div>
+{@render actions(article)}
 
 <style>
   .help-browser {

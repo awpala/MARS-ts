@@ -57,6 +57,10 @@ test('a failed Help article displays an error and remains dismissible', async ({
   await expect(dialog.getByRole('alert')).toHaveText(
     'Unable to load this article. Reload the page and try again.'
   );
+  await expect(dialog.getByRole('link', { name: 'Read Online', exact: false })).toHaveAttribute(
+    'href',
+    'https://github.com/awpala/MARS-ts/blob/main/src/lib/help/markdown/MarsHelpIntro.md'
+  );
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
   await expect(helpMenu).toBeFocused();
@@ -74,19 +78,34 @@ test('Help menu opens all eleven attributed articles and restores keyboard focus
   await expect(menu.locator('button:nth-child(2) + hr')).toHaveCount(1);
   await helpMenu.click();
   const articles = [
-    ['Introduction', 'Introduction', 'Original article: Release 4.5 · August 2014'],
-    ['Debugging', 'Interactive Debugging', '2000'],
-    ['Settings', 'Configuration Settings', 'localStorage'],
-    ['Syscalls', 'Syscalls', 'Tony Brock in July 2007'],
-    ['Exception Handlers', 'Exception Handlers', '.ktext 0x80000180'],
-    ['Macros', 'Macros', 'Mohammad Hossein Sekhavat'],
-    ['Tools', 'Tools — Legacy Reference', 'mars.tools.MarsTool'],
-    ['Limitations', 'Requirements and Limitations', 'Historical Java limitations'],
-    ['Release History', 'Release History', '23 January 2008'],
-    ['Bugs/Comments', 'Bug Reporting and General Comments', 'PSanderson@otterbein.edu'],
-    ['Acknowledgements', 'Acknowledgements', 'Updated 18 August 2014']
+    [
+      'Introduction',
+      'Introduction',
+      'Original article: Release 4.5 · August 2014',
+      'MarsHelpIntro'
+    ],
+    ['Debugging', 'Interactive Debugging', '2000', 'MarsHelpDebugging'],
+    ['Settings', 'Configuration Settings', 'localStorage', 'MarsHelpSettings'],
+    ['Syscalls', 'Syscalls', 'Tony Brock in July 2007', 'SyscallHelp'],
+    ['Exception Handlers', 'Exception Handlers', '.ktext 0x80000180', 'ExceptionsHelp'],
+    ['Macros', 'Macros', 'Mohammad Hossein Sekhavat', 'MacrosHelp'],
+    ['Tools', 'Tools — Legacy Reference', 'mars.tools.MarsTool', 'MarsHelpTools'],
+    [
+      'Limitations',
+      'Requirements and Limitations',
+      'Historical Java limitations',
+      'MarsHelpLimits'
+    ],
+    ['Release History', 'Release History', '23 January 2008', 'MarsHelpHistory'],
+    [
+      'Bugs/Comments',
+      'Bug Reporting and General Comments',
+      'PSanderson@otterbein.edu',
+      'BugReportingHelp'
+    ],
+    ['Acknowledgements', 'Acknowledgements', 'Updated 18 August 2014', 'Acknowledgements']
   ];
-  for (const [label, title, retainedText] of articles) {
+  for (const [label, title, retainedText, markdownStem] of articles) {
     await helpMenu.click();
     await page.locator('.menubar').getByRole('button', { name: label, exact: true }).click();
     const dialog = page.getByRole('dialog', { name: title, exact: true });
@@ -95,7 +114,14 @@ test('Help menu opens all eleven attributed articles and restores keyboard focus
     await expect(dialog).toContainText(retainedText);
     await expect(dialog).toContainText('Copyright © 2003–2013 Pete Sanderson and Kenneth Vollmar');
     await expect(dialog).not.toContainText('This document is available for printing');
-    expect(await dialog.locator('.dialog-body').evaluate((body) => body.scrollTop)).toBe(0);
+    const online = dialog.getByRole('link', { name: 'Read Online', exact: false });
+    await expect(online).toHaveAttribute(
+      'href',
+      `https://github.com/awpala/MARS-ts/blob/main/src/lib/help/markdown/${markdownStem}.md`
+    );
+    await expect(online).toHaveAttribute('target', '_blank');
+    await expect(online).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(await dialog.locator('.single-article').evaluate((body) => body.scrollTop)).toBe(0);
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
     await expect(helpMenu).toBeFocused();
@@ -142,6 +168,7 @@ test('F1 Help opens a tabbed browser on the overview, retains its tab, and leave
   await expect.poll(() => panel.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
   await expect(tab(mars, 'Debugging')).toBeInViewport();
   await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeInViewport();
+  await expect(dialog.getByRole('link', { name: 'Read Online', exact: false })).toBeInViewport();
   await tab(topics, 'MIPS').click();
   const mips = dialog.getByRole('group', { name: 'MIPS topics', exact: true });
   await expect(mips.getByRole('button')).toHaveText(['Syscalls', 'Exception Handlers', 'Macros']);
@@ -190,6 +217,82 @@ test('F1 Help opens a tabbed browser on the overview, retains its tab, and leave
   const macros = page.getByRole('dialog', { name: 'Macros', exact: true });
   await expect(macros).toContainText('Mohammad Hossein Sekhavat');
   await expect(macros.getByRole('group', { name: /topics$/ })).toHaveCount(0);
+});
+
+test('Read Online follows browser selections and opens GitHub independently of the desktop', async ({
+  page,
+  context
+}) => {
+  // Exercise actual new-tab navigation without depending on GitHub or publishing these files first.
+  await context.route(
+    'https://github.com/awpala/MARS-ts/blob/main/src/lib/help/markdown/**',
+    (route) => route.fulfill({ contentType: 'text/html', body: '<h1>Online Help</h1>' })
+  );
+  await openDesktop(page);
+  await page.getByRole('button', { name: 'New', exact: true }).click();
+  const source = page.getByRole('textbox', { name: 'Source mips1.asm', exact: true });
+  await source.fill('# keep working beside online Help');
+  const desktopUrl = page.url();
+  await page.keyboard.press('F1');
+  const dialog = page.getByRole('dialog', { name: 'MARS Help', exact: true });
+  const online = dialog.getByRole('link', { name: 'Read Online', exact: false });
+  for (const [topic, nested, markdownStem] of [
+    ['Overview', '', 'Overview'],
+    ['MIPS', 'Syscalls', 'SyscallHelp'],
+    ['MIPS', 'Exception Handlers', 'ExceptionsHelp'],
+    ['MIPS', 'Macros', 'MacrosHelp'],
+    ['MARS', 'Introduction', 'MarsHelpIntro'],
+    ['MARS', 'Debugging', 'MarsHelpDebugging'],
+    ['MARS', 'Settings', 'MarsHelpSettings'],
+    ['MARS', 'Tools', 'MarsHelpTools'],
+    ['MARS', 'Limitations', 'MarsHelpLimits'],
+    ['MARS', 'Release History', 'MarsHelpHistory'],
+    ['Bugs/Comments', '', 'BugReportingHelp'],
+    ['Acknowledgements', '', 'Acknowledgements']
+  ]) {
+    await dialog
+      .getByRole('group', { name: 'Help topics', exact: true })
+      .getByRole('button', { name: topic, exact: true })
+      .click();
+    if (nested) {
+      await dialog
+        .getByRole('group', { name: `${topic} topics`, exact: true })
+        .getByRole('button', { name: nested, exact: true })
+        .click();
+    }
+    await expect(online).toHaveAttribute(
+      'href',
+      `https://github.com/awpala/MARS-ts/blob/main/src/lib/help/markdown/${markdownStem}.md`
+    );
+  }
+  const popupPromise = page.waitForEvent('popup');
+  await online.click();
+  const popup = await popupPromise;
+  await expect(popup).toHaveURL(
+    'https://github.com/awpala/MARS-ts/blob/main/src/lib/help/markdown/Acknowledgements.md'
+  );
+  expect(page.url()).toBe(desktopUrl);
+  await expect(dialog).toBeVisible();
+  await expect(
+    dialog.getByRole('article', { name: 'Acknowledgements', exact: true })
+  ).toBeVisible();
+  await popup.close();
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(source).toBeEditable();
+  await expect(source).toHaveValue('# keep working beside online Help');
+  await page
+    .locator('.menubar summary')
+    .filter({ hasText: /^Help$/ })
+    .click();
+  await page.getByRole('button', { name: 'About MARS', exact: true }).click();
+  await expect(
+    page
+      .getByRole('dialog', { name: 'About MARS', exact: true })
+      .getByRole('link', { name: 'Read Online', exact: false })
+  ).toHaveAttribute(
+    'href',
+    'https://github.com/awpala/MARS-ts/blob/main/src/lib/help/markdown/About.md'
+  );
 });
 
 test('an open Help browser and its selection survive reload, while closed or standalone Help stays closed', async ({
@@ -302,8 +405,9 @@ test('syscall reference distinguishes implemented services from legacy contracts
   await dialog.getByRole('article').focus();
   await page.keyboard.press('Control+End');
   await expect
-    .poll(() => dialog.locator('.dialog-body').evaluate((body) => body.scrollTop))
+    .poll(() => dialog.locator('.single-article').evaluate((body) => body.scrollTop))
     .toBeGreaterThan(0);
+  await expect(dialog.getByRole('link', { name: 'Read Online', exact: false })).toBeInViewport();
   await expect(dialog.getByRole('button', { name: 'Close dialog', exact: true })).toBeInViewport();
   await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeInViewport();
   await dialog.getByRole('button', { name: 'Close', exact: true }).click();

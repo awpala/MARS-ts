@@ -11,6 +11,8 @@ export type HelpArticle = {
   readonly label: string;
   /** Accessible dialog title. */
   readonly title: string;
+  /** Hand-maintained companion filename under help/markdown/, also used for the GitHub destination. */
+  readonly markdownFile: string;
   /** Load the authored HTML module on demand; absent for the immediate overview and About content. */
   readonly loadHtml?: () => Promise<{
     /** Trusted article fragment exported by Vite's raw asset loader. */
@@ -20,75 +22,91 @@ export type HelpArticle = {
 
 /** All Help menu entries, including the existing F1 overview and About article. */
 export const helpArticles: readonly HelpArticle[] = [
-  { id: 'help', label: 'Help', title: 'MARS Help' },
-  { id: 'about', label: 'About MARS', title: 'About MARS' },
+  { id: 'help', label: 'Help', title: 'MARS Help', markdownFile: 'Overview.md' },
+  { id: 'about', label: 'About MARS', title: 'About MARS', markdownFile: 'About.md' },
   {
     id: 'help-intro',
     label: 'Introduction',
     title: 'Introduction',
+    markdownFile: 'MarsHelpIntro.md',
     loadHtml: () => import('./MarsHelpIntro.html?raw')
   },
   {
     id: 'help-debugging',
     label: 'Debugging',
     title: 'Interactive Debugging',
+    markdownFile: 'MarsHelpDebugging.md',
     loadHtml: () => import('./MarsHelpDebugging.html?raw')
   },
   {
     id: 'help-settings',
     label: 'Settings',
     title: 'Configuration Settings',
+    markdownFile: 'MarsHelpSettings.md',
     loadHtml: () => import('./MarsHelpSettings.html?raw')
   },
   {
     id: 'help-syscalls',
     label: 'Syscalls',
     title: 'Syscalls',
+    markdownFile: 'SyscallHelp.md',
     loadHtml: () => import('./SyscallHelp.html?raw')
   },
   {
     id: 'help-exceptions',
     label: 'Exception Handlers',
     title: 'Exception Handlers',
+    markdownFile: 'ExceptionsHelp.md',
     loadHtml: () => import('./ExceptionsHelp.html?raw')
   },
   {
     id: 'help-macros',
     label: 'Macros',
     title: 'Macros',
+    markdownFile: 'MacrosHelp.md',
     loadHtml: () => import('./MacrosHelp.html?raw')
   },
   {
     id: 'help-tools',
     label: 'Tools',
     title: 'Tools — Legacy Reference',
+    markdownFile: 'MarsHelpTools.md',
     loadHtml: () => import('./MarsHelpTools.html?raw')
   },
   {
     id: 'help-limits',
     label: 'Limitations',
     title: 'Requirements and Limitations',
+    markdownFile: 'MarsHelpLimits.md',
     loadHtml: () => import('./MarsHelpLimits.html?raw')
   },
   {
     id: 'help-history',
     label: 'Release History',
     title: 'Release History',
+    markdownFile: 'MarsHelpHistory.md',
     loadHtml: () => import('./MarsHelpHistory.html?raw')
   },
   {
     id: 'help-bugs',
     label: 'Bugs/Comments',
     title: 'Bug Reporting and General Comments',
+    markdownFile: 'BugReportingHelp.md',
     loadHtml: () => import('./BugReportingHelp.html?raw')
   },
   {
     id: 'help-acknowledgements',
     label: 'Acknowledgements',
     title: 'Acknowledgements',
+    markdownFile: 'Acknowledgements.md',
     loadHtml: () => import('./Acknowledgements.html?raw')
   }
 ];
+
+/** Direct GitHub view of an article's Markdown companion on the repository's main branch. */
+export function helpArticleOnlineUrl(article: HelpArticle): string {
+  return `https://github.com/awpala/MARS-ts/blob/main/src/lib/help/markdown/${article.markdownFile}`;
+}
 
 /** One top-level tab of the F1 Help browser; a tab holding several articles shows a nested strip. */
 export type HelpTab = {
