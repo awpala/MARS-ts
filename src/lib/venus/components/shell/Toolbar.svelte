@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getDesktop } from '../../context/desktop.js';
   import { getDesktopCommands } from '../../context/commands.js';
   import {
     helpActions,
@@ -20,6 +21,7 @@
   };
   let { showLines = $bindable(), speed = $bindable(), showSpeed }: Props = $props();
   const commands = getDesktopCommands();
+  const { display } = getDesktop();
 </script>
 
 <!-- @component Composes generic toolbar groups/buttons from shared command definitions, with a parent-owned run-speed slider. -->
@@ -48,6 +50,12 @@
           icon={{ glyph: 'Lines' }}
           pressed={showLines}
           onclick={() => (showLines = !showLines)}
+        />
+        <IconButton
+          label="Highlight current line"
+          icon={{ glyph: 'Highlight' }}
+          pressed={display.highlightCurrentLine}
+          onclick={() => (display.highlightCurrentLine = !display.highlightCurrentLine)}
         />
       {/if}
     </ToolbarGroup>

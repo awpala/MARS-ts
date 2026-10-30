@@ -26,6 +26,8 @@ export interface DisplaySettings {
   labelSortState: number;
   /** Whether the editor displays line numbers. */
   showLines: boolean;
+  /** Whether the editor highlights the caret line; defaults to false for older records. */
+  highlightCurrentLine: boolean;
   /** Whether register and memory values display in hexadecimal. */
   hexValues: boolean;
   /** Whether memory addresses display in hexadecimal. */
@@ -55,6 +57,7 @@ function validate(value: unknown): DisplaySettings | undefined {
     (data.clearAllOutputsOnGo !== undefined && typeof data.clearAllOutputsOnGo !== 'boolean') ||
     (data.promptClearBreakpoints !== undefined &&
       typeof data.promptClearBreakpoints !== 'boolean') ||
+    (data.highlightCurrentLine !== undefined && typeof data.highlightCurrentLine !== 'boolean') ||
     (data.autoSave !== undefined && typeof data.autoSave !== 'boolean') ||
     (data.ascii !== undefined && typeof data.ascii !== 'boolean') ||
     (data.showDataLabels !== undefined && typeof data.showDataLabels !== 'boolean') ||
@@ -77,6 +80,7 @@ function validate(value: unknown): DisplaySettings | undefined {
     showTextLabels: data.showTextLabels ?? true,
     labelSortState: data.labelSortState ?? 0,
     showLines: data.showLines,
+    highlightCurrentLine: data.highlightCurrentLine ?? false,
     hexValues: data.hexValues,
     hexAddresses: data.hexAddresses,
     speed: data.speed

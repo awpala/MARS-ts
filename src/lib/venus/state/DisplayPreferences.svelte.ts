@@ -25,6 +25,7 @@ const persistedKeys = [
   'showTextLabels',
   'labelSortState',
   'showLines',
+  'highlightCurrentLine',
   'hexValues',
   'hexAddresses',
   'speed'
@@ -60,6 +61,8 @@ export class DisplayPreferences {
   labelSortState = $state(0);
   /** Whether the source editor shows line numbers. */
   showLines = $state(true);
+  /** Whether the editor highlights the caret line; off by default. */
+  highlightCurrentLine = $state(false);
   /** Whether memory values display as ASCII. */
   ascii = $state(false);
   /** Whether register and memory values display in hexadecimal. */

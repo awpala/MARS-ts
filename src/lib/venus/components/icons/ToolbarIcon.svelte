@@ -26,6 +26,7 @@
     | 'Ascii'
     | 'Values'
     | 'Lines'
+    | 'Highlight'
     | 'Input'
     | 'Exceptions'
     | 'Memory';

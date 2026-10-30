@@ -12,6 +12,16 @@
   const current = $derived(workspace.current);
   const running = $derived(simulation.running);
   const showLines = $derived(display.showLines);
+  const caretLine = $derived(
+    (
+      current?.text.slice(
+        0,
+        workspace.selectionDirection === 'backward'
+          ? workspace.selectionStart
+          : workspace.selectionEnd
+      ) ?? ''
+    ).split('\n').length
+  );
   /** Instruction hover help is withheld while a dialog owns interaction. */
   const helpEnabled = $derived(!desktop.hasModal);
   /** Initialized instruction catalog, used only for hover descriptions. */
@@ -129,6 +139,14 @@
           ).join('\n')}</pre>
       </div>{/if}
     <div class="source-surface">
+      {#if display.highlightCurrentLine}
+        <div
+          class="current-line"
+          aria-hidden="true"
+          style:--line-index={caretLine - 1}
+          style:--scroll-top={`${workspace.sourceScrollTop}px`}
+        ></div>
+      {/if}
       <pre
         class="syntax-layer"
         aria-hidden="true"
@@ -205,6 +223,16 @@
     min-height: 0;
     overflow: hidden;
     background: var(--theme-canvas, white);
+  }
+  .current-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(5px + var(--line-index) * 1lh - var(--scroll-top));
+    height: 1lh;
+    font: var(--editor-font);
+    background: color-mix(in srgb, var(--theme-text, #17202b) 10%, var(--theme-canvas, white));
+    pointer-events: none;
   }
   .syntax-layer {
     position: absolute;

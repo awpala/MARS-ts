@@ -64,6 +64,34 @@ test('Alt and Option N create editor buffers from source and register focus', as
   expect(page.context().pages()).toHaveLength(pages);
 });
 
+test('current line highlight follows the caret and persists its toggle', async ({ page }) => {
+  await openDesktop(page);
+  await page.keyboard.press('Alt+n');
+  const source = page.getByRole('textbox', { name: 'Source mips1.asm' });
+  const toggle = page.getByRole('button', { name: 'Highlight current line' });
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await source.fill('first\nsecond\nthird');
+  await toggle.click();
+  const highlight = page.locator('.current-line');
+  await expect(highlight).toBeVisible();
+  await source.focus();
+  await source.press('Control+Home');
+  const firstTop = await highlight.evaluate((element) => element.getBoundingClientRect().top);
+  await source.press('ArrowDown');
+  await expect
+    .poll(() => highlight.evaluate((element) => element.getBoundingClientRect().top))
+    .toBe(firstTop + 21);
+  await source.press('Shift+ArrowDown');
+  await expect
+    .poll(() => highlight.evaluate((element) => element.getBoundingClientRect().top))
+    .toBe(firstTop + 42);
+  await page.reload();
+  await waitForDesktop(page);
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await toggle.click();
+  await expect(highlight).toHaveCount(0);
+});
+
 test('About MARS opens the bundled unchanged license in a new tab', async ({ page }) => {
   await openDesktop(page);
   await page
@@ -237,7 +265,7 @@ test('working display settings and run speed survive reload', async ({ page }) =
     has: page.getByRole('button', { name: 'Undo', exact: true })
   });
   const lines = editing.getByRole('button', { name: 'Show line numbers', exact: true });
-  await expect(editing.getByRole('button').last()).toHaveAccessibleName('Show line numbers');
+  await expect(editing.getByRole('button').last()).toHaveAccessibleName('Highlight current line');
   await lines.press('Shift+Tab');
   await page.keyboard.press('Tab');
   await expect(lines).toHaveAccessibleDescription('Show line numbers');

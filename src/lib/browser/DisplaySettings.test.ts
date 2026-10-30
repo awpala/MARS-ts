@@ -16,6 +16,7 @@ const settings = {
   showTextLabels: true,
   labelSortState: 5,
   showLines: false,
+  highlightCurrentLine: true,
   hexValues: false,
   hexAddresses: false,
   speed: 12
@@ -39,6 +40,7 @@ describe('working display preference persistence', () => {
       null,
       {},
       { ...settings, showLines: 'false' },
+      { ...settings, highlightCurrentLine: 'true' },
       { ...settings, autoSave: 'true' },
       { ...settings, clearAllOutputsOnGo: 'true' },
       { ...settings, promptClearBreakpoints: 'true' },
@@ -67,6 +69,13 @@ describe('working display preference persistence', () => {
     expect(
       loadDisplaySettings(() => ({ getItem: () => JSON.stringify(older), setItem: () => {} }))
     ).toEqual({ ...older, showDataLabels: true, showTextLabels: true, labelSortState: 0 });
+  });
+  it('defaults current-line highlighting to off for older preferences', () => {
+    const { highlightCurrentLine, ...older } = settings;
+    void highlightCurrentLine;
+    expect(
+      loadDisplaySettings(() => ({ getItem: () => JSON.stringify(older), setItem: () => {} }))
+    ).toEqual({ ...older, highlightCurrentLine: false });
   });
   it('defaults the register pane to shown for pre-toggle preferences', () => {
     const { showRegisters, ...older } = settings;

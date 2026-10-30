@@ -91,6 +91,8 @@ export class SourceWorkspace {
   selectionStart = $state(0);
   /** Current source-selection end offset. */
   selectionEnd = $state(0);
+  /** Direction of the current selection, identifying its active caret end. */
+  selectionDirection = $state<'forward' | 'backward' | 'none'>('none');
   /** Current source viewport top offset, restored with the desktop session. */
   sourceScrollTop = $state(0);
   /** Current source viewport left offset, restored with the desktop session. */
@@ -364,6 +366,7 @@ export class SourceWorkspace {
   selection = () => {
     this.selectionStart = this.sourceInput?.selectionStart ?? 0;
     this.selectionEnd = this.sourceInput?.selectionEnd ?? 0;
+    this.selectionDirection = this.sourceInput?.selectionDirection ?? 'none';
   };
   /** Dismiss a source dialog and abandon pending save/close/import queues. */
   dismiss = () => {
