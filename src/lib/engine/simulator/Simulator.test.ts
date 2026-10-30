@@ -1,5 +1,6 @@
 import { RandomStreams } from '#lib/engine/syscalls/random/RandomStreams.js';
 import { DialogIO } from '#lib/engine/io/DialogIO.js';
+import { ToneGenerator } from '#lib/engine/syscalls/midi/ToneGenerator.js';
 import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
 import { Simulator, type SimulatorHost } from './Simulator.js';
@@ -109,6 +110,7 @@ function machine(
     systemIO: io,
     randomStreams: new RandomStreams(() => 0n),
     dialogs: new DialogIO(),
+    toneGenerator: new ToneGenerator(),
     exceptionHost
   });
   loader.loadSyscalls();

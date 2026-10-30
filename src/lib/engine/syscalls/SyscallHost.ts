@@ -8,6 +8,7 @@ import type { RegisterFile } from '../hardware/registers/RegisterFile.js';
 import type { SystemIO } from '../io/SystemIO.js';
 import type { RandomStreams } from './random/RandomStreams.js';
 import type { DialogIO } from '../io/DialogIO.js';
+import type { ToneGenerator } from './midi/ToneGenerator.js';
 
 /** Hardware and GUI console services owned by the machine running this service. */
 export interface SyscallHost {
@@ -23,6 +24,8 @@ export interface SyscallHost {
   readonly randomStreams: RandomStreams;
   /** Injected asynchronous dialog capability. */
   readonly dialogs: DialogIO;
+  /** Session tone service delegating MIDI output to an optional sound host. */
+  readonly toneGenerator: ToneGenerator;
   /** Session exception-register updates and current PC. */
   readonly exceptionHost: ProcessingExceptionHost;
 }

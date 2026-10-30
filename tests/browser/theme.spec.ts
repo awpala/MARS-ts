@@ -77,7 +77,6 @@ test('machine tables share one frame and paint stripes and every highlight in bo
     .fill(
       '.data\n.word 0\n.text\nmain: lui $t1,0x1001\naddi $t0, $zero, 5\nsw $t0,0($t1)\nj next\nnop\nnext: nop\n'
     );
-  await page.getByRole('button', { name: 'Show Labels Window', exact: true }).click();
   await page.getByRole('button', { name: 'Assemble', exact: true }).click();
   const step = page.getByRole('button', { name: 'Step', exact: true });
   await step.click();

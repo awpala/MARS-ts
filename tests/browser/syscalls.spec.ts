@@ -144,3 +144,84 @@ test('message dialogs display program text literally and dismiss without an inpu
     /^\n-- program is finished running --/
   );
 });
+
+type RecordedTone = {
+  frequency: number;
+  type: string;
+  state: string;
+  start: number;
+  stops: number[];
+};
+/** Record every oscillator the page starts, with its context state; the real Web Audio graph still plays. */
+async function recordTones(page: Page) {
+  await page.addInitScript(() => {
+    const records: RecordedTone[] = [];
+    Object.assign(window, { marsTones: records });
+    const create = BaseAudioContext.prototype.createOscillator;
+    BaseAudioContext.prototype.createOscillator = function (this: BaseAudioContext) {
+      const oscillator = create.call(this);
+      const record: RecordedTone = { frequency: 0, type: '', state: '', start: -1, stops: [] };
+      records.push(record);
+      const start = oscillator.start.bind(oscillator),
+        stop = oscillator.stop.bind(oscillator);
+      oscillator.start = (when = 0) => {
+        Object.assign(record, {
+          frequency: oscillator.frequency.value,
+          type: oscillator.type,
+          state: this.state,
+          start: when
+        });
+        start(when);
+      };
+      oscillator.stop = (when = 0) => {
+        record.stops.push(when);
+        stop(when);
+      };
+      return oscillator;
+    };
+  });
+  return () => page.evaluate(() => (window as unknown as { marsTones: RecordedTone[] }).marsTones);
+}
+const tone = (service: number, pitch: number, duration: number) =>
+  `li $v0,${service}\nli $a0,${pitch}\nli $a1,${duration}\nli $a2,40\nli $a3,127\nsyscall\n`;
+
+test('MIDI services sound sine tones from the Go gesture and wait only for synchronous tones', async ({
+  page
+}) => {
+  const tones = await recordTones(page);
+  await openDesktop(page);
+  await page.getByRole('button', { name: 'New', exact: true }).click();
+  await page
+    .getByRole('textbox', { name: /^Source / })
+    .fill(tone(33, 69, 400) + tone(31, 60, 200) + finish);
+  await page.getByRole('button', { name: 'Assemble', exact: true }).click();
+  const go = Date.now();
+  await page.getByRole('button', { name: 'Go', exact: true }).click();
+  const output = page.getByRole('textbox', { name: 'Run I/O', exact: true });
+  await expect(output).toHaveValue(/-- program is finished running --/);
+  expect(Date.now() - go).toBeGreaterThanOrEqual(400);
+  const [synchronous, asynchronous, ...rest] = await tones();
+  expect(rest).toHaveLength(0);
+  expect(synchronous).toMatchObject({ frequency: 440, type: 'sine', state: 'running' });
+  expect(synchronous.stops).toHaveLength(1);
+  expect(synchronous.stops[0] - synchronous.start).toBeCloseTo(0.43, 6);
+  expect(asynchronous.frequency).toBeCloseTo(261.6256, 3);
+  expect(asynchronous.stops[0] - asynchronous.start).toBeCloseTo(0.23, 6);
+});
+
+test('Stop releases a pending synchronous tone without cutting it off', async ({ page }) => {
+  const tones = await recordTones(page);
+  await run(page, tone(33, 72, 60000) + 'li $a0,999\nli $v0,1\nsyscall\n' + finish);
+  await expect.poll(async () => (await tones()).length).toBe(1);
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Reset', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Mars Messages', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: 'Mars Messages', exact: true })).toHaveValue(
+    /Go: execution terminated by user\./
+  );
+  await page.getByRole('button', { name: 'Run I/O', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: 'Run I/O', exact: true })).not.toHaveValue(/999/);
+  const [held] = await tones();
+  expect(held.stops).toHaveLength(1);
+  expect(held.stops[0] - held.start).toBeCloseTo(60.03, 6);
+});

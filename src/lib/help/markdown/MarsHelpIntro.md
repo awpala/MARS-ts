@@ -23,7 +23,7 @@ Assemble (F3) translates the current source, including unsaved edits. To assembl
 
 The Execute pane supports Go, Step, Backstep, Pause, Stop, Reset, breakpoints, labels, and inspection and editing of registers and memory while execution is stopped. Registers remain visible beside Edit and Execute. The toolbar controls labels, program arguments, number formats, ASCII data, line numbers, and popup input. Enable Args to enter program arguments below the Text Segment heading; the first Go or Step after assembly or Reset supplies them through `$a0` (argc) and `$a1` (argv).
 
-Console reads and writes, heap allocation, exit, and integer formatting syscalls are available. Random services 40–44 and dialog services 50–59 are available, along with automatic exception-handler selection. File, time, MIDI, and sleep syscall families and Tools remain unfinished; see Syscalls for the service-by-service reference. Memory Configuration is available in Settings. This browser application has no command-line launcher.
+Console reads and writes, heap allocation, exit, and integer formatting syscalls are available. Random services 40–44, dialog services 50–59, and MIDI services 31 and 33 (as sine tones) are available, along with automatic exception-handler selection. File, time, and sleep syscall families and Tools remain unfinished; see Syscalls for the service-by-service reference. Memory Configuration is available in Settings. This browser application has no command-line launcher.
 
 ## Dump memory to a file
 

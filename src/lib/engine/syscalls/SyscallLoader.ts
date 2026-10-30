@@ -18,6 +18,8 @@ import { SyscallExit } from './termination/SyscallExit.js';
 import { SyscallPrintChar } from './console/SyscallPrintChar.js';
 import { SyscallReadChar } from './console/SyscallReadChar.js';
 import { SyscallExit2 } from './termination/SyscallExit2.js';
+import { SyscallMidiOut } from './midi/SyscallMidiOut.js';
+import { SyscallMidiOutSync } from './midi/SyscallMidiOutSync.js';
 import { SyscallPrintIntHex } from './console/SyscallPrintIntHex.js';
 import { SyscallPrintIntBinary } from './console/SyscallPrintIntBinary.js';
 import { SyscallPrintIntUnsigned } from './console/SyscallPrintIntUnsigned.js';
@@ -41,7 +43,7 @@ import { SyscallMessageDialogString } from './dialogs/SyscallMessageDialogString
 /** Session-local loader retaining canonical duplicate detection, override ordering, and last-match lookup. */
 export class SyscallLoader {
   private syscallList: Syscall[] | null = null;
-  /** Implemented console, random, and dialog services; absent families resolve to null. */
+  /** Implemented console, MIDI, random, and dialog services; absent families resolve to null. */
   static readonly CORE_REGISTRATIONS: readonly SyscallRegistration[] = Object.freeze([
     Object.freeze({
       className: 'SyscallPrintInt.class',
@@ -94,6 +96,14 @@ export class SyscallLoader {
     Object.freeze({
       className: 'SyscallExit2.class',
       create: (host: SyscallHost) => new SyscallExit2(host)
+    }),
+    Object.freeze({
+      className: 'SyscallMidiOut.class',
+      create: (host: SyscallHost) => new SyscallMidiOut(host)
+    }),
+    Object.freeze({
+      className: 'SyscallMidiOutSync.class',
+      create: (host: SyscallHost) => new SyscallMidiOutSync(host)
     }),
     Object.freeze({
       className: 'SyscallPrintIntHex.class',

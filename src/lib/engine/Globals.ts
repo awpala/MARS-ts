@@ -20,6 +20,8 @@ import { InstructionSet } from './instructions/InstructionSet.js';
 import { SystemIO, type InputRequest } from './io/SystemIO.js';
 import { RandomStreams } from './syscalls/random/RandomStreams.js';
 import { DialogIO, type DialogIOHost } from './io/DialogIO.js';
+import { ToneGenerator } from './syscalls/midi/ToneGenerator.js';
+import type { ToneGeneratorHost } from './syscalls/midi/ToneGeneratorHost.js';
 import { JavaFloatingPoint } from './formatting/JavaFloatingPoint.js';
 import { BackStepper } from './simulator/BackStepper.js';
 import { DelayedBranch } from './simulator/DelayedBranch.js';
@@ -43,9 +45,11 @@ export interface GlobalsHost {
   randomSeed?(): bigint;
   /** Same-tab or test dialog capability; required only when executing dialog services. */
   dialogs?: DialogIOHost;
+  /** Sound output for MIDI services; absent hosts play nothing and do not wait, as Java does without a MIDI device. */
+  tones?: ToneGeneratorHost;
   /** Cooperatively yield or wait using the platform's scheduler. */
   yieldControl(milliseconds: number): Promise<void>;
-  /** Release pending console/dialog input when the simulator requests pause or stop. */
+  /** Release pending console/dialog input and tone waits when the simulator requests pause or stop. */
   releaseInput?(): void;
   /** Close host-owned program files when assembly or simulation resets descriptors. */
   resetFiles?(): void;
@@ -109,6 +113,8 @@ export class Globals {
   readonly randomStreams: RandomStreams;
   /** Session-owned platform dialog boundary. */
   readonly dialogs: DialogIO;
+  /** Session-owned MIDI tone service; its host owns audio resources. */
+  readonly toneGenerator: ToneGenerator;
   /** Session-owned service registry. */
   readonly syscallLoader: SyscallLoader;
   private readonly settings: Settings;
@@ -228,6 +234,7 @@ export class Globals {
       return host.randomSeed();
     });
     this.dialogs = new DialogIO(host.dialogs);
+    this.toneGenerator = new ToneGenerator(host.tones);
     this.syscallLoader = new SyscallLoader(
       {
         registerFile: this.registerFile,
@@ -236,7 +243,8 @@ export class Globals {
         systemIO: this.systemIO,
         exceptionHost,
         randomStreams: this.randomStreams,
-        dialogs: this.dialogs
+        dialogs: this.dialogs,
+        toneGenerator: this.toneGenerator
       },
       host.syscallRegistrations,
       host.syscallOverrides,

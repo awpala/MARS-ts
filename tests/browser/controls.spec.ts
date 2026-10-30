@@ -340,7 +340,7 @@ test('every defined shortcut cancels browser defaults across app surfaces, inclu
               new KeyboardEvent('keydown', {
                 key: keys.at(-1)!,
                 ctrlKey: keys.includes('ctrl'),
-                altKey: keys.includes('alt') || keys.includes('option'),
+                altKey: keys.includes('alt/option'),
                 shiftKey: keys.includes('shift'),
                 bubbles: true,
                 cancelable: true
@@ -419,10 +419,15 @@ test('only toggle tooltips remain visible through pointer clicks until hover end
         '\n.text\nmain: nop\n'
     );
   await page.getByRole('button', { name: 'Assemble', exact: true }).click();
+  // Labels starts visible, so hide it and show it again under the same hover.
   const labelsToggle = page.getByRole('button', { name: 'Show Labels Window', exact: true });
+  await expect(labelsToggle).toHaveAttribute('aria-pressed', 'true');
   await labelsToggle.hover();
   await expect(tooltip).toBeVisible();
   const toolbarDescription = await tooltip.elementHandle();
+  await labelsToggle.click();
+  await expect(labelsToggle).toHaveAttribute('aria-pressed', 'false');
+  expect(await toolbarDescription!.isVisible()).toBe(true);
   await labelsToggle.click();
   await expect(labelsToggle).toHaveAttribute('aria-pressed', 'true');
   expect(await toolbarDescription!.isVisible()).toBe(true);

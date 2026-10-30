@@ -358,12 +358,14 @@ test('syscall reference distinguishes implemented services from legacy contracts
       .getByRole('row')
       .filter({ has: page.getByRole('cell', { name: 'print integer', exact: true }) })
   ).toContainText('Available');
-  for (const service of ['open file', 'MIDI out']) {
+  for (const service of ['open file', 'sleep']) {
     await expect(
       table.getByRole('row').filter({ has: page.getByRole('cell', { name: service, exact: true }) })
     ).toContainText('Not yet available');
   }
   for (const service of [
+    'MIDI out',
+    'MIDI out synchronous',
     'set seed',
     'random int',
     'random float',

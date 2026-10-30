@@ -1,12 +1,12 @@
 <!-- Derived from help/SyscallHelp.html.
 Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt. -->
 <p class="notice">
-  <strong>MARS-ts availability:</strong> services 1–12, 17, 34–36, random 40–44, and dialogs 50–59
-  are implemented. File services 13–16 and time/MIDI/sleep 30–33 remain unavailable and raise an
-  unsupported-service exception. Dialog services always open in the current tab, independently of
-  the console popup-input setting. Cancel resumes the program with the documented status; Stop ends
-  execution. The full legacy service contract is retained below; unavailable services are marked in
-  the table.
+  <strong>MARS-ts availability:</strong> services 1–12, 17, MIDI 31 and 33, 34–36, random 40–44, and
+  dialogs 50–59 are implemented. File services 13–16, time 30, and sleep 32 remain unavailable and
+  raise an unsupported-service exception. Dialog services always open in the current tab,
+  independently of the console popup-input setting. Cancel resumes the program with the documented
+  status; Stop ends execution. The full legacy service contract is retained below; unavailable
+  services are marked in the table.
 </p>
 
 <p>
@@ -15,6 +15,15 @@ Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSl
   Confirmation window close or Escape returns -1. Integer dialog input is parsed without trimming;
   surrounding spaces produce status -1. InputDialogString preserves legacy newline, truncation, and
   small-buffer rules; reserve at least two bytes for useful string input.
+</p>
+
+<p>
+  MIDI services 31 and 33 play a sine tone at the requested pitch, duration, and volume; every
+  instrument number produces the same sine sound. Browsers allow sound only after you interact with
+  the page, so tones play once Go or Step has started the program. Service 33 waits for the full
+  duration even when the browser cannot play sound. Stop or Pause ends that wait at once, but a tone
+  that has started keeps playing to the end of its duration, as in MARS. Up to 32 tones sound
+  together; another tone cuts off the oldest.
 </p>
 
 <header>
@@ -223,7 +232,7 @@ Step 4. Retrieve return values, if any, from result registers as specified.<br /
           = volume (0-127)
         </td>
         <td>Generate tone and return immediately. <i>See note below table</i></td>
-        <td>Not yet available</td>
+        <td>Available</td>
       </tr>
       <tr>
         <td>sleep</td>
@@ -243,7 +252,7 @@ Step 4. Retrieve return values, if any, from result registers as specified.<br /
           = volume (0-127)
         </td>
         <td>Generate tone and return upon tone completion. <i>See note below table</i></td>
-        <td>Not yet available</td>
+        <td>Available</td>
       </tr>
       <tr>
         <td>print integer in hexadecimal</td>
@@ -534,7 +543,12 @@ buffer: .asciiz "The quick brown fox jumps over the lazy dog."
 
 <hr />
 
-<h3>Legacy services 31 and 33: MIDI output (not yet available)</h3>
+<h3>Using SYSCALL system services 31 and 33: MIDI output</h3>
+<p>
+  <strong>MARS-ts:</strong> the browser's Web Audio API plays a sine tone in place of the
+  <code>javax.sound.midi</code> synthesizer described below. The instrument number is accepted, and
+  out-of-range values still take their defaults, but every instrument sounds the same.
+</p>
 These system services are unique to MARS, and provide a means of producing sound. MIDI output is
 simulated by your system sound card, and the simulation is provided by the
 <code>javax.sound.midi</code>

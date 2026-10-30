@@ -8,6 +8,7 @@ import type {
   SavedLabelSelection
 } from '#lib/browser/DesktopSession.js';
 import { browserEnginePreferences } from '#lib/browser/EnginePreferences.js';
+import { WebAudioToneHost } from '#lib/browser/WebAudioToneHost.js';
 import { Globals } from '#lib/engine/Globals.js';
 import { ProcessingException } from '#lib/engine/diagnostics/ProcessingException.js';
 import { Settings } from '#lib/engine/Settings.js';
@@ -70,6 +71,8 @@ export class SimulationState {
   /** Machine code of the most recent successful build, or null before one; an identical rebuild keeps breakpoints. */
   private buildSignature: string | null = null;
   private disposed = false;
+  /** Sound output of the current machine; Go and Step prepare it within their user gesture. */
+  private tones: WebAudioToneHost | undefined;
   /** Compose the machine host with source resolution and display navigation owned by this desktop. */
   constructor(
     private readonly workspace: SourceWorkspace,
@@ -84,9 +87,11 @@ export class SimulationState {
     if (all || this.messageTab === 'Mars Messages') this.messages = '';
     if (all || this.messageTab === 'Run I/O') this.runIO = '';
   };
-  /** Initialize browser host services and the machine; return teardown for subscriptions, pending input, and scheduler timers. */
+  /** Initialize browser host services and the machine; return teardown for subscriptions, pending input, tones, and scheduler timers. */
   start(): () => void {
     let disposed = false;
+    const tones = new WebAudioToneHost();
+    this.tones = tones;
     // eslint-disable-next-line svelte/prefer-svelte-reactivity -- Scheduler handles are owned resources, never rendered reactive state.
     const timers = new Map<ReturnType<typeof setTimeout>, () => void>();
     const wake = () => {
@@ -148,6 +153,13 @@ export class SimulationState {
           );
         }
       },
+      tones: {
+        // A tone started after Stop or Pause still sounds, but the stopping run does not wait for it.
+        playTone: (tone) => {
+          const end = tones.playTone(tone);
+          return disposed || session.simulator.isStopRequested() ? Promise.resolve() : end;
+        }
+      },
       printString: (text) => {
         if (!disposed) {
           this.appendRunIO(text);
@@ -165,6 +177,7 @@ export class SimulationState {
       releaseInput: () => {
         this.completeInput(false);
         this.completeDialog(null);
+        tones.release();
         wake();
       },
       refresh: () => this.controller?.refresh(),
@@ -190,6 +203,8 @@ export class SimulationState {
       disposed = true;
       this.disposed = true;
       release();
+      tones.dispose();
+      this.tones = undefined;
       void controls
         .dispose()
         .finally(wake)
@@ -409,6 +424,8 @@ export class SimulationState {
         return;
       }
       this.messageTab = 'Run I/O';
+      // Browser autoplay policy permits sound only when the context starts within this user gesture.
+      this.tones?.prepare();
       const run: RunCommand = command === 'step' ? 'step' : 'go';
       const filename = this.machine?.program?.getFilename() ?? '';
       if (run === 'step') await this.controller.step(this.programArguments);

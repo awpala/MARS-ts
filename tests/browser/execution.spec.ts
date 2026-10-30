@@ -491,17 +491,25 @@ test('an identical rebuild keeps breakpoints and a changed build clears them', a
   await action(page, 'Assemble').click();
   await expect(breakpoint).toBeChecked();
   await expect(toggle).toHaveAttribute('aria-pressed', 'false');
-  // Suspended checkboxes gray out, as in the legacy renderer, without becoming read-only.
+  // Suspended checkboxes gray out, as in the legacy renderer, without becoming read-only; only
+  // maximum run speed locks them.
   await expect(breakpoint).toHaveCSS('opacity', '0.5');
-  await expect(breakpoint).toBeEnabled();
+  await expect(breakpoint).toBeDisabled();
+  await editBreakpoints(page, () => expect(breakpoint).toBeEnabled());
+  // An identical build keeps its filename, so later builds edit the same source in place.
+  const editor = page.getByRole('textbox', { name: 'Source mips1.asm', exact: true });
+  const rebuild = async (text: string) => {
+    await action(page, 'Edit').click();
+    await editor.fill(text);
+    await action(page, 'Assemble').click();
+  };
   // A comment changes the source but not the assembled machine code.
-  await source(page, `# unchanged build\n${program}`);
-  await action(page, 'Assemble').click();
+  await rebuild(`# unchanged build\n${program}`);
   await expect(breakpoint).toBeChecked();
-  await source(page, program.replace('$zero,1', '$zero,2'));
-  await action(page, 'Assemble').click();
+  await rebuild(program.replace('$zero,1', '$zero,2'));
   await expect(breakpoint).not.toBeChecked();
-  await expect(toggle).toBeDisabled();
+  // Without breakpoints, Toggle all breakpoints stays disabled even below maximum speed.
+  await editBreakpoints(page, () => expect(toggle).toBeDisabled());
   await expect(breakpoint).toHaveCSS('opacity', '1');
 });
 
@@ -513,7 +521,8 @@ test('Labels filters data and text and sorts names or unsigned addresses in both
     page,
     '.data\nzData: .word 1\n.globl AlphaData\nAlphaData: .word 2\n.text\nzText: nop\nalphaText: nop\n.kdata\nKernel: .word 3\n'
   );
-  await action(page, 'Show Labels Window').click();
+  // Labels starts visible by default.
+  await expect(action(page, 'Show Labels Window')).toHaveAttribute('aria-pressed', 'true');
   await action(page, 'Assemble').click();
   const labels = page.getByRole('region', { name: 'Labels', exact: true });
   const names = labels.locator('tbody tr td:first-child');
@@ -594,7 +603,6 @@ syscall
     ],
     ['temperature.asm']
   );
-  await action(page, 'Show Labels Window').click();
   await action(page, 'Assemble').click();
   const labels = page.getByRole('region', { name: 'Labels', exact: true });
   const headings = labels.getByRole('rowheader');
@@ -961,7 +969,6 @@ test('active-source assembly uses explicit unsaved includes and retires saved as
   await page
     .getByLabel('Initialize Program Counter to global main if defined', { exact: true })
     .check();
-  await page.getByRole('button', { name: 'Show Labels Window', exact: true }).click();
   await action(page, 'Assemble').click();
   await expect(page.getByLabel('Execution status')).toHaveText('Status: assembled');
   await expect(
@@ -1162,7 +1169,6 @@ test('data label names and addresses reveal their range and cell after paging or
       'nop\n'.repeat(200) +
       'LateText: li $t1, 9\n.ktext\nKernelText: li $t2, 10\n'
   );
-  await action(page, 'Show Labels Window').click();
   await action(page, 'Assemble').click();
   const labels = page.getByRole('region', { name: 'Labels', exact: true });
   const data = page.getByRole('region', { name: 'Data Segment', exact: true });
@@ -1251,7 +1257,6 @@ test('text labels select both segment tables and toggle their Labels row after p
       'nop\n'.repeat(200) +
       'LateText: li $t1, 9\n.ktext\nKernelText: li $t2, 10\n'
   );
-  await action(page, 'Show Labels Window').click();
   await action(page, 'Assemble').click();
   const labels = page.getByRole('region', { name: 'Labels', exact: true });
   const data = page.getByRole('region', { name: 'Data Segment', exact: true });
@@ -1431,6 +1436,10 @@ test('Text Segment source cells are hoverable and clickable across the entire ce
   const text = page.getByRole('region', { name: 'Text Segment', exact: true });
   const link = text.locator('.source-link').first();
   const cell = link.locator('xpath=ancestor::td');
+  // The default Labels pane narrows the Text Segment, so the widened Source column scrolls;
+  // bring the cell's far edge into view.
+  await expect(link).toBeVisible();
+  await text.locator('.text-scroll').evaluate((node) => (node.scrollLeft = node.scrollWidth));
   const cellBox = (await cell.boundingBox())!;
   const linkBox = (await link.boundingBox())!;
   // The button spans the cell, leaving only the cell's own border outside it.
@@ -1454,7 +1463,6 @@ test('Labels name and address cells are hoverable and clickable across the entir
     page,
     '.data\nshort: .word 1\na_longer_name: .word 2\n.text\nmain: nop\nli $v0,10\nsyscall\n'
   );
-  await action(page, 'Show Labels Window').click();
   await action(page, 'Assemble').click();
   const labels = page.getByRole('region', { name: 'Labels', exact: true });
   const hint = 'Click on label or address to view it in Text/Data Segment';

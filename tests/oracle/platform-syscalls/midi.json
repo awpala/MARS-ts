@@ -1,0 +1,24 @@
+{
+  "jdkMajor": 21,
+  "legacySourceSha256": "49c6b8ae0d9f66f355f741b86d812aef135b6fb915c7305874290d355c0938b6",
+  "command": [
+    "java",
+    "-Djava.awt.headless=true",
+    "-Djava.util.prefs.userRoot=<fresh-user>",
+    "-Djava.util.prefs.systemRoot=<fresh-system>",
+    "-cp",
+    "<probe-classes>:__build/legacy/Mars.jar",
+    "mars.mips.instructions.MidiSyscallProbe"
+  ],
+  "stdin": "",
+  "stdout": "33\t0\t60\t1500\t0\t100\tok\t33,60,1500,0,100\tno-device;javax.sound.midi.MidiUnavailableException: Can not open line;returnedBeforeDuration=true\n33\t1\t60\t120\t0\t100\tok\t33,60,120,0,100\topen,setTempoInMPQ(1000.0),setSequence,addMetaEventListener,start,endOfTrack,close;PPQ:1|0:C000|0:903C64|120:803C64|120:FF2F00;C000,903C64,803C64;true;true\n33\t2\t0\t40\t127\t127\tok\t33,0,40,127,127\topen,setTempoInMPQ(1000.0),setSequence,addMetaEventListener,start,endOfTrack,close;PPQ:1|0:C07F|0:90007F|40:80007F|40:FF2F00;C07F,90007F,80007F;true;true\n33\t3\t127\t40\t0\t0\tok\t33,127,40,0,0\topen,setTempoInMPQ(1000.0),setSequence,addMetaEventListener,start,endOfTrack,close;PPQ:1|0:C000|0:907F00|40:807F00|40:FF2F00;C000,907F00,807F00;true;true\n33\t4\t-1\t40\t-1\t-1\tok\t33,-1,40,-1,-1\topen,setTempoInMPQ(1000.0),setSequence,addMetaEventListener,start,endOfTrack,close;PPQ:1|0:C000|0:903C64|40:803C64|40:FF2F00;C000,903C64,803C64;true;true\n33\t5\t128\t40\t128\t128\tok\t33,128,40,128,128\topen,setTempoInMPQ(1000.0),setSequence,addMetaEventListener,start,endOfTrack,close;PPQ:1|0:C000|0:903C64|40:803C64|40:FF2F00;C000,903C64,803C64;true;true\n33\t6\t328\t40\t261\t306\tok\t33,328,40,261,306\topen,setTempoInMPQ(1000.0),setSequence,addMetaEventListener,start,endOfTrack,close;PPQ:1|0:C000|0:903C64|40:803C64|40:FF2F00;C000,903C64,803C64;true;true\n33\t7\t-2147483648\t40\t2147483647\t-2147483648\tok\t33,-2147483648,40,2147483647,-2147483648\topen,setTempoInMPQ(1000.0),setSequence,addMetaEventListener,start,endOfTrack,close;PPQ:1|0:C000|0:903C64|40:803C64|40:FF2F00;C000,903C64,803C64;true;true\n33\t8\t64\t0\t0\t100\tok\t33,64,0,0,100\topen,setTempoInMPQ(1000.0),setSequence,addMetaEventListener,start,endOfTrack,close;PPQ:1|0:C000|0:904064|0:804064|0:FF2F00;C000,904064,804064;true;true\n33\t9\t64\t-1\t0\t100\tok\t33,64,-1,0,100\topen,setTempoInMPQ(1000.0),setSequence,addMetaEventListener,start,endOfTrack,close;PPQ:1|0:C000|0:904064|1000:804064|1000:FF2F00;C000,904064,804064;true;true\n33\t10\t64\t-2147483648\t0\t100\tok\t33,64,-2147483648,0,100\topen,setTempoInMPQ(1000.0),setSequence,addMetaEventListener,start,endOfTrack,close;PPQ:1|0:C000|0:904064|1000:804064|1000:FF2F00;C000,904064,804064;true;true\n31\t11\t60\t400\t0\t100\tok\t31,60,400,0,100\topen,setTempoInMPQ(1000.0),setSequence,addMetaEventListener,start,endOfTrack,close;PPQ:1|0:C000|0:903C64|400:803C64|400:FF2F00;C000,903C64,803C64;false;true\n31\t12\t-5\t-5\t200\t300\tok\t31,-5,-5,200,300\topen,setTempoInMPQ(1000.0),setSequence,addMetaEventListener,start,endOfTrack,close;PPQ:1|0:C000|0:903C64|1000:803C64|1000:FF2F00;C000,903C64,803C64;false;true\n31\t13\t60,64\t300\t0,40\t100,90\tok,ok\t31,64,300,40,90\topen,setTempoInMPQ(1000.0),setSequence,addMetaEventListener,start,endOfTrack,close;PPQ:1|0:C000|0:903C64|300:803C64|300:FF2F00;C000,903C64,803C64;false;true\topen,setTempoInMPQ(1000.0),setSequence,addMetaEventListener,start,endOfTrack,close;PPQ:1|0:C028|0:90405A|300:80405A|300:FF2F00;C028,90405A,80405A;false;true\toverlapped=true\n31\t14\t67\t2147483647\t0\t100\tok\t31,67,2147483647,0,100\topen,setTempoInMPQ(1000.0),setSequence,addMetaEventListener,start;PPQ:1|0:C000|0:904364|2147483647:804364|2147483647:FF2F00;C000,904364;false;-\n",
+  "stderr": "",
+  "status": 0,
+  "hashes": {
+    "tests/oracle/platform-syscalls/MidiSyscallProbe.java": "297595f57c6177c3f83e79f06294fad5eafc185a01d6c489726da37e51c5266e",
+    "mars/mips/instructions/SyscallLoader.java": "b2b40aba07699230e1769711cd18e657a23ff6f8822819c0eddf19f9ffb30e8c",
+    "mars/mips/instructions/syscalls/SyscallMidiOut.java": "8a56ff7fc8c3fc2789528806f6e93ac38b835aa7dd3f2aa29570f75acfc2271e",
+    "mars/mips/instructions/syscalls/SyscallMidiOutSync.java": "a3c50836e77f9fc049a1e18db5f9b0545cf09265b410a9b2a1ecb0666d40c34b",
+    "mars/mips/instructions/syscalls/ToneGenerator.java": "62eabe80186fdfa4caca9c83f98369a85b9f673d00a5fe825df747a1fc4b300a"
+  }
+}

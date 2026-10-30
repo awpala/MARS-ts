@@ -41,7 +41,7 @@ Useful options for fixtures (all from `_legacy-app/mars/MarsLaunch.java`):
 | `<n>` | Maximum number of steps |
 | `pa <args...>` | Program arguments (must come last) |
 
-Nondeterministic behavior must stay out of exact-match fixtures: the time syscall (30), random syscalls without a fixed seed (40–44), `sleep` (32), MIDI (31, 33), and interactive dialogs (50–59, which also need a GUI). The [dialog method probe](../../tests/oracle/platform-syscalls/README.md) automates actual Swing responses under Xvfb to capture deterministic dialog outcomes separately. File syscalls (13–16) touch the real file system and need a scratch directory.
+Nondeterministic behavior must stay out of exact-match fixtures: the time syscall (30), random syscalls without a fixed seed (40–44), `sleep` (32), MIDI (31, 33), and interactive dialogs (50–59, which also need a GUI). The [dialog method probe](../../tests/oracle/platform-syscalls/README.md) automates actual Swing responses under Xvfb to capture deterministic dialog outcomes separately, and the MIDI method probe in the same directory records the sequences services 31 and 33 request through a substituted output device, with timing reduced to deterministic orderings and tolerance checks. File syscalls (13–16) touch the real file system and need a scratch directory.
 
 ## Where behavior lives
 
