@@ -14,6 +14,8 @@ Settings scenarios cover memory-layout preview/application, opening-selection Re
 
 [Button hover scenarios](button-hover.spec.ts) exercise the shared enabled-state highlight in both themes, including Delete Sources confirmation, dialog actions, console input, source and pane tabs, and disabled controls. Selected tabs retain their resting colors. The execution scenarios also check that a Text Segment row's Source link fills its whole cell, so hovering or clicking the cell's far corner, scrolled into view beside the default Labels pane, shows the link's highlight and "See in source file" tooltip and opens the source. A matching Labels scenario does the same for the name and address cells, including the empty side of each, and selects the label.
 
+The controls scenarios check transient function-key toolbar and console-clearing shortcut feedback, repeated activation, and disabled or modal-blocked commands.
+
 These scenarios complement the [TypeScript suites and Java oracle](../README.md). They establish browser integration behavior, while engine parity remains supported by the corresponding oracle comparisons.
 
 ## Server and browser ownership

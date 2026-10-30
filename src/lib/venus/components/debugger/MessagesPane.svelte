@@ -6,6 +6,12 @@
   import { getDesktop } from '../../context/desktop.js';
   import { requireAction } from '../../utils/commands/actions.js';
   import { ariaKeyShortcuts } from '../../utils/commands/shortcuts.js';
+  /** Momentary keyboard feedback supplied by the desktop. */
+  type Props = {
+    /** Command to highlight, or null when no shortcut is active. */
+    highlightedShortcut: string | null;
+  };
+  let { highlightedShortcut }: Props = $props();
   const { simulation } = getDesktop();
   const outputText = $derived(
     simulation.messageTab === 'Mars Messages' ? simulation.messages : simulation.runIO
@@ -43,6 +49,7 @@
   {#snippet actions()}
     <Button
       variant="outlined"
+      highlighted={highlightedShortcut === clear.command}
       class="clear mb-0.5 ml-auto rounded-none px-3 py-px"
       tooltip="Clear selected output"
       shortcut={clear.shortcut}
@@ -54,6 +61,7 @@
       tooltip="Clear all outputs"
       shortcut={clearAll.shortcut}
       variant="outlined"
+      highlighted={highlightedShortcut === clearAll.command}
       class="clear-all mb-0.5 rounded-none px-3 py-px"
       aria-keyshortcuts={ariaKeyShortcuts(clearAll.shortcut!)}
       onclick={() => simulation.clearOutput(true)}>{clearAll.label}</Button

@@ -1,6 +1,53 @@
 import { expect, test } from '@playwright/test';
 import { openDesktop } from './openDesktop.js';
 
+test('shortcuts highlight only their matching enabled buttons', async ({ page }) => {
+  await openDesktop(page);
+  const step = page.getByRole('button', { name: 'Step', exact: true });
+  await page.evaluate(() => {
+    const events: string[] = [];
+    Object.assign(window, { shortcutHighlights: events });
+    new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        const button = mutation.target as HTMLButtonElement;
+        if (button.classList.contains('shortcut-highlight'))
+          events.push(button.getAttribute('aria-label') ?? button.textContent!.trim());
+      }
+    }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+  });
+  const highlights = () =>
+    page.evaluate(() => (window as unknown as { shortcutHighlights: string[] }).shortcutHighlights);
+  await page.keyboard.press('F7');
+  expect(await highlights()).toEqual([]);
+
+  await page.getByRole('button', { name: 'New', exact: true }).click();
+  await page.getByRole('textbox', { name: /^Source / }).fill('.text\nnop\nnop\nnop\n');
+  await page.keyboard.press('F3');
+  await expect(step).toBeEnabled();
+  await expect.poll(highlights).toContain('Assemble');
+  await page.keyboard.press('F7');
+  await expect
+    .poll(async () => (await highlights()).filter((name) => name === 'Step').length)
+    .toBe(1);
+  await expect(step).not.toHaveClass(/shortcut-highlight/);
+  await expect(step).toBeEnabled();
+  await page.keyboard.press('F7');
+  await expect
+    .poll(async () => (await highlights()).filter((name) => name === 'Step').length)
+    .toBe(2);
+  await page.keyboard.press('Control+l');
+  await expect.poll(highlights).toContain('Clear');
+  await page.keyboard.press('Alt+l');
+  await expect.poll(highlights).toContain('Clear All');
+  await expect(step).not.toHaveClass(/shortcut-highlight/);
+
+  await page.getByRole('button', { name: 'Help', exact: true }).click();
+  const before = await highlights();
+  await page.keyboard.press('F7');
+  await page.keyboard.press('Control+l');
+  expect(await highlights()).toEqual(before);
+});
+
 test('repository link opens a new tab and releases mouse tooltip while preserving keyboard help', async ({
   page,
   context

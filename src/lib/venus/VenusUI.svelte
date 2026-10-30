@@ -4,7 +4,7 @@
    * MessagesPane.java, ExecutePane.java, and RunSpeedPanel.java.
    * Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license.
    */
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import { slide } from 'svelte/transition';
   import { MAIN_VIEWS } from '#lib/browser/DesktopSession.js';
   import { MIN_REGISTER_WIDTH } from '#lib/browser/PaneLayout.js';
@@ -29,6 +29,8 @@
   import FileExporter from './components/transfers/FileExporter.svelte';
   let menuBar: MenuBar | undefined;
   let activeElement = $state<Element | null>(null);
+  let highlightedShortcut = $state<string | null>(null);
+  let highlightTimer: ReturnType<typeof setTimeout> | undefined;
   const desktop = provideDesktop(new DesktopState((restoreFocus) => menuBar?.close(restoreFocus)));
   const { workspace, simulation, display } = desktop;
   const position = $derived(
@@ -44,7 +46,15 @@
     Execute:
       'View and control assembly language program execution.  Enabled upon successful assemble.'
   } as const;
-  useDesktopKeyboard(() => menuBar?.close());
+  useDesktopKeyboard(
+    () => menuBar?.close(),
+    (command) => {
+      highlightedShortcut = command;
+      clearTimeout(highlightTimer);
+      highlightTimer = setTimeout(() => (highlightedShortcut = null), 250);
+    }
+  );
+  onDestroy(() => clearTimeout(highlightTimer));
   onMount(desktop.mount);
 </script>
 
@@ -83,6 +93,7 @@
       bind:promptClearBreakpoints={display.promptClearBreakpoints}
     />
     <Toolbar
+      {highlightedShortcut}
       bind:showLines={display.showLines}
       bind:speed={display.speed}
       showSpeed={display.view === 'Execute'}
@@ -130,7 +141,7 @@
           onchange={display.setEditorHeight}
           oncommit={display.persistLayout}
         />
-        <MessagesPane />
+        <MessagesPane {highlightedShortcut} />
       </div>
       {#if display.showRegisters}
         <div

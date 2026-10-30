@@ -18,8 +18,15 @@
     speed: number;
     /** Required visibility gate; the desktop shows run speed only in Execute. */
     showSpeed: boolean;
+    /** Momentary keyboard-activated command to highlight, or null when none. */
+    highlightedShortcut: string | null;
   };
-  let { showLines = $bindable(), speed = $bindable(), showSpeed }: Props = $props();
+  let {
+    showLines = $bindable(),
+    speed = $bindable(),
+    showSpeed,
+    highlightedShortcut
+  }: Props = $props();
   const commands = getDesktopCommands();
   const { display } = getDesktop();
 </script>
@@ -35,6 +42,7 @@
     tooltip={reason ? `${item.label} — ${reason}` : item.label}
     shortcut={item.shortcut}
     pressed={commands.isPressed(item.command)}
+    highlighted={highlightedShortcut === item.command}
     disabled={!commands.isEnabled(item)}
     onclick={() => void commands.execute(item.command)}
     icon={suspended ? { glyph: 'BreakpointsDisabled' } : icon}
@@ -84,5 +92,8 @@
     gap: 4px;
     padding: 3px;
     border-bottom: 1px solid var(--theme-border, #999);
+  }
+  .toolbar :global(button) {
+    transition: opacity 0s 150ms;
   }
 </style>

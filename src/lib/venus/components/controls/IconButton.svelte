@@ -19,6 +19,8 @@
     disabled?: boolean;
     /** Current toggle value; omitted for momentary actions. */
     pressed?: boolean;
+    /** Show momentary action feedback independently of toggle state; false by default. */
+    highlighted?: boolean;
     /** Optional layout classes on the button; none by default. */
     class?: ClassValue;
     /** Required activation callback; owns any asynchronous work. */
@@ -32,6 +34,7 @@
     shortcut,
     disabled = false,
     pressed,
+    highlighted = false,
     class: className,
     onclick
   }: Props = $props();
@@ -50,6 +53,7 @@
   tooltip={tooltip ?? label}
   keepTooltipOnClick={pressed !== undefined}
   {shortcut}
+  {highlighted}
   {disabled}
   {onclick}
 >

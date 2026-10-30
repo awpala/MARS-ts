@@ -19,6 +19,8 @@
     keepTooltipOnClick?: boolean;
     /** Optional keyboard hint for the tooltip; does not register a shortcut. */
     shortcut?: string;
+    /** Show momentary action feedback independently of toggle state; false by default. */
+    highlighted?: boolean;
     /** Base look: plain leaves all styling to the caller, bordered adds the themed border and surface, and outlined adds only the themed border. Plain by default. */
     variant?: 'plain' | 'bordered' | 'outlined';
   };
@@ -28,6 +30,7 @@
     tooltip,
     keepTooltipOnClick = false,
     shortcut,
+    highlighted = false,
     attachment,
     variant = 'plain',
     class: className,
@@ -45,7 +48,7 @@
   {#snippet children(trigger, description)}
     <button
       {...attributes}
-      class={[variants[variant], className]}
+      class={[variants[variant], className, { 'shortcut-highlight': highlighted }]}
       {type}
       {@attach trigger}
       {@attach attachment}
@@ -57,6 +60,10 @@
 </Tooltip>
 
 <style>
+  button.shortcut-highlight {
+    border-color: var(--theme-accent-border, #849eb5);
+    background: var(--theme-hover, #dbe8f2);
+  }
   button:enabled:hover:not(
       [aria-disabled='true'],
       [aria-pressed='true'],
