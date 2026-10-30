@@ -60,7 +60,7 @@ flowchart TB
         end
         subgraph StateModule["state/"]
             State["Desktop state owners<br/>workspace, simulation, preferences,<br/>search, recovery"]
-            Host["Simulation host callbacks<br/>source lookup, console, input,<br/>scheduling, preferences"]
+            Host["Simulation host callbacks<br/>source lookup, console, input,<br/>dialogs, scheduling, preferences,<br/>tones, entropy"]
             State --> Host
         end
         Root --> ComponentsModule
@@ -87,7 +87,7 @@ flowchart TB
     end
 
     subgraph BrowserModule["Browser · browser/"]
-        Browser["Browser adapters<br/>source library, preferences,<br/>recovery records, downloads"]
+        Browser["Browser adapters<br/>source library, preferences,<br/>recovery records, downloads,<br/>MIDI tone output"]
     end
 
     subgraph EngineModule["Engine · engine/"]
@@ -171,8 +171,8 @@ Help is composed into Venus dialogs and uses the reusable clipboard/transfer con
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | [Venus](venus/README.md)     | Desktop composition, context, cross-view state, source/run workflows, debugging presentation, keyboard coordination, and UI lifetimes   | Adapts the desktop to browser views while using editor, engine, and browser APIs                                  |
 | [Editor](editor/README.md)   | Source buffers, names, selection, saved baselines, dirty state, per-buffer undo/redo, and lexical highlighting                          | Does not assemble programs or own browser persistence; callers resolve unsaved changes before closing             |
-| [Browser](browser/README.md) | Source and preference storage validation, virtual filenames, recovery serialization, and downloadable source resources                  | Implements browser mechanics outside the engine; state owners decide when and why to persist                      |
-| [Help](help/README.md)       | Help catalog, overview/About content, attributed articles, and article rendering                                                        | Receives selected content and source-transfer callbacks; reuses the application's modal and transfer presentation |
+| [Browser](browser/README.md) | Source and preference storage validation, virtual filenames, recovery serialization, downloadable resources, and Web Audio MIDI tones   | Implements browser mechanics outside the engine; state owners decide when and why to persist                      |
+| [Help](help/README.md)       | Help catalog, tabbed browser, overview/About content, attributed articles with Markdown companions, and article rendering               | Receives selected content and source-transfer callbacks; reuses the application's modal and transfer presentation |
 | [Engine](engine/README.md)   | Canonical assembly, hardware, instruction execution, simulator sequencing, diagnostics, numeric compatibility, and implemented syscalls | Framework-free TypeScript with per-session state and injected host services                                       |
 
 The [system implementation guide](../../IMPLEMENTATION.md) describes current feature coverage, supported assembly and debugging behavior, persistence policy, and validation evidence. This guide explains library relationships; the individual module guides own their detailed contracts.
@@ -209,7 +209,7 @@ Machine words use explicitly normalized signed 32-bit numbers, with unsigned int
 
 ### Injected browser services
 
-The simulation owner supplies source lookup, console output, asynchronous input, cooperative scheduling, and preference callbacks. The engine invokes those interfaces without knowing whether the host is a browser or a test. Browser source lookup prefers current open buffers and then committed local-library sources. Console reads can use inline input or a same-tab dialog while retaining the same pending engine request.
+The simulation owner supplies source lookup, console output, asynchronous input, syscall dialogs, cooperative scheduling, preference callbacks, the MIDI tone host, and entropy for unseeded random streams. The engine invokes those interfaces without knowing whether the host is a browser or a test. Browser source lookup prefers current open buffers and then committed local-library sources. Console reads can use inline input or a same-tab dialog while retaining the same pending engine request.
 
 Browser adapters own storage formats and download-resource cleanup. Native file pickers and Clipboard API interactions belong to mounted transfer components, which pass exact text into the existing workspace workflow. Editor Import/Export is separate from runtime file-descriptor syscalls; the presence of browser file transfer does not mean deferred MIPS platform services have been implemented.
 
@@ -255,7 +255,7 @@ The Java sources under `_legacy-app/` are read-only behavioral references. Brows
 
 [Oracle fixtures](../../tests/oracle/README.md) and engine tests compare translated behavior with Java. [Browser scenarios](../../tests/browser/) exercise the adaptation: unsaved-source preservation, persistence failures, command availability, dialog focus/cancellation, execution and input, imports/exports, clipboard controls, and appearance. Type checking, lint, formatting, unit/parity tests, and the static build complement those checks; compilation alone establishes neither Java parity nor correct browser workflows.
 
-Core assembly, simulation, deterministic console syscalls, and desktop debugging are implemented. The six enabled legacy memory dump formats are implemented. Remaining platform syscalls, Tools, and several configuration dialogs remain unfinished. The [port plan](../../docs/adrs/0000-port-plan.md) and [implementation guide](../../IMPLEMENTATION.md) distinguish intended scope from implemented behavior.
+Core assembly, simulation, console/random/dialog/MIDI syscalls, automatic exception-handler selection, memory configuration, and desktop debugging are implemented. The six enabled legacy memory dump formats are implemented. File, time, and sleep syscalls, Tools, and editor instruction popup completion remain unfinished; the legacy Editor and Highlighting dialogs are deliberately replaced by bundled presets. The [port plan](../../docs/adrs/0000-port-plan.md) and [implementation guide](../../IMPLEMENTATION.md) distinguish intended scope from implemented behavior.
 
 ### Choosing an extension boundary
 

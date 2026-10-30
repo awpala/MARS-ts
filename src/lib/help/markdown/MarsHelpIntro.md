@@ -27,7 +27,7 @@ Console reads and writes, heap allocation, exit, and integer formatting syscalls
 
 ## Dump memory to a file
 
-After assembly, choose File → Dump Memory or its toolbar button while execution is stopped. Select the populated `.text` or `.data` range and ASCII Text, Binary, Binary Text, Hexadecimal Text, Intel hex format, or Text/Data Segment Window. Dump To File opens the browser/OS Save As dialog where supported; other browsers use a download with the browser's configured destination. Canceling the picker keeps your choices. A save failure stays visible so you can retry. Dumps use current memory, including changes from execution, and do not save or modify your source files. Segment Window follows hexadecimal/decimal display settings. Binary suggests `.bin`, hexadecimal formats `.hex`, and other text formats `.txt`. MIF is not an enabled legacy format.
+After assembly, choose File → Dump Memory (Ctrl+D) or its toolbar button while execution is stopped. Select the populated `.text` or `.data` range and ASCII Text, Binary, Binary Text, Hexadecimal Text, Intel hex format, or Text/Data Segment Window. Dump To File opens the browser/OS Save As dialog where supported; other browsers use a download with the browser's configured destination. Canceling the picker keeps your choices. A save failure stays visible so you can retry. Dumps use current memory, including changes from execution, and do not save or modify your source files. Segment Window follows hexadecimal/decimal display settings. Binary suggests `.bin`, hexadecimal formats `.hex`, and other text formats `.txt`. MIF is not an enabled legacy format.
 
 ## Original authors and project history
 

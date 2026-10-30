@@ -11,7 +11,7 @@ Determine exact language, runtime, framework, and dependency versions from manif
 | Legacy behavior | The Java sources and the oracle ([legacy guide](legacy.md)), not the MARS website or third-party forks |
 | CI runtimes | [verify.yml](../../.github/workflows/verify.yml), which must match the container's Node and JDK majors |
 
-The installed stack is Svelte 5, SvelteKit 3, Vite 8, Tailwind 4, Vitest 4, and TypeScript 6. The global TypeScript feature is pinned to major 6 because the planned SvelteKit lint and check tooling supports it; the app's own TypeScript devDependency becomes authoritative for its gates at P1.
+The installed stack is Svelte 5, SvelteKit 3, Vite 8, Tailwind 4, Vitest 4, and TypeScript 6. The global TypeScript feature is pinned to major 6 because the scaffolded SvelteKit lint and check tooling supports it; the app's own TypeScript devDependency is authoritative for its gates.
 
 ## Authoritative implementation policy
 

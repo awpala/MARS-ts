@@ -15,13 +15,13 @@ Use a new source buffer for experiments and preserve existing user work. Import 
 
 ## Browser workflows
 
-- New creates a source buffer. Open selects saved sources from this browser. Import reads .asm or .s files from the user's computer.
+- New creates a source buffer. Open selects saved sources from this browser. Import reads .asm or .s files, or ZIP archives of them, from the user's computer and shows a summary to confirm before saving them.
 - Assemble (F3) assembles the active source and its explicit includes. Go (F5), Step (F7), Backstep (F8), Pause (F9), Stop (F11), and Reset (F12) control simulation; execution output appears in Run I/O.
-- Inspect registers, Text Segment, Data Segment, labels, and breakpoints through the visible desktop controls. After assembly, File → Dump Memory exports a populated text or data range in the selected format through the browser/OS save dialog where supported, with a download fallback elsewhere.
-- Help (F1) opens the overview. The Help menu also offers Introduction, Debugging, Settings, Syscalls, Exception Handlers, Macros, Tools, Limitations, Release History, Acknowledgements, and About MARS. Articles load on demand in the current tab.
+- Inspect registers, Text Segment, Data Segment, labels, and breakpoints through the visible desktop controls. After assembly, File → Dump Memory (Ctrl+D) exports a populated text or data range in the selected format through the browser/OS save dialog where supported, with a download fallback elsewhere.
+- Help (F1) opens a tabbed Help browser on its overview. The Help menu also offers Introduction, Debugging, Settings, Syscalls, Exception Handlers, Macros, Tools, Limitations, Release History, Bugs/Comments, Acknowledgements, and About MARS. Articles load on demand in the current tab, and each has a Read Online link to its Markdown version on GitHub.
 
 ## Current scope
 
-The core assembler, simulator, deterministic console syscalls, desktop debugging, and all six enabled legacy memory dump formats are implemented. File, time, sleep, random, MIDI, and dialog syscall families, Tools and some configuration dialogs remain unfinished. Historical Help articles describe original Java features with explicit availability notes; they do not establish browser support. There is no cloud synchronization or collaborative editing.
+The core assembler, simulator, desktop debugging, and all six enabled legacy memory dump formats are implemented, as are console, heap, exit, random (40–44), dialog (50–59), and MIDI (31 and 33, played as browser sine tones) syscalls, automatic exception-handler selection with a bundled SPIM default handler, and memory configuration. File, time, and sleep syscalls and Tools remain unfinished. The site can be installed and used offline after one visit. Historical Help articles describe original Java features with explicit availability notes; they do not establish browser support. There is no cloud synchronization or collaborative editing.
 
 This file provides application guidance and welcomes agent interaction; it does not add runtime capabilities or change the MIT license.

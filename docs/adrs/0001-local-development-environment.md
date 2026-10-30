@@ -26,14 +26,15 @@ Bind the checkout at `/workspace` and link `/scripts` to `/workspace/.devcontain
 base image + pinned features (Node, TypeScript, JDK, CLIs)
   -> setup-env.sh
        -> idempotent shell profile and live command links
-       -> apt tools (ripgrep, iproute2, shellcheck, build-essential)
+       -> apt tools (ripgrep, iproute2, shellcheck, build-essential;
+          provisional Xvfb, xauth, X11 libraries, and fonts for the Swing dialog oracle)
        -> feature command verification (node, tsc, java, javac, jar, ...)
        -> global sv CLI
        -> npm ci (only once package-lock.json exists)
        -> operator handoff
 ```
 
-Ordering matters. The feature commands are verified before anything depends on them, so a JRE-only or failed Java feature fails setup instead of failing later inside `build-legacy`. Before the app is scaffolded, the absence of `package.json` is the one state in which `npm ci` is skipped; once a lockfile exists, an install failure fails setup, and a `package.json` without a lockfile is a broken checkout. Setup never builds the legacy jar or starts a listener: those are explicit developer or gate actions.
+Ordering matters. The feature commands are verified before anything depends on them, so a JRE-only or failed Java feature fails setup instead of failing later inside `build-legacy`. Before the app is scaffolded, the absence of `package.json` is the one state in which `npm ci` is skipped; once a lockfile exists, an install failure fails setup, and a `package.json` without a lockfile is a broken checkout. Setup never builds the legacy jar or starts a listener: those are explicit developer or gate actions. The Xvfb/xauth, AWT X11 libraries, and fonts were added later for the automated Swing dialog probe ([ADR 0014](0014-random-and-dialog-syscalls.md)); they share the JDK's provisional lifetime and are removed with it at P5. Playwright's Chromium is not provisioned here; `npm run test:browser:install` installs it when browser validation is needed ([development operations](../agents/operations.md)).
 
 ## Persistence and boundaries
 

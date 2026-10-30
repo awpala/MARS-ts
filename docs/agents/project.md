@@ -4,7 +4,7 @@ MARS-ts ports the checked-in canonical Java implementation of MARS, the MIPS Ass
 
 ## Current state
 
-Milestones P0, P1, and P2 are complete. The root [package](../../package.json), [Vite configuration](../../vite.config.ts), and [source tree](../../src/) now exist alongside the prepared [oracle fixtures](../../tests/oracle/README.md) and [browser assets](../../static/README.md). All four validation tiers pass, and initial browser workflows are exercised on isolated port 6278. The core assembler, simulator, console/random/dialog/MIDI syscalls, exception handling, and desktop debugging are implemented. All 21 original whole-program cases, including program arguments and seeded randomness, run against the production engine; CLI integration remains excluded. Module-level Java probes cover assembly, every basic instruction callback, hardware, numeric conversions, console/random syscalls, actual Swing dialogs, MIDI sequences, execution sequencing, settings, and backstepping. Remaining settings dialogs and platform features are unfinished. The full port remains authorized through the existing milestones, with CLI integration excluded ([ADR 0002](../adrs/0002-port-fidelity.md)).
+Milestones P0, P1, and P2 are complete. The root [package](../../package.json), [Vite configuration](../../vite.config.ts), and [source tree](../../src/) now exist alongside the prepared [oracle fixtures](../../tests/oracle/README.md) and [browser assets](../../static/README.md). All four validation tiers are active, and browser workflows are exercised on isolated port 6278; report the result of an actual run rather than relying on this summary. The core assembler, simulator, console/random/dialog/MIDI syscalls, exception handling with the automatic handler workflow, memory configuration, all six enabled dump formats, Help, and desktop debugging are implemented. All 21 original whole-program cases, including program arguments and seeded randomness, run against the production engine; CLI integration remains excluded. Module-level Java probes cover assembly, every basic instruction callback, hardware, numeric conversions, console/random syscalls, actual Swing dialogs, MIDI sequences, execution sequencing, settings, backstepping, dump formats, and the exception-handler workflow. Every legacy Settings entry is implemented except the Editor and Highlighting dialogs, deliberately replaced by bundled presets, and the removed assemble-all setting. The file, time, and sleep syscalls, the bundled Tools, and editor instruction popup completion are unfinished. The full port remains authorized through the existing milestones, with CLI integration excluded ([ADR 0002](../adrs/0002-port-fidelity.md)).
 
 ## Identity
 
@@ -29,11 +29,15 @@ MARS is copyright 2003–2013 Pete Sanderson and Kenneth Vollmar, under the MIT 
 | --- | --- | --- |
 | `_legacy-app/` | Legacy application | Java sources, resources, packaging, and Javadoc; see the [legacy guide](legacy.md) |
 | `MARSlicense.txt` | Shared attribution | Original license retained at the root through offboarding; packaged into both applications |
-| `docs/` | Port documentation | Authored architecture, port mappings, ADRs, runbooks, and agent guidance |
+| `README.md`, `IMPLEMENTATION.md` | Port documentation | Brief entry point and the current-system [implementation guide](../../IMPLEMENTATION.md) |
+| `docs/` | Port documentation | Authored architecture, port mappings, the deviation catalog, ADRs, runbooks, and agent guidance |
+| `package.json`, `package-lock.json`, `vite.config.ts`, `tsconfig.json`, `playwright.config.ts`, lint and format configuration | Application | The single root SvelteKit package and its tooling; see [application engineering](app.md) |
+| `src/` | Application | The engine, browser adapters, editor, Help, Venus desktop, routes, and service worker; see the [library guide](../../src/lib/README.md) |
 | `.devcontainer/`, `cleanup.sh`, `.github/` | Development operations | See [operations](operations.md) |
 | `AGENTS.md`, `.agents/`, `.claude/`, `.codex/`, `.mcp.json` | Agent harness | See [harness](harness.md) |
-| `tests/oracle/` | Parity evidence | Inputs, captured Java outputs, and dependency-free regeneration/check runner |
-| `static/` | Browser assets | Prepared SVG toolbar icons, original MARS favicon, and attribution |
+| `tests/` | Validation | Cross-module Vitest suites, Playwright browser scenarios, and the [oracle fixtures](../../tests/oracle/README.md) with their dependency-free regeneration/check runners; see the [tests guide](../../tests/README.md) |
+| `static/` | Browser assets | SVG icons, the original MARS favicon, the license, the web app manifest, `llms.txt`/`robots.txt`, bundled assembly references, and attribution |
+| `build/`, `.svelte-kit/`, `node_modules/` | Generated | Ignored build output, SvelteKit sync output, and installed dependencies |
 | `__refs/`, `__logs/`, `__build/` | Local only | Ignored. Never make an active file depend on them |
 
 `__refs/` holds research material such as reference repositories. Nothing under it is part of the project contract, CI inputs, or the shipped app. Adding a new top-level directory is a layout decision: follow the [port plan](../adrs/0000-port-plan.md#5-proposed-layout) or record an ADR.

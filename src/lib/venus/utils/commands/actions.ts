@@ -51,7 +51,7 @@ export const fileActions: readonly Action[] = [
   { label: 'Save All', command: 'saveAll' },
   { label: 'Auto Save', icon: glyph('AutoSave'), command: 'autoSave' },
   { label: 'Import ...', icon: glyph('Import'), command: 'import' },
-  { label: 'Dump Memory ...', icon: glyph('Dump'), command: 'dump' },
+  { label: 'Dump Memory ...', icon: glyph('Dump'), command: 'dump', shortcut: 'Ctrl+D' },
   { label: 'Export', icon: glyph('Export'), command: 'export' },
   { label: 'Export All', icon: glyph('ExportAll'), command: 'exportAll' }
 ];

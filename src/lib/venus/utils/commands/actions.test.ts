@@ -92,6 +92,11 @@ describe('keyboardAction', () => {
     expect(keyboardAction(key({ key: 's' }))).toBeUndefined();
     expect(keyboardAction(key({ key: 'F5' }))?.command).toBe('go');
   });
+  it('binds Dump Memory to the legacy menu-modifier+D accelerator', () => {
+    expect(keyboardAction(key({ key: 'd', ctrlKey: true }))?.command).toBe('dump');
+    expect(keyboardAction(key({ key: 'd', metaKey: true }))?.command).toBe('dump');
+    expect(keyboardAction(key({ key: 'D', ctrlKey: true, shiftKey: true }))).toBeUndefined();
+  });
   it('accepts either spelling of the Alt/Option alternative', () => {
     expect(keyboardAction(key({ key: 'n', altKey: true }))?.command).toBe('new');
     expect(keyboardAction(key({ key: 'z', ctrlKey: true, shiftKey: true }))?.command).toBe('redo');

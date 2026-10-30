@@ -154,9 +154,12 @@ ln -sf "${SCRIPTS_BIN_DIR}/run-legacy.sh" /usr/local/bin/run-legacy
 # checks.sh, and build-essential supplies native compilation tools for npm
 # dependency builds.
 #
-# No browser is installed yet. Chromium becomes necessary only when the app
-# adds browser-driven tests or diagram rendering; add it then, together with
-# the gate that consumes it, rather than carrying dormant tooling.
+# No browser is installed here. The Playwright browser scenarios (`npm run
+# test:browser`, isolated on port 6278) are run separately from `run-checks`
+# and CI, so Chromium and its system libraries are fetched on demand with
+# `npm run test:browser:install` (`playwright install --with-deps chromium`)
+# only in environments that run them. Install it here only if a gate starts
+# consuming it, rather than carrying dormant tooling.
 #
 # The JDK is NOT installed here: the pinned Java feature in devcontainer.json
 # owns it (SDKMAN under /usr/local/sdkman). Do not add an apt JDK -- two JDKs

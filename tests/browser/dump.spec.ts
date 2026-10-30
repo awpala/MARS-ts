@@ -123,6 +123,59 @@ test('dump after execution reads the live data and dismissal restores the deskto
   expect(files[0].text.startsWith('00000063\n')).toBe(true);
 });
 
+test('Ctrl+D opens Dump Memory from any focused surface only when a loaded program is idle', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await openStoredSources(page, [{ name: 'dump.asm', source }]);
+  // Registered after the desktop's capture handler, so it observes that handler's decision.
+  await page.evaluate(() =>
+    window.addEventListener(
+      'keydown',
+      (event) => {
+        if (event.key.toLowerCase() === 'd')
+          (window as unknown as { dumpKeyPrevented: boolean }).dumpKeyPrevented =
+            event.defaultPrevented;
+      },
+      true
+    )
+  );
+  const dumpKeyPrevented = () =>
+    page.evaluate(() => (window as unknown as { dumpKeyPrevented: boolean }).dumpKeyPrevented);
+  const dialog = page.getByRole('dialog', { name: 'Dump Memory To File', exact: true });
+  const editor = page.getByRole('textbox', { name: 'Source dump.asm', exact: true });
+  // Disabled before assembly, but still captured so Ctrl+D never reaches the browser's bookmark command.
+  await editor.press('Control+d');
+  expect(await dumpKeyPrevented()).toBe(true);
+  await expect(dialog).not.toBeVisible();
+  await expect(editor).toHaveValue(source);
+  await page.getByRole('button', { name: 'Assemble', exact: true }).click();
+  // The toolbar tooltip and File menu advertise the same shortcut the keyboard binding accepts.
+  const trigger = page.getByRole('button', { name: 'Dump Memory ...', exact: true });
+  await trigger.hover();
+  await expect(trigger).toHaveAccessibleDescription('Dump Memory ... Ctrl+D');
+  await expect(page.locator('.tooltip kbd')).toHaveText(['Ctrl', 'D']);
+  await page.mouse.move(5, 200);
+  await page
+    .locator('.menubar summary')
+    .filter({ hasText: /^File$/ })
+    .click();
+  await expect(
+    page
+      .locator('details[open]')
+      .getByRole('button', { name: 'Dump Memory ... Ctrl+D', exact: true })
+  ).toBeEnabled();
+  await page.keyboard.press('Escape');
+  const register = page.getByLabel('$t0 value', { exact: true });
+  await register.press('Control+d');
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).not.toBeVisible();
+  await expect(register).toBeFocused();
+  await register.press('Meta+d');
+  await expect(dialog).toBeVisible();
+});
+
 test('data-only and empty assemblies omit unpopulated dump choices', async ({ page }) => {
   await assemble(page, '.data\n.word 42\n');
   await page.getByRole('button', { name: 'Dump Memory ...', exact: true }).click();

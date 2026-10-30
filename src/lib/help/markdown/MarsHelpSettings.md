@@ -9,7 +9,7 @@ Settings menu checkboxes control display, input, assembly, and execution. The fi
 
 ## Display and input
 
-- **Show Labels Window:** off by default. Shows program labels and addresses beside the Text Segment, with Data/Text filters and sorting.
+- **Show Labels Window:** on by default. Shows program labels and addresses beside the Text Segment, with Data/Text filters and sorting.
 - **Addresses displayed in hexadecimal:** on by default. Turn it off for decimal addresses.
 - **Values displayed in hexadecimal:** on by default. Turn it off for decimal memory and register values.
 - **ASCII data display:** off by default. Interprets Data Segment bytes as characters and disables editing in that view. Its state is shared by the toolbar and Data Segment checkbox.
@@ -19,14 +19,16 @@ Settings menu checkboxes control display, input, assembly, and execution. The fi
 
 ## Assembly and execution
 
-The Settings menu has separators after Clear all outputs on Go and Self-modifying code. Assembly uses the active source and its explicit `.include` directives; there is no assemble-all control. A previously saved assemble-all preference is reset when the desktop starts. Included source resolves from current open buffers first, then saved library files.
+The Settings menu has separators after Prompt to clear all breakpoints and Self-modifying code. Assembly uses the active source and its explicit `.include` directives; there is no assemble-all control. A previously saved assemble-all preference is reset when the desktop starts. Included source resolves from current open buffers first, then saved library files.
 
 1. **Assemble file on open:** off by default. Automatically assembles a source when opened.
 2. **Assembler warnings are considered errors:** off by default; introduced in Java Release 3.5. When enabled, any assembly warning makes assembly fail. Unrecognized or ignored directives can produce warnings, as can truncated numeric data.
 3. **Initialize Program Counter to global main if defined:** off by default; introduced in Java Release 3.8. Uses the address of the text label `main` declared with `.globl main`, if present. Otherwise execution starts at the default text address.
-4. **Permit extended (pseudo) instructions and formats:** on by default. Includes address forms beyond the native 16-bit offset plus register.
-5. **Delayed branching:** off by default. The instruction after a branch or jump executes before the transfer. Account for the delay slot, often with an explicit `nop`; the assembler does not automatically add one after every source branch. Introduced in Java Release 3.3. Since Release 3.4, branch offsets are encoded relative to the next instruction regardless of this setting, with simulation adjusted accordingly. Changing this option automatically reassembles a loaded program.
-6. **Self-modifying code:** off by default; introduced in Java Release 4.4. Permits program writes to user text, execution from user data, and stopped-state editing of text words.
+4. **Clear all outputs on Go:** off by default; added by MARS-ts. When enabled, Go clears both Mars Messages and Run I/O before it starts a fresh run after Assemble or Reset. Resuming after Pause, a breakpoint, Step, or Backstep keeps existing output, and Step, Assemble, Reset, and Backstep never clear it.
+5. **Prompt to clear all breakpoints:** off by default; added by MARS-ts. Clear all breakpoints normally removes them at once, as in Java MARS. When enabled, the toolbar button, Run menu entry, and Ctrl+K first ask for confirmation, and Cancel keeps every breakpoint. Clearing Keep showing this warning in that confirmation turns this setting off.
+6. **Permit extended (pseudo) instructions and formats:** on by default. Includes address forms beyond the native 16-bit offset plus register.
+7. **Delayed branching:** off by default. The instruction after a branch or jump executes before the transfer. Account for the delay slot, often with an explicit `nop`; the assembler does not automatically add one after every source branch. Introduced in Java Release 3.3. Since Release 3.4, branch offsets are encoded relative to the next instruction regardless of this setting, with simulation adjusted accordingly. Changing this option automatically reassembles a loaded program.
+8. **Self-modifying code:** off by default; introduced in Java Release 4.4. Permits program writes to user text, execution from user data, and stopped-state editing of text words.
 
 ## Program arguments
 

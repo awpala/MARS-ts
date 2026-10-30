@@ -1,6 +1,7 @@
 # ADR 0014: Random streams and syscall dialogs
 
-Status: Accepted
+- **Status**: Accepted
+- **Date**: 2026-10-29
 
 ## Context
 
@@ -20,4 +21,4 @@ An explicit Stop button is available inside each blocking modal. It requests sim
 
 The [method probe](../../tests/oracle/platform-syscalls/README.md) captures actual legacy service execution, using fixed seeds headlessly and automated real Swing responses under Xvfb. It records exact raw registers, buffer memory, CP0, diagnostic text, message text, and message types. The source tree remains read-only. Xvfb/xauth, AWT X11 libraries, and fonts are provisional validation dependencies installed with the environment and CI, removed with the JDK at P5. The shared probe runner's default remains headless for every existing capture.
 
-[Engine comparisons](../../src/lib/engine/syscalls/platform-syscalls.test.ts) consume those captures and exercise entropy ownership, rejected host operations, suspension, stream isolation, and checkpoint continuation. All whole-program corpus cases now include seeded randomness. [Browser scenarios](../../tests/browser/syscalls.spec.ts) exercise all dialog families, initial focus, Cancel/close/Stop, no echo, seeded output, and random-range exception-handler dispatch. These tests establish machine contracts and browser behavior, not Swing pixel parity or identical unseeded startup values. [UI-P0003 and ENG-P0004](../deviations.md) record the host adaptations.
+[Engine comparisons](../../src/lib/engine/syscalls/platform-syscalls.test.ts) consume those captures and exercise entropy ownership, rejected host operations, suspension, stream isolation, and checkpoint continuation. With the `seeded-random` case enabled, all 21 whole-program corpus cases now run through the production engine. [Browser scenarios](../../tests/browser/syscalls.spec.ts) exercise all dialog families, initial focus, Cancel/close/Stop, no echo, seeded output, and random-range exception-handler dispatch. These tests establish machine contracts and browser behavior, not Swing pixel parity or identical unseeded startup values. [UI-P0003 and ENG-P0004](../deviations.md) record the host adaptations.

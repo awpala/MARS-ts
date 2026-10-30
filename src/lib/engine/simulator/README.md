@@ -1,6 +1,6 @@
 # Simulator state
 
-This boundary owns execution state and sequencing. `DelayedBranch` ports `_legacy-app/mars/simulator/DelayedBranch.java`: registering a branch retains its target through the delay slot, and a successful branch in that delay slot extends the delay while retaining the first target. Each simulator session must own a distinct instance. The Java package-visible coordination methods are public methods for the future TypeScript `Simulator` owner; they do not create platform resources or subscriptions.
+This boundary owns execution state and sequencing. `DelayedBranch` ports `_legacy-app/mars/simulator/DelayedBranch.java`: registering a branch retains its target through the delay slot, and a successful branch in that delay slot extends the delay while retaining the first target. Each simulator session must own a distinct instance. The Java package-visible coordination methods are public methods used by the TypeScript `Simulator`; they do not create platform resources or subscriptions.
 
 Branch targets use signed 32-bit `number` values, normalized with `| 0`. The [Java unit probe](../../../../tests/oracle/assembler-units/README.md) covers cleared, registered, triggered, repeated, and nested-branch transitions. `Simulator` coordinates this state with the translated instruction callbacks, exception dispatch, stop requests, breakpoints, and instruction limits in Java's original order.
 

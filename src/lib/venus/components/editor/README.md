@@ -6,4 +6,6 @@ The source view owns its textarea, scroll synchronization, syntax painting, and 
 
 Double-clicking a document name, or pressing F2 on its focused tab button, opens an inline filename input. Enter or moving focus submits through the workspace's existing Save As Rename workflow; Escape cancels without writing. The input owns only its temporary text. Successful commits publish the updated tab label, editor name, dirty state, and recovery record together; invalid names open a warning and retain the latest valid name and source. Closed-library collisions retain replacement confirmation, and failed writes retain the original buffer and library record.
 
+A bundled reference, such as the SPIM default exception handler, opens as a protected tab: the tab shows a lock and announces itself as read-only, EditorPane adds a read-only banner with a Copy to new file action (disabled while a program runs), the textarea is read-only, and inline rename is unavailable. The workspace enforces the protection; these views only present it.
+
 These views present the source editing responsibilities of the legacy Venus editor through native browser editing surfaces. The [Venus guide](../../README.md) records supported behavior and remaining editor limitations. Add source-specific presentation here; keep buffer operations and cross-view state with the workspace.

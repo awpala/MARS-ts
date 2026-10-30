@@ -32,7 +32,7 @@ The planned baseline matches a current SvelteKit portfolio stack: SvelteKit with
 
 ## 3. Legacy architecture and target mapping
 
-The legacy tree is 217 Java files (about 60,000 lines) in these packages. The target column is the proposed home, not an implemented module.
+The legacy tree is 217 Java files (about 60,000 lines) in these packages, plus the root `Mars.java` launcher. The target column records the planned home; the [implementation guide](../../IMPLEMENTATION.md#module-responsibilities) maps the modules that now implement each responsibility, and `mars.tools` has no implementation yet.
 
 | Legacy package | Responsibility | Proposed target |
 | --- | --- | --- |

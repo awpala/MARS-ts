@@ -8,8 +8,8 @@ The application package is [package.json](../../package.json), with SvelteKit 3 
 
 The simulator engine (assembler, instruction set, hardware, simulator, syscalls, dump formats) is framework-free TypeScript under `src/lib/engine/`, separate from components and routes. All application implementation lives under `src/`, with the package manifest and build configuration at the repository root. The port plan's [mapping table](../adrs/0000-port-plan.md#3-legacy-architecture-and-target-mapping) shows the intended modules.
 
-- The engine imports nothing from `svelte`, `@sveltejs/kit`, `$app/*`, or DOM types. It runs unchanged in Vitest under Node, in the Node parity runner, in the browser, and in a Web Worker.
-- **All I/O goes through injected host interfaces**: console output, input (which may be asynchronous), files, dialogs, audio, time, and randomness seeds. The browser UI, the parity runner, and tests each supply their own host.
+- The engine imports nothing from `svelte`, `@sveltejs/kit`, `$app/*`, or DOM types. It runs unchanged in Vitest under Node and in the browser, where it currently executes cooperatively on the main thread ([ADR 0004](../adrs/0004-cooperative-simulation.md)); the same boundary would let it move to a Web Worker without a rewrite.
+- **All I/O goes through injected host interfaces**: source lookup, console output, input (which may be asynchronous), syscall dialogs, MIDI tones, scheduling, preferences, and randomness seeds today, and files and time when those syscalls are ported. The browser UI and the Vitest parity and unit suites each supply their own host.
 - **State is per-instance.** A simulator session owns its memory, register file, coprocessors, symbol tables, and settings. Nothing in the engine is a mutable module-level singleton; immutable tables, such as the instruction definitions, may be module-level constants.
 - **Change notification is explicit.** Memory, register, and simulator events are subscriptions that return an unsubscribe function. The engine never holds a reference to a component.
 - **Bit-exact semantics** follow the [Java-to-TypeScript rules](legacy.md#java-to-typescript-semantics).
@@ -21,13 +21,13 @@ The simulator engine (assembler, instruction set, hardware, simulator, syscalls,
 - Prefer `$derived` over `$effect`; reserve `$effect` for side effects. Effects never run during SSR, so a `browser` guard inside an effect body is dead code.
 - Use `$state.raw` for whole payloads that are only reassigned, such as register snapshots pushed from the engine; deep proxies on large memory views cost more than they track.
 - Generate DOM ids with `$props.id()`.
-- **Bridge engine subscriptions in one place.** A component or controller that subscribes to an engine session returns the unsubscribe as its `$effect` cleanup or `onMount` teardown. Releasing a session (reset, close, navigation) also stops its execution loop or Worker.
+- **Bridge engine subscriptions in one place.** A component or controller that subscribes to an engine session returns the unsubscribe as its `$effect` cleanup or `onMount` teardown. Releasing a session (reset, close, navigation) also stops its execution loop and releases its pending host operations.
 - **Module-scope state is per-process, not per-request.** Prerendering and development run SSR, so module-level `$state` is shared across renders. Keep sessions, editor buffers, and user settings inside the component tree or browser-only modules gated on `browser`.
 - Reference: the `svelte` MCP server and the [`svelte-core-bestpractices`](../../.agents/skills/svelte-core-bestpractices/SKILL.md) skill.
 
 ## SvelteKit
 
-- File-based routing under `src/routes/`. The planned adapter is static output with every page prerendered; the simulator runs entirely in the browser.
+- File-based routing under `src/routes/`. The static adapter emits prerendered output; the simulator runs entirely in the browser, and the [service worker](../../src/service-worker/README.md) adds offline support ([ADR 0010](../adrs/0010-pwa-offline-support.md)).
 - The root route launches directly into the main GUI. Do not port `MarsSplashScreen` or introduce a splash or intermediary launch screen.
 - SvelteKit 3 takes configuration through `sveltekit(...)` in the root `vite.config.ts`; do not add a competing `svelte.config.js`. Imports use the declared `#lib/*` package subpath.
 - Import shared modules through the package's declared subpath imports or SvelteKit's library alias, consistently, with whatever extension rule the scaffold's TypeScript configuration enforces.
@@ -48,10 +48,11 @@ The simulator engine (assembler, instruction set, hardware, simulator, syscalls,
 
 ## Commands
 
-Once scaffolded, run from the repository root:
+Run from the repository root:
 
-- `npm run dev`: the dev server on `6277` (alias `run-app`, which logs to `__logs/local/`).
-- `npm run build` and `npm run preview`.
+- `npm run dev`: the human's dev server on `6277` (alias `run-app`, which logs to `__logs/local/`); agents do not run it.
+- `npm run build` and `npm run preview` (preview also binds `6277`; agents pass `--port 6279` or higher).
+- `npm run test:browser`: Playwright scenarios on the isolated `6278` server.
 - `npm run check`: `svelte-kit sync` then `svelte-check`.
 - `npm run lint` / `npm run lint:fix`, `npm run format` / `npm run format:check`.
 - `npm run test`: Vitest, including oracle-fixture parity tests.

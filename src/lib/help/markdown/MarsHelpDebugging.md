@@ -28,7 +28,7 @@ Settings → Self-modifying code (off by default, introduced in Java Release 4.4
 
 Floating registers accept decimal values, including E notation such as `12.5e3`, or hexadecimal IEEE-754 bit patterns. A double overlays two single registers; changing either representation changes the corresponding paired view.
 
-Enable Show Labels Window in the toolbar to inspect symbols. Filter Data or Text symbols, sort using the Label or Address headings, and select a label to navigate to its memory or instruction address.
+The Labels window, shown by default and toggled by Show Labels Window in the toolbar or Settings, lists symbols. Filter Data or Text symbols, sort using the Label or Address headings, and select a label to navigate to its memory or instruction address.
 
 Unlike the original Swing article’s live-editing workflow, MARS-ts disables machine edits during execution. Pause or Step before changing registers or memory. Condition flags remain editable while the program runs, and so do breakpoints at any speed below unlimited.
 
