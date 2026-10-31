@@ -39,6 +39,8 @@ Scripts resolve the workspace from their own real path (following the `/usr/loca
 
 The setup script's `upsert_alias` and `upsert_export` calls are authoritative. Profile entries are replaced idempotently, never appended as competing definitions. Command links point at the live scripts and are never copies. Runtime installation directories (`/usr/local/bin`, Node, the SDKMAN JDK) must not be hidden by persistent volumes.
 
+The devcontainer setup installs `unzip` for the browser tests' independent ZIP archive inspection helper.
+
 The app launcher keeps timestamped output with a latest symlink, records the source revision and lifecycle events, and forwards signals to its process group. `kill-app` targets only the configured port and verifies process identity before escalation. Neither helper starts unrelated services or kills processes by name.
 
 `run-legacy` must keep its isolation: headless AWT, a fresh preferences root per run with its store directories pre-created (so the JDK logs nothing to stderr), and MARS's own stdin, stdout, stderr, and exit status. `build-legacy` compiles from `_legacy-app/`, copies runtime resources from that directory and the shared `MARSlicense.txt` from the repository root, and always deletes and rebuilds its output so stale classes cannot mask a source difference. `run-legacy` preserves the caller’s working directory so source arguments and includes keep their existing semantics. Rerun setup to refresh the `$legacy` shortcut in existing containers; the live build/run helpers need no reinstall.

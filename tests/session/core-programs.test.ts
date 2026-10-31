@@ -94,7 +94,6 @@ describe('original Java corpus through production Globals and RunController', ()
         });
         const controller = new RunController(machine);
         const settings = machine.getSettings();
-        settings.setBooleanSettingNonPersistent(Settings.ASSEMBLE_ALL_ENABLED, false);
         settings.setBooleanSettingNonPersistent(
           Settings.EXTENDED_ASSEMBLER_ENABLED,
           entry.id !== 'pseudo-disabled'

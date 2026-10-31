@@ -151,8 +151,8 @@ ln -sf "${SCRIPTS_BIN_DIR}/run-legacy.sh" /usr/local/bin/run-legacy
 # ca-certificates/curl/gnupg support vendor downloads, ripgrep supports source
 # search across the large legacy tree, iproute2 supplies the listener
 # diagnostics kill-app.sh relies on (ss), shellcheck backs the harness gate in
-# checks.sh, and build-essential supplies native compilation tools for npm
-# dependency builds.
+# checks.sh, unzip verifies browser-test ZIP exports, and build-essential
+# supplies native compilation tools for npm dependency builds.
 #
 # No browser is installed here. The Playwright browser scenarios (`npm run
 # test:browser`, isolated on port 6278) are run separately from `run-checks`
@@ -174,7 +174,7 @@ echo "--- Installing search, diagnostics, lint, and build tools ---"
 # xvfb-run requires xauth, and AWT needs X11 libraries and fonts. Remove these
 # alongside the JDK and oracle helpers at P5 offboarding.
 apt-get install --yes --no-install-recommends \
-  ca-certificates curl gnupg ripgrep iproute2 shellcheck build-essential \
+  ca-certificates curl gnupg ripgrep iproute2 shellcheck unzip build-essential \
   xvfb xauth libxtst6 libxi6 libxrender1 fontconfig fonts-dejavu-core
 
 # ---------------------------------------------------------------------------

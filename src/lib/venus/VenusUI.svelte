@@ -95,6 +95,7 @@
     <Toolbar
       {highlightedShortcut}
       bind:showLines={display.showLines}
+      bind:highlightCurrentLine={display.highlightCurrentLine}
       bind:speed={display.speed}
       showSpeed={display.view === 'Execute'}
     />

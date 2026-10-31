@@ -103,8 +103,9 @@
       your computer; Export downloads copies.
     </p>
     <p>
-      Registers remain visible beside Edit and Execute. Use the toolbar toggles to change value
-      display and label visibility.
+      Registers are shown beside Edit and Execute by default; use the Register Banks switch in the
+      menu bar to hide or show them. Use the toolbar toggles to change value display and label
+      visibility.
     </p>
     <p>
       Assemble (F3) translates the current source. Go (F5), Step (F7), Backstep (F8), Pause (F9),

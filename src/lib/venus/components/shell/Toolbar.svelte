@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { getDesktop } from '../../context/desktop.js';
   import { getDesktopCommands } from '../../context/commands.js';
   import {
     helpActions,
@@ -14,6 +13,8 @@
   type Props = {
     /** Required line-number preference, bindable to its owner. */
     showLines: boolean;
+    /** Required current-line highlighting preference, bindable to its owner. */
+    highlightCurrentLine: boolean;
     /** Required run-speed slider position (0–40), bindable to its owner. */
     speed: number;
     /** Required visibility gate; the desktop shows run speed only in Execute. */
@@ -23,12 +24,12 @@
   };
   let {
     showLines = $bindable(),
+    highlightCurrentLine = $bindable(),
     speed = $bindable(),
     showSpeed,
     highlightedShortcut
   }: Props = $props();
   const commands = getDesktopCommands();
-  const { display } = getDesktop();
 </script>
 
 <!-- @component Composes generic toolbar groups/buttons from shared command definitions, with a parent-owned run-speed slider. -->
@@ -62,8 +63,8 @@
         <IconButton
           label="Highlight current line"
           icon={{ glyph: 'Highlight' }}
-          pressed={display.highlightCurrentLine}
-          onclick={() => (display.highlightCurrentLine = !display.highlightCurrentLine)}
+          pressed={highlightCurrentLine}
+          onclick={() => (highlightCurrentLine = !highlightCurrentLine)}
         />
       {/if}
     </ToolbarGroup>
