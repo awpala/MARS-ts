@@ -33,7 +33,7 @@ All 21 original cases are enabled; none is excluded from the comparison. The tes
 
 `seeded-random` and `program-arguments` run through the same seeded random streams and argument storage that the desktop uses. `exit-status` remains enabled for GUI termination and console behavior: the original CLI capture has exit status 7, while canonical Swing `Exit2` ignores `$a0` and ends normally. The browser follows that GUI behavior and does not reproduce the launcher’s process exit code.
 
-These comparisons establish the listed corpus behavior, not completion of every MARS feature. The separate class probes under this directory cover foundation units, memory, settings, diagnostics, assembly/tokenization, operand matching, statements/program lifecycle, instruction descriptors and callbacks, editor highlighting, simulator sequencing, undo, numeric runtime conversion, program arguments, core, random, dialog, and MIDI syscalls, dump formats, and the automatic exception-handler workflow. Unimplemented file, time, and sleep services, Tools, and browser interaction require their own evidence.
+These comparisons establish the listed corpus behavior, not completion of every MARS feature. The separate class probes under this directory cover foundation units, memory, settings, diagnostics, assembly/tokenization, operand matching, statements/program lifecycle, instruction descriptors and callbacks, pseudo-instruction expansion, editor highlighting, simulator sequencing, undo, numeric runtime conversion, program arguments, core, random, dialog, and MIDI syscalls, dump formats, and the automatic exception-handler workflow. Unimplemented file, time, and sleep services, Tools, and browser interaction require their own evidence.
 
 ## Coverage and extension
 

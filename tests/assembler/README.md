@@ -1,6 +1,6 @@
 # Assembler comparisons
 
-This group owns oracle comparisons for directives, source and token structures, symbols, lexical classification, macros, operand matching, and complete assembly. The production [assembler](../../src/lib/engine/assembler/README.md) owns those algorithms; tests supply captured inputs, source adapters, and observable expectations.
+This group owns oracle comparisons for directives, source and token structures, symbols, tokenization, lexical classification, macros, operand matching, and complete assembly. The production [assembler](../../src/lib/engine/assembler/README.md) owns those algorithms; tests supply captured inputs, source adapters, and observable expectations.
 
 Focused probes inject the Java-captured operator vocabulary where instruction lookup is outside the tested contract. Complete assembly constructs production `Globals` and uses its real tokenizer, instruction registry, and hardware. Preserve that distinction when extending a scenario rather than replacing every setup with one generic machine fixture.
 

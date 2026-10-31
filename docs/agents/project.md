@@ -36,7 +36,7 @@ MARS is copyright 2003–2013 Pete Sanderson and Kenneth Vollmar, under the MIT 
 | `.devcontainer/`, `cleanup.sh`, `.github/` | Development operations | See [operations](operations.md) |
 | `AGENTS.md`, `.agents/`, `.claude/`, `.codex/`, `.mcp.json` | Agent harness | See [harness](harness.md) |
 | `tests/` | Validation | Cross-module Vitest suites, Playwright browser scenarios, and the [oracle fixtures](../../tests/oracle/README.md) with their dependency-free regeneration/check runners; see the [tests guide](../../tests/README.md) |
-| `static/` | Browser assets | SVG icons, the original MARS favicon, the license, the web app manifest, `llms.txt`/`robots.txt`, bundled assembly references, and attribution |
+| `static/` | Browser assets | SVG icons, the original MARS favicon, the license, the web app manifest and its PNG icons, `llms.txt`/`robots.txt`, bundled assembly references, and attribution |
 | `build/`, `.svelte-kit/`, `node_modules/` | Generated | Ignored build output, SvelteKit sync output, and installed dependencies |
 | `__refs/`, `__logs/`, `__build/` | Local only | Ignored. Never make an active file depend on them |
 

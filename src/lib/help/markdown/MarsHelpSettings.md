@@ -14,7 +14,7 @@ Settings menu checkboxes control display, input, assembly, and execution. The fi
 - **Values displayed in hexadecimal:** on by default. Turn it off for decimal memory and register values.
 - **ASCII data display:** off by default. Interprets Data Segment bytes as characters and disables editing in that view. Its state is shared by the toolbar and Data Segment checkbox.
 - **Highlight current line:** the editing toolbar button immediately after line numbers highlights the caret line across the editor. It defaults to off and is saved in browser preferences.
-- **Show line numbers:** on by default in the source editor. Its toggle follows the undo/redo and clipboard actions in the editing toolbar group.
+- **Show line numbers:** on by default in the source editor. Its toggle is near the end of the editing toolbar group, after the undo/redo, clipboard, and Find/Replace actions.
 - **Popup dialog for input syscalls:** off by default; introduced in Java Release 4.0. Services 5, 6, 7, 8, and 12 normally read in Run I/O. Enable this toggle for same-tab input dialogs. Services 50–59 use their own same-tab dialogs regardless of this setting.
 - **Appearance:** the menu-bar sun/moon switch selects light or dark mode; light is the default. The choice persists independently of machine state.
 

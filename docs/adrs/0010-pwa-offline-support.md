@@ -23,7 +23,7 @@ After one online visit to the hosted site, or to a copy served from `localhost`,
 
 Updates reach a user on the next visit after all tabs on the old release close, not instantly. Browser data stays scoped to the origin, so an installed copy from `localhost` and the hosted site hold separate sources; export/import is the migration path. The icons are a 50 × 50 favicon enlarged to 192 and 512 pixels, so they look soft until higher-resolution artwork replaces them. The Nginx configuration in the [runbook](../runbooks/prod-deployment.md) already revalidates non-hashed files, which covers `service-worker.js` and the manifest; browsers also bypass the HTTP cache for the worker script by default.
 
-The development server does not bundle or register the worker. Offline behavior is verified against a production build served by `vite preview`; the committed browser suite covers only the manifest link and icons.
+The development server does not bundle the worker, although SvelteKit still registers it there as an unbundled module. Offline behavior is verified against a production build served by `vite preview`; the committed browser suite covers only the manifest link and icons.
 
 ## Evidence
 

@@ -43,11 +43,14 @@ flowchart TB
             subgraph FeedbackModule["feedback/"]
                 Feedback["Loading, tooltips,<br/>keycaps, inline errors"]
             end
+            subgraph IconsModule["icons/"]
+                Icons["Theme-aware glyphs<br/>and masked icons"]
+            end
             Shell & EditorViews & Debugger & Dialogs & Transfers --> Controls
             Debugger --> Layout
             Layout --> Controls
-            Shell & Debugger & Controls --> Feedback
-            Controls -->|toolbar glyphs| Shell
+            Shell & Debugger & Dialogs & Controls --> Feedback
+            Shell & EditorViews & Transfers & Controls --> Icons
         end
         subgraph ContextModule["context/"]
             Context["Typed desktop and command contexts"]
@@ -163,7 +166,7 @@ flowchart TB
 
 Venus composes the browser desktop and owns its session lifecycle. Editor and RunController remain framework-free models even though Venus uses them in the browser. Engine remains a separate portable module with an injected host boundary; the deployed application executes it in the browser too. Host callbacks belong to Venus simulation state and resolve source through the existing workspace, whose editor buffers take precedence over committed browser-library sources.
 
-Help is composed into Venus dialogs and uses the reusable clipboard/transfer controls for code examples. Its source-transfer callback delegates to the existing workspace; Help owns neither a machine nor an editor. Within components, the feature groups (shell, editor, debugger, dialogs, and transfers) compose the generic controls, layout, and feedback groups, which read no desktop context; controls borrow only the shell's leaf toolbar glyphs.
+Help is composed into Venus dialogs and uses the reusable clipboard/transfer controls for code examples. Its source-transfer callback delegates to the existing workspace; Help owns neither a machine nor an editor. Within components, the feature groups (shell, editor, debugger, dialogs, and transfers) compose the generic controls, layout, feedback, and icon groups, which read no desktop context; controls draw their icons through the icon group rather than borrowing from a feature group.
 
 ### Module responsibilities
 
