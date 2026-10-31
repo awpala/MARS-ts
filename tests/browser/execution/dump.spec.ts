@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openDesktop, openStoredSources, stubSavePicker } from './openDesktop.js';
+import { openDesktop, openStoredSources, stubSavePicker } from '../harness/openDesktop.js';
 import { readFile } from 'node:fs/promises';
 
 const source = '.data\n.word 0x12345678, -1\n.text\nli $t0, 42\nli $v0, 10\nsyscall\n';
@@ -154,15 +154,15 @@ test('Ctrl+D opens Dump Memory from any focused surface only when a loaded progr
   const trigger = page.getByRole('button', { name: 'Dump Memory ...', exact: true });
   await trigger.hover();
   await expect(trigger).toHaveAccessibleDescription('Dump Memory ... Ctrl+D');
-  await expect(page.locator('.tooltip kbd')).toHaveText(['Ctrl', 'D']);
+  await expect(page.getByTestId('tooltip-content').getByTestId('shortcut-key')).toHaveText([
+    'Ctrl',
+    'D'
+  ]);
   await page.mouse.move(5, 200);
-  await page
-    .locator('.menubar summary')
-    .filter({ hasText: /^File$/ })
-    .click();
+  await page.getByTestId('menu-file-trigger').click();
   await expect(
     page
-      .locator('details[open]')
+      .getByTestId('menu-file-content')
       .getByRole('button', { name: 'Dump Memory ... Ctrl+D', exact: true })
   ).toBeEnabled();
   await page.keyboard.press('Escape');

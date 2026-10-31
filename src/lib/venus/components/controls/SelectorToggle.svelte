@@ -23,6 +23,8 @@
     tooltip?: string;
     /** Optional layout classes on the label; empty by default. */
     class?: string;
+    /** Optional stable test hook on the clickable label; defaults to selector-toggle. */
+    testId?: string;
   };
   let {
     label,
@@ -33,14 +35,15 @@
     'aria-describedby': description,
     attachment,
     tooltip,
-    class: className = ''
+    class: className = '',
+    testId = 'selector-toggle'
   }: Props = $props();
 </script>
 
 <!-- @component Reusable native selection box with clickable text and an optional themed tooltip. Supports caller bindings or change callbacks without desktop context; --selector-gap controls spacing. -->
 <Tooltip text={tooltip} keepOpenOnClick>
   {#snippet children(trigger, tooltipDescription)}
-    <label {@attach trigger} {@attach attachment} class={className}>
+    <label {@attach trigger} {@attach attachment} class={className} data-testid={testId}>
       <input
         type="checkbox"
         {checked}
@@ -52,7 +55,7 @@
           onchange?.(checked);
         }}
       />
-      <span>{label}</span>
+      <span data-testid="selector-label">{label}</span>
     </label>
   {/snippet}
 </Tooltip>

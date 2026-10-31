@@ -71,6 +71,7 @@
   ></textarea>
   {#if simulation.consoleInputPending && simulation.messageTab === 'Run I/O'}<form
       class="console-input"
+      data-testid="console-input"
       onsubmit={(event) => {
         event.preventDefault();
         simulation.completeInput(true);

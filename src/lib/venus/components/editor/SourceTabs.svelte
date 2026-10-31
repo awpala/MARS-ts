@@ -98,6 +98,7 @@
 >
   {#snippet tabControl(tab)}
     <div
+      data-testid="source-tab"
       class="source-tab"
       role="group"
       aria-label={tab.label}
@@ -131,6 +132,7 @@
         />
       {:else}
         <Button
+          data-testid="source-tab-name"
           class={[
             'source-name px-[7px] py-1 whitespace-nowrap',
             selected === tab.id && 'font-bold',

@@ -1,4 +1,15 @@
 {
+  // Keep the read-only Java oracle browsable without reporting its diagnostics.
+  // Red Hat Java requires Reload Window after this filter changes.
+  "java.diagnostic.filter": ["**/_legacy-app/**"],
+  "cSpell.ignorePaths": [
+    "package-lock.json",
+    "node_modules",
+    "vscode-extension",
+    ".vscode",
+    ".vscode-insiders",
+    "**/_legacy-app/**",
+  ],
   "cSpell.words": [
     "awpala",
     "backstep",
@@ -28,6 +39,8 @@
     "prerendering",
     "prerenders",
     "Sanderson",
+    "spim",
+    "SPIM",
     "syscall",
     "syscalls",
     "Vollmar",

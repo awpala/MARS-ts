@@ -17,7 +17,7 @@
       {#if index > 0}<span class="separator">/</span>{/if}
       {#each keys as key, keyIndex (key)}
         {#if keyIndex > 0}<span class="separator">+</span>{/if}
-        <kbd>{key}</kbd>
+        <kbd data-testid="shortcut-key">{key}</kbd>
       {/each}
     {/each}
   </span>

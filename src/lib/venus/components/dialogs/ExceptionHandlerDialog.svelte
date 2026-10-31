@@ -63,7 +63,10 @@
         onclick={() => {
           close();
           void workspace.openBundledSource(spimExceptionHandler.name);
-        }}>Open default <code class="font-mono font-bold">exceptions.s</code> in editor</Button
+        }}
+        >Open default <code class="font-mono font-bold" data-testid="exception-handler-filename"
+          >exceptions.s</code
+        > in editor</Button
       >
     </div>
     <p class="mt-2 text-xs">
@@ -111,7 +114,7 @@
       <fieldset>
         <legend>Source files stored in this browser</legend>
         <div
-          class="my-2.5 max-h-[300px] min-h-[120px] overflow-auto border border-[var(--theme-border,#94a3b8)] bg-[var(--theme-canvas,white)] p-2"
+          class="my-2.5 max-h-75 min-h-30 overflow-auto border border-(--theme-border,#94a3b8) bg-(--theme-canvas,white) p-2"
         >
           {#each files as file (file.name)}
             <RadioSelector

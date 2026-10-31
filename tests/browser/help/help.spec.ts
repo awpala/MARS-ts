@@ -1,5 +1,5 @@
 import { expect, test, type Route } from '@playwright/test';
-import { openDesktop, waitForDesktop } from './openDesktop.js';
+import { openDesktop, waitForDesktop } from '../harness/openDesktop.js';
 
 test('Help articles load on demand and a late response cannot replace the current article', async ({
   page
@@ -19,7 +19,7 @@ test('Help articles load on demand and a late response cannot replace the curren
   );
   await openDesktop(page);
   expect(requestedArticles).toEqual([]);
-  const helpMenu = page.locator('.menubar summary').filter({ hasText: /^Help$/ });
+  const helpMenu = page.getByTestId('menu-help-trigger');
   await helpMenu.click();
   await page.getByRole('button', { name: 'Introduction', exact: true }).click();
   const introduction = page.getByRole('dialog', { name: 'Introduction', exact: true });
@@ -50,7 +50,7 @@ test('a failed Help article displays an error and remains dismissible', async ({
     (route) => route.abort('failed')
   );
   await openDesktop(page);
-  const helpMenu = page.locator('.menubar summary').filter({ hasText: /^Help$/ });
+  const helpMenu = page.getByTestId('menu-help-trigger');
   await helpMenu.click();
   await page.getByRole('button', { name: 'Introduction', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Introduction', exact: true });
@@ -70,12 +70,16 @@ test('Help menu opens all eleven attributed articles and restores keyboard focus
   page
 }) => {
   await openDesktop(page);
-  const helpMenu = page.locator('.menubar summary').filter({ hasText: /^Help$/ });
+  const helpMenu = page.getByTestId('menu-help-trigger');
   await helpMenu.click();
-  const menu = page.locator('details[open] .menu');
+  const menu = page.getByTestId('menu-help-content');
   await expect(menu.getByRole('button').nth(0)).toHaveAccessibleName('Help F1');
   await expect(menu.getByRole('button').nth(1)).toHaveText('About MARS');
-  await expect(menu.locator('button:nth-child(2) + hr')).toHaveCount(1);
+  expect(
+    await menu
+      .getByTestId('menu-separator')
+      .evaluate((separator) => separator.previousElementSibling?.getAttribute('data-testid'))
+  ).toBe('menu-item-about');
   await helpMenu.click();
   const articles = [
     [
@@ -107,7 +111,10 @@ test('Help menu opens all eleven attributed articles and restores keyboard focus
   ];
   for (const [label, title, retainedText, markdownStem] of articles) {
     await helpMenu.click();
-    await page.locator('.menubar').getByRole('button', { name: label, exact: true }).click();
+    await page
+      .getByRole('navigation', { name: 'Application menus', exact: true })
+      .getByRole('button', { name: label, exact: true })
+      .click();
     const dialog = page.getByRole('dialog', { name: title, exact: true });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole('article')).toBeFocused();
@@ -121,7 +128,9 @@ test('Help menu opens all eleven attributed articles and restores keyboard focus
     );
     await expect(online).toHaveAttribute('target', '_blank');
     await expect(online).toHaveAttribute('rel', 'noopener noreferrer');
-    expect(await dialog.locator('.single-article').evaluate((body) => body.scrollTop)).toBe(0);
+    expect(await dialog.getByTestId('help-article-scroll').evaluate((body) => body.scrollTop)).toBe(
+      0
+    );
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
     await expect(helpMenu).toBeFocused();
@@ -209,10 +218,7 @@ test('F1 Help opens a tabbed browser on the overview, retains its tab, and leave
   await tab(topics, 'MARS').click();
   await expect(tab(mars, 'Debugging')).toHaveAttribute('aria-pressed', 'true');
   await page.keyboard.press('Escape');
-  await page
-    .locator('.menubar summary')
-    .filter({ hasText: /^Help$/ })
-    .click();
+  await page.getByTestId('menu-help-trigger').click();
   await page.getByRole('button', { name: 'Macros', exact: true }).click();
   const macros = page.getByRole('dialog', { name: 'Macros', exact: true });
   await expect(macros).toContainText('Mohammad Hossein Sekhavat');
@@ -280,10 +286,7 @@ test('Read Online follows browser selections and opens GitHub independently of t
   await dialog.getByRole('button', { name: 'Close', exact: true }).click();
   await expect(source).toBeEditable();
   await expect(source).toHaveValue('# keep working beside online Help');
-  await page
-    .locator('.menubar summary')
-    .filter({ hasText: /^Help$/ })
-    .click();
+  await page.getByTestId('menu-help-trigger').click();
   await page.getByRole('button', { name: 'About MARS', exact: true }).click();
   await expect(
     page
@@ -328,10 +331,7 @@ test('an open Help browser and its selection survive reload, while closed or sta
   await page.keyboard.press('F1');
   await expect(marsTopic('Settings')).toHaveAttribute('aria-pressed', 'true');
   await page.keyboard.press('Escape');
-  await page
-    .locator('.menubar summary')
-    .filter({ hasText: /^Help$/ })
-    .click();
+  await page.getByTestId('menu-help-trigger').click();
   await page.getByRole('button', { name: 'Macros', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Macros', exact: true })).toBeVisible();
   await page.reload();
@@ -343,16 +343,15 @@ test('syscall reference distinguishes implemented services from legacy contracts
   page
 }) => {
   await openDesktop(page);
-  await page
-    .locator('.menubar summary')
-    .filter({ hasText: /^Help$/ })
-    .click();
+  await page.getByTestId('menu-help-trigger').click();
   await page.getByRole('button', { name: 'Syscalls', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await expect(
     dialog.getByRole('list', { name: 'Syscall notes' }).getByRole('listitem')
   ).toHaveCount(8);
-  const table = dialog.getByRole('table').first();
+  const table = dialog
+    .getByRole('region', { name: 'Syscall service reference', exact: true })
+    .getByRole('table');
   await expect(
     table
       .getByRole('row')
@@ -407,7 +406,7 @@ test('syscall reference distinguishes implemented services from legacy contracts
   await dialog.getByRole('article').focus();
   await page.keyboard.press('Control+End');
   await expect
-    .poll(() => dialog.locator('.single-article').evaluate((body) => body.scrollTop))
+    .poll(() => dialog.getByTestId('help-article-scroll').evaluate((body) => body.scrollTop))
     .toBeGreaterThan(0);
   await expect(dialog.getByRole('link', { name: 'Read Online', exact: false })).toBeInViewport();
   await expect(dialog.getByRole('button', { name: 'Close dialog', exact: true })).toBeInViewport();
@@ -425,10 +424,7 @@ test('code controls copy exact text and open a new source without replacing an e
   await page.getByRole('button', { name: 'New', exact: true }).click();
   const existing = page.getByRole('textbox', { name: 'Source mips1.asm', exact: true });
   await existing.fill('# keep this source');
-  await page
-    .locator('.menubar summary')
-    .filter({ hasText: /^Help$/ })
-    .click();
+  await page.getByTestId('menu-help-trigger').click();
   await page.getByRole('button', { name: 'Exception Handlers', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Exception Handlers', exact: true });
   const source = await dialog.locator('pre').first().textContent();
@@ -460,10 +456,7 @@ test('every code block has controls and clipboard rejection shows recoverable fe
     });
   });
   for (let attempt = 0; attempt < 2; attempt++) {
-    await page
-      .locator('.menubar summary')
-      .filter({ hasText: /^Help$/ })
-      .click();
+    await page.getByTestId('menu-help-trigger').click();
     await page.getByRole('button', { name: 'Macros', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Macros', exact: true });
     await expect(dialog.locator('pre').first()).toBeVisible();
@@ -488,10 +481,7 @@ test('F1 overview and long articles remain usable in dark mode at a smaller view
   await page.keyboard.press('Escape');
   await page.setViewportSize({ width: 800, height: 600 });
   await page.getByRole('switch', { name: 'Dark theme', exact: true }).click();
-  await page
-    .locator('.menubar summary')
-    .filter({ hasText: /^Help$/ })
-    .click();
+  await page.getByTestId('menu-help-trigger').click();
   await page.getByRole('button', { name: 'Release History', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Release History', exact: true });
   await expect(dialog).toContainText(/historical/i);

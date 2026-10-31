@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openDesktop } from './openDesktop.js';
+import { openDesktop } from '../harness/openDesktop.js';
 
 test('shortcuts highlight only their matching enabled buttons', async ({ page }) => {
   await openDesktop(page);
@@ -57,10 +57,13 @@ test('repository link opens a new tab and releases mouse tooltip while preservin
   );
   await openDesktop(page);
   const link = page.getByRole('link', { name: 'MARS-ts on GitHub (opens in a new tab)' });
-  await expect(link.locator('.github-icon')).toHaveCSS('mask-image', /\/icons\/GitHub\.svg/);
+  await expect(link.getByTestId('mask-icon-github')).toHaveCSS(
+    'mask-image',
+    /\/icons\/GitHub\.svg/
+  );
   expect((await page.request.get('/icons/GitHub.svg')).ok()).toBe(true);
   const theme = page.getByRole('switch', { name: 'Dark theme' });
-  const tooltip = page.locator('.tooltip');
+  const tooltip = page.getByTestId('tooltip-content');
   const themeBounds = (await theme.boundingBox())!;
   const linkBounds = (await link.boundingBox())!;
   expect(linkBounds.x).toBeGreaterThan(themeBounds.x + themeBounds.width);
@@ -86,7 +89,7 @@ test('tooltips support disabled controls, hover, focus, dismissal, themes, and k
   page
 }) => {
   await openDesktop(page);
-  const tooltip = page.locator('.tooltip');
+  const tooltip = page.getByTestId('tooltip-content');
   const step = page.getByRole('button', { name: 'Step', exact: true });
   await expect(step).toBeDisabled();
   await step.hover();
@@ -99,7 +102,7 @@ test('tooltips support disabled controls, hover, focus, dismissal, themes, and k
       new PointerEvent('pointerleave', { relatedTarget: element.parentElement })
     );
     await Promise.resolve();
-    return document.querySelectorAll('.tooltip').length;
+    return document.querySelectorAll('[data-testid="tooltip-content"]').length;
   });
   expect(remaining).toBe(0);
   await page.mouse.move(5, 200);
@@ -121,24 +124,24 @@ test('tooltips support disabled controls, hover, focus, dismissal, themes, and k
   const create = page.getByRole('button', { name: 'New', exact: true });
   await create.focus();
   await expect(create).toHaveAccessibleDescription('New Alt/Option+N');
-  await expect(tooltip.locator('kbd')).toHaveText(['Alt/Option', 'N']);
+  await expect(tooltip.getByTestId('shortcut-key')).toHaveText(['Alt/Option', 'N']);
   await page.keyboard.press('Escape');
   await expect(tooltip).toBeHidden();
   await expect(create).toBeFocused();
 
-  await page
-    .locator('.menubar summary')
-    .filter({ hasText: /^File$/ })
-    .click();
+  await page.getByTestId('menu-file-trigger').click();
   const save = page
-    .locator('details[open]')
+    .getByTestId('menu-file-content')
     .getByRole('button', { name: 'Save Ctrl+S', exact: true });
-  await expect(save.locator('kbd')).toHaveText(['Ctrl', 'S']);
+  await expect(save.getByTestId('shortcut-key')).toHaveText(['Ctrl', 'S']);
   await page.keyboard.press('Escape');
   await page.getByRole('switch', { name: 'Dark theme' }).click();
   await create.hover();
   await expect(tooltip).toHaveCSS('background-color', 'rgb(52, 59, 50)');
-  await expect(tooltip.locator('kbd').first()).toHaveCSS('background-color', 'rgb(22, 30, 39)');
+  await expect(tooltip.getByTestId('shortcut-key').first()).toHaveCSS(
+    'background-color',
+    'rgb(22, 30, 39)'
+  );
 
   await page.setViewportSize({ width: 800, height: 600 });
   const theme = page.getByRole('switch', { name: 'Dark theme' });
@@ -215,11 +218,8 @@ test('file multiselect supports label clicks, keyboard deselection, and native s
       ])
     )
   );
-  await page
-    .locator('.menubar summary')
-    .filter({ hasText: /^File$/ })
-    .click();
-  await page.locator('details[open]').getByRole('button', { name: /^Open/ }).click();
+  await page.getByTestId('menu-file-trigger').click();
+  await page.getByTestId('menu-file-content').getByRole('button', { name: /^Open/ }).click();
   const dialog = page.getByRole('dialog', { name: 'Open', exact: true });
   const group = dialog.getByRole('group', { name: 'Source files stored in this browser' });
   const submit = dialog.getByRole('button', { name: 'Open', exact: true });
@@ -364,7 +364,7 @@ test('every defined shortcut cancels browser defaults across app surfaces, inclu
     const path = '/src/lib/venus/utils/commands/actions.ts';
     const metadata = (await import(
       /* @vite-ignore */ path
-    )) as typeof import('../../src/lib/venus/utils/commands/actions.js');
+    )) as typeof import('../../../src/lib/venus/utils/commands/actions.js');
     const actions = [
       ...metadata.fileActions,
       ...metadata.editActions,
@@ -375,7 +375,7 @@ test('every defined shortcut cancels browser defaults across app surfaces, inclu
     ];
     const input = document.createElement('input');
     document.querySelector('dialog[open]')!.append(input);
-    const targets = [document.body, document.querySelector('textarea')!, input];
+    const targets = [document.body, document.querySelector('[data-testid="source-input"]')!, input];
     const results: { shortcut: string; canceled: boolean }[] = [];
     for (const target of targets) {
       for (const action of actions) {
@@ -483,7 +483,7 @@ test('only toggle tooltips remain visible through pointer clicks until hover end
 
   const labels = page.getByRole('region', { name: 'Labels', exact: true });
   await labels
-    .locator('.labels-scroll')
+    .getByTestId('labels-scroll')
     .evaluate((element) => (element.scrollTop = element.scrollHeight));
   const data = labels.getByRole('checkbox', { name: 'Data', exact: true });
   await data.hover();

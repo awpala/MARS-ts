@@ -48,7 +48,7 @@
   --modal-body-overflow="hidden"
 >
   <div class="memory-settings">
-    <div class="configuration">
+    <div class="configuration" data-testid="memory-configuration-scroll">
       <fieldset>
         <legend>Configuration</legend>
         {#each choices as configuration (configuration.getConfigurationIdentifier())}

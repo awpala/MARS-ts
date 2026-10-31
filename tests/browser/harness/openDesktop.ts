@@ -14,9 +14,10 @@ export async function openDesktop(page: Page): Promise<void> {
 
 /** Wait for restoration and machine initialization after initial navigation or reload. */
 export async function waitForDesktop(page: Page): Promise<void> {
-  await expect(page.getByRole('button', { name: 'New', exact: true })).toBeEnabled({
+  await expect(page.getByTestId('desktop-controls')).toHaveAttribute('aria-busy', 'false', {
     timeout: 30000
   });
+  await expect(page.getByRole('button', { name: 'New', exact: true })).toBeEnabled();
 }
 
 /** Seed browser-local source records and open selected names (all by default) through the actual Open dialog. */

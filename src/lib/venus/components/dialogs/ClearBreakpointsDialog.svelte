@@ -15,7 +15,7 @@
 <!-- @component Clear all breakpoints confirmation; the desktop owns visibility, display preferences own the synced Keep showing this warning checkbox, and simulation owns the breakpoint list. -->
 <Modal title="Clear all breakpoints?" onclose={close}>
   <p class="my-2">
-    Remove all <strong>{count}</strong>
+    Remove all <strong data-testid="breakpoint-count">{count}</strong>
     {count === 1 ? 'breakpoint' : 'breakpoints'}?
   </p>
   <p class="my-2">To skip them during Go without removing them, use Toggle all breakpoints.</p>

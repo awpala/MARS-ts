@@ -1,11 +1,11 @@
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-import { openDesktop, openStoredSources, waitForDesktop } from './openDesktop.js';
-import { readArchive } from './archive.js';
+import { openDesktop, openStoredSources, waitForDesktop } from '../harness/openDesktop.js';
+import { readArchive } from '../harness/archive.js';
 
 const action = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
-const menu = (page: Page) => page.locator('.settings-menu');
-const settings = (page: Page) => page.locator('.menubar summary').filter({ hasText: /^Settings$/ });
+const menu = (page: Page) => page.getByTestId('menu-settings-content');
+const settings = (page: Page) => page.getByTestId('menu-settings-trigger');
 const memoryDialog = (page: Page) =>
   page.getByRole('dialog', { name: 'MIPS Memory Configuration' });
 
@@ -174,7 +174,7 @@ test('every Settings item has a themed description, including disabled settings 
 }) => {
   await openDesktop(page);
   await settings(page).click();
-  const items = menu(page).locator('label, button');
+  const items = menu(page).getByTestId(/^menu-item-/);
   expect(await items.count()).toBe(15);
   for (const item of await items.all()) {
     await item.hover();
@@ -276,7 +276,7 @@ async function chooseHandler(page: Page, name: string) {
   await browseDialog(page).getByRole('button', { name: 'Open', exact: true }).click();
 }
 
-test('exception handler selection and enablement persist independently across toggles and reloads', async ({
+test('exception handler modes follow enablement and an empty library cannot select a custom source', async ({
   page
 }) => {
   await openDesktop(page);
@@ -292,10 +292,13 @@ test('exception handler selection and enablement persist independently across to
     name: 'Use SPIM default exceptions handler',
     exact: true
   });
-  const custom = dialog.getByRole('radio', { name: 'Use a custom exception handler', exact: true });
+  const customOption = dialog.getByTestId('radio-selector').filter({
+    has: page.getByRole('radio', { name: 'Use a custom exception handler', exact: true })
+  });
+  const custom = customOption.getByRole('radio');
   await expect(spim).toBeDisabled();
   await expect(custom).toBeDisabled();
-  await expect(custom.locator('..')).toHaveCSS('opacity', '0.5');
+  await expect(customOption).toHaveCSS('opacity', '0.5');
   await setHandlerEnabled(page, true);
   await expect(spim).toBeEnabled();
   await expect(custom).toBeEnabled();
@@ -317,7 +320,12 @@ test('exception handler selection and enablement persist independently across to
   await page.keyboard.press('Escape');
   await expect(dialog).toBeVisible();
   await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+});
 
+test('exception handler browsing sorts saved sources and Cancel discards draft selections', async ({
+  page
+}) => {
+  await openDesktop(page);
   await action(page, 'New').click();
   await page.getByRole('textbox', { name: /^Source / }).fill('# never saved');
   await openStoredSources(
@@ -330,10 +338,17 @@ test('exception handler selection and enablement persist independently across to
     ['z.asm']
   );
   await openExceptionHandler(page);
+  const dialog = exceptionDialog(page);
+  const toggle = dialog.getByRole('switch', { name: 'Enable exception handler', exact: true });
+  const filename = dialog.getByRole('status', { name: 'Exception handler source' });
   await setHandlerEnabled(page, true);
   await dialog.getByRole('button', { name: 'Browse', exact: true }).click();
   await expect(browseDialog(page).getByRole('radio')).toHaveCount(3);
-  await expect(browseDialog(page).locator('label span')).toHaveText(['A.asm', 'a.asm', 'z.asm']);
+  await expect(browseDialog(page).getByTestId('radio-label')).toHaveText([
+    'A.asm',
+    'a.asm',
+    'z.asm'
+  ]);
   await browseDialog(page).getByRole('radio', { name: 'a.asm', exact: true }).check();
   await browseDialog(page).getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(filename).toHaveText('No file selected');
@@ -346,11 +361,33 @@ test('exception handler selection and enablement persist independently across to
   await openExceptionHandler(page);
   await expect(toggle).toHaveAttribute('aria-checked', 'false');
   await expect(filename).toHaveText('No file selected');
+});
+
+test('exception handler selection and enablement persist independently across toggles and reloads', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await openStoredSources(
+    page,
+    [
+      { name: 'z.asm', source: 'nop\n' },
+      { name: 'a.asm', source: '.ktext 0x80000180\nnop\n' }
+    ],
+    ['z.asm']
+  );
+  await openExceptionHandler(page);
+  const dialog = exceptionDialog(page);
+  const toggle = dialog.getByRole('switch', { name: 'Enable exception handler', exact: true });
+  const filename = dialog.getByRole('status', { name: 'Exception handler source' });
   await setHandlerEnabled(page, true);
   await chooseHandler(page, 'a.asm');
   await setHandlerEnabled(page, false);
-  await expect(spim).toBeDisabled();
-  await expect(custom).toBeDisabled();
+  await expect(
+    dialog.getByRole('radio', { name: 'Use SPIM default exceptions handler', exact: true })
+  ).toBeDisabled();
+  await expect(
+    dialog.getByRole('radio', { name: 'Use a custom exception handler', exact: true })
+  ).toBeDisabled();
   await expect(dialog.getByRole('button', { name: 'Browse', exact: true })).toBeDisabled();
   await dialog.getByRole('button', { name: 'OK', exact: true }).click();
   await page.reload();
@@ -374,6 +411,19 @@ test('exception handler selection and enablement persist independently across to
   await expect(filename).toHaveText('z.asm');
   await setHandlerEnabled(page, true);
   await expect(filename).toHaveText('z.asm');
+});
+
+test('exception handler enablement persists and closing its dialog discards an uncommitted toggle', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await openStoredSources(page, [{ name: 'z.asm', source: 'nop\n' }]);
+  await openExceptionHandler(page);
+  const dialog = exceptionDialog(page);
+  const toggle = dialog.getByRole('switch', { name: 'Enable exception handler', exact: true });
+  const filename = dialog.getByRole('status', { name: 'Exception handler source' });
+  await setHandlerEnabled(page, true);
+  await chooseHandler(page, 'z.asm');
   await dialog.getByRole('button', { name: 'OK', exact: true }).click();
   await page.reload();
   await waitForDesktop(page);
@@ -510,7 +560,7 @@ test('memory dialog centers configuration choices and keeps actions visible in s
   expect(Math.abs(right.y + right.height / 2 - (left.y + left.height / 2))).toBeLessThan(2);
   for (const name of ['Apply and Close', 'Apply', 'Cancel', 'Reset'])
     await expect(dialog.getByRole('button', { name, exact: true })).toBeInViewport({ ratio: 1 });
-  const scroller = dialog.locator('.configuration');
+  const scroller = dialog.getByTestId('memory-configuration-scroll');
   expect(await scroller.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(
     true
   );
@@ -545,10 +595,10 @@ test('toolbar settings shortcuts occupy their groups and the bundled SPIM handle
   await expect(display.getByRole('button').nth(5)).toHaveAccessibleName(
     'Display Data Segment values as ASCII'
   );
-  await display.getByRole('button').last().click();
+  await display.getByRole('button', { name: 'Memory Configuration ...', exact: true }).click();
   await expect(memoryDialog(page)).toBeVisible();
   await memoryDialog(page).getByRole('button', { name: 'Cancel', exact: true }).click();
-  await execution.getByRole('button').last().click();
+  await execution.getByRole('button', { name: 'Exception Handler ...', exact: true }).click();
   await setHandlerEnabled(page, true);
   await exceptionDialog(page)
     .getByRole('radio', { name: 'Use SPIM default exceptions handler', exact: true })
@@ -601,22 +651,25 @@ test('bundled handler opens locked, restores canonical text, and copies to an ed
   const canonical = await asset.text();
   expect(canonical).toContain('Copyright (c) 1990-2010, James R. Larus.');
   expect(canonical).toBe(
-    readFileSync(new URL('../../static/sources/exceptions.s', import.meta.url), 'utf8')
+    readFileSync(new URL('../../../static/sources/exceptions.s', import.meta.url), 'utf8')
   );
   await openExceptionHandler(page);
   const preview = exceptionDialog(page).getByRole('button', {
     name: 'Open default exceptions.s in editor',
     exact: true
   });
-  await expect(preview.locator('code')).toHaveText('exceptions.s');
-  await expect(preview.locator('code')).toHaveCSS('font-weight', '700');
-  await expect(preview.locator('code')).toHaveCSS('font-family', /monospace/);
+  await expect(preview.getByTestId('exception-handler-filename')).toHaveText('exceptions.s');
+  await expect(preview.getByTestId('exception-handler-filename')).toHaveCSS('font-weight', '700');
+  await expect(preview.getByTestId('exception-handler-filename')).toHaveCSS(
+    'font-family',
+    /monospace/
+  );
   await expect(preview).toBeEnabled();
   await preview.click();
   const referenceTab = action(page, '/SPIM:/exceptions.s (read-only)');
   const reference = page.getByRole('textbox', { name: 'Source /SPIM:/exceptions.s', exact: true });
   await expect(referenceTab).toHaveAttribute('aria-pressed', 'true');
-  await expect(referenceTab.locator('[style*="Lock.svg"]')).toHaveCount(1);
+  await expect(referenceTab.getByTestId('mask-icon-lock')).toHaveCount(1);
   await expect(reference).toHaveAttribute('readonly', '');
   await expect(reference).toHaveValue(canonical);
   await expect(

@@ -1,5 +1,11 @@
+import { instructionRow, memoryCell, labelRow } from '../harness/locators.js';
 import { expect, test } from '@playwright/test';
-import { editBreakpoints, openDesktop, openStoredSources, waitForDesktop } from './openDesktop.js';
+import {
+  editBreakpoints,
+  openDesktop,
+  openStoredSources,
+  waitForDesktop
+} from '../harness/openDesktop.js';
 
 const action = (page: import('@playwright/test').Page, name: string) =>
   page.getByRole('button', { name, exact: true });
@@ -30,11 +36,11 @@ test('reload restores Edit selection independently of the exact loaded machine, 
   await page.getByRole('textbox', { name: 'Source editing.asm', exact: true }).press('Control+End');
   await page.reload();
   await waitForDesktop(page);
-  await expect(page.locator('footer > span').first()).toHaveText('Editing: editing.asm');
+  await expect(page.getByTestId('footer-source')).toHaveText('Editing: editing.asm');
   await expect(page.getByLabel('Execution status')).toHaveCount(0);
   await expect(page.getByLabel('Run I/O', { exact: true })).toHaveValue('42');
   await action(page, 'Execute').click();
-  await expect(page.locator('footer > span').first()).toHaveText('Loaded: loaded.asm');
+  await expect(page.getByTestId('footer-source')).toHaveText('Loaded: loaded.asm');
   await expect(page.getByLabel('Execution status')).toHaveText('Status: paused');
   await expect(page.getByLabel('$t0 value', { exact: true })).toHaveValue('0x00000007');
   await expect(page.getByLabel('pc value', { exact: true })).toHaveValue('0x00400010');
@@ -53,7 +59,7 @@ test('reload restores Edit selection independently of the exact loaded machine, 
   const messages = await page.getByLabel('Mars Messages', { exact: true }).inputValue();
   await page.reload();
   await waitForDesktop(page);
-  await expect(page.locator('footer > span').first()).toHaveText('Loaded: loaded.asm');
+  await expect(page.getByTestId('footer-source')).toHaveText('Loaded: loaded.asm');
   await expect(page.getByLabel('Execution status')).toHaveText('Status: terminated');
   await expect(action(page, 'Go')).toBeDisabled();
   await expect(page.getByLabel('Mars Messages', { exact: true })).toHaveValue(messages);
@@ -96,11 +102,11 @@ test('reload retains assembly errors, console diagnostics, source caret, and edi
   const messages = await page.getByLabel('Mars Messages', { exact: true }).inputValue();
   await page.reload();
   await waitForDesktop(page);
-  await expect(page.locator('footer > span').first()).toHaveText('Editing: mips1.asm');
+  await expect(page.getByTestId('footer-source')).toHaveText('Editing: mips1.asm');
   await expect(page.getByLabel('Execution status')).toHaveText('Status: error');
   await expect(page.getByLabel('Mars Messages', { exact: true })).toHaveValue(messages);
   await source.focus();
-  await expect(page.locator('footer')).toContainText('Line 1, Column 20');
+  await expect(page.getByTestId('desktop-footer')).toContainText('Line 1, Column 20');
   await action(page, 'Undo').click();
   await expect(source).toHaveValue('');
   await expect(page.getByLabel('Execution status')).toHaveCount(0);
@@ -136,24 +142,21 @@ test('localStorage retains label selection with the loaded program across Edit s
   await action(page, 'Edit').click();
   await page.reload();
   await waitForDesktop(page);
-  await expect(page.locator('footer > span').first()).toHaveText('Editing: editing.asm');
+  await expect(page.getByTestId('footer-source')).toHaveText('Editing: editing.asm');
   await action(page, 'Execute').click();
-  await expect(page.locator('footer > span').first()).toHaveText('Loaded: loaded.asm');
-  await expect(selected.locator('xpath=ancestor::tr')).toHaveAttribute('data-selected', 'true');
-  const memory = page.getByLabel('Memory 0x00400004', { exact: true });
-  await expect(memory.locator('..')).toHaveAttribute('data-selected', 'true');
-  const row = page
-    .getByLabel('Breakpoint 0x00400004', { exact: true })
-    .locator('xpath=ancestor::tr');
+  await expect(page.getByTestId('footer-source')).toHaveText('Loaded: loaded.asm');
+  await expect(labelRow(labels, 'selected')).toHaveAttribute('data-selected', 'true');
+  await expect(memoryCell(page, '0x00400004')).toHaveAttribute('data-selected', 'true');
+  const row = instructionRow(page, '0x00400004');
   await expect(row).toHaveAttribute('data-selected', 'true');
-  await selected.locator('xpath=ancestor::tr').getByRole('button').nth(1).click();
+  await labelRow(labels, 'selected').getByTestId('label-address').click();
   await expect.poll(stored).toBeNull();
   await page.reload();
   await waitForDesktop(page);
   await expect(labels.locator('[data-selected="true"]')).toHaveCount(0);
   await selected.click();
   await action(page, 'Assemble').click();
-  await expect(page.locator('footer > span').first()).toHaveText('Loaded: editing.asm');
+  await expect(page.getByTestId('footer-source')).toHaveText('Loaded: editing.asm');
   await expect(labels.locator('[data-selected="true"]')).toHaveCount(0);
   await expect.poll(stored).toBeNull();
 });
@@ -183,10 +186,7 @@ test('global label selection restores and invalid stored label identity leaves t
   await page.reload();
   await waitForDesktop(page);
   await expect(label).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByLabel('Memory 0x10010000', { exact: true }).locator('..')).toHaveAttribute(
-    'data-selected',
-    'true'
-  );
+  await expect(memoryCell(page, '0x10010000')).toHaveAttribute('data-selected', 'true');
   await page.evaluate(() => {
     const record = JSON.parse(localStorage.getItem('mars-ts:desktop-session:v1')!);
     record.execution.labelSelection.name = 'missing';

@@ -34,7 +34,7 @@
 </script>
 
 <!-- @component Generic labeled range control. Native keyboard input, disabled state, and events pass through; value formatting and persistence belong to the caller. -->
-<label class={className}>
+<label class={className} data-testid="slider-label">
   {label}{valueText ? ` ${valueText}` : ''}
   <input
     {...attributes}

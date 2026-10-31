@@ -61,7 +61,13 @@
     --modal-body-overflow="hidden"
   >
     <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-    <div class="single-article" role="region" aria-label={desktop.help.title} tabindex="0">
+    <div
+      class="single-article"
+      role="region"
+      aria-label={desktop.help.title}
+      tabindex="0"
+      data-testid="help-article-scroll"
+    >
       <HelpArticle article={desktop.help} canOpen={!simulation.running} {onopen} />
     </div>
     {@render actions(desktop.help)}

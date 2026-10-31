@@ -29,23 +29,23 @@ Under **Application → Configuration → Git Source**, confirm repository `awpa
 
 Open **Settings → General** and maintain the **Build pipeline** and **Networking** cards using the following configuration reference. Older layouts place General under Configuration.
 
-| Field | Value |
-| --- | --- |
-| Build Pack / Build strategy | `Nixpacks` |
-| Base Directory | `/` |
-| Site type / Output type | `Static` / `Static site`; in older layouts enable **Is it a static site?** |
-| SPA option, if present | Disabled |
-| Publish Directory | `/build` |
-| Install Command | `node --version && npm ci --include=dev` |
-| Build Command | `npm run build` |
-| Start Command | Empty; the static server owns startup |
-| Static server | Nginx |
-| Custom Nginx configuration | Complete `server { ... }` configuration below; replaces `/etc/nginx/conf.d/default.conf` |
-| Ports Exposes | `80` |
-| Port Mappings | Empty |
-| HTTP Basic Authentication / Authentication | Disabled / `None` |
+| Field                                      | Value                                                                                    |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| Build Pack / Build strategy                | `Nixpacks`                                                                               |
+| Base Directory                             | `/`                                                                                      |
+| Site type / Output type                    | `Static` / `Static site`; in older layouts enable **Is it a static site?**               |
+| SPA option, if present                     | Disabled                                                                                 |
+| Publish Directory                          | `/build`                                                                                 |
+| Install Command                            | `node --version && npm ci --include=dev`                                                 |
+| Build Command                              | `npm run build`                                                                          |
+| Start Command                              | Empty; the static server owns startup                                                    |
+| Static server                              | Nginx                                                                                    |
+| Custom Nginx configuration                 | Complete `server { ... }` configuration below; replaces `/etc/nginx/conf.d/default.conf` |
+| Ports Exposes                              | `80`                                                                                     |
+| Port Mappings                              | Empty                                                                                    |
+| HTTP Basic Authentication / Authentication | Disabled / `None`                                                                        |
 
-Save and reload the page to confirm the settings persisted. Coolify's [Nixpacks deployment guide](https://coolify.io/docs/applications/builds/nixpacks/deploy) describes static output and the internal Nginx port. The standalone **Static** build pack serves files already in Git; this repository needs the Node build first. Local development/preview remains on `6277`, and automated browser testing remains on `6278`.
+Save and reload the page to confirm the settings persisted. Coolify's [Nixpacks deployment guide](https://coolify.io/docs/applications/builds/nixpacks/deploy) describes static output and the internal Nginx port. The standalone **Static** build pack serves files already in Git; this repository needs the Node build first. Local development/preview remains on `6277`, and automated browser testing uses isolated group servers on available harness-allocated ports starting at `6278`.
 
 The [package manifest](../../package.json) requires Node 24. Keep development dependencies during installation because they include the compiler and static adapter. The install command prints the resolved Node version into the build log. Verify that it is Node 24; if needed, set `NIXPACKS_NODE_VERSION=24` as a build-time variable and rebuild. An installed Nixpacks version/archive that cannot supply Node 24 must be corrected before release; do not relax the project's engine requirement. See [Coolify's Node version selection](https://coolify.io/docs/applications/builds/nixpacks/node-versioning).
 
@@ -154,7 +154,7 @@ MARS_VALIDATION=1 run-checks
 npm run test:browser
 ```
 
-Require the harness, documentation, legacy oracle, and app tiers to pass. Install browser prerequisites with `npm run test:browser:install` if needed. Browser tests use `6278`; leave `6277` available for human review. These commands verify source and the isolated static build, not Coolify's generated image. Current CI runs the aggregate gates but does not run the Playwright suite or a production-container HTTP test.
+Require the harness, documentation, legacy oracle, and app tiers to pass. Install browser prerequisites with `npm run test:browser:install` if needed. Browser tests allocate isolated group-server ports starting at `6278`; leave `6277` exclusively for human review. These commands verify source and the isolated static build, not Coolify's generated image. CI runs the aggregate gates and a separate semantic-group Playwright workflow under the [documented trigger policy](../agents/operations.md#gates); it does not perform a production-container HTTP test.
 
 Ordinary application releases retain the current domain and DNS. When moving servers or changing DNS, update the `mars-ide` record in the **DNS provider's dashboard for `portfolio-projects.dev`** using the server's public address from **Coolify → Servers** or the server provider. Publish an AAAA record only when that server's IPv6 routing and proxy are configured. Keep public ports `80` and `443` routed to the Coolify proxy for this hostname.
 
@@ -196,16 +196,16 @@ curl --connect-timeout 10 --max-time 30 -I https://mars-ide.portfolio-projects.d
 curl --connect-timeout 10 --max-time 30 -i https://mars-ide.portfolio-projects.dev/missing-page/
 ```
 
-| Request | Required result |
-| --- | --- |
-| HTTPS `/` | HTTP `200`, MARS HTML with one canonical link to `https://mars-ide.portfolio-projects.dev/`, valid certificate for this hostname |
-| HTTP `/` | Redirect to the HTTPS origin, without an internal port or hostname |
-| `/MARSlicense.txt` | HTTP `200`, the bundled Pete Sanderson and Kenneth Vollmar license text |
-| `/llms.txt` | HTTP `200`, plain-text MARS agent guidance matching the shipped asset; cache revalidation |
-| `/robots.txt` | HTTP `200`, plain-text crawler policy allowing all paths and matching the shipped asset; cache revalidation |
-| `/_app/version.json` | HTTP `200`, JSON with cache revalidation |
-| `/_app/immutable/missing-chunk.js` | HTTP `404`, no year-long immutable cache policy, no HTML fallback |
-| `/missing-page/` | HTTP `404`; no successful SPA fallback to the IDE |
+| Request                            | Required result                                                                                                                  |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| HTTPS `/`                          | HTTP `200`, MARS HTML with one canonical link to `https://mars-ide.portfolio-projects.dev/`, valid certificate for this hostname |
+| HTTP `/`                           | Redirect to the HTTPS origin, without an internal port or hostname                                                               |
+| `/MARSlicense.txt`                 | HTTP `200`, the bundled Pete Sanderson and Kenneth Vollmar license text                                                          |
+| `/llms.txt`                        | HTTP `200`, plain-text MARS agent guidance matching the shipped asset; cache revalidation                                        |
+| `/robots.txt`                      | HTTP `200`, plain-text crawler policy allowing all paths and matching the shipped asset; cache revalidation                      |
+| `/_app/version.json`               | HTTP `200`, JSON with cache revalidation                                                                                         |
+| `/_app/immutable/missing-chunk.js` | HTTP `404`, no year-long immutable cache policy, no HTML fallback                                                                |
+| `/missing-page/`                   | HTTP `404`; no successful SPA fallback to the IDE                                                                                |
 
 The current application has only the root route. Do not copy the calculator's nested-route, sitemap, or `/healthz` checks. If the generated server returns the IDE for unknown paths, confirm **Static** rather than **SPA** mode and correct the generated Nginx configuration before accepting the release. Custom Nginx changes require a rebuild.
 
@@ -256,17 +256,17 @@ Coolify's [rollback documentation](https://coolify.io/docs/applications/deployme
 
 ## Diagnose a failed step
 
-| Symptom | Where to investigate |
-| --- | --- |
-| Repository absent or checkout fails | **Sources → corresponding GitHub App:** verify installation access to `awpala/MARS-ts`; **Git Source:** verify App, repository, branch, and commit. |
-| No deployment after a matching push | **Advanced:** Auto Deploy; **Git Source:** `main` and `HEAD`; **General:** Watch Paths; **GitHub App:** recent webhook deliveries and endpoint reachability. |
-| Wrong Node version or unavailable Node package | Inspect the Nixpacks plan and install log; check the manifest and build-time version override. Resolve builder/archive support for Node 24. |
-| Missing SvelteKit, Vite, or Tailwind during build | Confirm `npm ci --include=dev`, the root Base Directory, and the committed lockfile. Do not replace `npm ci` with `npm install`. |
-| Missing `build/` | Confirm `npm run build`, Publish Directory `/build`, and absence of `MARS_VALIDATION=1`. Read the first build error. |
+| Symptom                                                                    | Where to investigate                                                                                                                                                                                          |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Repository absent or checkout fails                                        | **Sources → corresponding GitHub App:** verify installation access to `awpala/MARS-ts`; **Git Source:** verify App, repository, branch, and commit.                                                           |
+| No deployment after a matching push                                        | **Advanced:** Auto Deploy; **Git Source:** `main` and `HEAD`; **General:** Watch Paths; **GitHub App:** recent webhook deliveries and endpoint reachability.                                                  |
+| Wrong Node version or unavailable Node package                             | Inspect the Nixpacks plan and install log; check the manifest and build-time version override. Resolve builder/archive support for Node 24.                                                                   |
+| Missing SvelteKit, Vite, or Tailwind during build                          | Confirm `npm ci --include=dev`, the root Base Directory, and the committed lockfile. Do not replace `npm ci` with `npm install`.                                                                              |
+| Missing `build/`                                                           | Confirm `npm run build`, Publish Directory `/build`, and absence of `MARS_VALIDATION=1`. Read the first build error.                                                                                          |
 | Nginx reports `"location" directive is not allowed here` in `default.conf` | Replace Custom Nginx configuration with the complete `server { ... }` example in step 2, save, and rebuild/redeploy. The field replaces the entire file; cache fragments pasted at its top level are invalid. |
-| Default page or proxy `502` | Confirm static output, publish directory, domain target port `80`, runtime logs, and health. Local port `6277` is not the production target. |
-| Unhealthy container or proxy `404` | Test `/` inside the container with `curl` or `wget`; check health configuration, published `index.html`, and domain routing. |
-| Certificate error or wrong site | Check A/AAAA, effective CAA policy, server ingress, exact hostname, duplicate domain assignments, and proxy certificate logs. |
-| HTML loads but the IDE is blank | Inspect failed assets and browser errors; confirm the deployed output includes `/_app/` assets and there is no stale HTML/cache mismatch. |
-| Saved sources appear missing | Confirm the exact HTTPS origin and browser profile. Browser data is not stored in Coolify; import an exported copy from the previous origin. |
-| Failed Verify after publication | Inspect the deployed SHA and CI failure. Pause Auto Deploy and use step 8 if the published revision is unsuitable. |
+| Default page or proxy `502`                                                | Confirm static output, publish directory, domain target port `80`, runtime logs, and health. Local port `6277` is not the production target.                                                                  |
+| Unhealthy container or proxy `404`                                         | Test `/` inside the container with `curl` or `wget`; check health configuration, published `index.html`, and domain routing.                                                                                  |
+| Certificate error or wrong site                                            | Check A/AAAA, effective CAA policy, server ingress, exact hostname, duplicate domain assignments, and proxy certificate logs.                                                                                 |
+| HTML loads but the IDE is blank                                            | Inspect failed assets and browser errors; confirm the deployed output includes `/_app/` assets and there is no stale HTML/cache mismatch.                                                                     |
+| Saved sources appear missing                                               | Confirm the exact HTTPS origin and browser profile. Browser data is not stored in Coolify; import an exported copy from the previous origin.                                                                  |
+| Failed Verify after publication                                            | Inspect the deployed SHA and CI failure. Pause Auto Deploy and use step 8 if the published revision is unsuitable.                                                                                            |

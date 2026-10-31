@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { openDesktop, waitForDesktop } from './openDesktop.js';
+import { openDesktop, waitForDesktop } from '../harness/openDesktop.js';
 
 const name = 'Program arguments provided to MIPS program';
 const action = (page: Page, label: string) =>
@@ -7,7 +7,7 @@ const action = (page: Page, label: string) =>
 const args = (page: Page) => page.getByRole('textbox', { name: 'Program Arguments:', exact: true });
 const register = (page: Page, label: string) =>
   page.getByRole('textbox', { name: `${label} value`, exact: true });
-const settings = (page: Page) => page.locator('.menubar summary').filter({ hasText: /^Settings$/ });
+const settings = (page: Page) => page.getByTestId('menu-settings-trigger');
 const assembled = (page: Page) =>
   expect(page.getByLabel('Execution status')).toHaveText('Status: assembled');
 
@@ -31,7 +31,7 @@ test('Args shares its persisted setting with the menu and adds a fixed input row
   await source(page, program);
   await expect(args(page)).toHaveCount(0);
   await settings(page).click();
-  const menu = page.locator('.settings-menu');
+  const menu = page.getByTestId('menu-settings-content');
   await expect(menu.getByRole('checkbox').nth(1)).toHaveAccessibleName(name);
   await menu.getByRole('checkbox', { name, exact: true }).check();
   await settings(page).click();
@@ -40,7 +40,7 @@ test('Args shares its persisted setting with the menu and adds a fixed input row
   const text = page.getByRole('region', { name: 'Text Segment', exact: true });
   const heading = (await text.getByRole('heading', { name: 'Text Segment' }).boundingBox())!;
   const input = (await args(page).boundingBox())!;
-  const table = (await text.locator('thead').boundingBox())!;
+  const table = (await text.getByTestId('machine-table-header').boundingBox())!;
   expect(input.y).toBeGreaterThanOrEqual(heading.y + heading.height);
   expect(input.y + input.height).toBeLessThanOrEqual(table.y);
   expect(input.width).toBeLessThan((await text.boundingBox())!.width / 2);
@@ -158,7 +158,7 @@ test('Args toggle is disabled while running and the draft survives pane changes'
   await expect(action(page, name)).toBeDisabled();
   await settings(page).click();
   await expect(
-    page.locator('.settings-menu').getByRole('checkbox', { name, exact: true })
+    page.getByTestId('menu-settings-content').getByRole('checkbox', { name, exact: true })
   ).toBeDisabled();
   await settings(page).click();
   await args(page).fill('next run');

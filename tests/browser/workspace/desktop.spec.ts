@@ -1,4 +1,5 @@
-import { deflatedArchive, readArchive } from './archive.js';
+import { instructionRow, expectButtonSequence } from '../harness/locators.js';
+import { deflatedArchive, readArchive } from '../harness/archive.js';
 import {
   losePageFocus,
   openDesktop,
@@ -7,7 +8,7 @@ import {
   restorePageFocus,
   stubSavePicker,
   waitForDesktop
-} from './openDesktop.js';
+} from '../harness/openDesktop.js';
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
@@ -71,7 +72,7 @@ test('current line highlight follows the caret and persists its toggle', async (
   const toggle = page.getByRole('button', { name: 'Highlight current line' });
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
   await source.fill('first\nsecond\nthird');
-  const highlight = page.locator('.current-line');
+  const highlight = page.getByTestId('editor-current-line');
   await expect(highlight).toBeVisible();
   await source.focus();
   await source.press('Control+Home');
@@ -97,10 +98,7 @@ test('current line highlight follows the caret and persists its toggle', async (
 
 test('About MARS opens the bundled unchanged license in a new tab', async ({ page }) => {
   await openDesktop(page);
-  await page
-    .locator('.menubar summary')
-    .filter({ hasText: /^Help$/ })
-    .click();
+  await page.getByTestId('menu-help-trigger').click();
   await page.getByRole('button', { name: 'About MARS', exact: true }).click();
   const about = page.getByRole('dialog', { name: 'About MARS', exact: true });
   const popup = page.waitForEvent('popup');
@@ -122,7 +120,7 @@ test('source hover shows instruction syntax and documentation without interferin
   const source = page.getByRole('textbox', { name: 'Source mips1.asm', exact: true });
   const program = '# li comment\n.asciiz "la"\nli $t0, 42\n\tla $t1, label\nadd $t0, $t1, $t2\n';
   await source.fill(program);
-  const layer = page.locator('.syntax-layer');
+  const layer = page.getByTestId('editor-syntax');
   const tooltip = page.getByRole('tooltip');
   const hoverToken = async (text: string) => {
     await page.mouse.move(5, 5);
@@ -215,26 +213,29 @@ test('working display settings and run speed survive reload', async ({ page }) =
   await expect(page.getByRole('slider', { name: 'Run speed' })).toHaveCount(0);
   await page.getByRole('button', { name: 'New', exact: true }).click();
   await page.getByRole('textbox', { name: 'Source mips1.asm', exact: true }).fill('.text\nmain:\n');
-  const settings = page.locator('.menubar summary').filter({ hasText: /^Settings$/ });
+  const settings = page.getByTestId('menu-settings-trigger');
   await settings.click();
   await expect(page.getByRole('button', { name: 'Editor ...', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Highlighting ...', exact: true })).toHaveCount(0);
   await expect(
     page.getByRole('checkbox', { name: 'Assemble all open files in editor', exact: true })
   ).toHaveCount(0);
-  await expect(page.locator('.settings-menu').getByRole('separator')).toHaveCount(3);
+  await expect(page.getByTestId('menu-settings-content').getByRole('separator')).toHaveCount(3);
   for (const label of [
     'Values displayed in hexadecimal',
     'Prompt to clear all breakpoints',
     'Self-modifying code'
   ]) {
-    const item = page.locator('.settings-menu label').filter({ hasText: label });
+    const item = page
+      .getByTestId('menu-settings-content')
+      .getByTestId(/^menu-item-/)
+      .filter({ has: page.getByRole('checkbox', { name: label, exact: true }) });
     expect(await item.evaluate((element) => element.nextElementSibling?.tagName)).toBe('HR');
   }
   await expect(
     page.getByRole('button', { name: 'Assemble all files in directory', exact: true })
   ).toHaveCount(0);
-  const menu = page.locator('.settings-menu');
+  const menu = page.getByTestId('menu-settings-content');
   const toggles = page.getByRole('group', { name: 'Display settings', exact: true });
   const sharedLabels = [
     'Show Labels Window',
@@ -244,7 +245,14 @@ test('working display settings and run speed survive reload', async ({ page }) =
     'Values displayed in hexadecimal'
   ];
   expect(
-    (await menu.locator('label').allTextContents()).slice(0, 5).map((label) => label.trim())
+    (
+      await menu
+        .getByTestId(/^menu-item-/)
+        .filter({ has: page.getByRole('checkbox') })
+        .allTextContents()
+    )
+      .slice(0, 5)
+      .map((label) => label.trim())
   ).toEqual([
     sharedLabels[0],
     sharedLabels[1],
@@ -264,9 +272,7 @@ test('working display settings and run speed survive reload', async ({ page }) =
   await expect(menu.getByRole('checkbox', { name: 'Show Labels Window' })).toBeChecked();
   await settings.click();
   await expect(toggles.getByRole('button')).toHaveCount(7);
-  const editing = page.locator('.toolbar .toolgroup').filter({
-    has: page.getByRole('button', { name: 'Undo', exact: true })
-  });
+  const editing = page.getByRole('group', { name: 'Editing actions', exact: true });
   const lines = editing.getByRole('button', { name: 'Show line numbers', exact: true });
   await expect(editing.getByRole('button').last()).toHaveAccessibleName('Highlight current line');
   await lines.press('Shift+Tab');
@@ -297,12 +303,16 @@ test('working display settings and run speed survive reload', async ({ page }) =
   const groupBox = (await toggles.boundingBox())!;
   const helpBox = (await page.getByRole('button', { name: 'Help', exact: true }).boundingBox())!;
   expect(groupBox.x + groupBox.width).toBeLessThanOrEqual(helpBox.x);
-  await expect(page.locator('.line-numbers')).toHaveCount(0);
+  await expect(page.getByTestId('editor-line-numbers')).toHaveCount(0);
   await page.getByRole('button', { name: 'Execute', exact: true }).click();
   const slider = page.getByRole('slider');
-  await expect(page.locator('.speed')).toHaveText('Run speed at max (no interaction)');
+  await expect(page.getByTestId('run-speed-controls').getByTestId('slider-label')).toHaveText(
+    'Run speed at max (no interaction)'
+  );
   await slider.fill('20');
-  await expect(page.locator('.speed')).toHaveText('Run speed 15 inst/sec');
+  await expect(page.getByTestId('run-speed-controls').getByTestId('slider-label')).toHaveText(
+    'Run speed 15 inst/sec'
+  );
   await page.getByRole('button', { name: 'Edit', exact: true }).click();
   await expect(slider).toHaveCount(0);
   await page.getByRole('button', { name: 'Execute', exact: true }).click();
@@ -390,7 +400,11 @@ test('Coproc 1 condition flags sit below their caption in control-number pairs',
   for (let index = 0; index < 8; index++) {
     const control = page.getByRole('checkbox', { name: `Condition flag ${index}`, exact: true });
     const checkbox = (await control.boundingBox())!;
-    const number = (await control.locator('..').locator('span').boundingBox())!;
+    const number = (await page
+      .getByTestId('selector-toggle')
+      .filter({ has: control })
+      .getByTestId('selector-label')
+      .boundingBox())!;
     expect(checkbox.y).toBeGreaterThanOrEqual(caption.y + caption.height);
     expect(number.x).toBeGreaterThan(checkbox.x);
     expect(Math.abs(number.y - checkbox.y)).toBeLessThan(6);
@@ -417,7 +431,10 @@ test('launches the desktop directly, renders original assets, and edits real ses
   await expect(page.getByRole('heading', { name: 'Text Segment' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Data Segment' })).toBeVisible();
   await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /favicon\.ico$/);
-  for (const image of await page.locator('.toolbar img').all()) {
+  for (const image of await page
+    .getByLabel('Toolbar', { exact: true })
+    .getByTestId('button-image')
+    .all()) {
     expect(
       await image.evaluate((element) => (element as HTMLImageElement).naturalWidth)
     ).toBeGreaterThan(0);
@@ -500,11 +517,7 @@ test('Close All confirms from the toolbar or File menu before resolving every bu
   ]);
   const toolbar = page.getByLabel('Toolbar', { exact: true });
   const closeAll = toolbar.getByRole('button', { name: 'Close All', exact: true });
-  await expect(
-    toolbar
-      .getByRole('button', { name: 'Open ...', exact: true })
-      .locator('xpath=following-sibling::button[1]')
-  ).toHaveAttribute('aria-label', 'Close All');
+  await expectButtonSequence(toolbar, ['Open ...', 'Close All']);
   await page.getByRole('textbox', { name: 'Source two.asm', exact: true }).fill('two changed\n');
   await closeAll.click();
   const confirm = page.getByRole('dialog', { name: 'Close all files?', exact: true });
@@ -516,12 +529,9 @@ test('Close All confirms from the toolbar or File menu before resolving every bu
   await expect(page.getByRole('textbox', { name: 'Source two.asm', exact: true })).toHaveValue(
     'two changed\n'
   );
+  await page.getByTestId('menu-file-trigger').click();
   await page
-    .locator('.menubar summary')
-    .filter({ hasText: /^File$/ })
-    .click();
-  await page
-    .locator('.menubar')
+    .getByRole('navigation', { name: 'Application menus', exact: true })
     .getByRole('button', { name: /^Close All/ })
     .click();
   await confirm.getByRole('button', { name: 'Close All', exact: true }).click();
@@ -554,7 +564,7 @@ test('Alt/Option+Shift+W asks to close all files through the same confirmation',
   await closeAll.hover();
   await expect(closeAll).toHaveAccessibleDescription(/Alt\/Option\+Shift\+W/);
   // The label and its keycaps fit on one line instead of the label splitting across lines.
-  const tooltip = page.getByRole('tooltip').locator('.tooltip');
+  const tooltip = page.getByRole('tooltip').getByTestId('tooltip-content');
   expect(
     await tooltip.evaluate((element) => {
       const [label, keys] = [...element.children] as HTMLElement[];
@@ -602,14 +612,12 @@ test('Alt/Option+Shift+W asks to close all files through the same confirmation',
 test('menus dismiss outside and retain usable actions inside', async ({ page }) => {
   await openDesktop(page);
   await expect(page.getByRole('button', { name: 'New', exact: true })).toBeEnabled();
-  const file = page
-    .locator('.menubar details')
-    .filter({ has: page.locator('summary').filter({ hasText: /^File$/ }) });
-  await file.locator('summary').click();
+  const file = page.getByTestId('menu-file');
+  await file.getByTestId('menu-file-trigger').click();
   await expect(file).toHaveAttribute('open', '');
   await page.getByRole('button', { name: 'Coproc 0', exact: true }).click();
   await expect(file).not.toHaveAttribute('open', '');
-  await file.locator('summary').click();
+  await file.getByTestId('menu-file-trigger').click();
   await file.getByRole('button', { name: /^New/ }).click();
   await expect(page.getByRole('textbox', { name: 'Source mips1.asm', exact: true })).toBeVisible();
 });
@@ -618,7 +626,7 @@ test('register width adjusts horizontally without changing the panel height', as
   await openDesktop(page);
   await expect(page.getByRole('button', { name: 'New', exact: true })).toBeEnabled();
   const divider = page.getByRole('separator', { name: 'Register panel width' });
-  const panel = page.locator('.register-pane');
+  const panel = page.getByRole('complementary', { name: 'Registers', exact: true });
   const before = (await panel.boundingBox())!;
   const handle = (await divider.boundingBox())!;
   await page.mouse.move(handle.x + handle.width / 2, handle.y + 100);
@@ -643,7 +651,7 @@ test('source highlighting follows edits while retaining exact textarea content',
   const source = page.getByRole('textbox', { name: 'Source mips1.asm', exact: true });
   const program = '.text\nmain:\n\tadd $t0, $t1, $t2 # sum\n.asciiz "hello"\n';
   await source.fill(program);
-  const layer = page.locator('.syntax-layer');
+  const layer = page.getByTestId('editor-syntax');
   await expect(layer).toHaveAttribute('aria-hidden', 'true');
   await expect(layer.locator('[data-token="7"]').first()).toHaveText('.text');
   await expect(layer.locator('[data-token="6"]')).toHaveText('add');
@@ -680,10 +688,7 @@ test('Save All prompts for each new file and cancel preserves the remaining buff
   await page.getByRole('textbox', { name: 'Source mips1.asm', exact: true }).fill('first');
   await page.getByRole('button', { name: 'New', exact: true }).click();
   await page.getByRole('textbox', { name: 'Source mips2.asm', exact: true }).fill('second');
-  await page
-    .locator('summary')
-    .filter({ hasText: /^File$/ })
-    .click();
+  await page.getByTestId('menu-file-trigger').click();
   await page.getByRole('button', { name: 'Save All', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Save As', exact: true });
   await expect(dialog.getByLabel('File name')).toHaveValue('mips1.asm');
@@ -760,7 +765,7 @@ test('Open sorts filenames case-insensitively while cancel and reopening preserv
   await source.fill('modified in progress\n');
   await page.getByRole('button', { name: 'Open ...', exact: true }).click();
   const open = page.getByRole('dialog', { name: 'Open', exact: true });
-  await expect(open.locator('.source-files label')).toHaveText([
+  await expect(open.getByTestId('selector-toggle')).toHaveText([
     'Alpha.asm',
     'alpha.asm',
     'Beta.asm',
@@ -842,35 +847,27 @@ test('Export and Export All download exact working source and closed library fil
   await openDialog.getByRole('button', { name: 'Open', exact: true }).click();
   const current = '.text\nli $t0, 99\n# latest working source\n';
   await page.getByRole('textbox', { name: 'Source working.asm', exact: true }).fill(current);
-  const autoSave = page.getByRole('button', { name: 'Auto Save', exact: true });
-  const importButton = page.getByRole('button', { name: 'Import ...', exact: true });
-  await expect(autoSave.locator('xpath=following-sibling::button[1]')).toHaveAttribute(
-    'aria-label',
+  await expectButtonSequence(page.getByLabel('Toolbar', { exact: true }), [
+    'Auto Save',
     'Import ...'
-  );
-  await expect(page.locator('.toolbar').getByRole('button', { name: /^Print/ })).toHaveCount(0);
-  await page
-    .locator('.menubar summary')
-    .filter({ hasText: /^File$/ })
-    .click();
-  await expect(page.locator('.menubar').getByRole('button', { name: /^Print/ })).toHaveCount(0);
-  await page
-    .locator('.menubar summary')
-    .filter({ hasText: /^File$/ })
-    .click();
+  ]);
+  await expect(
+    page.getByLabel('Toolbar', { exact: true }).getByRole('button', { name: /^Print/ })
+  ).toHaveCount(0);
+  await page.getByTestId('menu-file-trigger').click();
+  await expect(
+    page
+      .getByRole('navigation', { name: 'Application menus', exact: true })
+      .getByRole('button', { name: /^Print/ })
+  ).toHaveCount(0);
+  await page.getByTestId('menu-file-trigger').click();
   const exportButton = page.getByRole('button', { name: 'Export', exact: true });
-  await expect(importButton.locator('xpath=following-sibling::button[1]')).toHaveAttribute(
-    'aria-label',
-    'Export'
-  );
-  await expect(exportButton.locator('xpath=following-sibling::button[1]')).toHaveAttribute(
-    'aria-label',
-    'Export All'
-  );
-  await expect(exportAll.locator('xpath=following-sibling::button[1]')).toHaveAttribute(
-    'aria-label',
+  await expectButtonSequence(page.getByLabel('Toolbar', { exact: true }), ['Import ...', 'Export']);
+  await expectButtonSequence(page.getByLabel('Toolbar', { exact: true }), ['Export', 'Export All']);
+  await expectButtonSequence(page.getByLabel('Toolbar', { exact: true }), [
+    'Export All',
     'Dump Memory ...'
-  );
+  ]);
   const downloaded = page.waitForEvent('download');
   await exportButton.click();
   const single = await downloaded;
@@ -1213,7 +1210,7 @@ test('Auto Save commits all working buffers, persists its setting, and disabling
   await openDesktop(page);
   const autoSave = page.getByRole('button', { name: 'Auto Save', exact: true });
   await expect(autoSave).toHaveAttribute('aria-pressed', 'false');
-  const fileMenu = page.locator('.menubar summary').filter({ hasText: /^File$/ });
+  const fileMenu = page.getByTestId('menu-file-trigger');
   await fileMenu.click();
   const autoSaveMenu = page.getByRole('checkbox', { name: 'Auto Save', exact: true });
   await expect(autoSaveMenu).not.toBeChecked();
@@ -1517,14 +1514,14 @@ test('Line and Column follows source focus while the selected filename stays vis
   page
 }) => {
   await openDesktop(page);
-  const position = page.locator('footer').getByText(/^Line \d+, Column \d+$/);
+  const position = page.getByTestId('footer-position');
   await expect(position).toBeHidden();
   await page.getByRole('button', { name: 'New', exact: true }).click();
   const source = page.getByRole('textbox', { name: 'Source mips1.asm', exact: true });
   await source.fill('one\ntwo\nabc');
   await source.press('Control+End');
   await expect(position).toHaveText('Line 3, Column 4');
-  const filename = page.locator('footer > span').first();
+  const filename = page.getByTestId('footer-source');
   await expect(filename).toHaveText('Editing: mips1.asm');
   await expect(page.getByLabel('Execution status', { exact: true })).toHaveCount(0);
   await page.getByLabel('$t0 value', { exact: true }).focus();
@@ -1566,22 +1563,22 @@ test('Execute footer follows the loaded program independently of the selected Ed
     { name: 'first.asm', source: '.text\nli $t0, 1\nli $v0, 10\nsyscall\n' },
     { name: 'second.asm', source: '.text\nli $t0, 2\nli $v0, 10\nsyscall\n' }
   ]);
-  const filename = page.locator('footer > span').first();
+  const filename = page.getByTestId('footer-source');
   await page.getByRole('button', { name: 'first.asm', exact: true }).click();
   await page.getByRole('button', { name: 'Assemble', exact: true }).click();
   await expect(filename).toHaveText('Loaded: first.asm');
-  await expect(filename.locator('strong')).toHaveText('first.asm');
+  await expect(filename.getByTestId('footer-filename')).toHaveText('first.asm');
   await expect(filename).toHaveCSS('font-weight', '400');
-  await expect(filename.locator('strong')).toHaveCSS('font-weight', '700');
+  await expect(filename.getByTestId('footer-filename')).toHaveCSS('font-weight', '700');
   const status = page.getByLabel('Execution status', { exact: true });
   await expect(status).toHaveText('Status: assembled');
-  await expect(status.locator('strong')).toHaveText('assembled');
+  await expect(status.getByTestId('execution-status-value')).toHaveText('assembled');
   await expect(status).toHaveCSS('font-weight', '400');
-  await expect(status.locator('strong')).toHaveCSS('font-weight', '700');
+  await expect(status.getByTestId('execution-status-value')).toHaveCSS('font-weight', '700');
   await page.getByRole('button', { name: 'Step', exact: true }).click();
   await expect(status).toHaveText('Status: paused');
-  await expect(status.locator('strong')).toHaveText('paused');
-  const sourceLink = page.locator('.text-segment .source-link').first();
+  await expect(status.getByTestId('execution-status-value')).toHaveText('paused');
+  const sourceLink = instructionRow(page, '0x00400000').getByTestId('text-source-link');
   await sourceLink.hover();
   await expect(page.getByRole('tooltip')).toHaveText('See in source file');
   await expect(sourceLink).toHaveAccessibleDescription('See in source file');
@@ -1608,7 +1605,7 @@ test('Execute footer follows the loaded program independently of the selected Ed
   await page.getByRole('button', { name: 'Assemble', exact: true }).click();
   await expect(filename).toHaveText('Editing: second.asm');
   await expect(status).toHaveText('Status: error');
-  await expect(status.locator('strong')).toHaveText('error');
+  await expect(status.getByTestId('execution-status-value')).toHaveText('error');
   await page.getByRole('button', { name: 'Execute', exact: true }).click();
   await expect(filename).toHaveText('No program loaded');
 });
@@ -1625,10 +1622,7 @@ test('new empty buffers stay unsaved until the first character, including with A
   await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
   await source.press('Control+s');
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await page
-    .locator('.menubar summary')
-    .filter({ hasText: /^File$/ })
-    .click();
+  await page.getByTestId('menu-file-trigger').click();
   await page.getByRole('button', { name: 'Save All', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   expect(await savedSources()).toEqual([]);

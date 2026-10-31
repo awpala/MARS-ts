@@ -32,7 +32,7 @@ The simulator engine (assembler, instruction set, hardware, simulator, syscalls,
 - SvelteKit 3 takes configuration through `sveltekit(...)` in the root `vite.config.ts`; do not add a competing `svelte.config.js`. Imports use the declared `#lib/*` package subpath.
 - Import shared modules through the package's declared subpath imports or SvelteKit's library alias, consistently, with whatever extension rule the scaffold's TypeScript configuration enforces.
 - Internal links resolve through SvelteKit's typed path helpers rather than bare string paths.
-- Normal development and preview use port `6277`, exclusively for the human. Agents must not start, stop, request, or test against that listener. `npm run test:browser` owns an isolated server on `6278`, and ad hoc agent servers bind `6279` or higher ([development operations](operations.md)); `MARS_VALIDATION=1` isolates other validation output under `__build/`. Browser-test mode and Vitest also use isolated generated files and dependency caches. The host bind mount uses polling (`server.watch.usePolling`).
+- Normal development and preview use port `6277`, exclusively for the human. Agents must not start, stop, request, or test against that listener. `npm run test:browser` owns per-group application snapshots and available ports starting at `6278`, and ad hoc agent servers bind available ports `6279` or higher ([development operations](operations.md)); `MARS_VALIDATION=1` isolates other validation output under `__build/`. Browser-test mode and Vitest also use isolated generated files and dependency caches. The host bind mount uses polling (`server.watch.usePolling`).
 
 ## TypeScript
 
@@ -43,8 +43,23 @@ The simulator engine (assembler, instruction set, hardware, simulator, syscalls,
 ## Tailwind CSS
 
 - Tailwind 4 through its Vite plugin; no `tailwind.config.js` or PostCSS configuration.
-- Utility classes on elements; extract a Svelte component rather than `@apply` for repeated class lists.
+- Utility classes on elements; extract a Svelte component rather than `@apply` for repeated class lists. The application stylesheet explicitly scans runtime Svelte/TypeScript/JavaScript/HTML under `src/`, excluding test/spec files; Markdown, browser tests, and legacy files must not generate utilities or invalidate the stylesheet.
 - The Venus UI is the initial visual and functional reference: preserve its desktop layout, compact styling, pane arrangement, and workflows. Convert raster UI icons to SVG, retain the existing MARS favicon, use the local source library for Open/Save and the browser file picker for Import, and render application dialogs in the current tab ([ADR 0002](../adrs/0002-port-fidelity.md)).
+
+## Browser test selectors
+
+Treat selectors shared by production components and [browser scenarios](../../tests/browser/README.md) as a maintained test contract. When editing a tested view, preserve its hooks or update the component and every affected consumer together.
+
+Keep specs in their [semantic responsibility group](../../tests/browser/README.md#semantic-groups), with shared setup and observation under `tests/browser/harness/`. Use the named project commands and default reporters from the [suite guide](../../tests/browser/README.md#running-scenarios) so targeted runs preserve per-group logs and the shared local/CI discovery contract.
+
+- Use reliable accessible roles, names, and labels for controls. For presentation containers, table cells, scrollers, decorative subparts, and other elements without a suitable accessible identity, add a dedicated `data-testid` and use Playwright's `getByTestId()`.
+- Name hooks in kebab-case for their responsibility, independent of CSS classes, layout, generated DOM IDs, and icon paths. Put the hook on the actual element whose geometry, interaction, or content is tested. Pass caller-owned hooks through generic controls when the caller owns the identity.
+- Repeated collections may reuse a static test ID. Scope to the owning pane or row, then distinguish members by stable domain attributes, accessible names, or meaningful content. `filter({ has: ... })` resolves its inner locator relative to each candidate: use a descendant-only leaf locator, without an ancestor pane or row prefix. Identify the domain row/container first, then find its hooked subparts. Do not encode the current array position into a hook to disguise an ordinal locator.
+- Do not identify elements through CSS classes, style declarations, bundled asset URLs, XPath, parent/sibling traversal, or incidental `first()`, `last()`, `nth()`, and child positions. Add a hook to the intended owner or subpart instead. Ordinal selection remains valid when the order itself is the asserted contract or when enumerating homogeneous rendered content.
+- Keep identity separate from state and presentation assertions. Scope `data-highlight`, `data-selected`, `aria-current`, and other meaningful state filters through a test ID or accessible locator. Native `<details>` menu content stays in the DOM when closed: assert `toBeHidden()` or the absence of the owner's `open` attribute rather than `toHaveCount(0)` on its persistent hook. CSS/class assertions remain valid when styling or visual feedback is the behavior being checked; they must not supply the element's identity.
+- Root `html`/`body` inspection, manifest `meta`/`link` queries, and deliberate semantic structure/content checks remain appropriate. A selector that asserts a documented structure or ordering contract should make that purpose clear in the scenario.
+
+The [ESLint configuration](../../eslint.config.js) enforces `browser-tests/stable-locators` for `tests/browser/**/*.{ts,mjs}` during `npm run lint`. It checks literal strings and template fragments in `locator`, `querySelector`, `querySelectorAll`, and `closest`, rejecting classes, class/style attribute selectors, XPath or parent/root paths, and positional CSS selectors, including queries inside browser evaluations. UI implementation and review must still apply the complete convention to dynamic selectors, asset-based identity, and incidental ordinal captures. Keep [the browser suite's locator guidance](../../tests/browser/README.md#locator-contracts) and the UI/review skill routing aligned when changing it.
 
 ## Commands
 
@@ -52,9 +67,9 @@ Run from the repository root:
 
 - `npm run dev`: the human's dev server on `6277` (alias `run-app`, which logs to `__logs/local/`); agents do not run it.
 - `npm run build` and `npm run preview` (preview also binds `6277`; agents pass `--port 6279` or higher).
-- `npm run test:browser`: Playwright scenarios on the isolated `6278` server.
+- `npm run test:browser`: snapshot-isolated semantic-group runners on harness-allocated ports starting at `6278`; select impacted projects/cases for local feature work under the [browser validation scope](workflow.md#browser-validation-scope).
 - `npm run check`: `svelte-kit sync` then `svelte-check`.
 - `npm run lint` / `npm run lint:fix`, `npm run format` / `npm run format:check`.
 - `npm run test`: Vitest, including oracle-fixture parity tests.
 
-Gate: `check`, `lint`, `format:check`, `test`, and `build` must all pass (`run-checks app`). Type checking does not validate behavior; exercise UI changes with `npm run test:browser` on the isolated test server before reporting them done. Use the [Svelte implementation workflow](../../.agents/skills/svelte-code-writer/SKILL.md) for MCP analysis.
+Gate: `check`, `lint`, `format:check`, `test`, and `build` must all pass (`run-checks app`). Type checking does not validate behavior; exercise UI changes through the impacted browser projects/cases under the [browser validation scope](workflow.md#browser-validation-scope). Existing CI retains its full browser sentinel. Use the [Svelte implementation workflow](../../.agents/skills/svelte-code-writer/SKILL.md) for MCP analysis.

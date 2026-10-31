@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { readArchive } from './archive.js';
-import { openDesktop, openStoredSources } from './openDesktop.js';
+import { readArchive } from '../harness/archive.js';
+import { openDesktop, openStoredSources } from '../harness/openDesktop.js';
 
 // The legacy app's Open dialog filters "Assembler Files (*.asm; *.s)" by case-insensitive extension (Config.properties).
 

@@ -1,5 +1,6 @@
+import { instructionRow, labelRow } from '../harness/locators.js';
 import { expect, test } from '@playwright/test';
-import { openDesktop, waitForDesktop } from './openDesktop.js';
+import { openDesktop, waitForDesktop } from '../harness/openDesktop.js';
 
 test('theme toggle preserves editor and execution state, recolors panes, and persists both choices', async ({
   page
@@ -8,8 +9,8 @@ test('theme toggle preserves editor and execution state, recolors panes, and per
   await openDesktop(page);
   const toggle = page.getByRole('switch', { name: 'Dark theme', exact: true });
   await expect(toggle).toHaveAttribute('aria-checked', 'false');
-  await expect(toggle.locator('.thumb')).toHaveCSS('transition-duration', '0.3s');
-  await expect(page.locator('.desktop')).toHaveCSS('background-color', 'rgb(237, 237, 237)');
+  await expect(toggle.getByTestId('toggle-thumb')).toHaveCSS('transition-duration', '0.3s');
+  await expect(page.getByTestId('desktop')).toHaveCSS('background-color', 'rgb(237, 237, 237)');
   await page.getByRole('button', { name: 'New', exact: true }).click();
   const source = page.getByRole('textbox', { name: 'Source mips1.asm', exact: true });
   const program = '.text\nli $t0, 42\nli $v0, 10\nsyscall\n';
@@ -17,9 +18,12 @@ test('theme toggle preserves editor and execution state, recolors panes, and per
   await toggle.focus();
   await toggle.press('Space');
   await expect(toggle).toHaveAttribute('aria-checked', 'true');
-  await expect(toggle.locator('.thumb')).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 28, 0)');
-  await expect(page.locator('.source-surface')).toHaveCSS('background-color', 'rgb(22, 30, 39)');
-  await expect(page.locator('.syntax-layer [data-token="6"]').first()).toHaveCSS(
+  await expect(toggle.getByTestId('toggle-thumb')).toHaveCSS(
+    'transform',
+    'matrix(1, 0, 0, 1, 28, 0)'
+  );
+  await expect(page.getByTestId('editor-surface')).toHaveCSS('background-color', 'rgb(22, 30, 39)');
+  await expect(page.getByTestId('editor-syntax').locator('[data-token="6"]').first()).toHaveCSS(
     'color',
     'rgb(143, 199, 255)'
   );
@@ -27,21 +31,27 @@ test('theme toggle preserves editor and execution state, recolors panes, and per
   await page.getByRole('button', { name: 'Assemble', exact: true }).click();
   const range = page.getByRole('combobox', { name: 'Data segment base' });
   await expect(range).toHaveCSS('background-color', 'rgb(45, 57, 72)');
-  await expect(range.locator('option').first()).toHaveCSS('background-color', 'rgb(22, 30, 39)');
-  await expect(range.locator('option').first()).toHaveCSS('color', 'rgb(225, 233, 242)');
+  await expect(range.locator('option[value="data"]')).toHaveCSS(
+    'background-color',
+    'rgb(22, 30, 39)'
+  );
+  await expect(range.locator('option[value="data"]')).toHaveCSS('color', 'rgb(225, 233, 242)');
   await range.selectOption('heap');
   await expect(range).toHaveValue('heap');
   await page.getByRole('button', { name: 'Step', exact: true }).click();
   const register = page.getByLabel('$t0 value', { exact: true });
   await expect(register).toHaveValue('0x0000002a');
-  await expect(page.locator('.text-segment tr[data-highlight="pc"]')).toHaveCSS(
+  await expect(page.getByTestId('text-scroll').locator('[data-highlight="pc"]')).toHaveCSS(
     'background-color',
     'rgb(98, 81, 36)'
   );
   await toggle.click();
-  await expect(range.locator('option').first()).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await expect(range.locator('option[value="data"]')).toHaveCSS(
+    'background-color',
+    'rgb(255, 255, 255)'
+  );
   await expect(register).toHaveValue('0x0000002a');
-  await expect(page.locator('.text-segment tr[data-highlight="pc"]')).toHaveCSS(
+  await expect(page.getByTestId('text-scroll').locator('[data-highlight="pc"]')).toHaveCSS(
     'background-color',
     'rgb(255, 255, 153)'
   );
@@ -64,10 +74,10 @@ test('machine tables share one frame and paint stripes and every highlight in bo
   page
 }) => {
   await openDesktop(page);
-  const settings = page.locator('.menubar summary').filter({ hasText: /^Settings$/ });
+  const settings = page.getByTestId('menu-settings-trigger');
   await settings.click();
   await page
-    .locator('.settings-menu')
+    .getByTestId('menu-settings-content')
     .getByRole('checkbox', { name: 'Delayed branching', exact: true })
     .check();
   await settings.click();
@@ -86,15 +96,21 @@ test('machine tables share one frame and paint stripes and every highlight in bo
   const memory = page.getByLabel('Memory 0x10010000', { exact: true });
   await expect(memory).toHaveValue('0x00000005');
 
-  const delaySlot = page.locator('.text-segment tbody tr[data-highlight="delay-slot"]');
-  const memoryCell = page.locator('.data-segment td[data-highlight="memory"]');
-  const register = page.locator('.register-pane tbody tr[data-highlight="register"]');
-  const registerRows = page.locator('.register-pane tbody tr');
+  const delaySlot = page.getByTestId('text-scroll').locator('[data-highlight="delay-slot"]');
+  const memoryCell = page.getByTestId('data-scroll').locator('[data-highlight="memory"]');
+  const register = page
+    .getByRole('complementary', { name: 'Registers', exact: true })
+    .locator('[data-highlight="register"]');
+  const registerRows = page
+    .getByRole('complementary', { name: 'Registers', exact: true })
+    .getByTestId('register-row');
   await expect(delaySlot).toHaveAttribute('aria-current', 'step');
   await expect(memoryCell.getByRole('textbox')).toHaveAccessibleName('Memory 0x10010000');
-  await expect(register.locator('td').first()).toHaveText('$t0');
-  const textHeading = page.locator('.text-segment thead th').first();
-  const registerHeading = page.locator('.register-pane thead th').first();
+  await expect(register.getByTestId('register-name')).toHaveText('$t0');
+  const textHeading = page.getByTestId('text-heading-bkpt');
+  const registerHeading = page
+    .getByRole('complementary', { name: 'Registers', exact: true })
+    .getByRole('columnheader', { name: 'Name', exact: true });
   for (const property of ['font-family', 'font-size', 'padding', 'line-height']) {
     expect(
       await textHeading.evaluate(
@@ -110,27 +126,30 @@ test('machine tables share one frame and paint stripes and every highlight in bo
   }
 
   // Monospace numbers right-align for comparison; the cell naming each row is bold.
-  const textCells = page.locator('.text-segment tbody tr').first().locator('td');
-  const dataCells = page.locator('.data-segment tbody tr').first().locator('td');
-  const registerCells = registerRows.first().locator('td');
-  const labelCells = page.getByRole('region', { name: 'Labels', exact: true }).locator('tbody td');
-  for (const cell of [textCells.nth(1), dataCells.nth(0)]) {
+  const textRow = instructionRow(page, '0x00400000');
+  const dataRow = page.getByTestId('data-row').filter({ has: memory });
+  const zeroRow = registerRows.filter({ has: page.getByLabel('$zero value', { exact: true }) });
+  const mainLabel = labelRow(page.getByRole('region', { name: 'Labels', exact: true }), 'main');
+  for (const cell of [textRow.getByTestId('text-address'), dataRow.getByTestId('data-address')]) {
     await expect(cell).toHaveCSS('text-align', 'right');
     await expect(cell).toHaveCSS('font-weight', '700');
   }
   for (const value of [
-    textCells.nth(2).getByRole('textbox'),
+    textRow.getByTestId('text-code').getByRole('textbox'),
     memory,
-    registerCells.nth(2).getByRole('textbox')
+    zeroRow.getByTestId('register-value').getByRole('textbox')
   ])
     await expect(value).toHaveCSS('text-align', 'right');
-  await expect(registerCells.nth(1)).toHaveCSS('text-align', 'right');
-  await expect(textCells.nth(3)).toHaveCSS('text-align', 'start');
-  for (const name of [registerCells.nth(0), labelCells.first()]) {
+  await expect(zeroRow.getByTestId('register-number')).toHaveCSS('text-align', 'right');
+  await expect(textRow.getByTestId('text-basic')).toHaveCSS('text-align', 'start');
+  for (const name of [
+    zeroRow.getByTestId('register-name-cell'),
+    mainLabel.getByTestId('label-name-cell')
+  ]) {
     await expect(name).toHaveCSS('font-weight', '700');
     await expect(name).toHaveCSS('text-align', 'start');
   }
-  await expect(labelCells.nth(1)).toHaveCSS('text-align', 'right');
+  await expect(mainLabel.getByTestId('label-address-cell')).toHaveCSS('text-align', 'right');
 
   const palettes = {
     light: {
@@ -168,7 +187,11 @@ test('machine tables share one frame and paint stripes and every highlight in bo
     'text-align',
     'right'
   );
-  await expect(registerRows.first().locator('td').first()).toHaveCSS('font-weight', '700');
+  await expect(
+    registerRows
+      .filter({ has: page.getByLabel('$f0 float value', { exact: true }) })
+      .getByTestId('register-name-cell')
+  ).toHaveCSS('font-weight', '700');
 });
 
 test('saved dark palette is applied before hydration', async ({ page }) => {
@@ -179,7 +202,10 @@ test('saved dark palette is applied before hydration', async ({ page }) => {
   );
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await expect(page.locator('.loading-screen')).toHaveCSS('background-color', 'rgb(32, 40, 51)');
+  await expect(page.getByTestId('desktop-loading')).toHaveCSS(
+    'background-color',
+    'rgb(32, 40, 51)'
+  );
 });
 
 test('invalid preferences and unavailable storage keep appearance usable', async ({ page }) => {
@@ -189,7 +215,7 @@ test('invalid preferences and unavailable storage keep appearance usable', async
   });
   await openDesktop(page);
   const toggle = page.getByRole('switch', { name: 'Dark theme', exact: true });
-  await expect(toggle.locator('.thumb')).toHaveCSS('transition-duration', '0.3s');
+  await expect(toggle.getByTestId('toggle-thumb')).toHaveCSS('transition-duration', '0.3s');
   await expect(toggle).toHaveAttribute('aria-checked', 'false');
   await page.evaluate(() => {
     Object.defineProperty(window, 'localStorage', {
@@ -199,23 +225,27 @@ test('invalid preferences and unavailable storage keep appearance usable', async
     });
   });
   await toggle.click();
-  await expect(page.locator('.desktop')).toHaveCSS('background-color', 'rgb(32, 40, 51)');
+  await expect(page.getByTestId('desktop')).toHaveCSS('background-color', 'rgb(32, 40, 51)');
   await toggle.click();
-  await expect(page.locator('.desktop')).toHaveCSS('background-color', 'rgb(237, 237, 237)');
+  await expect(page.getByTestId('desktop')).toHaveCSS('background-color', 'rgb(237, 237, 237)');
 });
 
 test('slider visibly travels in both directions even with reduced motion enabled', async ({
   page
 }) => {
   await openDesktop(page);
-  await expect(page.locator('.theme-control')).toContainText('Theme:');
+  await expect(
+    page
+      .getByTestId('toggle-control')
+      .filter({ has: page.getByRole('switch', { name: 'Dark theme', exact: true }) })
+  ).toContainText('Theme:');
   for (const reducedMotion of ['no-preference', 'reduce'] as const) {
     await page.emulateMedia({ reducedMotion });
     for (const destination of [28, 0]) {
       const positions = await page
         .getByRole('switch', { name: 'Dark theme' })
         .evaluate(async (element) => {
-          const thumb = element.querySelector<HTMLElement>('.thumb')!;
+          const thumb = element.querySelector<HTMLElement>('[data-testid="toggle-thumb"]')!;
           const positions: number[] = [];
           const readPosition = () => new DOMMatrixReadOnly(getComputedStyle(thumb).transform).m41;
           positions.push(readPosition());
@@ -231,9 +261,10 @@ test('slider visibly travels in both directions even with reduced motion enabled
           });
           return positions;
         });
-      expect(positions[0]).toBe(28 - destination);
+      // Composited transforms can retain a fractional-pixel remainder at an endpoint.
+      expect(positions[0]).toBeCloseTo(28 - destination, 3);
       expect(positions.some((position) => position > 1 && position < 27)).toBe(true);
-      expect(positions.at(-1)).toBe(destination);
+      expect(positions.at(-1)).toBeCloseTo(destination, 3);
     }
   }
 });

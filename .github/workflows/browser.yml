@@ -1,0 +1,104 @@
+name: Browser tests
+
+# Branch pushes do not spend a browser runner. Merge-queue validation checks the
+# prospective merge; the main push validates the committed result independently.
+on:
+  push:
+    branches: [main]
+  merge_group:
+    branches: [main]
+    types: [checks_requested]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    name: Discover browser groups
+    runs-on: ubuntu-24.04
+    outputs:
+      suites: ${{ steps.groups.outputs.suites }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      # The discovery helper only uses Node built-ins and erasable TypeScript, so
+      # matrix discovery needs neither application dependencies nor a browser.
+      - name: Read semantic browser groups
+        id: groups
+        run: |
+          node --input-type=module <<'NODE'
+          import { appendFileSync } from 'node:fs';
+          import { browserSuites } from './tests/browser/harness/suites.ts';
+          appendFileSync(process.env.GITHUB_OUTPUT, `suites=${JSON.stringify(browserSuites())}\n`);
+          NODE
+
+  browser:
+    name: Chromium / ${{ matrix.suite }}
+    needs: discover
+    strategy:
+      # Keep collecting independent failures; at most four group runners are active.
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        suite: ${{ fromJSON(needs.discover.outputs.suites) }}
+    runs-on: ubuntu-24.04
+    # This covers installation and one group; individual scenario/readiness
+    # deadlines stay unchanged and fail independently of this aggregate allowance.
+    timeout-minutes: 30
+    env:
+      BROWSER_SUITE: ${{ matrix.suite }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install app dependencies
+        run: npm ci
+      # The archive helper independently inspects exports with the system unzip tool.
+      - name: Install archive inspection tool
+        run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends unzip
+      - name: Install Chromium and browser system dependencies
+        run: npm run test:browser:install
+      # Playwright owns port 6278 and budgets two workers for the four-CPU reference.
+      # Retain the default GitHub, HTML, and per-project file reporters. Capture
+      # complete command output too, including server/npm messages outside tests.
+      - name: Run browser group
+        shell: bash
+        run: |
+          mkdir -p __logs/__test-runs
+          run_log="__logs/__test-runs/$(date +%s)_browser-${BROWSER_SUITE}-runner.log"
+          set -o pipefail
+          npm run test:browser -- --project="$BROWSER_SUITE" 2>&1 | tee "$run_log"
+      - name: Preserve browser report and failure traces
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-results-${{ matrix.suite }}
+          path: |
+            __build/browser-report/
+            __build/browser-results/
+            __logs/__test-runs/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  browser-result:
+    # A stable required-check name survives additions to the discovered groups.
+    name: Chromium browser suite
+    if: ${{ always() }}
+    needs: [discover, browser]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require every browser group to pass
+        env:
+          DISCOVERY_RESULT: ${{ needs.discover.result }}
+          BROWSER_RESULT: ${{ needs.browser.result }}
+        run: |
+          test "$DISCOVERY_RESULT" = success
+          test "$BROWSER_RESULT" = success

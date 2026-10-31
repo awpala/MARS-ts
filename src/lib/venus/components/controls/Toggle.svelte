@@ -38,7 +38,7 @@
 </script>
 
 <!-- @component Generic labeled switch built on Button. Owns native keyboard activation and thumb presentation, with optional decorative content; it has no theme or storage policy. -->
-<div class={['toggle-control', className]}>
+<div class={['toggle-control', className]} data-testid="toggle-control">
   <span>{label}</span>
   <Button
     class={[
@@ -61,6 +61,7 @@
     }}
   >
     <span
+      data-testid="toggle-thumb"
       class={['thumb', { checked }]}
       style:background={variant === 'active' ? '#fff' : undefined}
       aria-hidden="true"

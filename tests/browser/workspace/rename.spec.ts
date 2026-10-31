@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openDesktop, openStoredSources, waitForDesktop } from './openDesktop.js';
+import { openDesktop, openStoredSources, waitForDesktop } from '../harness/openDesktop.js';
 
 test('inline rename updates the tab, editor, and saved name on Enter or blur; Escape cancels', async ({
   page

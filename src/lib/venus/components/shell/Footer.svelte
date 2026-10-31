@@ -17,12 +17,16 @@
 </script>
 
 <!-- @component Desktop footer showing the current-view filename, focused editor caret, and execution status supplied by its parent. -->
-<footer>
-  <span>{filenamePrefix}<strong>{filename}</strong></span>
-  <span>{position ? `Line ${position.line}, Column ${position.column}` : ''}</span>
+<footer data-testid="desktop-footer">
+  <span data-testid="footer-source"
+    >{filenamePrefix}<strong data-testid="footer-filename">{filename}</strong></span
+  >
+  <span data-testid="footer-position"
+    >{position ? `Line ${position.line}, Column ${position.column}` : ''}</span
+  >
   <span>
     {#if status !== null}<span aria-label="Execution status"
-        >Status: <strong>{status}</strong>{!breakpointsEnabled
+        >Status: <strong data-testid="execution-status-value">{status}</strong>{!breakpointsEnabled
           ? ' — breakpoints suspended'
           : ''}</span
       >{/if}

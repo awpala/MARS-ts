@@ -42,17 +42,29 @@
   const highlightedPC = $derived(
     view.running && view.machine.runSpeed === UNLIMITED_SPEED ? null : pc
   );
+  // Assembly owns row identity; live getters retain self-modifying-code refreshes.
   const rows = $derived.by(() => {
-    void view.snapshot.revision;
-    return view.snapshot.statements.map((original) => {
+    return view.statements.map((original) => {
       const address = original.getAddress();
-      const live = view.machine.memory.getStatementNoNotify(address) ?? original;
+      const live = $derived.by(() => {
+        void view.snapshot.revision;
+        return view.machine.memory.getStatementNoNotify(address) ?? original;
+      });
+      const code = $derived(live.getBinaryStatement());
+      const basic = $derived(live.getPrintableBasicAssemblyStatement());
+      const modified = $derived(code !== original.getBinaryStatement());
       return {
         address,
-        code: live.getBinaryStatement(),
-        basic: live.getPrintableBasicAssemblyStatement(),
+        get code() {
+          return code;
+        },
+        get basic() {
+          return basic;
+        },
         source: original.getSource(),
-        modified: live.getBinaryStatement() !== original.getBinaryStatement(),
+        get modified() {
+          return modified;
+        },
         line: original.getSourceLine(),
         filename: original.getSourceFile() ?? ''
       };
@@ -100,14 +112,16 @@
       />
     </div>
   {/if}
-  <div class="text-scroll min-h-0 flex-1 overflow-auto">
+  <div class="text-scroll min-h-0 flex-1 overflow-auto" data-testid="text-scroll">
     <MachineTable>
       {#snippet header()}
-        {#each ['Bkpt', 'Address', 'Code', 'Basic', 'Source'] as heading (heading)}<th>{heading}</th
+        {#each ['Bkpt', 'Address', 'Code', 'Basic', 'Source'] as heading (heading)}<th
+            data-testid={`text-heading-${heading.toLowerCase()}`}>{heading}</th
           >{/each}
       {/snippet}
       <tbody>
         {#each rows as row (row.address)}<tr
+            data-testid="text-row"
             {@attach row.address === highlightedPC && followPC}
             id={view.instructionId(row.address)}
             tabindex="-1"
@@ -132,17 +146,20 @@
                 {/snippet}
               </Tooltip></td
             >
-            <td class="numeric identifier">{view.formatAddress(row.address)}</td><td class="numeric"
+            <td class="numeric identifier" data-testid="text-address"
+              >{view.formatAddress(row.address)}</td
+            ><td class="numeric" data-testid="text-code"
               ><CellInput
                 aria-label={`Code ${Binary.intToHexString(row.address)}`}
                 value={Binary.intToHexString(row.code)}
                 readonly={view.running || !selfModifying}
                 onchange={(event) => view.changeWord(row.address, event.currentTarget, true)}
               /></td
-            ><td>{row.basic}</td>
-            <td class={{ action: !row.modified }}
+            ><td data-testid="text-basic">{row.basic}</td>
+            <td class={{ action: !row.modified }} data-testid="text-source"
               >{#if row.modified}<span> ------ </span>{:else}<Button
                   class="source-link text-left whitespace-pre"
+                  data-testid="text-source-link"
                   tooltip="See in source file"
                   onclick={() => workspace.showSource(row.filename, row.line)}
                   >{row.line}: {row.source}</Button

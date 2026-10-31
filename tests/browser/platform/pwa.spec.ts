@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openDesktop } from './openDesktop.js';
+import { openDesktop } from '../harness/openDesktop.js';
 
 test('the page links a web app manifest whose icons are served', async ({ page, request }) => {
   await openDesktop(page);

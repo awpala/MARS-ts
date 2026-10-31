@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { waitForDesktop } from './openDesktop.js';
+import { waitForDesktop } from '../harness/openDesktop.js';
 
 /** Test-owned deferred browser operations; no production state or debugging hook is exposed. */
 type LifetimeWindow = Window &
@@ -21,7 +21,7 @@ async function mountDesktop(page: Page) {
     const path = '/src/lib/venus/mountDesktop.browser-test.ts';
     const { mountDesktop } = (await import(
       /* @vite-ignore */ path
-    )) as typeof import('../../src/lib/venus/mountDesktop.browser-test.js');
+    )) as typeof import('../../../src/lib/venus/mountDesktop.browser-test.js');
     (window as LifetimeWindow).releaseDesktop = mountDesktop(document.body);
   });
   await waitForDesktop(page);
@@ -96,11 +96,11 @@ for (const command of ['Paste', 'Cut'] as const) {
           })
       });
     }, command);
+    await page.getByTestId('menu-edit-trigger').click();
     await page
-      .locator('.menubar summary')
-      .filter({ hasText: /^Edit$/ })
+      .getByTestId('menu-edit-content')
+      .getByRole('button', { name: command, exact: true })
       .click();
-    await page.locator('details[open]').getByRole('button', { name: command, exact: true }).click();
     await page.getByRole('button', { name: 'Assemble', exact: true }).click();
     await page.getByRole('button', { name: 'Go', exact: true }).click();
     const stop = page.getByRole('button', { name: 'Stop', exact: true });
@@ -120,10 +120,7 @@ test('Help initializes its own new source before a subsequent command selects an
   page
 }) => {
   await openIsolatedDesktop(page);
-  await page
-    .locator('.menubar summary')
-    .filter({ hasText: /^Help$/ })
-    .click();
+  await page.getByTestId('menu-help-trigger').click();
   await page.getByRole('button', { name: 'Exception Handlers', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Exception Handlers', exact: true });
   const example = await dialog.locator('pre').first().textContent();
@@ -157,10 +154,7 @@ test('Help code controls keep their focus and feedback when execution stops', as
       value: async () => undefined
     })
   );
-  await page
-    .locator('.menubar summary')
-    .filter({ hasText: /^Help$/ })
-    .click();
+  await page.getByTestId('menu-help-trigger').click();
   await page.getByRole('button', { name: 'Exception Handlers', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Exception Handlers', exact: true });
   const copy = dialog.getByRole('button', { name: 'Copy code example 1', exact: true });
@@ -242,11 +236,11 @@ test('unmount releases pending work and remounts do not duplicate keyboard comma
         })
     });
   });
+  await page.getByTestId('menu-edit-trigger').click();
   await page
-    .locator('.menubar summary')
-    .filter({ hasText: /^Edit$/ })
+    .getByTestId('menu-edit-content')
+    .getByRole('button', { name: 'Paste', exact: true })
     .click();
-  await page.locator('details[open]').getByRole('button', { name: 'Paste', exact: true }).click();
   // The pending read blocks the desktop behind its status, so it starts after the other pending work.
   await page.getByLabel('Import assembly files', { exact: true }).setInputFiles({
     name: 'late.asm',

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openDesktop } from './openDesktop.js';
+import { openDesktop } from '../harness/openDesktop.js';
 
 for (const theme of ['light', 'dark']) {
   test(`Open shares bulk selection and enabled hover feedback in ${theme} mode`, async ({

@@ -159,7 +159,7 @@
     style:top={`${position?.top ?? 0}px`}
     style:visibility={position ? 'visible' : 'hidden'}
   >
-    <div class="tooltip popup-surface">
+    <div class="tooltip popup-surface" data-testid="tooltip-content">
       <span>{text}</span>
       {#if shortcut}<KeyboardShortcut {shortcut} />{/if}
     </div>

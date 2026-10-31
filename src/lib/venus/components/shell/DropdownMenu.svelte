@@ -45,24 +45,30 @@
 </script>
 
 <!-- @component Native dropdown rendering caller-supplied command and checkbox groups. -->
-<details name={groupName}>
-  <summary>{label}</summary>
-  <div class={['menu', className]}>
+<details name={groupName} data-testid={`menu-${label.toLowerCase()}`}>
+  <summary data-testid={`menu-${label.toLowerCase()}-trigger`}>{label}</summary>
+  <div class={['menu', className]} data-testid={`menu-${label.toLowerCase()}-content`}>
     {#each visibleGroups as group, index (group.id)}
-      {#if index > 0}<hr />{/if}
+      {#if index > 0}<hr data-testid="menu-separator" />{/if}
       {#each group.items as item (item.id)}
+        {@const testId = `menu-item-${item.id
+          .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+          .replace(/[^a-zA-Z0-9]+/g, '-')
+          .toLowerCase()}`}
         {#if item.checked !== undefined}
           <SelectorToggle
+            {testId}
             label={item.label}
             checked={item.checked}
             tooltip={item.tooltip}
             disabled={item.disabled}
             onchange={item.onselect}
-            class="w-full px-3 py-[5px] text-left whitespace-nowrap hover:bg-[var(--theme-hover,#c6dcef)]"
+            class="w-full px-3 py-1.25 text-left whitespace-nowrap hover:bg-(--theme-hover,#c6dcef)"
           />
         {:else}
           <Button
-            class="flex w-full items-center justify-between gap-2 px-3 py-[5px] text-left whitespace-nowrap"
+            data-testid={testId}
+            class="flex w-full items-center justify-between gap-2 px-3 py-1.25 text-left whitespace-nowrap"
             tooltip={item.tooltip}
             disabled={item.disabled}
             onclick={item.onselect}

@@ -6,13 +6,13 @@ Read the [implementation guide](IMPLEMENTATION.md) for the current architecture,
 
 The [deviation catalog](docs/deviations.md) records current behavioral differences from MARS 4.5 in UI and Engine subsets, with browser/platform adaptations separated from UI/UX changes. It excludes pending features and minor styling and will define the formal comparison baseline when MARS-ts 1.0 is released.
 
-[*See `MARS-ts` deployed live here!*](https://mars-ide.portfolio-projects.dev)
+[_See `MARS-ts` deployed live here!_](https://mars-ide.portfolio-projects.dev)
 
 > [!IMPORTANT]
 > This is a good faith feature-parity attempt/interpretation **only** (via corresponding TypeScript porting of equivalent Java implementation). The repo owner makes **no** guarantee of 100% fidelity to the original Java-based implementation; user discretion/discernment is therefore advised accordingly!
 
 > [!WARNING]
-> ***Disclosure***: Porting performed with assistance of LLM-based tooling (primarily, Claude Code and Codex).
+> _**Disclosure**_: Porting performed with assistance of LLM-based tooling (primarily, Claude Code and Codex).
 
 > [!NOTE]
 > For additional information, see original author documentation [here](https://dpetersanderson.github.io/Help/MarsHelpIntro.html), as of legacy/final version 4.5 (Java/Swing-based implementation). Modified versions are implemented in the `Help` menu/dropdown of the MARS-ts implementation (see [here](./src/lib/help/README.md)), with explicitly indicated distinction(s) between legacy vs. current/ported functionality, where relevant.
@@ -21,7 +21,7 @@ The [deviation catalog](docs/deviations.md) records current behavioral differenc
 
 Open the [development container](.devcontainer/devcontainer.json), then use `run-app` to start the IDE on **port 6277**. The environment provides Node 24 and a provisional JDK 21 for the unchanged Java reference. See [development operations](docs/agents/operations.md) for setup, build, test, and cleanup commands.
 
-For automated validation, use `MARS_VALIDATION=1 run-checks app` and `npm run test:browser`; browser tests use **6278**, leaving 6277 available for ad hoc development review and smoke testing. Other checks are documented in the [implementation guide](IMPLEMENTATION.md#reproducing-checks). Coding assistants start at [AGENTS.md](AGENTS.md).
+For automated validation, use `MARS_VALIDATION=1 run-checks app` and `npm run test:browser`; browser tests use isolated application snapshots and harness-allocated ports starting at **6278**, leaving 6277 exclusively for human development review. Other checks are documented in the [implementation guide](IMPLEMENTATION.md#reproducing-checks). Coding assistants start at [AGENTS.md](AGENTS.md).
 
 ## License
 

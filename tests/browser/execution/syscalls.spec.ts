@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { openDesktop } from './openDesktop.js';
+import { openDesktop } from '../harness/openDesktop.js';
 
 async function run(page: Page, program: string) {
   await openDesktop(page);

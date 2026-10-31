@@ -34,7 +34,13 @@
 {#if 'glyph' in icon}
   <ToolbarIcon name={icon.glyph} />
 {:else if 'image' in icon}
-  <img src={asset(`icons/${icon.image}.svg`)} alt="" width="22" height="22" />
+  <img
+    data-testid="button-image"
+    src={asset(`icons/${icon.image}.svg`)}
+    alt=""
+    width="22"
+    height="22"
+  />
 {:else}
   <MaskIcon name={icon.mask} size={12} />
 {/if}

@@ -71,18 +71,22 @@
 <pre class="print-source">{workspace.current?.text ?? ''}</pre>
 
 {#if !desktop.visible}
-  <div class="loading-screen">
+  <div class="loading-screen" data-testid="desktop-loading">
     <LoadingSpinner label="Loading MARS…" />
   </div>
 {/if}
 <fieldset
+  data-testid="desktop-controls"
   disabled={!desktop.visible}
   class={['application-controls', { initializing: !desktop.visible }]}
   aria-busy={!desktop.visible}
 >
   <FileImporter />
   {#each exportVariants as variant (variant)}<FileExporter {variant} />{/each}
-  <div class="desktop flex h-dvh min-h-120 flex-col overflow-hidden text-[12px]">
+  <div
+    class="desktop flex h-dvh min-h-120 flex-col overflow-hidden text-[12px]"
+    data-testid="desktop"
+  >
     <BackupError
       message={workspace.backupError || workspace.autoSaveError || desktop.persistence.error}
     />
@@ -105,6 +109,7 @@
       style:--register-width={`${display.displayedRegisterWidth}px`}
     >
       <div
+        data-testid="workspace-panes"
         class="left-panes"
         bind:clientHeight={display.leftPaneHeight}
         style:--editor-height={`${display.displayedEditorHeight}px`}
@@ -147,6 +152,7 @@
       {#if display.showRegisters}
         <div
           class="register-sidebar"
+          data-testid="register-sidebar"
           transition:slide={{ axis: 'x', duration: desktop.visible ? 220 : 0 }}
         >
           <PaneDivider

@@ -28,7 +28,7 @@
 </script>
 
 <!-- @component Native labeled radio choice with caller-owned group selection. Shared names retain browser arrow-key behavior; the control owns no settings or persistence. -->
-<label class={className}>
+<label class={className} data-testid="radio-selector">
   <input
     type="radio"
     {name}
@@ -40,7 +40,7 @@
       onchange?.(value);
     }}
   />
-  <span>{label}</span>
+  <span data-testid="radio-label">{label}</span>
 </label>
 
 <style>

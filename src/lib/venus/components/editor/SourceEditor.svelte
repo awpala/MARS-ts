@@ -28,7 +28,9 @@
   const instructionSet = $derived(simulation.machine?.instructionSet);
   const paneId = $props.id();
   const syntaxStyles = editorPreset.syntaxStyles;
-  const highlighted = $derived(highlightSource(current?.text ?? ''));
+  // Buffer metadata and history can refresh without changing the syntax tokens.
+  const sourceText = $derived(current?.text ?? '');
+  const highlighted = $derived(highlightSource(sourceText));
   let sourceHelp = $state.raw<{
     buffer: number;
     source: string;
@@ -132,16 +134,17 @@
     style:--editor-caret={`var(--theme-text, ${editorPreset.caretColor})`}
     style:--editor-selection={`var(--theme-selection, ${editorPreset.selectionBackground})`}
   >
-    {#if showLines}<div class="line-numbers" aria-hidden="true">
+    {#if showLines}<div class="line-numbers" aria-hidden="true" data-testid="editor-line-numbers">
         <pre style:transform={`translateY(${-workspace.sourceScrollTop}px)`}>{Array.from(
             { length: current.text.split('\n').length },
             (_, i) => i + 1
           ).join('\n')}</pre>
       </div>{/if}
-    <div class="source-surface">
+    <div class="source-surface" data-testid="editor-surface">
       {#if display.highlightCurrentLine}
         <div
           class="current-line"
+          data-testid="editor-current-line"
           aria-hidden="true"
           style:--line-index={caretLine - 1}
           style:--scroll-top={`${workspace.sourceScrollTop}px`}
@@ -149,6 +152,7 @@
       {/if}
       <pre
         class="syntax-layer"
+        data-testid="editor-syntax"
         aria-hidden="true"
         style:transform={`translate(${-workspace.sourceScrollLeft}px, ${-workspace.sourceScrollTop}px)`}>{#each highlighted as span (span.start)}<span
             data-token={span.id}
@@ -160,6 +164,7 @@
             style:font-weight={syntaxStyles[span.id].bold ? 'bold' : 'normal'}>{span.text}</span
           >{/each}&#10;</pre>
       <textarea
+        data-testid="source-input"
         {@attach registerInput}
         aria-label={`Source ${current.name}`}
         aria-describedby={visibleSourceHelp ? `${paneId}-source-help` : undefined}

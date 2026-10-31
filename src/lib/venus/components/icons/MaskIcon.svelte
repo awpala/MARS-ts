@@ -21,6 +21,7 @@
 
 <!-- @component Current-color icon masking a bundled static SVG, hidden from assistive technology. Owns no interaction or state. -->
 <span
+  data-testid={`mask-icon-${name.toLowerCase()}`}
   class={['mask-icon', className]}
   style:width={`${size}px`}
   style:height={`${size}px`}

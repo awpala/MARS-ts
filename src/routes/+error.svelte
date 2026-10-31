@@ -15,8 +15,8 @@
   <meta name="robots" content="noindex" />
 </svelte:head>
 
-<main>
-  <section aria-labelledby="error-heading">
+<main data-testid="route-error">
+  <section aria-labelledby="error-heading" data-testid="route-error-panel">
     <p class="status">{error.status}</p>
     <h1 id="error-heading">{error.status === 404 ? 'Page not found' : 'Something went wrong'}</h1>
     <p>

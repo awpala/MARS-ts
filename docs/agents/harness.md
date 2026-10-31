@@ -10,22 +10,22 @@ Everything vendor-neutral lives under `.agents/`. Tool adapters point at it rath
 
 **Skills.** Canonical skills live in [.agents/skills/](../../.agents/skills/), which Codex discovers natively. `.claude/skills/` is a byte-for-byte mirror for Claude Code: edit the canonical copy, then copy the tree (`rm -rf .claude/skills && cp -R .agents/skills .claude/skills`). `run-checks harness` fails when the two differ.
 
-| Skill | Responsibility |
-| --- | --- |
-| [Legacy port](../../.agents/skills/legacy-port/SKILL.md) | Port one legacy unit to TypeScript with oracle evidence |
-| [Svelte conventions](../../.agents/skills/svelte-core-bestpractices/SKILL.md) | Components, runes, snippets, reactivity, and lifecycle |
-| [Svelte implementation](../../.agents/skills/svelte-code-writer/SKILL.md) | First-party documentation, analyzer, and validation workflow |
-| [Module organization](../../.agents/skills/module-organization/SKILL.md) | Responsibility, ownership, legacy mapping, and coherent boundaries |
-| [Review](../../.agents/skills/repo-review/SKILL.md) | Concrete defects, parity evidence, contract preservation, and validation gaps |
+| Skill                                                                         | Responsibility                                                                |
+| ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| [Legacy port](../../.agents/skills/legacy-port/SKILL.md)                      | Port one legacy unit to TypeScript with oracle evidence                       |
+| [Svelte conventions](../../.agents/skills/svelte-core-bestpractices/SKILL.md) | Components, runes, snippets, reactivity, and lifecycle                        |
+| [Svelte implementation](../../.agents/skills/svelte-code-writer/SKILL.md)     | First-party documentation, analyzer, and validation workflow                  |
+| [Module organization](../../.agents/skills/module-organization/SKILL.md)      | Responsibility, ownership, legacy mapping, and coherent boundaries            |
+| [Review](../../.agents/skills/repo-review/SKILL.md)                           | Concrete defects, parity evidence, contract preservation, and validation gaps |
 
 **Roles.** Canonical role definitions live in [.agents/agents/](../../.agents/agents/) as Markdown with `name` and `description` frontmatter. They hold each role's ownership and delegation boundary; the technical rules stay in the routed guides.
 
-| Role | Owns | Writes |
-| --- | --- | --- |
-| [legacy-analyst](../../.agents/agents/legacy-analyst.md) | Questions about what MARS does | Nothing by default; assigned fixture files only |
-| [core-porter](../../.agents/agents/core-porter.md) | The framework-free engine | Assigned engine modules, their tests, and fixtures |
-| [svelte-file-editor](../../.agents/agents/svelte-file-editor.md) | Svelte components and SvelteKit routes | Assigned UI files |
-| [code-reviewer](../../.agents/agents/code-reviewer.md) | Review | Nothing |
+| Role                                                             | Owns                                   | Writes                                             |
+| ---------------------------------------------------------------- | -------------------------------------- | -------------------------------------------------- |
+| [legacy-analyst](../../.agents/agents/legacy-analyst.md)         | Questions about what MARS does         | Nothing by default; assigned fixture files only    |
+| [core-porter](../../.agents/agents/core-porter.md)               | The framework-free engine              | Assigned engine modules, their tests, and fixtures |
+| [svelte-file-editor](../../.agents/agents/svelte-file-editor.md) | Svelte components and SvelteKit routes | Assigned UI files                                  |
+| [code-reviewer](../../.agents/agents/code-reviewer.md)           | Review                                 | Nothing                                            |
 
 Adapters:
 
@@ -46,6 +46,14 @@ Both tools declare the first-party `svelte` MCP server; [tooling policy](tooling
 
 ## Maintaining the harness
 
+Validation instructions in roles, skills, and adapters follow the canonical [test run log contract](operations.md#test-run-logs). Route there for log location, filename conventions, stdout/stderr capture, and exit-status preservation rather than introducing another logging policy.
+
+Browser validation instructions also follow the [suite's semantic groups and named projects](../../tests/browser/README.md#semantic-groups). Local projects and the CI matrix share discovery; keep default reporters when selecting groups so per-project logs remain available alongside the master command log. The public suite and [test harness](../../tests/browser/harness/README.md) guides own those contracts rather than duplicated group lists in roles or skills.
+
+Route browser selection to the canonical [validation scope](workflow.md#browser-validation-scope): only impacted local feature groups/cases, with the configured full CI sentinel retained. Route monitoring and failure handling to the [triage and confirmation process](../../tests/browser/README.md#failure-triage-and-confirmation), including the dedicated monitor when explicitly requested. Roles and skills preserve these scope and authorization boundaries rather than introduce another rerun policy.
+
 Behavioral comparison policy lives in the [documentation contract](documentation.md#deviation-catalog-maintenance), with the public baseline in [docs/deviations.md](../deviations.md). Port, UI, analyst, and review roles route there rather than maintaining separate catalogs. Roles limited to assigned code or read-only analysis report needed entry/ADR updates to their coordinating owner; those ownership limits do not make catalog maintenance optional for the overall change. Keep this routing in the canonical skills and their Claude mirror when adjusting the baseline workflow.
+
+The [browser test selector contract](app.md#browser-test-selectors) is canonical for UI hooks and Playwright locators. The Svelte implementation and review skills route there so agents preserve stable test identity during component changes and reject new incidental presentation or DOM-position captures. The `browser-tests/stable-locators` rule in [ESLint](../../eslint.config.js) enforces the syntactic subset during app lint; it does not replace review of dynamic or incidental ordinal captures. Keep those routes and their Claude mirrors synchronized with changes to the convention; the [browser suite guide](../../tests/browser/README.md#locator-contracts) describes its public usage and shared locator helpers.
 
 When moving guidance, update incoming links, section anchors, and plain-text routing hints in `AGENTS.md`, the guides, the roles, and the skills. Link checks alone do not prove that useful instructions survived a move. When the port reaches a milestone that changes a standing fact (P1 creates the app, P5 removes the legacy tree), update [project scope](project.md), the "current state" lines in `AGENTS.md` and [application engineering](app.md), and the role definitions in the same change.

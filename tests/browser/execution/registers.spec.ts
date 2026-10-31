@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openDesktop, waitForDesktop } from './openDesktop.js';
+import { openDesktop, waitForDesktop } from '../harness/openDesktop.js';
 
 test('Registers switch hides the pane and divider, fills the workspace, and preserves width and machine across reload', async ({
   page
@@ -15,49 +15,72 @@ test('Registers switch hides the pane and divider, fills the workspace, and pres
   await divider.press('ArrowLeft');
   await divider.press('ArrowLeft');
   const width = await divider.getAttribute('aria-valuenow');
-  const rightWidth = (await page.locator('.register-pane').boundingBox())!.width;
+  const rightWidth = (await page
+    .getByRole('complementary', { name: 'Registers', exact: true })
+    .boundingBox())!.width;
   await page.getByRole('button', { name: 'New', exact: true }).click();
   await page
     .getByRole('textbox', { name: 'Source mips1.asm', exact: true })
     .fill('.text\nli $t0, 19\n');
   await page.getByRole('button', { name: 'Assemble', exact: true }).click();
   await page.getByRole('button', { name: 'Step', exact: true }).click();
-  const leftWidth = (await page.locator('.left-panes').boundingBox())!.width;
+  const leftWidth = (await page.getByTestId('workspace-panes').boundingBox())!.width;
   await page.mouse.move(5, 250);
   const activeFill = await toggle.evaluate((node) => getComputedStyle(node).backgroundColor);
   const widths = await toggle.evaluate(async (node) => {
-    const left = document.querySelector('.left-panes')!;
-    const widths = [left.getBoundingClientRect().width];
-    (node as HTMLButtonElement).click();
-    await new Promise<void>((resolve) => {
-      const started = performance.now();
-      const sample = () => {
-        widths.push(left.getBoundingClientRect().width);
-        if (performance.now() - started < 350) requestAnimationFrame(sample);
-        else resolve();
+    const left = document.querySelector('[data-testid="workspace-panes"]')!;
+    const sidebar = document.querySelector<HTMLElement>('[data-testid="register-sidebar"]')!;
+    const animate = sidebar.animate;
+    // Capture the owner's real transition before a busy frame can skip its intermediate width.
+    const started = new Promise<{ animation: Animation; duration: number }>((resolve) => {
+      sidebar.animate = (keyframes, options) => {
+        const animation = animate.call(sidebar, keyframes, options);
+        const duration = animation.effect?.getTiming().duration;
+        if (typeof duration === 'number' && duration > 0) {
+          animation.pause();
+          resolve({ animation, duration });
+        }
+        return animation;
       };
-      requestAnimationFrame(sample);
     });
-    return widths;
+    try {
+      const before = left.getBoundingClientRect().width;
+      (node as HTMLButtonElement).click();
+      const { animation, duration } = await started;
+      await animation.ready;
+      animation.currentTime = duration / 2;
+      const middle = left.getBoundingClientRect().width;
+      animation.currentTime = duration;
+      const after = left.getBoundingClientRect().width;
+      animation.finish();
+      await animation.finished;
+      return { before, middle, after, duration };
+    } finally {
+      sidebar.animate = animate;
+    }
   });
-  expect(widths.some((width) => width > widths[0] + 2 && width < widths.at(-1)! - 2)).toBe(true);
+  expect(widths.duration).toBeGreaterThan(0);
+  expect(widths.middle).toBeGreaterThan(widths.before + 2);
+  expect(widths.middle).toBeLessThan(widths.after - 2);
   await page.mouse.move(5, 250);
   await expect(toggle).toHaveAttribute('aria-checked', 'false');
   await expect(toggle).not.toHaveCSS('background-color', activeFill);
-  await expect(page.locator('.register-pane')).toHaveCount(0);
+  await expect(page.getByRole('complementary', { name: 'Registers', exact: true })).toHaveCount(0);
   await expect(divider).toHaveCount(0);
-  expect((await page.locator('.left-panes').boundingBox())!.width).toBeGreaterThan(
+  expect((await page.getByTestId('workspace-panes').boundingBox())!.width).toBeGreaterThan(
     leftWidth + rightWidth - 2
   );
   await page.reload();
   await waitForDesktop(page);
   await expect(toggle).toHaveAttribute('aria-checked', 'false');
-  await expect(page.locator('.register-pane')).toHaveCount(0);
+  await expect(page.getByRole('complementary', { name: 'Registers', exact: true })).toHaveCount(0);
   await expect(page.getByLabel('Execution status')).toHaveText('Status: paused');
   await toggle.click();
-  await expect(page.locator('.register-pane')).toBeVisible();
+  await expect(page.getByRole('complementary', { name: 'Registers', exact: true })).toBeVisible();
   await expect(divider).toHaveAttribute('aria-valuenow', width!);
-  expect((await page.locator('.register-pane').boundingBox())!.width).toBe(rightWidth);
+  expect(
+    (await page.getByRole('complementary', { name: 'Registers', exact: true }).boundingBox())!.width
+  ).toBe(rightWidth);
   await expect(page.getByLabel('$t0 value', { exact: true })).toHaveValue('0x00000013');
   await theme.click();
   await page.mouse.move(5, 250);
@@ -71,7 +94,7 @@ test('Registers switch hides the pane and divider, fills the workspace, and pres
 
 test('register Name cells describe their legacy roles in all three banks', async ({ page }) => {
   await openDesktop(page);
-  const pane = page.locator('.register-pane');
+  const pane = page.getByRole('complementary', { name: 'Registers', exact: true });
   for (const [bank, descriptions] of [
     [
       'Registers',
@@ -116,7 +139,7 @@ test('register Name cells describe their legacy roles in all three banks', async
   ] as const) {
     await pane.getByRole('button', { name: bank, exact: true }).click();
     for (const [name, description] of descriptions) {
-      const entry = pane.getByRole('cell', { name, exact: true }).locator('span');
+      const entry = pane.getByRole('cell', { name, exact: true }).getByTestId('register-name');
       await expect(entry).toHaveCSS('cursor', 'pointer');
       await entry.hover();
       await expect(page.getByRole('tooltip')).toHaveText(description);
@@ -132,7 +155,7 @@ test('Coproc 1 condition flags carry the legacy panel and checkbox descriptions'
   page
 }) => {
   await openDesktop(page);
-  const pane = page.locator('.register-pane');
+  const pane = page.getByRole('complementary', { name: 'Registers', exact: true });
   await pane.getByRole('button', { name: 'Coproc 1', exact: true }).click();
   await pane.getByText('Condition flags', { exact: true }).hover();
   await expect(page.getByRole('tooltip')).toHaveText(
@@ -147,15 +170,17 @@ test('Coproc 1 flag group is centered, with Select all and Select none left-alig
   page
 }) => {
   await openDesktop(page);
-  const pane = page.locator('.register-pane');
+  const pane = page.getByRole('complementary', { name: 'Registers', exact: true });
   await pane.getByRole('button', { name: 'Coproc 1', exact: true }).click();
   const flags = pane.getByRole('group', { name: 'Condition flags', exact: true });
   const all = pane.getByRole('button', { name: 'Select all', exact: true });
   const none = pane.getByRole('button', { name: 'Select none', exact: true });
   const paneBox = (await pane.boundingBox())!;
-  const groupBox = (await flags.locator('..').boundingBox())!;
+  const groupBox = (await page.getByTestId('condition-flags-controls').boundingBox())!;
   const caption = (await flags.getByText('Condition flags', { exact: true }).boundingBox())!;
-  const first = (await flags.getByRole('checkbox').first().boundingBox())!;
+  const first = (await flags
+    .getByRole('checkbox', { name: 'Condition flag 0', exact: true })
+    .boundingBox())!;
   const allBox = (await all.boundingBox())!;
   const noneBox = (await none.boundingBox())!;
   const groupCenter = groupBox.x + groupBox.width / 2;
@@ -169,14 +194,14 @@ test('Coproc 1 flag group is centered, with Select all and Select none left-alig
   const checkboxes = flags.getByRole('checkbox');
   await expect(all).toBeEnabled();
   await expect(none).toBeDisabled();
-  await checkboxes.nth(3).check();
+  await flags.getByRole('checkbox', { name: 'Condition flag 3', exact: true }).check();
   await expect(all).toBeEnabled();
   await expect(none).toBeEnabled();
   await all.click();
   for (const checkbox of await checkboxes.all()) await expect(checkbox).toBeChecked();
   await expect(all).toBeDisabled();
   await expect(none).toBeEnabled();
-  await checkboxes.nth(5).uncheck();
+  await flags.getByRole('checkbox', { name: 'Condition flag 5', exact: true }).uncheck();
   await expect(all).toBeEnabled();
   await none.click();
   for (const checkbox of await checkboxes.all()) await expect(checkbox).not.toBeChecked();
@@ -194,7 +219,7 @@ test('Coproc 1 condition flag edits drive branches and are undone by Backstep', 
     .fill('.text\nbc1t taken\nli $t0, 1\ntaken: li $t1, 2\n');
   await page.getByRole('button', { name: 'Assemble', exact: true }).click();
   await expect(page.getByLabel('Execution status')).toHaveText('Status: assembled');
-  const pane = page.locator('.register-pane');
+  const pane = page.getByRole('complementary', { name: 'Registers', exact: true });
   await pane.getByRole('button', { name: 'Coproc 1', exact: true }).click();
   const flag = pane.getByRole('checkbox', { name: 'Condition flag 0', exact: true });
   await expect(flag).toBeEnabled();
@@ -221,7 +246,7 @@ test('Coproc 1 condition flags stay editable while the program runs', async ({ p
     .fill('.text\nwait: bc1f wait\nli $t0, 7\n');
   await page.getByRole('button', { name: 'Assemble', exact: true }).click();
   await expect(page.getByLabel('Execution status')).toHaveText('Status: assembled');
-  const pane = page.locator('.register-pane');
+  const pane = page.getByRole('complementary', { name: 'Registers', exact: true });
   await pane.getByRole('button', { name: 'Coproc 1', exact: true }).click();
   await page.getByRole('button', { name: 'Go', exact: true }).click();
   await expect(page.getByLabel('Execution status')).toHaveText('Status: running');

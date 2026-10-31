@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
       watch: { usePolling: true, ignored: ['**/__build/**', '**/__logs/**', '**/build/**'] }
     },
     preview: { host: '0.0.0.0', port: browserTest ? 6278 : 6277, strictPort: true },
-    cacheDir: browserTest ? 'node_modules/.vite-browser-test' : 'node_modules/.vite',
+    cacheDir: browserTest ? '__build/browser-vite-cache' : 'node_modules/.vite',
     // Embed the canonical static source without importing through SvelteKit's static-file middleware.
     define: {
       __MARS_SPIM_EXCEPTIONS__: JSON.stringify(

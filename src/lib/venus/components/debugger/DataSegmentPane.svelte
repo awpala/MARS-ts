@@ -81,15 +81,24 @@
       limits
     );
   }
+  // Page geometry owns row identity; machine revisions update the live word values.
   const dataRows = $derived.by(() => {
-    void view.snapshot.revision;
     return Array.from({ length: MEMORY_ROWS }, (_, row) => {
       const address = (view.memoryBase + row * MEMORY_ROW_BYTES) | 0;
       return {
         address,
         words: Array.from({ length: MEMORY_COLUMNS }, (_, column) => {
           const location = (address + column * 4) | 0;
-          return { address: location, value: view.readWord(location) };
+          const value = $derived.by(() => {
+            void view.snapshot.revision;
+            return view.readWord(location);
+          });
+          return {
+            address: location,
+            get value() {
+              return value;
+            }
+          };
         })
       };
     });
@@ -148,21 +157,24 @@
     {/snippet}
     <div
       class="data-scroll min-h-0 flex-auto overflow-auto"
+      data-testid="data-scroll"
       bind:this={dataScroll}
       bind:clientHeight={dataScrollHeight}
     >
       <MachineTable bind:offsetHeight={dataTableHeight}>
         {#snippet header()}
-          <th>Address</th
+          <th data-testid="data-heading-address">Address</th
           >{#each Array.from({ length: MEMORY_COLUMNS }, (_, i) => i * 4) as offset (offset)}<th
               >Value (+{offset})</th
             >{/each}
         {/snippet}
         <tbody
-          >{#each dataRows as row (row.address)}<tr
-              ><td class="numeric identifier">{view.formatAddress(row.address)}</td
+          >{#each dataRows as row (row.address)}<tr data-testid="data-row"
+              ><td class="numeric identifier" data-testid="data-address"
+                >{view.formatAddress(row.address)}</td
               >{#each row.words as word (word.address)}<td
                   class="numeric"
+                  data-testid="memory-cell"
                   id={view.memoryId(word.address)}
                   tabindex="-1"
                   data-selected={word.address === view.selectedLabelWord || undefined}

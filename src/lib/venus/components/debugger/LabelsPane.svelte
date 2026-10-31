@@ -67,7 +67,7 @@
       label="Text"
     />
   </div>
-  <div class="labels-scroll min-h-0 flex-1 overflow-auto">
+  <div class="labels-scroll min-h-0 flex-1 overflow-auto" data-testid="labels-scroll">
     <MachineTable>
       {#snippet header()}
         {#each LABEL_COLUMNS as heading, column (heading)}
@@ -94,14 +94,20 @@
       {/snippet}
       {#each labelGroups as group (group.owner)}
         <tbody aria-label={group.file}>
-          <tr><th class="label-group" scope="rowgroup" colspan="2">{group.name}</th></tr>
+          <tr
+            ><th class="label-group" scope="rowgroup" colspan="2" data-testid="label-group-heading"
+              >{group.name}</th
+            ></tr
+          >
           {#each group.symbols as symbol (symbol.getName())}
             <tr
+              data-testid="label-row"
               id={view.labelRowId(group.filename, symbol.getName())}
               data-selected={view.isSelectedLabel(symbol, group.filename) || undefined}
             >
-              <td class="identifier action">
+              <td class="identifier action" data-testid="label-name-cell">
                 <Button
+                  data-testid="label-name"
                   tooltip="Click on label or address to view it in Text/Data Segment"
                   class="text-left"
                   aria-pressed={view.isSelectedLabel(symbol, group.filename)}
@@ -109,8 +115,9 @@
                   >{symbol.getName()}</Button
                 >
               </td>
-              <td class="numeric action">
+              <td class="numeric action" data-testid="label-address-cell">
                 <Button
+                  data-testid="label-address"
                   class="text-right"
                   tooltip="Click on label or address to view it in Text/Data Segment"
                   aria-pressed={view.isSelectedLabel(symbol, group.filename)}

@@ -74,7 +74,7 @@
   style:--register-background={`var(--theme-register-changed, ${preset.registers.background})`}
   style:--register-foreground={`var(--theme-text, ${preset.registers.foreground})`}
 >
-  <thead><tr>{@render header()}</tr></thead>
+  <thead data-testid="machine-table-header"><tr>{@render header()}</tr></thead>
   {@render children()}
 </table>
 

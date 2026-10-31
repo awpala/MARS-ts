@@ -44,11 +44,12 @@
 
 <!-- @component References a bundled glyph's `#icon` group, so its theme variables and current text color resolve from the page rather than the static file's light-theme fallbacks. The parent button owns labeling and state. -->
 <svg
+  data-testid="toolbar-icon"
   xmlns="http://www.w3.org/2000/svg"
   viewBox="0 0 24 24"
   width="22"
   height="22"
   aria-hidden="true"
 >
-  <use href={`${asset(`icons/${name}.svg`)}#icon`} />
+  <use data-testid="toolbar-icon-reference" href={`${asset(`icons/${name}.svg`)}#icon`} />
 </svg>

@@ -4,6 +4,8 @@ This directory owns browser presentation and element lifetimes for the Venus des
 
 Components are grouped by their presentation responsibility and imported directly from that group. The root contains this guide, not a barrel or compatibility wrappers.
 
+Tested presentation containers and subparts expose responsibility-named, kebab-case `data-testid` hooks. These belong to the rendered element whose content, geometry, or interaction is observed and remain independent of styling classes and DOM nesting. Repeated rows and cells reuse static hooks within a pane or domain-identified row; reusable controls accept caller-owned identity where appropriate. Keep hooks and their Playwright `getByTestId()` consumers synchronized, while retaining reliable accessible roles and names for controls. The [browser suite](../../../../tests/browser/README.md#locator-contracts) documents locator usage and the distinction between identity and state, styling, or deliberate ordering assertions.
+
 | Group                            | Responsibility                                                                                                             |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | [shell](shell/README.md)         | Application menus, grouped toolbar commands, embedded preferences, and repository navigation                               |

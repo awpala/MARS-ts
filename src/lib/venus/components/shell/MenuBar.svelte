@@ -37,19 +37,25 @@
   const groupName = $props.id();
   let element: HTMLElement;
   function actionItem(item: Action, tooltip?: string): MenuItem {
-    const reason = commands.disabledReason(item);
     return {
       id: item.command,
       label: item.label,
-      tooltip: tooltip ?? (reason && `${item.label} — ${reason}`),
+      get tooltip() {
+        const reason = commands.disabledReason(item);
+        return tooltip ?? (reason && `${item.label} — ${reason}`);
+      },
       shortcut: item.shortcut,
-      disabled: !commands.isEnabled(item),
-      ...(item.command === 'autoSave' ? { checked: commands.isPressed(item.command)! } : {}),
+      get disabled() {
+        return !commands.isEnabled(item);
+      },
+      get checked() {
+        return item.command === 'autoSave' ? commands.isPressed(item.command) : undefined;
+      },
       onselect: () => void commands.execute(item.command)
     };
   }
-  /** Settings groups: the display toggles, assembly choices, execution choices, then the dialogs. */
-  const settingsGroups = $derived.by(() => {
+  /** Build stable menu records once; getters read live capability state without replacing keyed items on each edit or simulator update. */
+  function settingsGroups(): MenuGroup[] {
     const groups: MenuGroup[] = [
       {
         id: 'display',
@@ -60,8 +66,14 @@
             id: toggle.icon,
             label: toggle.menuLabel ?? toggle.label,
             tooltip: toggle.description,
-            checked: toggle.active,
-            disabled: toggle.disabled,
+            get checked() {
+              return commands.displayToggles().find((current) => current.icon === toggle.icon)!
+                .active;
+            },
+            get disabled() {
+              return commands.displayToggles().find((current) => current.icon === toggle.icon)!
+                .disabled;
+            },
             onselect: toggle.toggle
           }))
       }
@@ -72,8 +84,12 @@
         id: String(option.id),
         label: option.label,
         tooltip: option.description,
-        checked: option.active,
-        disabled: option.disabled,
+        get checked() {
+          return commands.engineToggles().find((current) => current.id === option.id)!.active;
+        },
+        get disabled() {
+          return commands.engineToggles().find((current) => current.id === option.id)!.disabled;
+        },
         onselect: option.toggle
       });
       if (option.id === Settings.START_AT_MAIN) {
@@ -81,14 +97,18 @@
           id: 'clearAllOutputsOnGo',
           label: clearAllOutputsOnGoOption.label,
           tooltip: clearAllOutputsOnGoOption.description,
-          checked: clearAllOutputsOnGo,
+          get checked() {
+            return clearAllOutputsOnGo;
+          },
           onselect: () => (clearAllOutputsOnGo = !clearAllOutputsOnGo)
         });
         items.push({
           id: 'promptClearBreakpoints',
           label: promptClearBreakpointsOption.label,
           tooltip: promptClearBreakpointsOption.description,
-          checked: promptClearBreakpoints,
+          get checked() {
+            return promptClearBreakpoints;
+          },
           onselect: () => (promptClearBreakpoints = !promptClearBreakpoints)
         });
       }
@@ -106,9 +126,9 @@
       ]
     });
     return groups;
-  });
+  }
 
-  const definitions = $derived([
+  const definitions = [
     ...menus.map((menu) => ({
       label: menu.name,
       groups: menu.groups.map((actions, index) => ({
@@ -116,7 +136,7 @@
         items: actions.map((action) => actionItem(action))
       }))
     })),
-    { label: 'Settings', groups: settingsGroups, class: 'settings-menu' },
+    { label: 'Settings', groups: settingsGroups(), class: 'settings-menu' },
     {
       label: 'Tools',
       groups: [
@@ -143,7 +163,7 @@
         }
       ]
     }
-  ]);
+  ];
   /** Close this bar's menus. Restore focus to the active summary before opening Help when requested by the desktop. */
   export function close(restoreFocus = false): void {
     element?.querySelectorAll<HTMLDetailsElement>('details[open]').forEach((menu) => {

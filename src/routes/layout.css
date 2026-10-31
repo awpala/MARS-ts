@@ -1,4 +1,8 @@
-@import 'tailwindcss';
+/* Scan application code and Help HTML only. Documentation, tests, and legacy sources
+   must not generate utilities or invalidate the running desktop stylesheet. */
+@import 'tailwindcss' source(none);
+@source '../**/*.{svelte,ts,js,html}';
+@source not '../**/*.{test,spec}.{ts,js}';
 
 /* Light mode retains the original component colors and JSON preset fallbacks.
    Dark overrides share semantic roles across the desktop, dialogs, and editor. */

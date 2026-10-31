@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { openDesktop, openStoredSources } from './openDesktop.js';
+import { openDesktop, openStoredSources } from '../harness/openDesktop.js';
 
 async function checkHover(page: Page, button: Locator, theme: string, highlight = true) {
   await page.mouse.move(0, 0);
@@ -64,12 +64,9 @@ for (const theme of ['light', 'dark']) {
     await checkDialog(page, dialog('MARS Help'), theme);
     await dialog('MARS Help').getByRole('button', { name: 'Close', exact: true }).click();
 
+    await page.getByTestId('menu-settings-trigger').click();
     await page
-      .locator('.menubar summary')
-      .filter({ hasText: /^Settings$/ })
-      .click();
-    await page
-      .locator('.settings-menu')
+      .getByTestId('menu-settings-content')
       .getByRole('button', { name: 'Memory Configuration ...', exact: true })
       .click();
     await checkDialog(page, dialog('MIPS Memory Configuration'), theme);
@@ -109,7 +106,7 @@ for (const theme of ['light', 'dark']) {
       { name: 'beta.asm', source: '.text\nli $v0,5\nsyscall\n' }
     ]);
     await action('Edit').click();
-    const sources = page.locator('.source-name');
+    const sources = page.getByTestId('source-tab-name');
     await checkHover(page, sources.filter({ hasText: 'alpha.asm' }), theme);
     await checkHover(page, sources.filter({ hasText: 'beta.asm' }), theme, false);
     await checkHover(page, action('Close beta.asm'), theme);
@@ -118,14 +115,17 @@ for (const theme of ['light', 'dark']) {
     await expect(page.getByRole('textbox', { name: 'Run input', exact: true })).toBeVisible();
     await checkHover(
       page,
-      page.locator('.console-input').getByRole('button', { name: 'Submit', exact: true }),
+      page.getByTestId('console-input').getByRole('button', { name: 'Submit', exact: true }),
       theme
     );
     await checkHover(
       page,
-      page.locator('.console-input').getByRole('button', { name: 'Stop', exact: true }),
+      page.getByTestId('console-input').getByRole('button', { name: 'Stop', exact: true }),
       theme
     );
-    await page.locator('.console-input').getByRole('button', { name: 'Stop', exact: true }).click();
+    await page
+      .getByTestId('console-input')
+      .getByRole('button', { name: 'Stop', exact: true })
+      .click();
   });
 }

@@ -55,21 +55,29 @@
   let revision = $state(0);
   let error = $state('');
   let changed = $state<Record<string, string>>({});
+  // Keep keyed row identities until the bank changes; only values depend on refreshes.
   const rows = $derived.by(() => {
-    void revision;
-    void machineRevision;
     return (
       selected === 'Registers'
         ? general
         : selected === 'Coproc 0'
           ? coprocessor0.getRegisters()
           : coprocessor1.getRegisters()
-    ).map((register, index) => ({
-      tooltip: registerDescriptions[selected][index],
-      name: register.getName(),
-      number: register.getNumber(),
-      value: register.getValueNoNotify()
-    }));
+    ).map((register, index) => {
+      const value = $derived.by(() => {
+        void revision;
+        void machineRevision;
+        return register.getValueNoNotify();
+      });
+      return {
+        tooltip: registerDescriptions[selected][index],
+        name: register.getName(),
+        number: register.getNumber(),
+        get value() {
+          return value;
+        }
+      };
+    });
   });
   $effect(() => {
     let statements = controller.getState().statements;
@@ -215,33 +223,36 @@
       {/snippet}
       <tbody>
         {#each rows as row (row.number)}<tr
+            data-testid="register-row"
             data-highlight={changed[selected] === row.name ? 'register' : undefined}
-            ><td class="identifier">
+            ><td class="identifier" data-testid="register-name-cell">
               <Tooltip text={row.tooltip}>
                 {#snippet children(trigger, description)}
                   <span
+                    data-testid="register-name"
                     class="block cursor-pointer"
                     {@attach trigger}
                     aria-describedby={description}>{row.name}</span
                   >
                 {/snippet}
               </Tooltip>
-            </td>{#if selected === 'Coproc 1'}<td class="numeric"
+            </td>{#if selected === 'Coproc 1'}<td class="numeric" data-testid="register-float"
                 ><CellInput
                   aria-label={`${row.name} float value`}
                   value={floatValue(row.number)}
                   readonly={running}
                   onchange={(event) => updateFloat(row.number, false, event.currentTarget)}
                 /></td
-              ><td class="numeric"
+              ><td class="numeric" data-testid="register-double"
                 >{#if row.number % 2 === 0}<CellInput
                     aria-label={`${row.name} double value`}
                     value={doubleValue(row.number)}
                     readonly={running}
                     onchange={(event) => updateFloat(row.number, true, event.currentTarget)}
                   />{/if}</td
-              >{:else}<td class="numeric">{row.number < 32 ? row.number : ''}</td><td
-                class="numeric"
+              >{:else}<td class="numeric" data-testid="register-number"
+                >{row.number < 32 ? row.number : ''}</td
+              ><td data-testid="register-value" class="numeric"
                 ><CellInput
                   aria-label={`${row.name} value`}
                   value={format(row.value, selected === 'Registers' && row.number === 32)}
@@ -256,7 +267,7 @@
   </div>
   {#if selected === 'Coproc 1'}
     <!-- Fit-width wrapper centers the caption, flags, and bulk actions as one left-aligned group. -->
-    <div class="mx-auto flex w-fit flex-col p-1.25">
+    <div class="mx-auto flex w-fit flex-col p-1.25" data-testid="condition-flags-controls">
       <MultiSelect
         class="flags [--selector-gap:3px]"
         label="Condition flags"

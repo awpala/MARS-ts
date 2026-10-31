@@ -23,7 +23,7 @@
 </script>
 
 <!-- @component Run-speed specialization with one evenly spaced position per distinct speed and adjacent granular increment/decrement controls. The unlimited endpoint, where a program simply runs without debugger interaction, switches the fill to the theme's distinct maximum-speed color. The desktop retains legacy-compatible application and persistence. -->
-<div class="ml-auto flex h-7.25 shrink-0 items-center gap-1">
+<div class="ml-auto flex h-7.25 shrink-0 items-center gap-1" data-testid="run-speed-controls">
   <Slider
     class="speed min-w-42.5 text-center text-[11px] leading-3.5"
     label="Run speed"

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openDesktop, openStoredSources, waitForDesktop } from './openDesktop.js';
+import { openDesktop, openStoredSources, waitForDesktop } from '../harness/openDesktop.js';
 
 test('dragging source tabs preserves selection, dirty contents, loaded execution, and restored order', async ({
   page
@@ -16,25 +16,25 @@ test('dragging source tabs preserves selection, dirty contents, loaded execution
   await action('Assemble').click();
   await action('Edit').click();
   await action('c.asm').dragTo(action('a.asm'), { targetPosition: { x: 3, y: 10 } });
-  await expect(page.locator('.source-tabs .source-name')).toHaveText(['c.asm', 'a.asm', '* b.asm']);
+  await expect(page.getByTestId('source-tab-name')).toHaveText(['c.asm', 'a.asm', '* b.asm']);
   await expect(action('* b.asm')).toHaveAttribute('aria-pressed', 'true');
   await expect(source).toHaveValue('.text\nli $t0, 9\n');
   await action('a.asm').dragTo(action('* b.asm'), { targetPosition: { x: 45, y: 10 } });
-  await expect(page.locator('.source-tabs .source-name')).toHaveText(['c.asm', '* b.asm', 'a.asm']);
+  await expect(page.getByTestId('source-tab-name')).toHaveText(['c.asm', '* b.asm', 'a.asm']);
   await page.reload();
   await waitForDesktop(page);
-  await expect(page.locator('.source-tabs .source-name')).toHaveText(['c.asm', '* b.asm', 'a.asm']);
+  await expect(page.getByTestId('source-tab-name')).toHaveText(['c.asm', '* b.asm', 'a.asm']);
   await expect(action('* b.asm')).toHaveAttribute('aria-pressed', 'true');
   await expect(source).toHaveValue('.text\nli $t0, 9\n');
   await action('Execute').click();
-  await expect(page.locator('footer > span').first()).toHaveText('Loaded: b.asm');
+  await expect(page.getByTestId('footer-source')).toHaveText('Loaded: b.asm');
   await expect(page.getByLabel('Execution status')).toHaveText('Status: assembled');
   await action('Edit').click();
   await action('a.asm').dragTo(source);
   await expect(source).toHaveValue('.text\nli $t0, 9\n');
-  await expect(page.locator('.source-tabs .source-name')).toHaveText(['c.asm', '* b.asm', 'a.asm']);
+  await expect(page.getByTestId('source-tab-name')).toHaveText(['c.asm', '* b.asm', 'a.asm']);
   await action('a.asm').press('Alt+Shift+ArrowLeft');
-  await expect(page.locator('.source-tabs .source-name')).toHaveText(['c.asm', 'a.asm', '* b.asm']);
+  await expect(page.getByTestId('source-tab-name')).toHaveText(['c.asm', 'a.asm', '* b.asm']);
 });
 
 test('source tab drop markers include the close control for intermediate and last tabs', async ({
@@ -64,7 +64,7 @@ test('source tab drop markers include the close control for intermediate and las
       relatedTarget: await close.elementHandle()
     });
     await close.dispatchEvent('dragover', { dataTransfer, ...position });
-    const marker = page.locator('.source-tabs [data-drop-position]');
+    const marker = page.getByTestId('source-tab').and(page.locator('[data-drop-position]'));
     await expect(marker).toHaveCount(1);
     const markerGeometry = await marker.evaluate((element) => ({
       right: element.getBoundingClientRect().right,
@@ -79,7 +79,7 @@ test('source tab drop markers include the close control for intermediate and las
     await dragged.dispatchEvent('dragend', { dataTransfer });
     await dataTransfer.dispose();
     await expect(marker).toHaveCount(0);
-    await expect(page.locator('.source-tabs .source-name')).toHaveText(
+    await expect(page.getByTestId('source-tab-name')).toHaveText(
       targetName === 'c.asm' ? ['b.asm', 'c.asm', 'a.asm'] : ['b.asm', 'a.asm', 'c.asm']
     );
     await expect(close).toBeVisible();

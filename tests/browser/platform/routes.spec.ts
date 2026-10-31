@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { waitForDesktop } from './openDesktop.js';
+import { waitForDesktop } from '../harness/openDesktop.js';
 
 for (const theme of ['light', 'dark'] as const) {
   test(`unknown routes show a centered ${theme} fallback and return to the IDE`, async ({
@@ -10,11 +10,11 @@ for (const theme of ['light', 'dark'] as const) {
       const response = await page.goto(path);
       expect(response?.status()).toBe(404);
       await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
-      await expect(page.locator('main')).toHaveCSS(
+      await expect(page.getByTestId('route-error')).toHaveCSS(
         'background-color',
         theme === 'dark' ? 'rgb(32, 40, 51)' : 'rgb(237, 237, 237)'
       );
-      const pane = await page.locator('main section').boundingBox();
+      const pane = await page.getByTestId('route-error-panel').boundingBox();
       const viewport = page.viewportSize()!;
       expect(pane).not.toBeNull();
       expect(Math.abs(pane!.x + pane!.width / 2 - viewport.width / 2)).toBeLessThan(2);
