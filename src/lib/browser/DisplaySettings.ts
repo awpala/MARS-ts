@@ -87,7 +87,7 @@ function validate(value: unknown): DisplaySettings | undefined {
   };
 }
 
-/** Reads a complete validated preference record; malformed data or unavailable storage uses the GUI defaults. */
+/** Reads a complete validated preference record; missing, malformed, or unavailable storage returns undefined so the caller keeps its GUI defaults. */
 export function loadDisplaySettings(
   storage: PreferenceStorageAccess = () => window.localStorage
 ): DisplaySettings | undefined {

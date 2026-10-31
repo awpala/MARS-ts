@@ -1610,7 +1610,6 @@ test('Execute footer follows the loaded program independently of the selected Ed
   await expect(filename).toHaveText('No program loaded');
 });
 
-// Decode with an independent ZIP reader, which also verifies entry CRCs.
 test('new empty buffers stay unsaved until the first character, including with Auto Save', async ({
   page
 }) => {

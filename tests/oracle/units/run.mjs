@@ -1,4 +1,4 @@
-/** Java method-probe capture with the same headless/preferences isolation as run-legacy. */
+/** Java method-probe capture with isolated preferences and headless or Xvfb-backed execution. */
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {

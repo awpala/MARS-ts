@@ -152,7 +152,7 @@ type RecordedTone = {
   start: number;
   stops: number[];
 };
-/** Record every oscillator the page starts, with its context state; the real Web Audio graph still plays. */
+/** Record every oscillator the page creates, including its start/stop calls and context state at start; the real Web Audio graph still plays. */
 async function recordTones(page: Page) {
   await page.addInitScript(() => {
     const records: RecordedTone[] = [];

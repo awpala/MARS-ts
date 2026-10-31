@@ -116,7 +116,7 @@ export class ErrorMessage {
   getLine(): number {
     return this.line;
   }
-  /** One-based source column, or zero when unavailable. */
+  /** One-based source column, or the supplied nonpositive unknown location. */
   getPosition(): number {
     return this.position;
   }

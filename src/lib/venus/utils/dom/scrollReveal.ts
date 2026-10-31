@@ -18,7 +18,7 @@ export function centerBelowHeading(viewport: HTMLElement, target: HTMLElement): 
     (viewport.clientHeight - header - bounds.height) / 2;
 }
 
-/** Whether the target's bottom edge is within the viewport's visible height, measured from the viewport's top border edge. */
+/** Whether the target's bottom edge is at or above the viewport's bottom inner edge, excluding its border. */
 export function endsWithinViewport(viewport: HTMLElement, target: HTMLElement): boolean {
   const viewportTop = viewport.getBoundingClientRect().top + viewport.clientTop;
   return target.getBoundingClientRect().bottom <= viewportTop + viewport.clientHeight;

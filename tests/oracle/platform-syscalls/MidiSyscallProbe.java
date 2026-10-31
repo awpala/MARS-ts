@@ -130,7 +130,7 @@ public final class MidiSyscallProbe {
     try { loader.findSyscall(service).simulate(statement); return "ok"; }
     catch(Exception error) { return error.getClass().getName() + ":" + error.getMessage(); }
   }
-  /** Await the tones opened since {@code first}; unbounded tones are observed only through their note-on. */
+  /** Await the tones opened since {@code first}, waiting for closure or only startup according to {@code untilClosed}. */
   private static List<ToneRecord> await(int first, int count, boolean untilClosed) throws InterruptedException {
     long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
     while(tones.size() < first + count && System.nanoTime() < deadline) Thread.sleep(5);
@@ -202,7 +202,7 @@ public final class MidiSyscallProbe {
     // A maximal duration is scheduled as ticks without clamping; the probe does not wait for its end.
     run(31, 67, Integer.MAX_VALUE, 0, 100, Integer.MAX_VALUE, false);
     System.out.flush();
-    // ToneGenerator's cached pool threads are non-daemon, and the maximal tone never ends.
+    // ToneGenerator's cached pool threads are non-daemon; exit without waiting for the maximal tone's scheduled end.
     System.exit(0);
   }
 }

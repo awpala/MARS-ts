@@ -16,7 +16,7 @@ export function parseJsonRows<T>(stdout: string): T[] {
     .map((line) => JSON.parse(line) as T);
 }
 
-/** Decode tab-separated probe output without trimming individual fields or changing row order. */
+/** Decode tab-separated probe output after trimming trailing output whitespace, preserving row order. */
 export function parseTabRows(stdout: string): string[][] {
   return stdout
     .trimEnd()

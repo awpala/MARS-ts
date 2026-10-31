@@ -13,7 +13,7 @@ At install, the worker precaches the prerendered pages, the hashed Vite output, 
 Requests are handled as follows:
 
 - **Precached files** are served cache-first.
-- **Everything else** on the same origin is network-first. Successful responses are cached for later, and when the network fails the worker serves a cached copy if one exists.
+- **Everything else** on the same origin is network-first. Successful responses without `Cache-Control: no-store` are cached for later, and when the network fails the worker serves a cached copy if one exists.
 - **Offline navigations** that have no cached copy fall back to the cached shell (the prerendered desktop), so any URL opens the app.
 - **`_app/version.json`** and cross-origin or non-GET requests bypass the worker. SvelteKit's update polling therefore still sees new releases instead of a cached answer.
 

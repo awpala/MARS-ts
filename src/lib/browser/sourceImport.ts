@@ -50,7 +50,7 @@ function isArchiveMetadata(path: string): boolean {
  * Reads a picker selection into an import plan. Directly selected `.asm` and `.s` files keep their filename; ZIP archives
  * contribute each assembly entry under its normalized path inside the archive, so relative includes keep resolving. Every
  * other file or entry, unreadable data, an invalid path, and a name already taken by an earlier item in the selection is
- * skipped with a reason; nothing here touches the library.
+ * skipped with a reason, except directory markers and macOS metadata, which are silently ignored. Nothing here touches the library.
  */
 export async function readSourceImport(files: readonly File[]): Promise<SourceImportPlan> {
   const plan: SourceImportPlan = { sources: [], skipped: [] };

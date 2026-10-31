@@ -15,7 +15,7 @@
   "stderr": "",
   "status": 0,
   "hashes": {
-    "tests/oracle/platform-syscalls/MidiSyscallProbe.java": "297595f57c6177c3f83e79f06294fad5eafc185a01d6c489726da37e51c5266e",
+    "tests/oracle/platform-syscalls/MidiSyscallProbe.java": "979b97046fe529ffe1a3966a1678bcbf92f2cbce404cd473997a043e8ccda79a",
     "mars/mips/instructions/SyscallLoader.java": "b2b40aba07699230e1769711cd18e657a23ff6f8822819c0eddf19f9ffb30e8c",
     "mars/mips/instructions/syscalls/SyscallMidiOut.java": "8a56ff7fc8c3fc2789528806f6e93ac38b835aa7dd3f2aa29570f75acfc2271e",
     "mars/mips/instructions/syscalls/SyscallMidiOutSync.java": "a3c50836e77f9fc049a1e18db5f9b0545cf09265b410a9b2a1ecb0666d40c34b",

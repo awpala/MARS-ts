@@ -7,7 +7,7 @@ Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSl
 
 Seeded streams reproduce Java's random sequence. Unseeded streams receive browser entropy on first use. Streams survive assembly, Reset, and Backstep; re-seed with service 40 to repeat a sequence. Confirmation window close or Escape returns -1. Integer dialog input is parsed without trimming; surrounding spaces produce status -1. InputDialogString preserves legacy newline, truncation, and small-buffer rules; reserve at least two bytes for useful string input.
 
-MIDI services 31 and 33 play a sine tone at the requested pitch, duration, and volume; every instrument number produces the same sine sound. Browsers allow sound only after you interact with the page, so tones play once Go or Step has started the program. Service 33 waits for the full duration even when the browser cannot play sound. Stop or Pause ends that wait at once, but a tone that has started keeps playing to the end of its duration, as in MARS. Up to 32 tones sound together; another tone cuts off the oldest.
+MIDI services 31 and 33 play a sine tone at the requested pitch, duration, and volume; every instrument number produces the same sine sound. Browsers allow sound only after you interact with the page, so tones play once Go or Step has started the program. Service 33 waits for the full duration even when the browser cannot play sound. Stop or Pause ends that wait at once, but a tone that has started keeps playing to the end of its duration, as in MARS. Starting a tone at the 32-voice limit fades out the oldest, with a brief overlap during its fade.
 
 ## SYSCALL functions available in MARS
 

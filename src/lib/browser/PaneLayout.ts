@@ -40,7 +40,7 @@ function validate(value: unknown): PaneLayout | undefined {
   };
 }
 
-/** Reads validated layout preferences; unavailable storage or malformed data silently uses default layout. */
+/** Reads validated layout preferences; missing, malformed, or unavailable storage returns undefined so the caller keeps its default layout. */
 export function loadPaneLayout(
   storage: PreferenceStorageAccess = () => window.localStorage
 ): PaneLayout | undefined {

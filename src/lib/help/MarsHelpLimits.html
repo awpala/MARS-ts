@@ -50,7 +50,8 @@ Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSl
   <li>
     Backstep history is bounded to 2000 recent steps and does not reverse output or external I/O.
     Stable machine state and Backstep history are recovered after reload; active execution is not
-    resumed. Machine edits require execution to be stopped.
+    resumed. Numeric register and memory edits require execution to be stopped; condition flags
+    remain editable during execution.
   </li>
   <li>
     Execution yields cooperatively to the browser. Limited-speed timing is approximate, and large

@@ -66,8 +66,8 @@ Some essential facts about writing and using exception handlers include:
     assemblies, including when made during execution. A missing source is reported at assembly time.
   </li>
   <li>
-    If there is no instruction at location <code>0x80000180</code>, MARS will terminate the MIPS
-    program with an appropriate error message.
+    If there is no instruction at the configured exception handler address, MARS will terminate the
+    MIPS program with an appropriate error message.
   </li>
   <li>
     The exception handler can return control to the program using the <code>eret</code> instruction.

@@ -20,7 +20,7 @@ MARS-ts runs its TypeScript assembler and simulator in a modern browser with Jav
 - File, time, and sleep syscalls remain unfinished. Random 40–44 and dialog 50–59 services are available. MIDI 31 and 33 play sine tones that ignore the instrument number and sound only after Go or Step starts the program. See Syscalls for exact service availability. Tools are disabled. File → Dump Memory exports populated text or data memory in all six legacy formats.
 - The Exception Handler dialog selects a default or saved-library handler for automatic inclusion; explicit handler code is also supported. Memory Configuration supports the default layout and both compact layouts.
 - Editor and highlighting customization use bundled presets, not the original dialogs. Command-line operation is excluded. Program arguments are available through Settings and the Args toolbar toggle; their text follows legacy whitespace splitting and low-byte character storage.
-- Backstep history is bounded to 2000 recent steps and does not reverse output or external I/O. Stable machine state and Backstep history are recovered after reload; active execution is not resumed. Machine edits require execution to be stopped.
+- Backstep history is bounded to 2000 recent steps and does not reverse output or external I/O. Stable machine state and Backstep history are recovered after reload; active execution is not resumed. Numeric register and memory edits require execution to be stopped; condition flags remain editable during execution.
 - Execution yields cooperatively to the browser. Limited-speed timing is approximate, and large workloads still consume browser CPU and memory.
 
 ## Branch offsets

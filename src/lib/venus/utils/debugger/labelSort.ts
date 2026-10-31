@@ -8,7 +8,7 @@ export type SortableLabel = Pick<AssemblySymbol, 'getName' | 'getAddress'>;
 /** Labels table column headings, in column-index order. */
 export const LABEL_COLUMNS = ['Label', 'Address'] as const;
 
-/** Highest of the eight legacy sort states. */
+/** Number of legacy sort states; valid states run from zero through seven. */
 export const LABEL_SORT_STATES = 8;
 
 /** Next state per current state and clicked column; LabelsWindow remembers each column's direction when switching columns. */

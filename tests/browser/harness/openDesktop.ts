@@ -90,7 +90,7 @@ export async function restorePageFocus(page: Page): Promise<void> {
   });
 }
 
-/** Record, in order and without repeats, the accessible name of every transfer status the desktop shows from now on. */
+/** Record, in order and without consecutive repeats, the accessible name of every transfer status the desktop shows from now on. */
 export async function recordTransferStatuses(page: Page): Promise<() => Promise<string[]>> {
   await page.evaluate(() => {
     const seen: string[] = [];

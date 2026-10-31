@@ -100,7 +100,8 @@ export function pagedOffset(
 
 /**
  * Choose the range and page that show an address. Text addresses use the text range, kernel data and memory-mapped addresses their own,
- * and anything else the nearest eligible base at or below it, with ties keeping the earlier range and no eligible base keeping `current`.
+ * and anything else the nearest eligible base: $gp and $sp may lie on either side, while extern, data, and heap must be at or below it.
+ * Ties keep the earlier range, and no eligible base keeps `current`.
  * Pages keep the range's boundaries rather than placing every label in the first row.
  */
 export function locateAddress(

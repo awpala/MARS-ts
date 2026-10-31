@@ -66,7 +66,7 @@ export function writeZip(files: readonly ZipInput[]): Blob {
 
 /** One central-directory entry of a read archive; its data is extracted and verified only on request. */
 export interface ZipEntry {
-  /** Entry path exactly as the archive names it, with `/` separators. */
+  /** Decoded entry path as the archive names it; separators are not normalized. */
   name: string;
   /** Whether the entry is a directory marker rather than a file. */
   directory: boolean;
@@ -130,7 +130,7 @@ export function readZip(bytes: Uint8Array<ArrayBuffer>): ZipEntry[] {
     const commentLength = view.getUint16(position + 32, true);
     const localOffset = view.getUint32(position + 42, true);
     const nameBytes = bytes.subarray(position + 46, position + 46 + nameLength);
-    // Bit 11 declares UTF-8 names; many tools write UTF-8 without it, so other non-UTF-8 names are read as Latin-1.
+    // Bit 11 declares UTF-8 names; many tools write UTF-8 without it, so other non-UTF-8 names are read as Windows-1252.
     let name: string;
     try {
       name = utf8.decode(nameBytes);
@@ -167,7 +167,7 @@ export function readZip(bytes: Uint8Array<ArrayBuffer>): ZipEntry[] {
   return entries;
 }
 
-/** Inflates raw DEFLATE data, refusing output beyond the declared size so a forged header cannot exhaust memory. */
+/** Inflates raw DEFLATE into a buffer of the declared size and rejects a size mismatch; callers must bound that size before allocation. */
 async function inflate(
   compressed: Uint8Array<ArrayBuffer>,
   size: number

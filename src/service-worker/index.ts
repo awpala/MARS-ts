@@ -57,7 +57,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(respond(request, url));
 });
 
-/** Serves precached files from the cache, navigations network-first with the shell offline, the rest network-first. */
+/** Serves precached paths cache-first, including navigations; other requests are network-first with cached responses or the navigation shell as offline fallbacks. */
 async function respond(request: Request, url: URL): Promise<Response> {
   const cache = await caches.open(CACHE);
   if (precached.has(url.pathname)) {

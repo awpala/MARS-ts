@@ -21,11 +21,11 @@ const browserContext = (): ToneContext | undefined =>
 
 /** Sine-wave MIDI tone output over Web Audio; each desktop machine owns one instance with its context, voices, and wait timers. */
 export class WebAudioToneHost implements ToneGeneratorHost {
-  /** Simultaneous voices before the oldest is cut off, bounding a tight loop of asynchronous tones. */
+  /** Tracked voice limit; accepting another tone at the limit starts the oldest voice's fade-out. */
   static readonly MAX_VOICES = 32;
   /** Gain at velocity 127; lower velocities follow the square law of the General MIDI velocity curve. */
   static readonly PEAK_GAIN = 0.2;
-  /** Fade-in seconds at note-on, preventing a click. */
+  /** Maximum fade-in seconds at note-on; short tones use half their duration. */
   static readonly ATTACK = 0.005;
   /** Fade-out seconds after note-off, preventing a click. */
   static readonly RELEASE = 0.03;

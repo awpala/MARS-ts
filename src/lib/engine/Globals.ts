@@ -61,7 +61,7 @@ export interface GlobalsHost {
   writeDiagnostic?(message: string): void;
   /** Optional internal debug sink, active only while this machine's debug flag is true. */
   debug?(message: string): void;
-  /** Additional/alternative translated services explicitly registered for this session. */
+  /** Explicit service registrations replacing the default registry when supplied. */
   syscallRegistrations?: readonly SyscallRegistration[];
   /** Explicit parsed service overrides; canonical defaults retain their existing numbers. */
   syscallOverrides?: readonly SyscallOverride[];

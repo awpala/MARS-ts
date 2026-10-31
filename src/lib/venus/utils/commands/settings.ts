@@ -11,7 +11,7 @@ export type EngineOption = {
   label: string;
   /** Legacy hover description. */
   description: string;
-  /** True when changing it discards a loaded assembly; false when only host or later-run behavior changes. */
+  /** True when changing it invalidates assembly; delayed branching rebuilds loaded code instead. False when only host or later-run behavior changes. */
   invalidatesAssembly: boolean;
   /** Toolbar glyph for settings that also appear as a toolbar toggle; omitted for menu-only settings. */
   toolbarIcon?: ToolbarIconName;
@@ -86,7 +86,7 @@ export function engineOption(id: number): EngineOption | undefined {
   return engineOptions.find((option) => option.id === id);
 }
 
-/** Browser-specific Settings entry that clears both consoles when Go starts a fresh run ([ADR 0008](../../../docs/adrs/0008-clear-outputs-on-go.md)). */
+/** Browser-specific Settings entry that clears both consoles when Go starts a fresh run ([ADR 0008](../../../../../docs/adrs/0008-clear-outputs-on-go.md)). */
 export const clearAllOutputsOnGoOption = {
   label: 'Clear all outputs on Go',
   description:
