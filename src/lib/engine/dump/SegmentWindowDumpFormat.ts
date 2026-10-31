@@ -23,9 +23,10 @@ export class SegmentWindowDumpFormat extends AbstractDumpFormat {
     const memory = this.machine.memory;
     const settings = this.machine.getSettings();
     const addressText = (address: number) =>
-      settings.getBooleanSetting(Settings.DISPLAY_ADDRESSES_IN_HEX)
-        ? Binary.intToHexString(address)
-        : String(address >>> 0);
+      Binary.formatUnsignedInteger(
+        address,
+        settings.getBooleanSetting(Settings.DISPLAY_ADDRESSES_IN_HEX) ? 16 : 10
+      );
     const lines: string[] = [];
     if (memory.inDataSegment(firstAddress)) {
       let offset = 0;

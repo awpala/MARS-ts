@@ -1,3 +1,5 @@
+import { loadPreference, savePreference, type PreferenceStorageAccess } from './preferences.js';
+
 /** Browser persistence key for the first version of the desktop pane dividers. */
 export const PANE_LAYOUT_STORAGE_KEY = 'mars-ts:panes:v1';
 
@@ -16,8 +18,6 @@ export interface PaneLayout {
   /** Requested Data Segment height in CSS pixels, or null for its natural height; absent in older records. */
   dataSegmentHeight: number | null;
 }
-
-type StorageAccess = () => Pick<Storage, 'getItem' | 'setItem'>;
 
 function validate(value: unknown): PaneLayout | undefined {
   if (!value || typeof value !== 'object') return;
@@ -42,26 +42,15 @@ function validate(value: unknown): PaneLayout | undefined {
 
 /** Reads validated layout preferences; unavailable storage or malformed data silently uses default layout. */
 export function loadPaneLayout(
-  storage: StorageAccess = () => window.localStorage
+  storage: PreferenceStorageAccess = () => window.localStorage
 ): PaneLayout | undefined {
-  try {
-    const raw = storage().getItem(PANE_LAYOUT_STORAGE_KEY);
-    return raw === null ? undefined : validate(JSON.parse(raw));
-  } catch {
-    return undefined;
-  }
+  return loadPreference(PANE_LAYOUT_STORAGE_KEY, validate, storage);
 }
 
 /** Persists view preferences after a resize gesture; blocked or full storage never interrupts editing. */
 export function savePaneLayout(
   layout: PaneLayout,
-  storage: StorageAccess = () => window.localStorage
+  storage: PreferenceStorageAccess = () => window.localStorage
 ): void {
-  const value = validate(layout);
-  if (!value) return;
-  try {
-    storage().setItem(PANE_LAYOUT_STORAGE_KEY, JSON.stringify(value));
-  } catch {
-    /* Keep current in-memory layout when persistence is unavailable. */
-  }
+  savePreference(PANE_LAYOUT_STORAGE_KEY, layout, validate, storage);
 }

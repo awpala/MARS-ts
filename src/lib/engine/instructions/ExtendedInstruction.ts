@@ -154,7 +154,7 @@ export class ExtendedInstruction extends Instruction {
         instruction = this.substitute(
           instruction,
           'LL' + op + 'P' + add,
-          String((addr << 16) >> 16)
+          String(Binary.signExtend16(addr))
         );
       }
 
@@ -169,7 +169,7 @@ export class ExtendedInstruction extends Instruction {
         if (instruction.length > index + 3 && instruction.charAt(index + 3) == 'U') {
           instruction = this.substitute(instruction, 'LL' + op + 'U', String(addr & 0xffff));
         } else {
-          instruction = this.substitute(instruction, 'LL' + op, String((addr << 16) >> 16));
+          instruction = this.substitute(instruction, 'LL' + op, String(Binary.signExtend16(addr)));
         }
       }
 
@@ -235,7 +235,7 @@ export class ExtendedInstruction extends Instruction {
           instruction = this.substitute(
             instruction,
             'VL' + op + 'P' + add,
-            String((val << 16) >> 16)
+            String(Binary.signExtend16(val))
           );
         }
       }
@@ -251,7 +251,7 @@ export class ExtendedInstruction extends Instruction {
         if (instruction.length > index + 3 && instruction.charAt(index + 3) == 'U') {
           instruction = this.substitute(instruction, 'VL' + op + 'U', String(val & 0xffff));
         } else {
-          instruction = this.substitute(instruction, 'VL' + op, String((val << 16) >> 16));
+          instruction = this.substitute(instruction, 'VL' + op, String(Binary.signExtend16(val)));
         }
       }
 
@@ -329,7 +329,7 @@ export class ExtendedInstruction extends Instruction {
       } catch (error) {
         if (!(error instanceof NumberFormatException)) throw error;
       }
-      instruction = this.substitute(instruction, 'LLPP' + add, String((addr << 16) >> 16));
+      instruction = this.substitute(instruction, 'LLPP' + add, String(Binary.signExtend16(addr)));
     }
 
     if ((index = instruction.indexOf('LLP')) >= 0) {
@@ -344,7 +344,7 @@ export class ExtendedInstruction extends Instruction {
       if (instruction.length > index + 3 && instruction.charAt(index + 3) == 'U') {
         instruction = this.substitute(instruction, 'LLPU', String(addr & 0xffff));
       } else {
-        instruction = this.substitute(instruction, 'LLP', String((addr << 16) >> 16));
+        instruction = this.substitute(instruction, 'LLP', String(Binary.signExtend16(addr)));
       }
     }
 

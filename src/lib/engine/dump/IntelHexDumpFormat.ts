@@ -1,6 +1,7 @@
 /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt.
  * Ports mars/mips/dump/IntelHexDumpFormat.java. */
 import { AbstractDumpFormat } from './AbstractDumpFormat.js';
+import { Binary } from '../formatting/Binary.js';
 import type { Globals } from '../Globals.js';
 
 /** Legacy Intel HEX writer, including its relative addresses and word-byte order. */
@@ -19,10 +20,10 @@ export class IntelHexDumpFormat extends AbstractDumpFormat {
       lines.push(
         (
           ':04' +
-          (offset >>> 0).toString(16).padStart(4, '0') +
+          Binary.intToPaddedUnsignedString(offset, 16, 4) +
           '00' +
-          (word >>> 0).toString(16).padStart(8, '0') +
-          (-checksum & 255).toString(16).padStart(2, '0')
+          Binary.intToPaddedUnsignedString(word, 16, 8) +
+          Binary.intToPaddedUnsignedString(-checksum & 255, 16, 2)
         ).toUpperCase()
       );
     }

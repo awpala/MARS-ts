@@ -9,7 +9,6 @@ import { ProcessingException } from '../../diagnostics/ProcessingException.js';
 import { NumberFormatException } from '../../formatting/Binary.js';
 import { JavaFloatingPoint } from '../../formatting/JavaFloatingPoint.js';
 import { parseInteger } from '../../io/SystemIO.js';
-import { Exceptions } from '../../simulator/Exceptions.js';
 /** Shared byte-message and numeric-input algorithms of the legacy dialog syscalls; state stays with the machine and host. */
 export abstract class AbstractDialogSyscall extends AbstractSyscall {
   /** Read Java's byte-to-char message, wrapping memory errors through the current exception host. */
@@ -61,12 +60,7 @@ export abstract class AbstractDialogSyscall extends AbstractSyscall {
     } catch (error) {
       if (error instanceof InvalidRegisterAccessException) {
         this.host.registerFile.updateRegister(5, -1);
-        throw new ProcessingException(
-          statement,
-          `invalid int reg. access during double input (syscall ${this.getNumber()})`,
-          this.host.exceptionHost,
-          Exceptions.SYSCALL_EXCEPTION
-        );
+        throw this.syscallException(statement, 'invalid int reg. access during double input');
       }
       if (!(error instanceof NumberFormatException)) throw error;
       if (kind === 'int') store(0);

@@ -7,6 +7,7 @@
   import { Binary } from '#lib/engine/formatting/Binary.js';
   import { sourceStem } from '#lib/browser/SourceLibrary.js';
   import { FileDownload } from '#lib/browser/FileDownload.js';
+  import { errorMessage } from '#lib/browser/errorMessage.js';
   import { getDesktop } from '../../context/desktop.js';
   import Modal from './Modal.svelte';
   import DialogField from './DialogField.svelte';
@@ -49,7 +50,7 @@
       )
         desktop.dumpOpen = false;
     } catch (failure) {
-      error = failure instanceof Error ? failure.message : String(failure);
+      error = errorMessage(failure);
     } finally {
       saving = false;
     }

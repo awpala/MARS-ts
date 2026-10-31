@@ -1109,6 +1109,15 @@ test('Data Segment resizes from above and reselecting its range returns to the s
   await range.blur();
   await expect(range).toHaveValue('data');
   await expect(data.locator('tbody tr').first()).toContainText('0x10010200');
+  await range.focus();
+  await range.dispatchEvent('keydown', { key: 'F4' });
+  await expect(range).toHaveValue('');
+  await range.dispatchEvent('keydown', { key: 'ArrowDown' });
+  await expect(range).toHaveValue('data');
+  await range.dispatchEvent('keydown', { key: 'ArrowDown', altKey: true });
+  await expect(range).toHaveValue('');
+  await range.blur();
+  await expect(range).toHaveValue('data');
   await range.dispatchEvent('pointerdown');
   await range.selectOption('data');
   await expect(range).toHaveValue('data');

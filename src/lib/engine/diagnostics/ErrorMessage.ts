@@ -2,6 +2,7 @@
  * Copyright (c) 2003–2012 Pete Sanderson and Kenneth Vollmar. MIT license.
  * Ports mars/ErrorMessage.java. See MARSlicense.txt at the repository root.
  */
+import { JavaCharacter } from '../formatting/JavaCharacter.js';
 
 /** Source mapping needed by diagnostics; implemented by assembler SourceLine. */
 export interface DiagnosticSourceLine {
@@ -132,23 +133,15 @@ export class ErrorMessage {
     return this.macroExpansionHistory ? `${this.macroExpansionHistory}->` : '';
   }
 
-  private trimJava(source: string): string {
-    let start = 0;
-    let end = source.length;
-    while (start < end && source.charCodeAt(start) <= 32) start++;
-    while (end > start && source.charCodeAt(end - 1) <= 32) end--;
-    return source.slice(start, end);
-  }
-
   private parseMacroHistory(source: string): number[] {
-    let verify = this.trimJava(source);
+    let verify = JavaCharacter.trim(source);
     const history: number[] = [];
     for (const match of source.matchAll(/<\d+>/g)) {
       if (!verify.startsWith(match[0])) break;
       const line = Number(match[0].slice(1, -1));
       if (line > 2147483647) break;
       history.push(line);
-      verify = this.trimJava(verify.slice(match[0].length));
+      verify = JavaCharacter.trim(verify.slice(match[0].length));
     }
     return history;
   }

@@ -69,9 +69,8 @@ test('current line highlight follows the caret and persists its toggle', async (
   await page.keyboard.press('Alt+n');
   const source = page.getByRole('textbox', { name: 'Source mips1.asm' });
   const toggle = page.getByRole('button', { name: 'Highlight current line' });
-  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
   await source.fill('first\nsecond\nthird');
-  await toggle.click();
   const highlight = page.locator('.current-line');
   await expect(highlight).toBeVisible();
   await source.focus();
@@ -89,6 +88,10 @@ test('current line highlight follows the caret and persists its toggle', async (
   await waitForDesktop(page);
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
   await toggle.click();
+  await expect(highlight).toHaveCount(0);
+  await page.reload();
+  await waitForDesktop(page);
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
   await expect(highlight).toHaveCount(0);
 });
 

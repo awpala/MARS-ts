@@ -3,8 +3,6 @@
 import { AbstractSyscall } from '../AbstractSyscall.js';
 import type { SyscallHost } from '../SyscallHost.js';
 import type { ProgramStatement } from '../../assembler/programs/ProgramStatement.js';
-import { ProcessingException } from '../../diagnostics/ProcessingException.js';
-import { Exceptions } from '../../simulator/Exceptions.js';
 /** Canonical ReadChar service; hardware and I/O remain owned by the injected session. */
 export class SyscallReadChar extends AbstractSyscall {
   /** Construct service 12 (ReadChar) for this session. */
@@ -18,12 +16,7 @@ export class SyscallReadChar extends AbstractSyscall {
       value = await this.host.systemIO.readChar(this.getNumber());
     } catch (error) {
       if (!(error instanceof RangeError)) throw error;
-      throw new ProcessingException(
-        statement,
-        `invalid char input (syscall ${this.getNumber()})`,
-        this.host.exceptionHost,
-        Exceptions.SYSCALL_EXCEPTION
-      );
+      throw this.syscallException(statement, 'invalid char input');
     }
     this.host.registerFile.updateRegister(2, value);
   }

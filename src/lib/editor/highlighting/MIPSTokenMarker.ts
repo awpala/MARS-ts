@@ -9,7 +9,7 @@ import { TokenTypes } from '#lib/engine/assembler/tokenization/TokenTypes.js';
 import { RegisterFile } from '#lib/engine/hardware/registers/RegisterFile.js';
 import { Coprocessor1 } from '#lib/engine/hardware/registers/Coprocessor1.js';
 import { KeywordMap } from './KeywordMap.js';
-import { JavaCharacter } from '#lib/engine/assembler/tokenization/JavaCharacter.js';
+import { JavaCharacter } from '#lib/engine/formatting/JavaCharacter.js';
 import { Token } from './Token.js';
 import { TokenMarker, type Segment } from './TokenMarker.js';
 import data from './lexical-data.json';
@@ -109,13 +109,10 @@ export class MIPSTokenMarker extends TokenMarker {
             case ':': {
               backslash = false;
               let validIdentifier = false;
-              // Java String.trim removes only code units <= U+0020.
-              let start = this.lastOffset,
-                end = i;
-              while (start < end && array.charCodeAt(start) <= 32) start++;
-              while (end > start && array.charCodeAt(end - 1) <= 32) end--;
               try {
-                validIdentifier = TokenTypes.isValidIdentifier(array.slice(start, end));
+                validIdentifier = TokenTypes.isValidIdentifier(
+                  JavaCharacter.trim(array.slice(this.lastOffset, i))
+                );
               } catch (error) {
                 if (!(error instanceof RangeError)) throw error;
               }

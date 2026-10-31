@@ -30,7 +30,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 import { Binary, NumberFormatException } from '../../formatting/Binary.js';
 import { DataTypes } from '../directives/DataTypes.js';
 import { Directives } from '../directives/Directives.js';
-import { JavaCharacter } from './JavaCharacter.js';
+import { JavaCharacter } from '../../formatting/JavaCharacter.js';
+import { JavaFloatingPoint } from '../../formatting/JavaFloatingPoint.js';
 import { Macro, type MacroRegisters } from '../macros/Macro.js';
 
 /** Session-owned register and instruction lookups used by lexical classification. */
@@ -135,7 +136,7 @@ export class TokenTypes {
         if (!(error instanceof NumberFormatException)) throw error;
       }
     }
-    if (this.isJavaDouble(value)) return this.REAL_NUMBER;
+    if (JavaFloatingPoint.isParsableDouble(value)) return this.REAL_NUMBER;
     if (context.instructionSet.matchOperator(value) !== null) return this.OPERATOR;
     if (value.charAt(0) === '.' && Directives.matchDirective(value) !== null) return this.DIRECTIVE;
     if (value.charAt(0) === '"') return this.QUOTED_STRING;
@@ -169,17 +170,5 @@ export class TokenTypes {
       index++;
     }
     return result;
-  }
-  private static isJavaDouble(value: string): boolean {
-    // Only parse success is observed here. Java accepts decimal/hex float grammar,
-    // NaN/Infinity, type suffixes, and trim() whitespace, unlike Number/parseFloat.
-    let start = 0;
-    let end = value.length;
-    while (start < end && value.charCodeAt(start) <= 32) start++;
-    while (end > start && value.charCodeAt(end - 1) <= 32) end--;
-    const trimmed = value.substring(start, end);
-    return /^[+-]?(?:NaN|Infinity|(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?[fFdD]?|0[xX](?:[0-9a-fA-F]+(?:\.[0-9a-fA-F]*)?|\.[0-9a-fA-F]+)[pP][+-]?[0-9]+[fFdD]?)$/.test(
-      trimmed
-    );
   }
 }

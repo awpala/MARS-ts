@@ -1,6 +1,6 @@
 /* Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license.
  * Ports console methods of mars/util/SystemIO.java; see MARSlicense.txt. */
-import { JavaCharacter } from '../assembler/tokenization/JavaCharacter.js';
+import { JavaCharacter } from '../formatting/JavaCharacter.js';
 import { NumberFormatException } from '../formatting/Binary.js';
 
 /** One console or same-tab input request; the owning browser adapter controls focus and cancellation. */
@@ -54,7 +54,7 @@ export class SystemIO {
   }
   /** Read and parse a signed decimal int, with Java trim and BMP decimal digit semantics. */
   async readInteger(serviceNumber: number): Promise<number> {
-    const input = this.trim(
+    const input = JavaCharacter.trim(
       await this.request(serviceNumber, `Enter an integer value (syscall ${serviceNumber})`, -1)
     );
     return parseInteger(input);
@@ -63,7 +63,7 @@ export class SystemIO {
   /** Read a float using Java syntax and direct single-precision rounding. */
   async readFloat(serviceNumber: number): Promise<number> {
     return this.host.parseFloat(
-      this.trim(
+      JavaCharacter.trim(
         await this.request(serviceNumber, `Enter a float value (syscall ${serviceNumber})`, -1)
       )
     );
@@ -71,7 +71,7 @@ export class SystemIO {
   /** Read a double using Java syntax and binary64 rounding. */
   async readDouble(serviceNumber: number): Promise<number> {
     return this.host.parseDouble(
-      this.trim(
+      JavaCharacter.trim(
         await this.request(serviceNumber, `Enter a double value (syscall ${serviceNumber})`, -1)
       )
     );
@@ -109,13 +109,6 @@ export class SystemIO {
       prompt: this.host.getPopupSyscallInput() ? prompt : null,
       maxLength
     });
-  }
-  private trim(text: string): string {
-    let start = 0,
-      end = text.length;
-    while (start < end && text.charCodeAt(start) <= 32) start++;
-    while (end > start && text.charCodeAt(end - 1) <= 32) end--;
-    return text.slice(start, end);
   }
 }
 

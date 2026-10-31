@@ -114,7 +114,7 @@ flowchart TB
             IO["Console conversion and I/O interfaces"]
         end
         subgraph FormattingModule["formatting/"]
-            Formatting["Numeric compatibility and conversion"]
+            Formatting["Java numeric and character compatibility"]
         end
         subgraph DiagnosticsModule["diagnostics/"]
             Diagnostics["Source-mapped warnings and errors"]
@@ -160,6 +160,7 @@ flowchart TB
     Debugger -->|public inspection and edit APIs| Hardware
     Debugger -->|Java-compatible numeric conversion| Formatting
     Highlighting -->|directive and token metadata| Assembly
+    Highlighting -->|character categories and trimming| Formatting
     Highlighting -->|register names| Hardware
     Globals -.->|calls supplied interfaces| Host
 ```
@@ -170,13 +171,13 @@ Help is composed into Venus dialogs and uses the reusable clipboard/transfer con
 
 ### Module responsibilities
 
-| Module                       | Owns                                                                                                                                    | Principal boundary                                                                                                |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| [Venus](venus/README.md)     | Desktop composition, context, cross-view state, source/run workflows, debugging presentation, keyboard coordination, and UI lifetimes   | Adapts the desktop to browser views while using editor, engine, and browser APIs                                  |
-| [Editor](editor/README.md)   | Source buffers, names, selection, saved baselines, dirty state, per-buffer undo/redo, and lexical highlighting                          | Does not assemble programs or own browser persistence; callers resolve unsaved changes before closing             |
-| [Browser](browser/README.md) | Source and preference storage validation, virtual filenames, recovery serialization, downloadable resources, and Web Audio MIDI tones   | Implements browser mechanics outside the engine; state owners decide when and why to persist                      |
-| [Help](help/README.md)       | Help catalog, tabbed browser, overview/About content, attributed articles with Markdown companions, and article rendering               | Receives selected content and source-transfer callbacks; reuses the application's modal and transfer presentation |
-| [Engine](engine/README.md)   | Canonical assembly, hardware, instruction execution, simulator sequencing, diagnostics, numeric compatibility, and implemented syscalls | Framework-free TypeScript with per-session state and injected host services                                       |
+| Module                       | Owns                                                                                                                                              | Principal boundary                                                                                                |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| [Venus](venus/README.md)     | Desktop composition, context, cross-view state, source/run workflows, debugging presentation, keyboard coordination, and UI lifetimes             | Adapts the desktop to browser views while using editor, engine, and browser APIs                                  |
+| [Editor](editor/README.md)   | Source buffers, names, selection, saved baselines, dirty state, per-buffer undo/redo, and lexical highlighting                                    | Does not assemble programs or own browser persistence; callers resolve unsaved changes before closing             |
+| [Browser](browser/README.md) | Source and preference storage validation, virtual filenames, recovery serialization, downloadable resources, and Web Audio MIDI tones             | Implements browser mechanics outside the engine; state owners decide when and why to persist                      |
+| [Help](help/README.md)       | Help catalog, tabbed browser, overview/About content, attributed articles with Markdown companions, and article rendering                         | Receives selected content and source-transfer callbacks; reuses the application's modal and transfer presentation |
+| [Engine](engine/README.md)   | Canonical assembly, hardware, instruction execution, simulator sequencing, diagnostics, numeric/character compatibility, and implemented syscalls | Framework-free TypeScript with per-session state and injected host services                                       |
 
 The [system implementation guide](../../IMPLEMENTATION.md) describes current feature coverage, supported assembly and debugging behavior, persistence policy, and validation evidence. This guide explains library relationships; the individual module guides own their detailed contracts.
 

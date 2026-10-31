@@ -294,7 +294,7 @@ export class Assembler {
             ps2.getSourceLine(),
             0,
             'Duplicate text segment address: ' +
-              this.formatUnsignedInteger(
+              Binary.formatUnsignedInteger(
                 ps2.getAddress(),
                 this.host.getDisplayAddressesInHex() ? 16 : 10
               ) +
@@ -694,7 +694,10 @@ export class Assembler {
           this.autoAlign = false;
         } else {
           this.dataAddress.set(
-            this.alignToBoundary(this.dataAddress.get(), this.doubleToInt(Math.pow(2, value)))
+            this.alignToBoundary(
+              this.dataAddress.get(),
+              JavaFloatingPoint.doubleToInt(Math.pow(2, value))
+            )
           );
         }
       }
@@ -1110,7 +1113,12 @@ export class Assembler {
     }
 
     if (directive == Directives.FLOAT) {
-      this.writeToDataSegment(this.floatToIntBits(value), lengthInBytes, token, errors);
+      this.writeToDataSegment(
+        JavaFloatingPoint.floatToIntBits(value, this.floatingBits),
+        lengthInBytes,
+        token,
+        errors
+      );
     }
     if (directive == Directives.DOUBLE) {
       this.writeDoubleToDataSegment(value, token, errors);
@@ -1288,24 +1296,6 @@ export class Assembler {
         .fixSymbolTableAddress(address, alignedAddress);
       return alignedAddress;
     }
-  }
-
-  private formatUnsignedInteger(value: number, base: number): string {
-    return base === 16 ? Binary.intToHexString(value) : String(value >>> 0);
-  }
-  private doubleToInt(value: number): number {
-    return Number.isNaN(value)
-      ? 0
-      : value >= 2147483647
-        ? 2147483647
-        : value <= -2147483648
-          ? -2147483648
-          : Math.trunc(value);
-  }
-  private floatToIntBits(value: number): number {
-    if (Number.isNaN(value)) return 0x7fc00000;
-    this.floatingBits.setFloat32(0, value, false);
-    return this.floatingBits.getInt32(0, false);
   }
 }
 

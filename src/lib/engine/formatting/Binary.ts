@@ -1,5 +1,7 @@
 /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt.
- * Ports mars/util/Binary.java and the ASCII display table in Config.properties. */
+ * Ports mars/util/Binary.java and the ASCII display table in Config.properties;
+ * unsigned address display follows mars/venus/NumberDisplayBaseChooser.java. */
+import { JavaCharacter } from './JavaCharacter.js';
 
 /** Java-compatible integer parsing failure. */
 export class NumberFormatException extends Error {
@@ -65,11 +67,19 @@ export class Binary {
   }
   /** Formats an unsigned eight-digit hexadecimal word. */
   static intToHexString(value: number): string {
-    return '0x' + (value >>> 0).toString(16).padStart(8, '0');
+    return '0x' + Binary.intToPaddedUnsignedString(value, 16, 8);
+  }
+  /** Render an unsigned word in the supplied radix, padding to a minimum width without clipping. */
+  static intToPaddedUnsignedString(value: number, radix: number, minimumWidth: number): string {
+    return (value >>> 0).toString(radix).padStart(minimumWidth, '0');
+  }
+  /** Render an unsigned word as prefixed eight-digit hexadecimal for base 16, otherwise decimal. */
+  static formatUnsignedInteger(value: number, base: number): string {
+    return base === 16 ? Binary.intToHexString(value) : Binary.unsignedIntToIntString(value);
   }
   /** Formats the low halfword. */
   static intToHalfHexString(value: number): string {
-    return '0x' + (value & 0xffff).toString(16).padStart(4, '0');
+    return '0x' + Binary.intToPaddedUnsignedString(value & 0xffff, 16, 4);
   }
   /** Formats a sixteen-digit hexadecimal long. */
   static longToHexString(value: bigint): string {
@@ -102,13 +112,9 @@ export class Binary {
   }
   private static digit(character: string): number {
     const code = character.charCodeAt(0);
-    // JDK 21 Character.digit(char, 16): BMP decimal blocks and Latin hex letters.
-    const decimalStarts = [
-      0x30, 0x660, 0x6f0, 0x7c0, 0x966, 0x9e6, 0xa66, 0xae6, 0xb66, 0xbe6, 0xc66, 0xce6, 0xd66,
-      0xde6, 0xe50, 0xed0, 0xf20, 0x1040, 0x1090, 0x17e0, 0x1810, 0x1946, 0x19d0, 0x1a80, 0x1a90,
-      0x1b50, 0x1bb0, 0x1c40, 0x1c50, 0xa620, 0xa8d0, 0xa900, 0xa9d0, 0xa9f0, 0xaa50, 0xabf0, 0xff10
-    ];
-    for (const start of decimalStarts) if (code >= start && code < start + 10) return code - start;
+    // JDK 21 Character.digit(char, 16): BMP decimal digits and Latin hex letters.
+    const decimal = JavaCharacter.decimalDigitValue(character);
+    if (decimal >= 0) return decimal;
     for (const start of [0x41, 0x61, 0xff21, 0xff41])
       if (code >= start && code < start + 6) return code - start + 10;
     return -1;
@@ -186,6 +192,10 @@ export class Binary {
   /** Extracts signed low word. */
   static lowOrderLongToInt(value: bigint): number {
     return Number(BigInt.asIntN(32, value));
+  }
+  /** Sign-extend a word's low 16 bits to a signed 32-bit value. */
+  static signExtend16(value: number): number {
+    return (value << 16) >> 16;
   }
   /** Combines two word bit patterns into a signed long. */
   static twoIntsToLong(high: number, low: number): bigint {

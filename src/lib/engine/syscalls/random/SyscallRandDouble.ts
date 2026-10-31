@@ -3,8 +3,6 @@
 import { AbstractSyscall } from '../AbstractSyscall.js';
 import type { SyscallHost } from '../SyscallHost.js';
 import type { ProgramStatement } from '../../assembler/programs/ProgramStatement.js';
-import { ProcessingException } from '../../diagnostics/ProcessingException.js';
-import { Exceptions } from '../../simulator/Exceptions.js';
 import { InvalidRegisterAccessException } from '../../hardware/registers/InvalidRegisterAccessException.js';
 /** Canonical RandDouble service using the owning session's Java random streams. */
 export class SyscallRandDouble extends AbstractSyscall {
@@ -21,12 +19,7 @@ export class SyscallRandDouble extends AbstractSyscall {
       );
     } catch (error) {
       if (!(error instanceof InvalidRegisterAccessException)) throw error;
-      throw new ProcessingException(
-        statement,
-        `Internal error storing double to register (syscall ${this.getNumber()})`,
-        this.host.exceptionHost,
-        Exceptions.SYSCALL_EXCEPTION
-      );
+      throw this.syscallException(statement, 'Internal error storing double to register');
     }
   }
 }

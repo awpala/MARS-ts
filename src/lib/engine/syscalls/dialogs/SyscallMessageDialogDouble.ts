@@ -4,8 +4,6 @@ import { AbstractDialogSyscall } from './AbstractDialogSyscall.js';
 import type { SyscallHost } from '../SyscallHost.js';
 import type { ProgramStatement } from '../../assembler/programs/ProgramStatement.js';
 import { InvalidRegisterAccessException } from '../../hardware/registers/InvalidRegisterAccessException.js';
-import { ProcessingException } from '../../diagnostics/ProcessingException.js';
-import { Exceptions } from '../../simulator/Exceptions.js';
 /** Canonical MessageDialogDouble service; the injected host owns modal presentation and cancellation. */
 export class SyscallMessageDialogDouble extends AbstractDialogSyscall {
   /** Construct service 58 (MessageDialogDouble) for this session. */
@@ -24,12 +22,7 @@ export class SyscallMessageDialogDouble extends AbstractDialogSyscall {
     } catch (error) {
       if (!(error instanceof InvalidRegisterAccessException)) throw error;
       this.host.registerFile.updateRegister(5, -1);
-      throw new ProcessingException(
-        statement,
-        `invalid int reg. access during double input (syscall ${this.getNumber()})`,
-        this.host.exceptionHost,
-        Exceptions.SYSCALL_EXCEPTION
-      );
+      throw this.syscallException(statement, 'invalid int reg. access during double input');
     }
   }
 }

@@ -3,8 +3,6 @@
 import { AbstractSyscall } from '../AbstractSyscall.js';
 import type { SyscallHost } from '../SyscallHost.js';
 import type { ProgramStatement } from '../../assembler/programs/ProgramStatement.js';
-import { ProcessingException } from '../../diagnostics/ProcessingException.js';
-import { Exceptions } from '../../simulator/Exceptions.js';
 /** Canonical Sbrk service; hardware and I/O remain owned by the injected session. */
 export class SyscallSbrk extends AbstractSyscall {
   /** Construct service 9 (Sbrk) for this session. */
@@ -18,12 +16,7 @@ export class SyscallSbrk extends AbstractSyscall {
       address = this.host.memory.allocateBytesFromHeap(this.host.registerFile.getValue(4));
     } catch (error) {
       if (!(error instanceof Error) || error.name !== 'IllegalArgumentException') throw error;
-      throw new ProcessingException(
-        statement,
-        `${error.message} (syscall ${this.getNumber()})`,
-        this.host.exceptionHost,
-        Exceptions.SYSCALL_EXCEPTION
-      );
+      throw this.syscallException(statement, error.message);
     }
     this.host.registerFile.updateRegister(2, address);
   }

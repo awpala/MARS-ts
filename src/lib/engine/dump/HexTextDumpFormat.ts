@@ -1,6 +1,7 @@
 /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt.
  * Ports mars/mips/dump/HexTextDumpFormat.java. */
 import { AbstractDumpFormat } from './AbstractDumpFormat.js';
+import { Binary } from '../formatting/Binary.js';
 import type { Globals } from '../Globals.js';
 
 /** Legacy Hexadecimal Text encoder, owned by its machine's dump workflow. */
@@ -13,7 +14,7 @@ export class HexTextDumpFormat extends AbstractDumpFormat {
   dumpMemoryRange(firstAddress: number, lastAddress: number): Uint8Array<ArrayBuffer> {
     return this.text(
       [...this.words(firstAddress, lastAddress)].map(([, word]) =>
-        (word >>> 0).toString(16).padStart(8, '0')
+        Binary.intToPaddedUnsignedString(word, 16, 8)
       )
     );
   }

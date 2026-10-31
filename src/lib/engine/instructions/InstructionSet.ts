@@ -6,6 +6,7 @@ import {
   type ProcessingExceptionHost
 } from '../diagnostics/ProcessingException.js';
 import { Binary } from '../formatting/Binary.js';
+import { JavaFloatingPoint } from '../formatting/JavaFloatingPoint.js';
 import { AddressErrorException } from '../hardware/memory/AddressErrorException.js';
 import { Coprocessor0 } from '../hardware/registers/Coprocessor0.js';
 import type { Coprocessor1 } from '../hardware/registers/Coprocessor1.js';
@@ -125,7 +126,7 @@ export class InstructionSet {
           simulate: (statement) => {
             const operands = statement.getOperands()!;
             const add1 = this.host.registerFile.getValue(operands[1]) | 0;
-            const add2 = ((operands[2] << 16) >> 16) | 0;
+            const add2 = Binary.signExtend16(operands[2]) | 0;
             const sum = (add1 + add2) | 0;
             if ((add1 >= 0 && add2 >= 0 && sum < 0) || (add1 < 0 && add2 < 0 && sum >= 0)) {
               throw this.failure(
@@ -189,7 +190,7 @@ export class InstructionSet {
             const operands = statement.getOperands()!;
             this.host.registerFile.updateRegister(
               operands[0],
-              this.host.registerFile.getValue(operands[1]) + ((operands[2] << 16) >> 16)
+              this.host.registerFile.getValue(operands[1]) + Binary.signExtend16(operands[2])
             );
           }
         },
@@ -1116,7 +1117,9 @@ export class InstructionSet {
             const operands = statement.getOperands()!;
             this.host.registerFile.updateRegister(
               operands[0],
-              this.host.registerFile.getValue(operands[1]) < (operands[2] << 16) >> 16 ? 1 : 0
+              this.host.registerFile.getValue(operands[1]) < Binary.signExtend16(operands[2])
+                ? 1
+                : 0
             );
           }
         },
@@ -1133,7 +1136,7 @@ export class InstructionSet {
           simulate: (statement) => {
             const operands = statement.getOperands()!;
             const first = this.host.registerFile.getValue(operands[1]) | 0;
-            const second = ((operands[2] << 16) >> 16) | 0;
+            const second = Binary.signExtend16(operands[2]) | 0;
             if ((first >= 0 && second >= 0) || (first < 0 && second < 0)) {
               this.host.registerFile.updateRegister(operands[0], first < second ? 1 : 0);
             } else {
@@ -1404,7 +1407,7 @@ export class InstructionSet {
               this.host.registerFile.updateRegister(
                 operands[0],
                 (this.host.memory.getByte(
-                  this.host.registerFile.getValue(operands[2]) + ((operands[1] << 16) >> 16)
+                  this.host.registerFile.getValue(operands[2]) + Binary.signExtend16(operands[1])
                 ) <<
                   24) >>
                   24
@@ -1430,11 +1433,11 @@ export class InstructionSet {
             try {
               this.host.registerFile.updateRegister(
                 operands[0],
-                (this.host.memory.getHalf(
-                  this.host.registerFile.getValue(operands[2]) + ((operands[1] << 16) >> 16)
-                ) <<
-                  16) >>
-                  16
+                Binary.signExtend16(
+                  this.host.memory.getHalf(
+                    this.host.registerFile.getValue(operands[2]) + Binary.signExtend16(operands[1])
+                  )
+                )
               );
             } catch (e) {
               if (!(e instanceof AddressErrorException)) throw e;
@@ -1458,7 +1461,7 @@ export class InstructionSet {
               this.host.registerFile.updateRegister(
                 operands[0],
                 this.host.memory.getHalf(
-                  this.host.registerFile.getValue(operands[2]) + ((operands[1] << 16) >> 16)
+                  this.host.registerFile.getValue(operands[2]) + Binary.signExtend16(operands[1])
                 ) & 0x0000ffff
               );
             } catch (e) {
@@ -1483,7 +1486,7 @@ export class InstructionSet {
               this.host.registerFile.updateRegister(
                 operands[0],
                 this.host.memory.getByte(
-                  this.host.registerFile.getValue(operands[2]) + ((operands[1] << 16) >> 16)
+                  this.host.registerFile.getValue(operands[2]) + Binary.signExtend16(operands[1])
                 ) & 0x000000ff
               );
             } catch (e) {
@@ -1506,7 +1509,7 @@ export class InstructionSet {
             const operands = statement.getOperands()!;
             try {
               this.host.memory.setByte(
-                this.host.registerFile.getValue(operands[2]) + ((operands[1] << 16) >> 16),
+                this.host.registerFile.getValue(operands[2]) + Binary.signExtend16(operands[1]),
                 this.host.registerFile.getValue(operands[0]) & 0x000000ff
               );
             } catch (e) {
@@ -1529,7 +1532,7 @@ export class InstructionSet {
             const operands = statement.getOperands()!;
             try {
               this.host.memory.setHalf(
-                this.host.registerFile.getValue(operands[2]) + ((operands[1] << 16) >> 16),
+                this.host.registerFile.getValue(operands[2]) + Binary.signExtend16(operands[1]),
                 this.host.registerFile.getValue(operands[0]) & 0x0000ffff
               );
             } catch (e) {
@@ -1637,7 +1640,10 @@ export class InstructionSet {
               this.intBitsToFloat(this.host.coprocessor1.getValue(operands[2]))
             );
             const sum = Math.fround(add1 + add2);
-            this.host.coprocessor1.updateRegister(operands[0], this.floatToIntBits(sum));
+            this.host.coprocessor1.updateRegister(
+              operands[0],
+              JavaFloatingPoint.floatToIntBits(sum, this.bits)
+            );
           }
         },
         this.host
@@ -1659,7 +1665,10 @@ export class InstructionSet {
               this.intBitsToFloat(this.host.coprocessor1.getValue(operands[2]))
             );
             const diff = Math.fround(sub1 - sub2);
-            this.host.coprocessor1.updateRegister(operands[0], this.floatToIntBits(diff));
+            this.host.coprocessor1.updateRegister(
+              operands[0],
+              JavaFloatingPoint.floatToIntBits(diff, this.bits)
+            );
           }
         },
         this.host
@@ -1681,7 +1690,10 @@ export class InstructionSet {
               this.intBitsToFloat(this.host.coprocessor1.getValue(operands[2]))
             );
             const prod = Math.fround(mul1 * mul2);
-            this.host.coprocessor1.updateRegister(operands[0], this.floatToIntBits(prod));
+            this.host.coprocessor1.updateRegister(
+              operands[0],
+              JavaFloatingPoint.floatToIntBits(prod, this.bits)
+            );
           }
         },
         this.host
@@ -1703,7 +1715,10 @@ export class InstructionSet {
               this.intBitsToFloat(this.host.coprocessor1.getValue(operands[2]))
             );
             const quot = Math.fround(div1 / div2);
-            this.host.coprocessor1.updateRegister(operands[0], this.floatToIntBits(quot));
+            this.host.coprocessor1.updateRegister(
+              operands[0],
+              JavaFloatingPoint.floatToIntBits(quot, this.bits)
+            );
           }
         },
         this.host
@@ -1723,9 +1738,12 @@ export class InstructionSet {
             );
             let floatSqrt: number;
             if (value < 0.0) {
-              floatSqrt = this.floatToIntBits(NaN);
+              floatSqrt = JavaFloatingPoint.floatToIntBits(NaN, this.bits);
             } else {
-              floatSqrt = this.floatToIntBits(Math.fround(Math.sqrt(value)));
+              floatSqrt = JavaFloatingPoint.floatToIntBits(
+                Math.fround(Math.sqrt(value)),
+                this.bits
+              );
             }
             this.host.coprocessor1.updateRegister(operands[0], floatSqrt);
           }
@@ -1745,7 +1763,7 @@ export class InstructionSet {
             const floatValue = Math.fround(
               this.intBitsToFloat(this.host.coprocessor1.getValue(operands[1]))
             );
-            let floor = this.toInt(Math.floor(floatValue)) | 0;
+            let floor = JavaFloatingPoint.doubleToInt(Math.floor(floatValue)) | 0;
             if (
               Number.isNaN(floatValue) ||
               this.isInfinite(floatValue) ||
@@ -1772,7 +1790,7 @@ export class InstructionSet {
             const floatValue = Math.fround(
               this.intBitsToFloat(this.host.coprocessor1.getValue(operands[1]))
             );
-            let ceiling = this.toInt(Math.ceil(floatValue)) | 0;
+            let ceiling = JavaFloatingPoint.doubleToInt(Math.ceil(floatValue)) | 0;
             if (
               Number.isNaN(floatValue) ||
               this.isInfinite(floatValue) ||
@@ -1800,7 +1818,7 @@ export class InstructionSet {
               this.intBitsToFloat(this.host.coprocessor1.getValue(operands[1]))
             );
             let below: number, above: number;
-            let round = this.toInt(Math.round(floatValue));
+            let round = JavaFloatingPoint.doubleToInt(Math.round(floatValue));
             if (
               Number.isNaN(floatValue) ||
               this.isInfinite(floatValue) ||
@@ -1810,10 +1828,10 @@ export class InstructionSet {
               round = 2147483647;
             } else {
               if (floatValue < 0.0) {
-                above = this.toInt(floatValue);
+                above = JavaFloatingPoint.doubleToInt(floatValue);
                 below = (above - 1) | 0;
               } else {
-                below = this.toInt(floatValue);
+                below = JavaFloatingPoint.doubleToInt(floatValue);
                 above = (below + 1) | 0;
               }
               if (
@@ -1841,7 +1859,7 @@ export class InstructionSet {
             const floatValue = Math.fround(
               this.intBitsToFloat(this.host.coprocessor1.getValue(operands[1]))
             );
-            let truncate = this.toInt(floatValue) | 0;
+            let truncate = JavaFloatingPoint.doubleToInt(floatValue) | 0;
             if (
               Number.isNaN(floatValue) ||
               this.isInfinite(floatValue) ||
@@ -2052,7 +2070,7 @@ export class InstructionSet {
                 this.host.coprocessor1.getValue(operands[1])
               )
             );
-            let floor = this.toInt(Math.floor(doubleValue)) | 0;
+            let floor = JavaFloatingPoint.doubleToInt(Math.floor(doubleValue)) | 0;
             if (
               Number.isNaN(doubleValue) ||
               this.isInfinite(doubleValue) ||
@@ -2085,7 +2103,7 @@ export class InstructionSet {
                 this.host.coprocessor1.getValue(operands[1])
               )
             );
-            let ceiling = this.toInt(Math.ceil(doubleValue)) | 0;
+            let ceiling = JavaFloatingPoint.doubleToInt(Math.ceil(doubleValue)) | 0;
             if (
               Number.isNaN(doubleValue) ||
               this.isInfinite(doubleValue) ||
@@ -2119,7 +2137,7 @@ export class InstructionSet {
               )
             );
             let below: number, above: number;
-            let round = this.toInt(Math.round(doubleValue)) | 0;
+            let round = JavaFloatingPoint.doubleToInt(Math.round(doubleValue)) | 0;
             if (
               Number.isNaN(doubleValue) ||
               this.isInfinite(doubleValue) ||
@@ -2129,10 +2147,10 @@ export class InstructionSet {
               round = 2147483647;
             } else {
               if (doubleValue < 0.0) {
-                above = this.toInt(doubleValue);
+                above = JavaFloatingPoint.doubleToInt(doubleValue);
                 below = (above - 1) | 0;
               } else {
-                below = this.toInt(doubleValue);
+                below = JavaFloatingPoint.doubleToInt(doubleValue);
                 above = (below + 1) | 0;
               }
               if (doubleValue - below == above - doubleValue) {
@@ -2163,7 +2181,7 @@ export class InstructionSet {
                 this.host.coprocessor1.getValue(operands[1])
               )
             );
-            let truncate = this.toInt(doubleValue) | 0;
+            let truncate = JavaFloatingPoint.doubleToInt(doubleValue) | 0;
             if (
               Number.isNaN(doubleValue) ||
               this.isInfinite(doubleValue) ||
@@ -2677,7 +2695,7 @@ export class InstructionSet {
             );
             this.host.coprocessor1.updateRegister(
               operands[0],
-              this.floatToIntBits(Math.fround(val))
+              JavaFloatingPoint.floatToIntBits(Math.fround(val), this.bits)
             );
           }
         },
@@ -2695,7 +2713,10 @@ export class InstructionSet {
             const operands = statement.getOperands()!;
             this.host.coprocessor1.updateRegister(
               operands[0],
-              this.floatToIntBits(Math.fround(this.host.coprocessor1.getValue(operands[1])))
+              JavaFloatingPoint.floatToIntBits(
+                Math.fround(this.host.coprocessor1.getValue(operands[1])),
+                this.bits
+              )
             );
           }
         },
@@ -2720,7 +2741,7 @@ export class InstructionSet {
                 this.host.coprocessor1.getValue(operands[1])
               )
             );
-            this.host.coprocessor1.updateRegister(operands[0], this.toInt(val));
+            this.host.coprocessor1.updateRegister(operands[0], JavaFloatingPoint.doubleToInt(val));
           }
         },
         this.host
@@ -2737,7 +2758,9 @@ export class InstructionSet {
             const operands = statement.getOperands()!;
             this.host.coprocessor1.updateRegister(
               operands[0],
-              this.toInt(this.intBitsToFloat(this.host.coprocessor1.getValue(operands[1])))
+              JavaFloatingPoint.doubleToInt(
+                this.intBitsToFloat(this.host.coprocessor1.getValue(operands[1]))
+              )
             );
           }
         },
@@ -3305,7 +3328,7 @@ export class InstructionSet {
         {
           simulate: (statement) => {
             const operands = statement.getOperands()!;
-            if (this.host.registerFile.getValue(operands[0]) == (operands[1] << 16) >> 16) {
+            if (this.host.registerFile.getValue(operands[0]) == Binary.signExtend16(operands[1])) {
               throw this.failure(statement, 'trap', Exceptions.TRAP_EXCEPTION);
             }
           }
@@ -3342,7 +3365,7 @@ export class InstructionSet {
         {
           simulate: (statement) => {
             const operands = statement.getOperands()!;
-            if (this.host.registerFile.getValue(operands[0]) != (operands[1] << 16) >> 16) {
+            if (this.host.registerFile.getValue(operands[0]) != Binary.signExtend16(operands[1])) {
               throw this.failure(statement, 'trap', Exceptions.TRAP_EXCEPTION);
             }
           }
@@ -3400,7 +3423,7 @@ export class InstructionSet {
         {
           simulate: (statement) => {
             const operands = statement.getOperands()!;
-            if (this.host.registerFile.getValue(operands[0]) >= (operands[1] << 16) >> 16) {
+            if (this.host.registerFile.getValue(operands[0]) >= Binary.signExtend16(operands[1])) {
               throw this.failure(statement, 'trap', Exceptions.TRAP_EXCEPTION);
             }
           }
@@ -3418,7 +3441,7 @@ export class InstructionSet {
           simulate: (statement) => {
             const operands = statement.getOperands()!;
             const first = this.host.registerFile.getValue(operands[0]) | 0;
-            const second = ((operands[1] << 16) >> 16) | 0;
+            const second = Binary.signExtend16(operands[1]) | 0;
             if (
               (first >= 0 && second >= 0) || (first < 0 && second < 0) ? first >= second : first < 0
             ) {
@@ -3479,7 +3502,7 @@ export class InstructionSet {
         {
           simulate: (statement) => {
             const operands = statement.getOperands()!;
-            if (this.host.registerFile.getValue(operands[0]) < (operands[1] << 16) >> 16) {
+            if (this.host.registerFile.getValue(operands[0]) < Binary.signExtend16(operands[1])) {
               throw this.failure(statement, 'trap', Exceptions.TRAP_EXCEPTION);
             }
           }
@@ -3497,7 +3520,7 @@ export class InstructionSet {
           simulate: (statement) => {
             const operands = statement.getOperands()!;
             const first = this.host.registerFile.getValue(operands[0]) | 0;
-            const second = ((operands[1] << 16) >> 16) | 0;
+            const second = Binary.signExtend16(operands[1]) | 0;
             if (
               (first >= 0 && second >= 0) || (first < 0 && second < 0) ? first < second : first >= 0
             ) {
@@ -3664,11 +3687,6 @@ export class InstructionSet {
     this.bits.setInt32(0, value);
     return this.bits.getFloat32(0);
   }
-  private floatToIntBits(value: number): number {
-    if (Number.isNaN(value)) return 0x7fc00000;
-    this.bits.setFloat32(0, value);
-    return this.bits.getInt32(0);
-  }
   private longBitsToDouble(value: bigint): number {
     this.bits.setBigInt64(0, value);
     return this.bits.getFloat64(0);
@@ -3677,11 +3695,6 @@ export class InstructionSet {
     if (Number.isNaN(value)) return 0x7ff8000000000000n;
     this.bits.setFloat64(0, value);
     return this.bits.getBigInt64(0);
-  }
-  private toInt(value: number): number {
-    return Number.isNaN(value)
-      ? 0
-      : Math.min(2147483647, Math.max(-2147483648, Math.trunc(value))) | 0;
   }
   private isInfinite(value: number): boolean {
     return value === Infinity || value === -Infinity;

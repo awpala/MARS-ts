@@ -31,7 +31,7 @@ import { ErrorList } from '../../diagnostics/ErrorList.js';
 import { ErrorMessage, type DiagnosticProgram } from '../../diagnostics/ErrorMessage.js';
 import { ProcessingException } from '../../diagnostics/ProcessingException.js';
 import { Directives } from '../directives/Directives.js';
-import { JavaCharacter } from './JavaCharacter.js';
+import { JavaCharacter } from '../../formatting/JavaCharacter.js';
 import { SourceLine } from './SourceLine.js';
 import { Token } from './Token.js';
 import { TokenList } from './TokenList.js';

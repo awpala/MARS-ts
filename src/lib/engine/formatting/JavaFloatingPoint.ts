@@ -2,8 +2,16 @@
  * Independent Java SE 21 Float/Double runtime compatibility adapter.
  * Implements the specified decimal selection and IEEE nearest-even rounding
  * with exact integer arithmetic; no OpenJDK implementation is copied.
+ * MARS copyright Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt.
+ * Shared cast/bit adapters support mars/assembler/Assembler.java and mars/mips/instructions/InstructionSet.java.
  */
 import { NumberFormatException } from './Binary.js';
+import { JavaCharacter } from './JavaCharacter.js';
+
+// Captures: sign, special value, decimal significand/exponent, hexadecimal significand/exponent.
+// No global/sticky flag: both test() and exec() are stateless across consumers.
+const FLOATING_LITERAL =
+  /^([+-]?)(?:(NaN|Infinity)|([0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE]([+-]?[0-9]+))?[fFdD]?|0[xX]([0-9a-fA-F]+(?:\.[0-9a-fA-F]*)?|\.[0-9a-fA-F]+)[pP]([+-]?[0-9]+)[fFdD]?)$/;
 
 type Fraction = { numerator: bigint; denominator: bigint };
 type Format = {
@@ -31,7 +39,7 @@ const DOUBLE: Format = {
   digits: 17
 };
 
-/** Exact Java floating text conversion, including direct single-precision parsing. */
+/** Exact Java floating conversions, including direct single-precision parsing and canonical bits. */
 export class JavaFloatingPoint {
   /** Render the single-precision value using Java's shortest-decimal selection. */
   static formatFloat(value: number): string {
@@ -49,37 +57,48 @@ export class JavaFloatingPoint {
   static parseDouble(source: string): number {
     return JavaFloatingPoint.parse(source, DOUBLE);
   }
+  /** Test Java parseDouble syntax with Java trimming, without parsing, exceptions, or match arrays. */
+  static isParsableDouble(source: string): boolean {
+    return FLOATING_LITERAL.test(JavaCharacter.trim(source));
+  }
+  /** Narrow a floating value as a Java int cast: truncate, saturate, and map NaN to zero. */
+  static doubleToInt(value: number): number {
+    return Number.isNaN(value)
+      ? 0
+      : Math.min(2147483647, Math.max(-2147483648, Math.trunc(value))) | 0;
+  }
+  /**
+   * Return Float.floatToIntBits, canonicalizing NaN; an optional caller-owned view needs four bytes.
+   * The view is reused for this call and never retained; omitting it allocates a fresh view.
+   */
+  static floatToIntBits(value: number, view?: DataView): number {
+    if (Number.isNaN(value)) return 0x7fc00000;
+    const bits = view ?? new DataView(new ArrayBuffer(4));
+    bits.setFloat32(0, value, false);
+    return bits.getInt32(0, false);
+  }
 
   private static parse(source: string, format: Format): number {
-    // String.trim in Java removes code units <= U+0020, not Unicode whitespace.
-    // eslint-disable-next-line no-control-regex -- Java trim deliberately includes ASCII control characters.
-    const text = source.replace(/^[\x00-\x20]+|[\x00-\x20]+$/g, '');
-    if (/^[+-]?NaN$/.test(text)) return NaN;
-    if (/^[+-]?Infinity$/.test(text)) return text[0] === '-' ? -Infinity : Infinity;
-    const negative = text[0] === '-';
-    const hex =
-      /^([+-]?)0[xX]([0-9a-fA-F]+(?:\.[0-9a-fA-F]*)?|\.[0-9a-fA-F]+)[pP]([+-]?[0-9]+)[fFdD]?$/.exec(
-        text
-      );
+    const literal = FLOATING_LITERAL.exec(JavaCharacter.trim(source));
+    if (literal === null) throw new NumberFormatException();
+    const negative = literal[1] === '-';
+    if (literal[2] === 'NaN') return NaN;
+    if (literal[2] === 'Infinity') return negative ? -Infinity : Infinity;
     let fraction: Fraction;
-    if (hex !== null) {
-      const parts = hex[2].split('.');
+    if (literal[5] !== undefined) {
+      const parts = literal[5].split('.');
       const coefficient = BigInt('0x' + parts.join(''));
       if (coefficient === 0n) return negative ? -0 : 0;
-      const exponent = Number(hex[3]) - 4 * (parts[1]?.length ?? 0);
+      const exponent = Number(literal[6]) - 4 * (parts[1]?.length ?? 0);
       const top = coefficient.toString(2).length - 1 + exponent;
       if (top > format.maximumExponent) return negative ? -Infinity : Infinity;
       if (top < format.minimumExponent - 1) return negative ? -0 : 0;
       fraction = this.binaryFraction(coefficient, exponent);
     } else {
-      const decimal = /^([+-]?)([0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE]([+-]?[0-9]+))?[fFdD]?$/.exec(
-        text
-      );
-      if (decimal === null) throw new NumberFormatException();
-      const parts = decimal[2].split('.');
+      const parts = literal[3].split('.');
       let digits = parts.join('').replace(/^0+/, '');
       if (digits.length === 0) return negative ? -0 : 0;
-      let exponent = Number(decimal[3] ?? '0') - (parts[1]?.length ?? 0);
+      let exponent = Number(literal[4] ?? '0') - (parts[1]?.length ?? 0);
       const order = digits.length - 1 + exponent;
       // These conservative outer bounds avoid constructing huge powers for
       // inputs such as 1e999999999; the boundaries still use exact rounding.

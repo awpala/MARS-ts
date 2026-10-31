@@ -3,8 +3,6 @@
 import { AbstractSyscall } from '../AbstractSyscall.js';
 import type { SyscallHost } from '../SyscallHost.js';
 import type { ProgramStatement } from '../../assembler/programs/ProgramStatement.js';
-import { ProcessingException } from '../../diagnostics/ProcessingException.js';
-import { Exceptions } from '../../simulator/Exceptions.js';
 import { NumberFormatException } from '../../formatting/Binary.js';
 /** Canonical ReadFloat service; hardware and I/O remain owned by the injected session. */
 export class SyscallReadFloat extends AbstractSyscall {
@@ -19,12 +17,7 @@ export class SyscallReadFloat extends AbstractSyscall {
       value = await this.host.systemIO.readFloat(this.getNumber());
     } catch (error) {
       if (!(error instanceof NumberFormatException)) throw error;
-      throw new ProcessingException(
-        statement,
-        `invalid float input (syscall ${this.getNumber()})`,
-        this.host.exceptionHost,
-        Exceptions.SYSCALL_EXCEPTION
-      );
+      throw this.syscallException(statement, 'invalid float input');
     }
     const bits = new DataView(new ArrayBuffer(4));
     bits.setFloat32(0, value);

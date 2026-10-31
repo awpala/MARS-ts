@@ -15,6 +15,7 @@
     pagedOffset
   } from '../../utils/debugger/memoryView.js';
   import IconButton from '../controls/IconButton.svelte';
+  import Select from '../controls/Select.svelte';
   import SelectorToggle from '../controls/SelectorToggle.svelte';
   import InlineAlert from '../feedback/InlineAlert.svelte';
   import PaneDivider from '../layout/PaneDivider.svelte';
@@ -38,7 +39,6 @@
   let dataScrollHeight = $state(0);
   let dataTableHeight = $state(0);
   let dataScroll = $state<HTMLElement>();
-  let segmentSelect = $state<HTMLSelectElement>();
   // Compression changes only the scroll viewport, so this stays constant while resizing.
   const naturalDataHeight = $derived(dataPaneHeight - dataScrollHeight + dataTableHeight);
   const maxDataHeight = $derived(
@@ -104,17 +104,17 @@
   }
   // Native selects fire no change when an option is reselected. Opening the list selects a
   // hidden placeholder bearing the current label, so choosing the current range resets it.
-  function armSegment() {
-    if (segmentSelect && !view.running) segmentSelect.selectedIndex = 0;
+  function armSegment(event: Event & { currentTarget: HTMLSelectElement }) {
+    if (!view.running) event.currentTarget.selectedIndex = 0;
   }
-  function restoreSegment() {
-    if (segmentSelect?.selectedIndex === 0) segmentSelect.value = display.dataSegment;
+  function restoreSegment(event: Event & { currentTarget: HTMLSelectElement }) {
+    if (event.currentTarget.selectedIndex === 0) event.currentTarget.value = display.dataSegment;
   }
-  function segmentKey(event: KeyboardEvent) {
+  function segmentKey(event: KeyboardEvent & { currentTarget: HTMLSelectElement }) {
     if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-      if (event.altKey) armSegment();
-      else restoreSegment();
-    } else if (event.key === 'Enter' || event.key === ' ' || event.key === 'F4') armSegment();
+      if (event.altKey) armSegment(event);
+      else restoreSegment(event);
+    } else if (event.key === 'Enter' || event.key === ' ' || event.key === 'F4') armSegment(event);
   }
 </script>
 
@@ -187,10 +187,11 @@
         icon={{ glyph: 'Previous' }}
         disabled={view.running || view.memoryBase >>> 0 <= limits.low}
         onclick={() => pageMemory(-MEMORY_PAGE_BYTES)}
-      /><select
+      /><Select
+        class="shrink-0"
+        style="padding: 0; border: 0; background: var(--theme-chrome, #eee)"
         aria-label="Data segment base"
         disabled={view.running}
-        bind:this={segmentSelect}
         bind:value={display.dataSegment}
         onpointerdown={armSegment}
         onkeydown={segmentKey}
@@ -202,7 +203,7 @@
           >{segmentOptions.find((option) => option.value === display.dataSegment)?.label}</option
         >{#each segmentOptions as option (option.value)}<option value={option.value}
             >{option.label}</option
-          >{/each}</select
+          >{/each}</Select
       ><IconButton
         size="md"
         label="Next memory page"
@@ -230,17 +231,6 @@
     background: var(--theme-chrome, #eee);
     flex-shrink: 0;
     padding: 2px 5px;
-  }
-  .data-controls > select {
-    flex-shrink: 0;
-  }
-  .data-controls select {
-    background: var(--theme-chrome, #eee);
-    color: var(--theme-text, #17202b);
-  }
-  .data-controls option {
-    background: var(--theme-canvas, white);
-    color: var(--theme-text, #17202b);
   }
   .control-separator {
     flex: 0 0 1px;

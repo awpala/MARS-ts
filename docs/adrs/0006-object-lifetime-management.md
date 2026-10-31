@@ -3,6 +3,7 @@
 - **Status**: Accepted
 - **Date**: 2026-10-20
 - **Amended**: 2026-10-23, after a second audit ([findings 5–8](#second-audit-2026-10-23))
+- **Reviewed**: 2026-10-31 ([refactor follow-up audit](#refactor-follow-up-audit-2026-10-31))
 
 ## Context
 
@@ -146,6 +147,12 @@ The second audit rechecked current `src/` after multi-file and ZIP Import, the s
 The audit also reconciled this record with the transfer status, page-scoped download and focus waits, and service-worker cache, which earlier text omitted or, for object URLs, described as released immediately after the download click.
 
 The changes retain the existing editor history, Auto Save, import confirmation, normal execution, and diagnostic responsibilities. They do not introduce a shared lifecycle manager, global resource registry, or parallel editor/machine models.
+
+### Refactor follow-up audit (2026-10-31)
+
+Separate engine and Venus reviewers rechecked module-level state, observer pairing, disposal ordering, pending input/dialog/tone/scheduler release, reset references, browser transfer continuations, native dialog focus, editor handles, Help controls, keyboard/tooltip resources, and service-worker scope before implementation. This source audit found no new confirmed lifetime defect. It does not replace the earlier behavior regressions or establish retained-heap, browser-audio, or production-worker guarantees.
+
+The resulting extractions preserve the ownership rules above. Shared [native dialog mechanics](../../src/lib/venus/utils/dom/dialogLifecycle.ts) return cleanup to each mounted attachment, while each dialog retains its initial-focus and dismissal policy. Shared [preference persistence](../../src/lib/browser/preferences.ts) acquires storage only during an operation and retains each adapter's schema and failure policy; source/recovery saves still report their own failures. Java character and numeric adapters retain no machine state, and canonical floating-bit conversion receives caller-owned scratch views rather than introducing a module-level buffer. These are behavior-preserving refactors, so they add no deviation-catalog entries or new lifecycle manager.
 
 ## Verification and limits
 

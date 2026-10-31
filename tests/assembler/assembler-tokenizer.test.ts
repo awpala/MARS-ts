@@ -9,7 +9,7 @@ import {
 import { TokenList } from '#lib/engine/assembler/tokenization/TokenList.js';
 import { SourceLine } from '#lib/engine/assembler/tokenization/SourceLine.js';
 import type { TokenClassificationContext } from '#lib/engine/assembler/tokenization/TokenTypes.js';
-import { JavaCharacter } from '#lib/engine/assembler/tokenization/JavaCharacter.js';
+import { JavaCharacter } from '#lib/engine/formatting/JavaCharacter.js';
 import { RegisterFile } from '#lib/engine/hardware/registers/RegisterFile.js';
 import { Coprocessor0 } from '#lib/engine/hardware/registers/Coprocessor0.js';
 import { Coprocessor1 } from '#lib/engine/hardware/registers/Coprocessor1.js';

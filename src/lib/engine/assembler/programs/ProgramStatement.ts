@@ -109,7 +109,7 @@ export class ProgramStatement {
         const high = 31 - start;
         let operand = (this.binaryStatement >> low) & ((1 << (high - low + 1)) - 1);
         if (format === BasicInstructionFormat.I_BRANCH_FORMAT && this.numOperands === 2)
-          operand = (operand << 16) >> 16;
+          operand = Binary.signExtend16(operand);
         else if (format === BasicInstructionFormat.J_FORMAT && this.numOperands === 0)
           operand |= (this.textAddress >> 2) & 0x3c000000;
         this.operands[this.numOperands++] = operand;

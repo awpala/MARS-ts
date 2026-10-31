@@ -1,3 +1,5 @@
+import { loadPreference, savePreference, type PreferenceStorageAccess } from './preferences.js';
+
 /** Browser preference key for the working editor/display controls. */
 export const DISPLAY_SETTINGS_STORAGE_KEY = 'mars-ts:display-settings:v1';
 
@@ -26,7 +28,7 @@ export interface DisplaySettings {
   labelSortState: number;
   /** Whether the editor displays line numbers. */
   showLines: boolean;
-  /** Whether the editor highlights the caret line; defaults to false for older records. */
+  /** Whether the editor highlights the caret line; defaults to true for older records, as in Java MARS. */
   highlightCurrentLine: boolean;
   /** Whether register and memory values display in hexadecimal. */
   hexValues: boolean;
@@ -35,8 +37,6 @@ export interface DisplaySettings {
   /** Legacy run-speed slider position, integer zero through forty. */
   speed: number;
 }
-
-type StorageAccess = () => Pick<Storage, 'getItem' | 'setItem'>;
 
 function validate(value: unknown): DisplaySettings | undefined {
   if (!value || typeof value !== 'object') return;
@@ -80,7 +80,7 @@ function validate(value: unknown): DisplaySettings | undefined {
     showTextLabels: data.showTextLabels ?? true,
     labelSortState: data.labelSortState ?? 0,
     showLines: data.showLines,
-    highlightCurrentLine: data.highlightCurrentLine ?? false,
+    highlightCurrentLine: data.highlightCurrentLine ?? true,
     hexValues: data.hexValues,
     hexAddresses: data.hexAddresses,
     speed: data.speed
@@ -89,26 +89,15 @@ function validate(value: unknown): DisplaySettings | undefined {
 
 /** Reads a complete validated preference record; malformed data or unavailable storage uses the GUI defaults. */
 export function loadDisplaySettings(
-  storage: StorageAccess = () => window.localStorage
+  storage: PreferenceStorageAccess = () => window.localStorage
 ): DisplaySettings | undefined {
-  try {
-    const raw = storage().getItem(DISPLAY_SETTINGS_STORAGE_KEY);
-    return raw === null ? undefined : validate(JSON.parse(raw));
-  } catch {
-    return undefined;
-  }
+  return loadPreference(DISPLAY_SETTINGS_STORAGE_KEY, validate, storage);
 }
 
 /** Stores only the working preference fields; blocked or full storage leaves in-memory settings usable. */
 export function saveDisplaySettings(
   settings: DisplaySettings,
-  storage: StorageAccess = () => window.localStorage
+  storage: PreferenceStorageAccess = () => window.localStorage
 ): void {
-  const value = validate(settings);
-  if (!value) return;
-  try {
-    storage().setItem(DISPLAY_SETTINGS_STORAGE_KEY, JSON.stringify(value));
-  } catch {
-    /* Keep in-memory preferences when persistence is unavailable. */
-  }
+  savePreference(DISPLAY_SETTINGS_STORAGE_KEY, settings, validate, storage);
 }

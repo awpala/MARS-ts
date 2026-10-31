@@ -61,8 +61,8 @@ export class DisplayPreferences {
   labelSortState = $state(0);
   /** Whether the source editor shows line numbers. */
   showLines = $state(true);
-  /** Whether the editor highlights the caret line; off by default. */
-  highlightCurrentLine = $state(false);
+  /** Whether the editor highlights the caret line; on by default, as in Java MARS. */
+  highlightCurrentLine = $state(true);
   /** Whether memory values display as ASCII. */
   ascii = $state(false);
   /** Whether register and memory values display in hexadecimal. */

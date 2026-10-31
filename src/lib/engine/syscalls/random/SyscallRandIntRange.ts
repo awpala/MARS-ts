@@ -3,8 +3,6 @@
 import { AbstractSyscall } from '../AbstractSyscall.js';
 import type { SyscallHost } from '../SyscallHost.js';
 import type { ProgramStatement } from '../../assembler/programs/ProgramStatement.js';
-import { ProcessingException } from '../../diagnostics/ProcessingException.js';
-import { Exceptions } from '../../simulator/Exceptions.js';
 /** Canonical RandIntRange service using the owning session's Java random streams. */
 export class SyscallRandIntRange extends AbstractSyscall {
   /** Construct service 42 (RandIntRange) for this session. */
@@ -18,12 +16,7 @@ export class SyscallRandIntRange extends AbstractSyscall {
       this.host.registerFile.updateRegister(4, stream.nextInt(this.host.registerFile.getValue(5)));
     } catch (error) {
       if (!(error instanceof RangeError)) throw error;
-      throw new ProcessingException(
-        statement,
-        `Upper bound of range cannot be negative (syscall ${this.getNumber()})`,
-        this.host.exceptionHost,
-        Exceptions.SYSCALL_EXCEPTION
-      );
+      throw this.syscallException(statement, 'Upper bound of range cannot be negative');
     }
   }
 }

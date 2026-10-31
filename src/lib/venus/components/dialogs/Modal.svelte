@@ -1,6 +1,7 @@
 <script lang="ts">
   import Button from '../controls/Button.svelte';
   import type { Snippet } from 'svelte';
+  import { openModalDialog } from '../../utils/dom/dialogLifecycle.js';
   /** Contract for a same-tab modal. The caller owns its open state and content. */
   type Props = {
     /** Required accessible heading. */
@@ -25,18 +26,14 @@
     );
   }
   function attachDialog(dialog: HTMLDialogElement) {
-    const previous = document.activeElement;
-    dialog.showModal();
+    const release = openModalDialog(dialog);
     dialog
       .querySelector<HTMLElement>(
         initialFocus ??
           '.dialog-body input:not([disabled]), .dialog-body button:not([disabled]), .dialog-body textarea:not([disabled])'
       )
       ?.focus({ preventScroll: !!initialFocus });
-    return () => {
-      dialog.close();
-      if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
-    };
+    return release;
   }
 </script>
 

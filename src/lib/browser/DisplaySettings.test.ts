@@ -70,12 +70,24 @@ describe('working display preference persistence', () => {
       loadDisplaySettings(() => ({ getItem: () => JSON.stringify(older), setItem: () => {} }))
     ).toEqual({ ...older, showDataLabels: true, showTextLabels: true, labelSortState: 0 });
   });
-  it('defaults current-line highlighting to off for older preferences', () => {
+  it('defaults current-line highlighting to on for older preferences', () => {
     const { highlightCurrentLine, ...older } = settings;
     void highlightCurrentLine;
     expect(
       loadDisplaySettings(() => ({ getItem: () => JSON.stringify(older), setItem: () => {} }))
-    ).toEqual({ ...older, highlightCurrentLine: false });
+    ).toEqual({ ...older, highlightCurrentLine: true });
+  });
+  it('retains an explicitly disabled current-line preference', () => {
+    const values = new Map<string, string>();
+    const storage = () => ({
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        values.set(key, value);
+      }
+    });
+    const disabled = { ...settings, highlightCurrentLine: false };
+    saveDisplaySettings(disabled, storage);
+    expect(loadDisplaySettings(storage)).toEqual(disabled);
   });
   it('defaults the register pane to shown for pre-toggle preferences', () => {
     const { showRegisters, ...older } = settings;

@@ -1,10 +1,18 @@
 /* MARS copyright Pete Sanderson and Kenneth Vollmar. MIT license; see MARSlicense.txt.
- * Reproduces java.lang.Character methods consumed by mars/assembler/TokenTypes.java and Tokenizer.java.
+ * Reproduces Java character and String.trim semantics consumed by MARS numeric and lexical operations.
  * Tables are generated from the pinned JDK 21 oracle, rather than the browser's Unicode version. */
 import data from './character-data.json';
 
-/** Java UTF-16 character categories used by MARS lexical analysis. */
+/** Java UTF-16 character categories and trimming used by numeric conversion and lexical analysis. */
 export class JavaCharacter {
+  /** Remove leading and trailing UTF-16 code units <= U+0020, as Java String.trim does. */
+  static trim(value: string): string {
+    let start = 0;
+    let end = value.length;
+    while (start < end && value.charCodeAt(start) <= 32) start++;
+    while (end > start && value.charCodeAt(end - 1) <= 32) end--;
+    return value.slice(start, end);
+  }
   /** Whether the first UTF-16 code unit has a Java letter category; surrogates are not letters. */
   static isLetter(character: string): boolean {
     return this.rangeStart(character, data.letterRanges) >= 0;

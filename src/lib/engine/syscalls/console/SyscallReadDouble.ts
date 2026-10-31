@@ -3,8 +3,6 @@
 import { AbstractSyscall } from '../AbstractSyscall.js';
 import type { SyscallHost } from '../SyscallHost.js';
 import type { ProgramStatement } from '../../assembler/programs/ProgramStatement.js';
-import { ProcessingException } from '../../diagnostics/ProcessingException.js';
-import { Exceptions } from '../../simulator/Exceptions.js';
 import { NumberFormatException } from '../../formatting/Binary.js';
 import { Binary } from '../../formatting/Binary.js';
 /** Canonical ReadDouble service; hardware and I/O remain owned by the injected session. */
@@ -20,12 +18,7 @@ export class SyscallReadDouble extends AbstractSyscall {
       value = await this.host.systemIO.readDouble(this.getNumber());
     } catch (error) {
       if (!(error instanceof NumberFormatException)) throw error;
-      throw new ProcessingException(
-        statement,
-        `invalid double input (syscall ${this.getNumber()})`,
-        this.host.exceptionHost,
-        Exceptions.SYSCALL_EXCEPTION
-      );
+      throw this.syscallException(statement, 'invalid double input');
     }
     const bits = new DataView(new ArrayBuffer(8));
     bits.setFloat64(0, value);

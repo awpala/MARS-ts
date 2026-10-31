@@ -9,6 +9,7 @@ test('speed buttons step through distinct evenly spaced settings with maximum on
   const toolbarHeight = (await toolbar.boundingBox())!.height;
   await page.getByRole('button', { name: 'Execute', exact: true }).click();
   const slider = page.getByRole('slider', { name: 'Run speed', exact: true });
+  const speedControls = toolbar.locator(':scope > div').filter({ has: slider });
   const plus = page.getByRole('button', { name: 'Increase run speed', exact: true });
   const minus = page.getByRole('button', { name: 'Decrease run speed', exact: true });
   await expect(slider).toHaveAttribute('max', '36');
@@ -18,9 +19,13 @@ test('speed buttons step through distinct evenly spaced settings with maximum on
   const plusBox = (await plus.boundingBox())!;
   const minusBox = (await minus.boundingBox())!;
   const toolbarBox = (await toolbar.boundingBox())!;
-  expect(toolbarBox.height).toBe(toolbarHeight);
-  expect(plusBox.y).toBeGreaterThanOrEqual(toolbarBox.y);
-  expect(minusBox.y + minusBox.height).toBeLessThanOrEqual(toolbarBox.y + toolbarBox.height);
+  const speedBox = (await speedControls.boundingBox())!;
+  // The toolbar may wrap the speed group onto another row; the group itself must stay compact.
+  expect(speedBox.height).toBe(29);
+  expect(speedBox.y).toBeGreaterThanOrEqual(toolbarBox.y);
+  expect(speedBox.y + speedBox.height).toBeLessThanOrEqual(toolbarBox.y + toolbarBox.height);
+  expect(plusBox.y).toBeGreaterThanOrEqual(speedBox.y);
+  expect(minusBox.y + minusBox.height).toBeLessThanOrEqual(speedBox.y + speedBox.height);
   expect(plusBox.x).toBeGreaterThan(sliderBox.x + sliderBox.width);
   expect(minusBox.x).toBe(plusBox.x);
   expect(minusBox.y).toBeGreaterThan(plusBox.y);

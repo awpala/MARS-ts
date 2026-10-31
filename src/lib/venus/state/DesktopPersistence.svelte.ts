@@ -4,7 +4,7 @@ import {
   saveDesktopSession,
   type DesktopSession
 } from '#lib/browser/DesktopSession.js';
-import { errorMessage } from '../utils/errors/errorMessage.js';
+import { errorMessage } from '#lib/browser/errorMessage.js';
 import type { DisplayPreferences } from './DisplayPreferences.svelte.js';
 import type { SourceWorkspace } from './SourceWorkspace.svelte.js';
 import type { SimulationState } from './SimulationState.svelte.js';

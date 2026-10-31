@@ -3,8 +3,6 @@
 import { AbstractSyscall } from '../AbstractSyscall.js';
 import type { SyscallHost } from '../SyscallHost.js';
 import type { ProgramStatement } from '../../assembler/programs/ProgramStatement.js';
-import { ProcessingException } from '../../diagnostics/ProcessingException.js';
-import { Exceptions } from '../../simulator/Exceptions.js';
 import { NumberFormatException } from '../../formatting/Binary.js';
 /** Canonical ReadInt service; hardware and I/O remain owned by the injected session. */
 export class SyscallReadInt extends AbstractSyscall {
@@ -19,12 +17,7 @@ export class SyscallReadInt extends AbstractSyscall {
       value = await this.host.systemIO.readInteger(this.getNumber());
     } catch (error) {
       if (!(error instanceof NumberFormatException)) throw error;
-      throw new ProcessingException(
-        statement,
-        `invalid integer input (syscall ${this.getNumber()})`,
-        this.host.exceptionHost,
-        Exceptions.SYSCALL_EXCEPTION
-      );
+      throw this.syscallException(statement, 'invalid integer input');
     }
     this.host.registerFile.updateRegister(2, value);
   }

@@ -8,7 +8,7 @@ import { AccessNotice } from '#lib/engine/hardware/notices/AccessNotice.js';
 import type { RunController, RunState } from '../../RunController.js';
 import type { DisplayPreferences } from '../../state/DisplayPreferences.svelte.js';
 import type { SimulationState } from '../../state/SimulationState.svelte.js';
-import { errorMessage } from '../../utils/errors/errorMessage.js';
+import { errorMessage } from '#lib/browser/errorMessage.js';
 import { observesWrites } from '../../utils/execution/runSpeed.js';
 import {
   locateAddress,

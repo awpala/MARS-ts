@@ -11,7 +11,7 @@ import {
 } from '#lib/browser/SourceLibrary.js';
 import type { SourceImportPlan } from '#lib/browser/sourceImport.js';
 import type { DisplayPreferences } from './DisplayPreferences.svelte.js';
-import { errorMessage } from '../utils/errors/errorMessage.js';
+import { errorMessage } from '#lib/browser/errorMessage.js';
 import { isSavableSource } from '../utils/sources/savableSource.js';
 /** Cross-domain capabilities injected by the desktop; the workspace never creates a machine. */
 export type WorkspaceHost = {

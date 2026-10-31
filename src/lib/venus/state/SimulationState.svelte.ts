@@ -16,7 +16,7 @@ import type { DialogRequest } from '#lib/engine/io/DialogIO.js';
 import type { InputRequest } from '#lib/engine/io/SystemIO.js';
 import { RunController } from '../RunController.js';
 import { engineOption, engineOptions } from '../utils/commands/settings.js';
-import { errorMessage } from '../utils/errors/errorMessage.js';
+import { errorMessage } from '#lib/browser/errorMessage.js';
 import { describeRunOutcome, type RunCommand } from '../utils/execution/runOutcome.js';
 import { buildFileNameList } from '../utils/execution/buildFileNameList.js';
 import type { SourceWorkspace } from './SourceWorkspace.svelte.js';

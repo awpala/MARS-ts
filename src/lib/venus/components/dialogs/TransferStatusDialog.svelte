@@ -1,24 +1,17 @@
 <script lang="ts">
   import LoadingSpinner from '../feedback/LoadingSpinner.svelte';
+  import { openModalDialog } from '../../utils/dom/dialogLifecycle.js';
   /** Blocking status for a pending file transfer; the caller owns when it is shown. */
   type Props = {
     /** Required visible status text, such as `Exporting…`, which also names the dialog. */
     status: string;
   };
   let { status }: Props = $props();
-  function attachDialog(dialog: HTMLDialogElement) {
-    const previous = document.activeElement;
-    dialog.showModal();
-    return () => {
-      dialog.close();
-      if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
-    };
-  }
 </script>
 
 <!-- @component Native modal dialog showing a spinner and status text while a file transfer is pending. It cannot be dismissed: Escape is ignored and the rest of the page is inert until the owner removes it, after which focus returns to the element that had it. -->
 <dialog
-  {@attach attachDialog}
+  {@attach openModalDialog}
   aria-label={status}
   aria-busy="true"
   tabindex="-1"

@@ -61,7 +61,7 @@ The engine root owns composition and settings. Responsibility-specific modules r
 | [Hardware](hardware/README.md)                         | Registers, coprocessors, sparse memory, address layouts, access notices, and recording hooks                                      | `mars/mips/hardware/`                                                                                        |
 | [Simulator](simulator/README.md)                       | Execution ordering, delayed branches, exceptions, stop reasons, breakpoints, step limits, and grouped undo                        | `mars/simulator/`                                                                                            |
 | [Syscalls](syscalls/README.md) and [I/O](io/README.md) | Service algorithms, explicit registration/overrides, console conversion, and injected input/output                                | `mars/mips/instructions/syscalls/`, `SyscallLoader.java`, and GUI console paths of `mars/util/SystemIO.java` |
-| [Formatting](formatting/README.md)                     | Integer/binary/hexadecimal/ASCII conversion and Java-compatible floating text                                                     | `mars/util/Binary.java`, ASCII resource/padding behavior, and consumed Java runtime numeric contracts        |
+| [Formatting](formatting/README.md)                     | Integer/binary/hexadecimal/ASCII conversion, Java character rules, floating text/casts, and canonical float bits                  | `Binary.java`, `NumberDisplayBaseChooser.java` address display, ASCII resources/padding, and JDK contracts   |
 | [Diagnostics](diagnostics/README.md)                   | Source locations, include/macro history, warning/error reports, and processing exceptions                                         | `mars/ErrorMessage.java`, `mars/ErrorList.java`, and `mars/ProcessingException.java`                         |
 
 The module guides own local API details, retained quirks, and focused evidence. Source modules name their Java origins and retain Pete Sanderson and Kenneth Vollmar's copyright and [MIT attribution](../../../MARSlicense.txt). The legacy tree is the behavioral reference; it is not a runtime dependency of the shipped application.
@@ -197,7 +197,7 @@ The host owns its scheduling resources and input UI; views own their hardware su
 
 Memory uses sparse block tables for user/kernel data, descending stack, MMIO, and user/kernel text. It owns alignment and address validation, heap allocation, byte order, statement storage, and access notifications. Default byte order is little-endian. The Default, CompactDataAtZero, and CompactTextAtZero layouts are implemented; having MMIO addresses does not implement a device Tool.
 
-The [hardware guide](hardware/README.md) explains register access, storage, and configuration contracts. The [formatting guide](formatting/README.md) explains Java-compatible integer and floating text conversion. Numeric quirks, raw-bit behavior, and write order remain engine semantics even when their most visible consumer is a debugger view.
+The [hardware guide](hardware/README.md) explains register access, storage, and configuration contracts. The [formatting guide](formatting/README.md) explains Java-compatible numeric and character conversions. Numeric quirks, raw-bit behavior, and write order remain engine semantics even when their most visible consumer is a debugger view.
 
 ## Implemented runtime services and remaining scope
 

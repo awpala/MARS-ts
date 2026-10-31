@@ -56,7 +56,7 @@ if (check) {
 
 if (check) {
   const engineTarget = new URL(
-    '../../../src/lib/engine/assembler/tokenization/character-data.json',
+    '../../../src/lib/engine/formatting/character-data.json',
     import.meta.url
   );
   if (

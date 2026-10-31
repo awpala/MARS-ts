@@ -7,6 +7,7 @@ import {
   type SavedSource
 } from './SourceLibrary.js';
 import { readZip } from './zip.js';
+import { errorMessage } from './errorMessage.js';
 
 /** The import picker's `accept` value: the assembly extensions plus ZIP archives. */
 export const IMPORT_FILE_ACCEPT = `${SOURCE_FILE_ACCEPT},.zip`;
@@ -63,14 +64,14 @@ export async function readSourceImport(files: readonly File[]): Promise<SourceIm
     try {
       name = sourceName(path);
     } catch (error) {
-      return skip(path, errorText(error), archive);
+      return skip(path, errorMessage(error), archive);
     }
     if (names.has(name)) return skip(path, 'Another selected source has the same name.', archive);
     try {
       plan.sources.push({ name, source: await read(), archive });
       names.add(name);
     } catch (error) {
-      skip(path, errorText(error), archive);
+      skip(path, errorMessage(error), archive);
     }
   };
   for (const file of files) {
@@ -79,7 +80,7 @@ export async function readSourceImport(files: readonly File[]): Promise<SourceIm
       try {
         entries = readZip(new Uint8Array(await file.arrayBuffer()));
       } catch (error) {
-        skip(file.name, errorText(error));
+        skip(file.name, errorMessage(error));
         continue;
       }
       const sources = entries.filter((entry) => !isArchiveMetadata(entry.name));
@@ -107,8 +108,4 @@ export async function readSourceImport(files: readonly File[]): Promise<SourceIm
     }
   }
   return plan;
-}
-
-function errorText(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }
