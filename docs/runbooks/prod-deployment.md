@@ -4,15 +4,15 @@ MARS-ts is live and stable at `https://mars-ts.dev`, deployed from `awpala/MARS-
 
 For an ordinary release, use steps 4–6 to validate the revision, follow its deployment, and run release smoke checks. Consult steps 1–3 when changing configuration or recreating the service, step 7 when maintaining deployment filters, and step 8 for rollback. The configuration and smoke checks are operating procedures for the live service.
 
-This procedure applies to this repository's existing static build. MARS-ts has no production Dockerfile or repository-managed Nginx configuration. Use **Nixpacks with static output**, configured to build with Node 26 and serve `build/` through Coolify's Nginx image. Configure asset caching in Coolify's generated Nginx configuration as described below. The [deployment decision](../adrs/0005-coolify-deployment.md) records that boundary. Java is needed for development and oracle checks, not production serving.
+This procedure applies to this repository's existing static build. MARS-ts has no production Dockerfile or repository-managed Nginx configuration. Use **Railpack with static output**, which resolves Node 26 from the package manifest and serves `build/` through Coolify's Nginx image. Configure asset caching in Coolify's generated Nginx configuration as described below. The [deployment decision](../adrs/0005-coolify-deployment.md) records that boundary. Java is needed for development and oracle checks, not production serving.
 
-Use the existing Coolify project, environment, application, GitHub App, and server when maintaining this service. Keep their installation-specific identifiers and DNS values in the deployment records. The Custom Nginx configuration field is under **Settings → General → Build pipeline**; older control names are noted elsewhere where useful.
+Use the existing Coolify project, environment, application, GitHub App, and server when maintaining this service. Keep their installation-specific identifiers and DNS values in the deployment records. The Custom Nginx configuration field is under **Settings → General → Build & deploy**.
 
 ## 1. Coolify dashboard: locate or recreate the application
 
 1. Open **Projects**, select the MARS project's environment, and open the application whose Git Source is `awpala/MARS-ts`. Use `mars-ts` when a new project or application name is needed.
 2. When recreating the service, select **+ New → Private Repository (with GitHub App)** in that environment. Select the intended deployment server, then the existing GitHub App corresponding to MARS-ts. This source method also works when the repository is public.
-3. Select `awpala/MARS-ts`, then **Load Repository**. Select branch `main`, Build Pack **Nixpacks**, Base Directory `/`, and static output with Publish Directory `/build` and internal port `80`. Select **Continue** and finish configuration before deploying.
+3. Select `awpala/MARS-ts`, then **Load Repository**. Select branch `main`, Build strategy **Railpack**, Base Directory `/`, and static output with Publish directory `/build` and internal port `80`. Select **Continue** and finish configuration before deploying.
 4. If the repository is missing, open **Sources → the corresponding GitHub App → General → Repositories** (older layouts use **Update Repositories**). On GitHub, confirm that the App installation has access to `awpala/MARS-ts`, then refresh the repository list in Coolify. Keep a dedicated App restricted to this repository.
 
 The [official GitHub App procedure](https://coolify.io/docs/applications/sources/github/app) describes source installation and application creation. An App source or project alone does not create a deployable Application. Its credentials belong to Coolify's source integration, not application variables or the browser bundle.
@@ -27,33 +27,34 @@ Under **Application → Configuration → Git Source**, confirm repository `awpa
 
 ### General: build and network
 
-Open **Settings → General** and maintain the **Build pipeline** and **Networking** cards using the following configuration reference. Older layouts place General under Configuration.
+Open **Settings → General** and maintain the **Build & deploy** and **Networking** sections using the following configuration reference.
 
 | Field                                      | Value                                                                                    |
 | ------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| Build Pack / Build strategy                | `Nixpacks`                                                                               |
+| Build strategy                             | `Railpack`                                                                               |
 | Base Directory                             | `/`                                                                                      |
-| Site type / Output type                    | `Static` / `Static site`; in older layouts enable **Is it a static site?**               |
-| SPA option, if present                     | Disabled                                                                                 |
-| Publish Directory                          | `/build`                                                                                 |
-| Install Command                            | `node --version && npm ci --include=dev`                                                 |
-| Build Command                              | `npm run build`                                                                          |
-| Start Command                              | Empty; the static server owns startup                                                    |
-| Static server                              | Nginx                                                                                    |
+| Site type                                  | `Static`                                                                                 |
+| Publish directory                          | `/build`                                                                                 |
+| Install command                            | `node --version && npm ci --include=dev`                                                 |
+| Build command                              | `npm run build`                                                                          |
+| Start command                              | Empty; the static server owns startup                                                    |
+| Web server                                 | `nginx:alpine`                                                                           |
 | Custom Nginx configuration                 | Complete `server { ... }` configuration below; replaces `/etc/nginx/conf.d/default.conf` |
-| Ports Exposes                              | `80`                                                                                     |
-| Port Mappings                              | Empty                                                                                    |
+| Ports exposes                              | `80`                                                                                     |
+| Port mappings                              | Empty                                                                                    |
 | HTTP Basic Authentication / Authentication | Disabled / `None`                                                                        |
 
-Save and reload the page to confirm the settings persisted. Coolify's [Nixpacks deployment guide](https://coolify.io/docs/applications/builds/nixpacks/deploy) describes static output and the internal Nginx port. The standalone **Static** build pack serves files already in Git; this repository needs the Node build first. Local development/preview remains on `6277`, and automated browser testing uses isolated group servers on available harness-allocated ports starting at `6278`.
+Save and reload the page to confirm the settings persisted. Coolify's [Railpack guide](https://coolify.io/docs/applications/builds/railpack) describes static output and the internal Nginx port. The standalone **Static** build strategy serves files already in Git; this repository needs the Node build first. Local development/preview remains on `6277`, and automated browser testing uses isolated group servers on available harness-allocated ports starting at `6278`.
 
-The [package manifest](../../package.json) requires Node 26. Keep development dependencies during installation because they include the compiler and static adapter. The install command prints the resolved Node version into the build log. Verify that it is Node 26; if needed, set `NIXPACKS_NODE_VERSION=26` as a build-time variable and rebuild. An installed Nixpacks version/archive that cannot supply Node 26 must be corrected before release; do not relax the project's engine requirement. See [Coolify's Node version selection](https://coolify.io/docs/applications/builds/nixpacks/node-versioning).
+The [package manifest](../../package.json) requires Node 26. Keep development dependencies during installation because they include the compiler and static adapter. The install command prints the resolved Node version into the build log. Verify that it is Node 26; do not relax the project's engine requirement.
+
+Railpack reads the Node version from `engines.node` in the manifest (`>=26 <27`) through Mise, so Coolify needs no Node-related variable and the repository needs no builder configuration file. Do not set `RAILPACK_NODE_VERSION`; it takes precedence over the manifest and could disagree with it. Confirm the `node --version` line in the install step prints `v26.x`, and treat any other major version as a release blocker rather than relaxing the engine range. Coolify bundles the Railpack version noted in its [Railpack documentation](https://coolify.io/docs/applications/builds/railpack); builds also require the Docker Buildx plugin on the build server and in Coolify's helper container.
 
 Leave `MARS_VALIDATION` unset in Coolify. [Vite configuration](../../vite.config.ts) deliberately sends validation builds to `__build/browser-site`; the normal production build writes `build/`. No application runtime secrets, database, persistent volumes, or bind mounts are required. Keep Coolify-managed metadata, but do not copy local environment files or GitHub App credentials into application variables.
 
 ### Static asset caching
 
-The desktop Lighthouse report captured on October 20, 2026 identified hashed-asset caching as a maintenance improvement for the live site. Use **Settings → General → Build pipeline** (card/section) → **Custom Nginx configuration** (input field). This field replaces the complete `/etc/nginx/conf.d/default.conf` file; it does not append directives inside a generated `server` block. Coolify's [static-image build implementation](https://github.com/coollabsio/coolify/blob/main/app/Jobs/ApplicationDeploymentJob.php) copies the field into that file and publishes the site at `/usr/share/nginx/html`.
+The desktop Lighthouse report captured on October 20, 2026 identified hashed-asset caching as a maintenance improvement for the live site. Use **Settings → General → Build & deploy** → **Custom Nginx configuration**. This field replaces the complete `/etc/nginx/conf.d/default.conf` file; it does not append directives inside a generated `server` block. Coolify's [static-image build implementation](https://github.com/coollabsio/coolify/blob/main/app/Jobs/ApplicationDeploymentJob.php) copies the field into that file and publishes the site at `/usr/share/nginx/html`.
 
 Replace the field's contents with this complete configuration. The outer `server { ... }` is required. Do not wrap it in `http { ... }` or paste only the inner cache directives: the image already includes `conf.d` inside its `http` context, where a bare `location` is invalid. If adapting an existing complete server configuration, keep its site-specific headers and other required settings while merging these locations and cache rules.
 
@@ -114,7 +115,7 @@ Open **Rollback → Image retention**, retain at least two images, and verify se
 
 ### Selective automatic deployment
 
-**Watch Paths belongs to this Coolify Application, not GitHub.** Under **Settings → General → Build pipeline → Watch Paths**, maintain the following, one pattern per line:
+**Watch paths belongs to this Coolify Application, not GitHub.** Under **Settings → General → Build & deploy → Watch paths**, maintain the following, one pattern per line:
 
 ```text
 src/**
@@ -195,16 +196,16 @@ curl --connect-timeout 10 --max-time 30 -I https://mars-ts.dev/_app/immutable/mi
 curl --connect-timeout 10 --max-time 30 -i https://mars-ts.dev/missing-page/
 ```
 
-| Request                            | Required result                                                                                                                  |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Request                            | Required result                                                                                              |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | HTTPS `/`                          | HTTP `200`, MARS HTML with one canonical link to `https://mars-ts.dev/`, valid certificate for this hostname |
-| HTTP `/`                           | Redirect to the HTTPS origin, without an internal port or hostname                                                               |
-| `/MARSlicense.txt`                 | HTTP `200`, the bundled Pete Sanderson and Kenneth Vollmar license text                                                          |
-| `/llms.txt`                        | HTTP `200`, plain-text MARS agent guidance matching the shipped asset; cache revalidation                                        |
-| `/robots.txt`                      | HTTP `200`, plain-text crawler policy allowing all paths and matching the shipped asset; cache revalidation                      |
-| `/_app/version.json`               | HTTP `200`, JSON with cache revalidation                                                                                         |
-| `/_app/immutable/missing-chunk.js` | HTTP `404`, no year-long immutable cache policy, no HTML fallback                                                                |
-| `/missing-page/`                   | HTTP `404`; no successful SPA fallback to the IDE                                                                                |
+| HTTP `/`                           | Redirect to the HTTPS origin, without an internal port or hostname                                           |
+| `/MARSlicense.txt`                 | HTTP `200`, the bundled Pete Sanderson and Kenneth Vollmar license text                                      |
+| `/llms.txt`                        | HTTP `200`, plain-text MARS agent guidance matching the shipped asset; cache revalidation                    |
+| `/robots.txt`                      | HTTP `200`, plain-text crawler policy allowing all paths and matching the shipped asset; cache revalidation  |
+| `/_app/version.json`               | HTTP `200`, JSON with cache revalidation                                                                     |
+| `/_app/immutable/missing-chunk.js` | HTTP `404`, no year-long immutable cache policy, no HTML fallback                                            |
+| `/missing-page/`                   | HTTP `404`; no successful SPA fallback to the IDE                                                            |
 
 The current application has only the root route. Do not copy the calculator's nested-route, sitemap, or `/healthz` checks. If the generated server returns the IDE for unknown paths, confirm **Static** rather than **SPA** mode and correct the generated Nginx configuration before accepting the release. Custom Nginx changes require a rebuild.
 
@@ -255,17 +256,17 @@ Coolify's [rollback documentation](https://coolify.io/docs/applications/deployme
 
 ## Diagnose a failed step
 
-| Symptom                                                                    | Where to investigate                                                                                                                                                                                          |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Repository absent or checkout fails                                        | **Sources → corresponding GitHub App:** verify installation access to `awpala/MARS-ts`; **Git Source:** verify App, repository, branch, and commit.                                                           |
-| No deployment after a matching push                                        | **Advanced:** Auto Deploy; **Git Source:** `main` and `HEAD`; **General:** Watch Paths; **GitHub App:** recent webhook deliveries and endpoint reachability.                                                  |
-| Wrong Node version or unavailable Node package                             | Inspect the Nixpacks plan and install log; check the manifest and build-time version override. Resolve builder/archive support for Node 26.                                                                   |
-| Missing SvelteKit, Vite, or Tailwind during build                          | Confirm `npm ci --include=dev`, the root Base Directory, and the committed lockfile. Do not replace `npm ci` with `npm install`.                                                                              |
-| Missing `build/`                                                           | Confirm `npm run build`, Publish Directory `/build`, and absence of `MARS_VALIDATION=1`. Read the first build error.                                                                                          |
-| Nginx reports `"location" directive is not allowed here` in `default.conf` | Replace Custom Nginx configuration with the complete `server { ... }` example in step 2, save, and rebuild/redeploy. The field replaces the entire file; cache fragments pasted at its top level are invalid. |
-| Default page or proxy `502`                                                | Confirm static output, publish directory, domain target port `80`, runtime logs, and health. Local port `6277` is not the production target.                                                                  |
-| Unhealthy container or proxy `404`                                         | Test `/` inside the container with `curl` or `wget`; check health configuration, published `index.html`, and domain routing.                                                                                  |
-| Certificate error or wrong site                                            | Check A/AAAA, effective CAA policy, server ingress, exact hostname, duplicate domain assignments, and proxy certificate logs.                                                                                 |
-| HTML loads but the IDE is blank                                            | Inspect failed assets and browser errors; confirm the deployed output includes `/_app/` assets and there is no stale HTML/cache mismatch.                                                                     |
-| Saved sources appear missing                                               | Confirm the exact HTTPS origin and browser profile. Browser data is not stored in Coolify; import an exported copy from the previous origin.                                                                  |
-| Failed Verify after publication                                            | Inspect the deployed SHA and CI failure. Pause Auto Deploy and use step 8 if the published revision is unsuitable.                                                                                            |
+| Symptom                                                                    | Where to investigate                                                                                                                                                                                                                    |
+| -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Repository absent or checkout fails                                        | **Sources → corresponding GitHub App:** verify installation access to `awpala/MARS-ts`; **Git Source:** verify App, repository, branch, and commit.                                                                                     |
+| No deployment after a matching push                                        | **Advanced:** Auto Deploy; **Git Source:** `main` and `HEAD`; **General:** Watch Paths; **GitHub App:** recent webhook deliveries and endpoint reachability.                                                                            |
+| Wrong Node version or unavailable Node package                             | Inspect the install log's `node --version` and the Railpack plan. Confirm the manifest's `engines.node` is unchanged and that `RAILPACK_NODE_VERSION` is unset. A Buildx error means the build server or helper image lacks the plugin. |
+| Missing SvelteKit, Vite, or Tailwind during build                          | Confirm `npm ci --include=dev`, the root Base Directory, and the committed lockfile. Do not replace `npm ci` with `npm install`.                                                                                                        |
+| Missing `build/`                                                           | Confirm `npm run build`, Publish directory `/build`, and absence of `MARS_VALIDATION=1`. Read the first build error.                                                                                                                    |
+| Nginx reports `"location" directive is not allowed here` in `default.conf` | Replace Custom Nginx configuration with the complete `server { ... }` example in step 2, save, and rebuild/redeploy. The field replaces the entire file; cache fragments pasted at its top level are invalid.                           |
+| Default page or proxy `502`                                                | Confirm static output, publish directory, domain target port `80`, runtime logs, and health. Local port `6277` is not the production target.                                                                                            |
+| Unhealthy container or proxy `404`                                         | Test `/` inside the container with `curl` or `wget`; check health configuration, published `index.html`, and domain routing.                                                                                                            |
+| Certificate error or wrong site                                            | Check A/AAAA, effective CAA policy, server ingress, exact hostname, duplicate domain assignments, and proxy certificate logs.                                                                                                           |
+| HTML loads but the IDE is blank                                            | Inspect failed assets and browser errors; confirm the deployed output includes `/_app/` assets and there is no stale HTML/cache mismatch.                                                                                               |
+| Saved sources appear missing                                               | Confirm the exact HTTPS origin and browser profile. Browser data is not stored in Coolify; import an exported copy from the previous origin.                                                                                            |
+| Failed Verify after publication                                            | Inspect the deployed SHA and CI failure. Pause Auto Deploy and use step 8 if the published revision is unsuitable.                                                                                                                      |
