@@ -10,7 +10,7 @@ The [desktop context](context/README.md) shares those per-instance owners with d
 
 ### Desktop architecture
 
-The root constructs the owners once during component initialization and publishes references through context. A view changing tabs, opening Help, or switching appearance does not create another editor or machine. The diagram shows composition and collaboration; the engine's use of injected host callbacks is distinct from importing browser code.
+The root constructs the owners once during component initialization and publishes references through context. A view changing tabs, opening Help, or switching appearance does not create another editor or machine. The diagram shows composition and collaboration; the engine's use of injected host callbacks is distinct from importing browser code. It treats the component groups and the state owners as single nodes: the [component guide](components/README.md) diagrams the feature groups over the generic ones and lists each group's collaborators, and the [state guide](state/README.md) diagrams the individual owners and what backs each injected host service.
 
 ```mermaid
 flowchart TB
@@ -23,6 +23,7 @@ flowchart TB
     Views --> Primitives["Generic controls, layout,<br/>feedback, and icons"]
     Root --> Hooks["Keyboard and unload bindings"]
     Hooks --> Context
+    Views -->|"generic key handling<br/>for source hover help"| Hooks
     Views --> Utilities["Stateless presentation rules<br/>commands, debugger, dom,<br/>execution, geometry, sources"]
     Hooks --> Utilities
     State --> Utilities

@@ -6,8 +6,8 @@
    */
   import { onDestroy, onMount } from 'svelte';
   import { slide } from 'svelte/transition';
-  import { MAIN_VIEWS } from '#lib/browser/DesktopSession.js';
-  import { MIN_REGISTER_WIDTH } from '#lib/browser/PaneLayout.js';
+  import { MAIN_VIEWS } from '#lib/browser/session/DesktopSession.js';
+  import { MIN_REGISTER_WIDTH } from '#lib/browser/preferences/PaneLayout.js';
   import { DesktopState } from './state/DesktopState.svelte.js';
   import { provideDesktop } from './context/desktop.js';
   import { useDesktopKeyboard } from './hooks/useDesktopKeyboard.js';

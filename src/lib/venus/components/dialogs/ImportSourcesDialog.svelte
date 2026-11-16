@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ImportedSource } from '#lib/browser/sourceImport.js';
+  import type { ImportedSource } from '#lib/browser/transfers/sourceImport.js';
   import Button from '../controls/Button.svelte';
   import { getDesktop } from '../../context/desktop.js';
   import Modal from './Modal.svelte';

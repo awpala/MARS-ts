@@ -1,5 +1,9 @@
-import { isSourceFilename, sourceBasename, sourceExtension } from '#lib/browser/SourceLibrary.js';
-import type { SavedSource } from '#lib/browser/SourceLibrary.js';
+import {
+  isSourceFilename,
+  sourceBasename,
+  sourceExtension
+} from '#lib/browser/sources/SourceLibrary.js';
+import type { SavedSource } from '#lib/browser/sources/SourceLibrary.js';
 
 /** Extension given to an exported source whose own name lacks a recognized assembly extension. */
 const DEFAULT_EXPORT_EXTENSION = 'asm';

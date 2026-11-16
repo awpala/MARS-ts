@@ -1,6 +1,6 @@
 /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license.
  * Range and paging rules derive from mars/venus/DataSegmentWindow.java. */
-import type { MemorySegment } from '#lib/browser/DesktopSession.js';
+import type { MemorySegment } from '#lib/browser/session/DesktopSession.js';
 import type { Globals } from '#lib/engine/Globals.js';
 import { AddressErrorException } from '#lib/engine/hardware/memory/AddressErrorException.js';
 import { Settings } from '#lib/engine/Settings.js';

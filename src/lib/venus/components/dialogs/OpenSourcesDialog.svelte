@@ -2,7 +2,7 @@
   import Button from '../controls/Button.svelte';
   import MultiSelect from '../controls/MultiSelect.svelte';
   import SelectAllNone from '../controls/SelectAllNone.svelte';
-  import { SOURCE_EXTENSION_LABEL } from '#lib/browser/SourceLibrary.js';
+  import { SOURCE_EXTENSION_LABEL } from '#lib/browser/sources/SourceLibrary.js';
   import { getDesktop } from '../../context/desktop.js';
   import { compareSourceNames } from '../../utils/sources/compareSourceNames.js';
   import Modal from './Modal.svelte';

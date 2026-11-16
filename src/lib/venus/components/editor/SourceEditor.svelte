@@ -3,7 +3,7 @@
   import { Token } from '#lib/editor/highlighting/Token.js';
   import { Directives } from '#lib/engine/assembler/directives/Directives.js';
   import editorPreset from '#lib/editor/editor-preset.json';
-  import { SOURCE_EXTENSION_LABEL } from '#lib/browser/SourceLibrary.js';
+  import { SOURCE_EXTENSION_LABEL } from '#lib/browser/sources/SourceLibrary.js';
   import { getDesktop } from '../../context/desktop.js';
   import { useKeyboard } from '../../hooks/useKeyboard.js';
   import { clamp } from '../../utils/geometry/clamp.js';

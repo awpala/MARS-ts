@@ -20,6 +20,40 @@ Tested presentation containers and subparts expose responsibility-named, kebab-c
 
 Controls, layout, and feedback remain independent of desktop context and feature views. Feature components may compose those primitives, the icon components, and transfer controls; they leave source and machine policy with their state owners. Dialog variants, like the debugger and editor views, consume context, while the Modal shell and its field/action layouts remain snippet-driven and the shared error alert receives its message from the variant.
 
+The diagram shows which group renders through which; it is not an exhaustive import graph. The root mounts the feature groups, the pane layout, and the loading and persistence-error feedback, and reaches controls and icons only through them. Controls draw their icons through the icon group rather than borrowing from a feature group.
+
+```mermaid
+flowchart TB
+    subgraph Features["Feature groups"]
+        Shell["<code>shell/</code><br/>menus, toolbar, footer,<br/>speed and theme controls"]
+        EditorViews["<code>editor/</code><br/>Edit pane, source editor,<br/>and document tabs"]
+        Debugger["<code>debugger/</code><br/>Execute, register,<br/>and message panes"]
+        Dialogs["<code>dialogs/</code><br/>modal shell and<br/>workflow variants"]
+        Transfers["<code>transfers/</code><br/>clipboard and<br/>file import/export"]
+    end
+    subgraph Generic["Generic groups"]
+        Layout["<code>layout/</code><br/>pane shells and dividers"]
+        Controls["<code>controls/</code><br/>buttons, links, selectors,<br/>tabs, sliders, switches"]
+        Feedback["<code>feedback/</code><br/>loading, tooltips,<br/>keycaps, inline errors"]
+        Icons["<code>icons/</code><br/>theme-aware glyphs<br/>and masked icons"]
+    end
+    Shell & EditorViews & Debugger & Dialogs & Transfers --> Controls
+    Debugger --> Layout
+    Layout --> Controls
+    Shell & Debugger & Dialogs & Controls --> Feedback
+    Shell & EditorViews & Transfers & Controls --> Icons
+```
+
+Only the feature groups collaborate beyond this directory. The generic groups import nothing from the desktop state, the editor, the browser adapters, or the engine; their only outside dependencies are stateless [presentation utilities](../utils/README.md) (description-ID joining, shortcut notation, and clamping). Each feature group reaches the following collaborators, and every group may use those utilities:
+
+| Group     | Desktop access                                                                                                                                           | Collaborators outside Venus                                                                                                                                                                                                                                                                 |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| shell     | Command capability only: dispatch, enablement, pressed state, and the live setting toggles                                                               | Browser theme storage and the stored run-speed bound; the engine setting identifiers that place the Settings-menu groups                                                                                                                                                                    |
+| editor    | Full desktop context: workspace, simulation, and display preferences; the generic [keyboard hook](../hooks/README.md) for Escape dismissal of hover help | Lexical [highlighting](../../editor/highlighting/README.md) and the bundled editor preset; directive hover metadata from the assembler and instruction hover metadata from the session's instruction registry; bundled-source labels and source-extension wording from the browser adapters |
+| debugger  | Full desktop context: display preferences, simulation, and workspace; the machine, controller, and snapshot handles arrive as props                      | The engine's public hardware inspection and edit APIs and access notices; Java-compatible numeric conversion from engine formatting; the browser adapters' stored view vocabularies and pane-size limits, source basename rule, and error text                                              |
+| dialogs   | Full desktop context in each workflow variant; the Modal shell and its field/action layouts stay snippet-driven                                          | Browser source-library filename rules, bundled-source catalog, import plan, and download lifecycle; the engine's dump formats and hexadecimal formatting                                                                                                                                    |
+| transfers | Full desktop context for the file behaviors, which register with the coordinator; Clipboard controls receive caller text and callbacks                   | Browser import planner, extension rules, download and save-picker lifecycle, and page-focus helper; the native file input, file reads, and the Clipboard API                                                                                                                                |
+
 Pane provides the generic sized region and content renderer, used by the execution segments through the debugger's SegmentPane frame and specialized by TabbedPane for tabbed editor, register, and message regions. TabbedPane is generic over its tab type, so callers pass a closed vocabulary such as the register banks or message consoles and receive the selected tab with that same type; it supplies a body snippet and optional tab-strip actions. Its body snippet receives the selected tab; the caller decides which content stays mounted. CSS custom properties control pane dimensions without reaching through component-scoped styles. The controls group's generic tab strip supports both pane tabs and scrollable nested document tabs, with stable keys and per-document action snippets. Selecting a document or closing it delegates to the editor owner; the tab strip does not create or dispose buffers.
 
 Dropdowns render ordered groups of command or checkbox records, with separators between nonempty groups. Menu bars own native-details dismissal within their own element and use an instance-specific details group name. Toolbar groups accept content snippets, the shared icon-only IconButton owns labeling and pressed/disabled presentation, and the icon components reference bundled SVG files rather than drawing inline artwork. The menu and toolbar adapters resolve their command records and setting toggles through the same desktop capability, so reusable controls do not know how to save files or execute a machine, and the shell stays independent of the individual owners.

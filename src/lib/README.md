@@ -8,176 +8,64 @@ The [root route](../routes/+page.svelte) opens the desktop directly. SvelteKit p
 
 ### Library relationships
 
-The subgraphs follow library modules and their responsibility-specific submodules. Solid arrows show composition, API use, or data access, not an exhaustive import graph. An arrow to or from a subgraph boundary relates to that module as a whole rather than one of its submodules. The dashed arrow is an engine call through an injected host interface; the engine does not import its Venus implementation. The route and browser APIs sit outside the library modules.
+The diagram shows the library modules and, within Venus, the three surfaces the other modules collaborate with: presentation, per-desktop state, and the framework-free run controller. Solid arrows show composition, API use, or data access, not an exhaustive import graph. The dashed arrow is an engine call through an injected host interface; the engine does not import its Venus implementation. The route and browser APIs sit outside the library modules. Relationships among a module's own submodules belong to that module's guide, as listed below the diagram.
 
 ```mermaid
 flowchart TB
     Route["SvelteKit route"]
-    Platform["Browser APIs<br/>DOM, storage, clipboard, files, timers"]
+    Platform["Browser APIs<br/>DOM, storage, clipboard, files, timers, audio"]
 
-    subgraph VenusModule["Venus · venus/"]
-        Root["VenusUI<br/>desktop renderer and lifetime"]
+    subgraph VenusModule["Venus · <code>venus/</code>"]
+        Views["Desktop presentation<br/>VenusUI, components, contexts, hooks"]
+        State["Desktop state owners<br/>workspace, simulation, preferences,<br/>search, recovery"]
         Controller["RunController<br/>framework-free run workflows<br/>and checkpoints"]
-        subgraph ComponentsModule["components/"]
-            subgraph ShellModule["shell/"]
-                Shell["Menus, toolbar, footer,<br/>speed and theme controls"]
-            end
-            subgraph EditorViewsModule["editor/"]
-                EditorViews["Edit pane, source editor,<br/>and document tabs"]
-            end
-            subgraph DebuggerModule["debugger/"]
-                Debugger["Execute, register,<br/>and message panes"]
-            end
-            subgraph DialogsModule["dialogs/"]
-                Dialogs["Modal shell and<br/>workflow variants"]
-            end
-            subgraph TransfersModule["transfers/"]
-                Transfers["Clipboard and<br/>file import/export"]
-            end
-            subgraph LayoutModule["layout/"]
-                Layout["Pane shells and dividers"]
-            end
-            subgraph ControlsModule["controls/"]
-                Controls["Buttons, links, selectors,<br/>tabs, sliders, switches"]
-            end
-            subgraph FeedbackModule["feedback/"]
-                Feedback["Loading, tooltips,<br/>keycaps, inline errors"]
-            end
-            subgraph IconsModule["icons/"]
-                Icons["Theme-aware glyphs<br/>and masked icons"]
-            end
-            Shell & EditorViews & Debugger & Dialogs & Transfers --> Controls
-            Debugger --> Layout
-            Layout --> Controls
-            Shell & Debugger & Dialogs & Controls --> Feedback
-            Shell & EditorViews & Transfers & Controls --> Icons
-        end
-        subgraph ContextModule["context/"]
-            Context["Typed desktop and command contexts"]
-        end
-        subgraph HooksModule["hooks/"]
-            Hooks["Keyboard and unload bindings"]
-        end
-        subgraph UtilitiesModule["utils/"]
-            Utilities["Stateless presentation rules"]
-        end
-        subgraph StateModule["state/"]
-            State["Desktop state owners<br/>workspace, simulation, preferences,<br/>search, recovery"]
-            Host["Simulation host callbacks<br/>source lookup, console, input,<br/>dialogs, scheduling, preferences,<br/>tones, entropy"]
-            State --> Host
-        end
-        Root --> ComponentsModule
-        Root --> Context
-        Root --> Hooks
-        Root --> State
-        Shell -->|command capability| Context
-        EditorViews & Debugger & Dialogs & Transfers --> Context
-        EditorViews --> Hooks
-        Hooks --> Context
-        ComponentsModule --> Utilities
-        Hooks --> Utilities
-        State --> Utilities
-        Context -->|references existing owners| State
+        Views -->|typed contexts| State
         State --> Controller
-        Controller -->|write-observation rule| Utilities
     end
 
-    subgraph EditorModule["Editor · editor/"]
-        Editor["Editor<br/>buffers and history"]
-        subgraph HighlightingModule["highlighting/"]
-            Highlighting["Lexical highlighting"]
-        end
-    end
+    Editor["Editor · <code>editor/</code><br/>buffers, history, lexical highlighting"]
+    Browser["Browser · <code>browser/</code><br/>source library, file transfers, preferences,<br/>session recovery, scheduling and tone hosts"]
+    Engine["Engine · <code>engine/</code><br/>session-local assembly, hardware,<br/>simulation, and runtime services"]
 
-    subgraph BrowserModule["Browser · browser/"]
-        Browser["Browser adapters<br/>source library, preferences,<br/>recovery records, downloads,<br/>MIDI tone output"]
-    end
-
-    subgraph EngineModule["Engine · engine/"]
-        Globals["Globals and Settings<br/>session-local machine composition"]
-        subgraph AssemblerModule["assembler/"]
-            Assembly["Source preparation, tokens,<br/>directives, symbols, macros, assembly"]
-        end
-        subgraph InstructionsModule["instructions/"]
-            Instructions["Instruction registry<br/>definitions, decoding, execution callbacks"]
-        end
-        subgraph HardwareModule["hardware/"]
-            Hardware["Registers, coprocessors, memory,<br/>layouts, access notices"]
-        end
-        subgraph SimulatorModule["simulator/"]
-            Simulation["Simulator and backstepping"]
-        end
-        subgraph SyscallsModule["syscalls/"]
-            Syscalls["Runtime service algorithms and registry"]
-        end
-        subgraph IOModule["io/"]
-            IO["Console conversion and I/O interfaces"]
-        end
-        subgraph FormattingModule["formatting/"]
-            Formatting["Java numeric and character compatibility"]
-        end
-        subgraph DiagnosticsModule["diagnostics/"]
-            Diagnostics["Source-mapped warnings and errors"]
-        end
-        Globals --> Assembly
-        Globals --> Instructions
-        Globals --> Hardware
-        Globals --> Simulation
-        Globals --> Syscalls
-        Globals --> IO
-        Assembly --> Instructions
-        Assembly --> Hardware
-        Assembly --> Diagnostics
-        Assembly --> Formatting
-        Simulation --> Instructions
-        Simulation --> Hardware
-        Simulation --> Diagnostics
-        Instructions --> Hardware
-        Instructions --> Syscalls
-        Syscalls --> Hardware
-        Syscalls --> IO
-        IO --> Formatting
-    end
-
-    Route --> Root
+    Route --> Views
+    Views -->|syntax painting| Editor
+    Views -->|stored vocabularies, extension rules,<br/>downloads, theme storage| Browser
+    Views -->|file and clipboard interactions| Platform
+    Views -->|inspection, edit, and metadata APIs| Engine
     State --> Editor
     State --> Browser
-    EditorViews --> Highlighting
-    EditorViews -->|instruction hover metadata| Instructions
-    EditorViews -->|directive hover metadata| Assembly
-    Shell -->|theme storage| Browser
-    Debugger -->|stored vocabularies and limits| Browser
-    Transfers -->|extension rules and downloads| Browser
-    Transfers -->|file and clipboard interactions| Platform
-    State -->|editor clipboard actions| Platform
+    State -->|constructs machine with host| Engine
+    Controller --> Engine
+    Editor -->|lexical metadata| Engine
     Browser --> Platform
     Browser -->|recovery checkpoint validation| Controller
-    Host --> Platform
-    Host -->|source resolution through workspace| Editor
-    Host -->|committed sources through workspace,<br/>engine preference storage| Browser
-    State -->|constructs machine with host| Globals
-    Controller --> Globals
-    Debugger -->|public inspection and edit APIs| Hardware
-    Debugger -->|Java-compatible numeric conversion| Formatting
-    Highlighting -->|directive and token metadata| Assembly
-    Highlighting -->|character categories and trimming| Formatting
-    Highlighting -->|register names| Hardware
-    Globals -.->|calls supplied interfaces| Host
+    Engine -.->|calls supplied host interfaces| State
 ```
 
 Venus composes the browser desktop and owns its session lifecycle. Editor and RunController remain framework-free models even though Venus uses them in the browser. Engine remains a separate portable module with an injected host boundary; the deployed application executes it in the browser too. Host callbacks belong to Venus simulation state and resolve source through the existing workspace, whose editor buffers take precedence over committed browser-library sources.
 
 Help is composed into Venus dialogs and uses the reusable clipboard/transfer controls for code examples. Its source-transfer callback delegates to the existing workspace; Help owns neither a machine nor an editor. Within components, the feature groups (shell, editor, debugger, dialogs, and transfers) compose the generic controls, layout, feedback, and icon groups, which read no desktop context; controls draw their icons through the icon group rather than borrowing from a feature group.
 
+Each module guide owns the next level of detail, with its own diagram where the structure warrants one:
+
+| Relationships                                                                                                                                                                                | Owning guide                                       |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Desktop root, typed contexts, hooks, utilities, state owners, and RunController, with their editor, browser, and engine collaborators                                                        | [Venus](venus/README.md#desktop-architecture)      |
+| Feature component groups over the generic controls, layout, feedback, and icon groups; each group's desktop access and its collaborators outside the directory                               | [Venus components](venus/components/README.md)     |
+| Desktop state owners, the models and adapters each one uses, and what backs every injected host service                                                                                      | [Venus state](venus/state/README.md)               |
+| Editor model, lexical highlighting, and the engine metadata the highlighter reads                                                                                                            | [Editor](editor/README.md)                         |
+| Browser submodules (sources, transfers, preferences, session, and execution), the application owners that consume them, the platform APIs they use, and the engine interfaces they implement | [Browser](browser/README.md#module-relationships)  |
+| Engine subsystem dependencies, machine composition, and the injected host boundary                                                                                                           | [Engine](engine/README.md#subsystem-relationships) |
+
 ### Module responsibilities
 
-| Module                       | Owns                                                                                                                                              | Principal boundary                                                                                                |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| [Venus](venus/README.md)     | Desktop composition, context, cross-view state, source/run workflows, debugging presentation, keyboard coordination, and UI lifetimes             | Adapts the desktop to browser views while using editor, engine, and browser APIs                                  |
-| [Editor](editor/README.md)   | Source buffers, names, selection, saved baselines, dirty state, per-buffer undo/redo, and lexical highlighting                                    | Does not assemble programs or own browser persistence; callers resolve unsaved changes before closing             |
-| [Browser](browser/README.md) | Source and preference storage validation, virtual filenames, recovery serialization, downloadable resources, and Web Audio MIDI tones             | Implements browser mechanics outside the engine; state owners decide when and why to persist                      |
-| [Help](help/README.md)       | Help catalog, tabbed browser, overview/About content, attributed articles with Markdown companions, and article rendering                         | Receives selected content and source-transfer callbacks; reuses the application's modal and transfer presentation |
-| [Engine](engine/README.md)   | Canonical assembly, hardware, instruction execution, simulator sequencing, diagnostics, numeric/character compatibility, and implemented syscalls | Framework-free TypeScript with per-session state and injected host services                                       |
+| Module                       | Owns                                                                                                                                                                              | Principal boundary                                                                                                |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| [Venus](venus/README.md)     | Desktop composition, context, cross-view state, source/run workflows, debugging presentation, keyboard coordination, and UI lifetimes                                             | Adapts the desktop to browser views while using editor, engine, and browser APIs                                  |
+| [Editor](editor/README.md)   | Source buffers, names, selection, saved baselines, dirty state, per-buffer undo/redo, and lexical highlighting                                                                    | Does not assemble programs or own browser persistence; callers resolve unsaved changes before closing             |
+| [Browser](browser/README.md) | Source and preference storage validation, virtual filenames, recovery serialization, import planning and downloadable resources, cooperative scheduling, and Web Audio MIDI tones | Implements browser mechanics outside the engine; state owners decide when and why to persist                      |
+| [Help](help/README.md)       | Help catalog, tabbed browser, overview/About content, attributed articles with Markdown companions, and article rendering                                                         | Receives selected content and source-transfer callbacks; reuses the application's modal and transfer presentation |
+| [Engine](engine/README.md)   | Canonical assembly, hardware, instruction execution, simulator sequencing, diagnostics, numeric/character compatibility, and implemented syscalls                                 | Framework-free TypeScript with per-session state and injected host services                                       |
 
 The [system implementation guide](../../IMPLEMENTATION.md) describes current feature coverage, supported assembly and debugging behavior, persistence policy, and validation evidence. This guide explains library relationships; the individual module guides own their detailed contracts.
 

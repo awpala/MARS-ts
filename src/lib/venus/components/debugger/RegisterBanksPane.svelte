@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { MIN_REGISTER_WIDTH } from '#lib/browser/PaneLayout.js';
-  import { REGISTER_BANKS } from '#lib/browser/DesktopSession.js';
+  import { MIN_REGISTER_WIDTH } from '#lib/browser/preferences/PaneLayout.js';
+  import { REGISTER_BANKS } from '#lib/browser/session/DesktopSession.js';
   import Tooltip from '../feedback/Tooltip.svelte';
   import InlineAlert from '../feedback/InlineAlert.svelte';
   import SelectAllNone from '../controls/SelectAllNone.svelte';

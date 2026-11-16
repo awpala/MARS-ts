@@ -1,6 +1,6 @@
 /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license.
  * Descriptions derive from mars/venus/RegistersWindow.java, Coprocessor0Window.java, and Coprocessor1Window.java. */
-import type { RegisterBank } from '#lib/browser/DesktopSession.js';
+import type { RegisterBank } from '#lib/browser/session/DesktopSession.js';
 
 const temporary = 'temporary (not preserved across call)';
 const saved = 'saved temporary (preserved across call)';

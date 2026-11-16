@@ -6,7 +6,7 @@
     <meta name="text-scale" content="scale" />
     <script>
       // Apply the saved palette before the stylesheet and desktop can paint.
-      // The key matches THEME_STORAGE_KEY in src/lib/browser/ThemePreference.ts.
+      // The key matches THEME_STORAGE_KEY in src/lib/browser/preferences/ThemePreference.ts.
       try {
         document.documentElement.dataset.theme =
           localStorage.getItem('mars-ts:theme:v1') === 'dark' ? 'dark' : 'light';

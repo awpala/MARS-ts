@@ -1,7 +1,11 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import { EXPORT_ALL_FILENAME, sourceArchiveBlob, sourceBlob } from '#lib/browser/download.js';
-  import { FileDownload } from '#lib/browser/FileDownload.js';
+  import {
+    EXPORT_ALL_FILENAME,
+    sourceArchiveBlob,
+    sourceBlob
+  } from '#lib/browser/transfers/download.js';
+  import { FileDownload } from '#lib/browser/transfers/FileDownload.js';
   import { getDesktop } from '../../context/desktop.js';
   import { exportFilenames } from '../../utils/sources/exportFilenames.js';
 

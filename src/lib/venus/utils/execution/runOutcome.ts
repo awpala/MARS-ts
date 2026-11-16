@@ -1,6 +1,6 @@
 /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license.
  * Completion messages derive from mars/venus/RunGoAction.java and RunStepAction.java. */
-import type { MessageTab, RegisterBank } from '#lib/browser/DesktopSession.js';
+import type { MessageTab, RegisterBank } from '#lib/browser/session/DesktopSession.js';
 import { Simulator } from '#lib/engine/simulator/Simulator.js';
 import type { RunState } from '../../RunController.js';
 

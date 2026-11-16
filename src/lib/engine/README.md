@@ -68,6 +68,33 @@ The module guides own local API details, retained quirks, and focused evidence. 
 
 Within hardware, [register banks](hardware/registers/README.md), [memory/layouts](hardware/memory/README.md), and [access notices](hardware/notices/README.md) separate state owners from published records. Within assembly, pass and operand coordination remain at the root while [tokenization](assembler/tokenization/README.md), [directives](assembler/directives/README.md), [symbols](assembler/symbols/README.md), [macros](assembler/macros/README.md), and [program representations](assembler/programs/README.md) own their existing contracts. These groups preserve the translated classes and use direct imports without forwarding files.
 
+### Subsystem relationships
+
+The diagram shows the principal composition and API use among the engine's modules, not an exhaustive import graph. Formatting and diagnostics are shared services used throughout the engine, so only their main consumers are drawn. The instruction registry reaches a runtime service through the session's syscall dispatcher, which `Globals` supplies; it does not import the service implementations.
+
+```mermaid
+flowchart TB
+    Globals["Globals and Settings<br/>session-local machine composition"]
+    Assembly["<code>assembler/</code><br/>source preparation, tokens, directives,<br/>symbols, macros, assembly"]
+    Instructions["<code>instructions/</code><br/>registry, definitions, decoding,<br/>execution callbacks"]
+    Hardware["<code>hardware/</code><br/>registers, coprocessors, memory,<br/>layouts, access notices"]
+    Simulation["<code>simulator/</code><br/>simulator and backstepping"]
+    Syscalls["<code>syscalls/</code><br/>runtime service algorithms and registry"]
+    IO["<code>io/</code><br/>console conversion and I/O interfaces"]
+    Dump["<code>dump/</code><br/>memory dump formats"]
+    Formatting["<code>formatting/</code><br/>Java numeric and character compatibility"]
+    Diagnostics["<code>diagnostics/</code><br/>source-mapped warnings and errors"]
+    Globals --> Assembly & Instructions & Hardware & Simulation & Syscalls & IO
+    Assembly --> Instructions & Hardware & Diagnostics & Formatting
+    Simulation --> Instructions & Hardware & Diagnostics
+    Instructions --> Hardware & Syscalls
+    Syscalls --> Hardware & IO
+    IO --> Formatting
+    Dump --> Hardware & Formatting
+```
+
+Application modules consume these boundaries through their public APIs rather than through a combined entry point. The Venus [RunController](../venus/RunController.ts) and simulation state construct and drive `Globals`; the [debugger views](../venus/components/debugger/README.md) inspect and edit hardware and convert values through formatting; the memory-dump dialog reads the dump formats; the source editor's hover help reads instruction and directive metadata; and the [editor highlighter](../editor/highlighting/README.md) reads assembler token and directive metadata, hardware register names, and formatting's character rules. None of these consumers is imported by the engine.
+
 ## Host services and portability
 
 [GlobalsHost](Globals.ts) is the composition-level contract for browser or test services. Subsystems receive narrower interfaces containing the collaborators they consume. Hosts provide platform mechanics; translated engine classes retain source-language, numeric, and MIPS behavior.

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { saveTheme } from '#lib/browser/ThemePreference.js';
+  import { saveTheme } from '#lib/browser/preferences/ThemePreference.js';
   import Toggle from '../controls/Toggle.svelte';
   import MaskIcon from '../icons/MaskIcon.svelte';
   let dark = $state(false);

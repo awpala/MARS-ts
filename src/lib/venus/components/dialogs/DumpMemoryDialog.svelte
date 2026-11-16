@@ -5,8 +5,8 @@
   import { DumpFormatLoader } from '#lib/engine/dump/DumpFormatLoader.js';
   import { MemoryDump } from '#lib/engine/dump/MemoryDump.js';
   import { Binary } from '#lib/engine/formatting/Binary.js';
-  import { sourceStem } from '#lib/browser/SourceLibrary.js';
-  import { FileDownload } from '#lib/browser/FileDownload.js';
+  import { sourceStem } from '#lib/browser/sources/SourceLibrary.js';
+  import { FileDownload } from '#lib/browser/transfers/FileDownload.js';
   import { errorMessage } from '#lib/browser/errorMessage.js';
   import { getDesktop } from '../../context/desktop.js';
   import Modal from './Modal.svelte';

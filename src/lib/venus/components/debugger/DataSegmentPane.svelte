@@ -3,7 +3,7 @@
    * Ports the view in mars/venus/DataSegmentWindow.java.
    * Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license.
    */
-  import { MIN_DATA_SEGMENT_HEIGHT } from '#lib/browser/PaneLayout.js';
+  import { MIN_DATA_SEGMENT_HEIGHT } from '#lib/browser/preferences/PaneLayout.js';
   import { Binary } from '#lib/engine/formatting/Binary.js';
   import { clamp } from '../../utils/geometry/clamp.js';
   import {

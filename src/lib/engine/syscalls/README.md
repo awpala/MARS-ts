@@ -26,7 +26,7 @@ Subgraphs follow the source-folder boundaries, with external engine collaborator
 
 ```mermaid
 flowchart LR
-  subgraph shared["syscalls/ (module root)"]
+  subgraph shared["<code>syscalls/</code> (module root)"]
     SyscallLoader[SyscallLoader]
     SyscallRegistration{{SyscallRegistration}}
     SyscallOverride{{SyscallOverride}}
@@ -35,33 +35,33 @@ flowchart LR
     SyscallHost{{SyscallHost}}
   end
 
-  subgraph console["console/"]
+  subgraph console["<code>console/</code>"]
     ConsoleOutput["SyscallPrintInt<br/>SyscallPrintFloat<br/>SyscallPrintDouble<br/>SyscallPrintString<br/>SyscallPrintChar<br/>SyscallPrintIntHex<br/>SyscallPrintIntBinary<br/>SyscallPrintIntUnsigned"]
     AbstractReadNumberSyscall([AbstractReadNumberSyscall])
     NumericInput["SyscallReadInt<br/>SyscallReadFloat<br/>SyscallReadDouble"]
     ConsoleInput["SyscallReadString<br/>SyscallReadChar"]
   end
 
-  subgraph heap["heap/"]
+  subgraph heap["<code>heap/</code>"]
     SyscallSbrk[SyscallSbrk]
   end
 
-  subgraph termination["termination/"]
+  subgraph termination["<code>termination/</code>"]
     Termination["SyscallExit<br/>SyscallExit2"]
   end
 
-  subgraph random["random/"]
+  subgraph random["<code>random/</code>"]
     Random["SyscallRandSeed<br/>SyscallRandInt<br/>SyscallRandIntRange<br/>SyscallRandFloat<br/>SyscallRandDouble"]
     RandomStreams[RandomStreams]
     JavaRandom[JavaRandom]
   end
 
-  subgraph dialogs["dialogs/"]
+  subgraph dialogs["<code>dialogs/</code>"]
     AbstractDialogSyscall([AbstractDialogSyscall])
     Dialogs["SyscallConfirmDialog<br/>SyscallInputDialogInt<br/>SyscallInputDialogFloat<br/>SyscallInputDialogDouble<br/>SyscallInputDialogString<br/>SyscallMessageDialog<br/>SyscallMessageDialogInt<br/>SyscallMessageDialogFloat<br/>SyscallMessageDialogDouble<br/>SyscallMessageDialogString"]
   end
 
-  subgraph midi["midi/"]
+  subgraph midi["<code>midi/</code>"]
     AbstractMidiSyscall([AbstractMidiSyscall])
     Midi["SyscallMidiOut<br/>SyscallMidiOutSync"]
     ToneGenerator[ToneGenerator]

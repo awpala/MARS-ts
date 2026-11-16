@@ -1,6 +1,6 @@
 import { untrack } from 'svelte';
-import { loadDesktopSession, type DesktopSession } from '#lib/browser/DesktopSession.js';
-import { DesktopSessionWriter } from '#lib/browser/DesktopSessionWriter.js';
+import { loadDesktopSession, type DesktopSession } from '#lib/browser/session/DesktopSession.js';
+import { DesktopSessionWriter } from '#lib/browser/session/DesktopSessionWriter.js';
 import { errorMessage } from '#lib/browser/errorMessage.js';
 import type { DisplayPreferences } from './DisplayPreferences.svelte.js';
 import type { SourceWorkspace } from './SourceWorkspace.svelte.js';

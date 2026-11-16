@@ -1,8 +1,8 @@
 import type { ModalState, WorkspaceDialog } from './ModalState.svelte.js';
-import { DEFAULT_DISPLAY_SETTINGS } from '#lib/browser/DisplaySettings.js';
+import { DEFAULT_DISPLAY_SETTINGS } from '#lib/browser/preferences/DisplaySettings.js';
 import { tick } from 'svelte';
 import { Editor, type EditPane } from '#lib/editor/Editor.js';
-import { bundledSource } from '#lib/browser/BundledSources.js';
+import { bundledSource } from '#lib/browser/sources/BundledSources.js';
 import {
   isSourceFilename,
   SOURCE_EXTENSION_LABEL,
@@ -10,8 +10,8 @@ import {
   sourceName,
   sourceStem,
   type SavedSource
-} from '#lib/browser/SourceLibrary.js';
-import type { SourceImportPlan } from '#lib/browser/sourceImport.js';
+} from '#lib/browser/sources/SourceLibrary.js';
+import type { SourceImportPlan } from '#lib/browser/transfers/sourceImport.js';
 import type { DisplayPreferences } from './DisplayPreferences.svelte.js';
 import { errorMessage } from '#lib/browser/errorMessage.js';
 import { isSavableSource } from '../utils/sources/savableSource.js';

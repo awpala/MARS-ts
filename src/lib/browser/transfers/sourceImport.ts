@@ -5,9 +5,9 @@ import {
   sourceExtension,
   sourceName,
   type SavedSource
-} from './SourceLibrary.js';
+} from '../sources/SourceLibrary.js';
 import { readZip } from './zip.js';
-import { errorMessage } from './errorMessage.js';
+import { errorMessage } from '../errorMessage.js';
 
 /** The import picker's `accept` value: the assembly extensions plus ZIP archives. */
 export const IMPORT_FILE_ACCEPT = `${SOURCE_FILE_ACCEPT},.zip`;

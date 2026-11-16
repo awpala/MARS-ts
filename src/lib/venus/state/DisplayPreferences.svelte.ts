@@ -1,11 +1,15 @@
-import { loadPaneLayout, MIN_REGISTER_WIDTH, savePaneLayout } from '#lib/browser/PaneLayout.js';
+import {
+  loadPaneLayout,
+  MIN_REGISTER_WIDTH,
+  savePaneLayout
+} from '#lib/browser/preferences/PaneLayout.js';
 import {
   loadDisplaySettings,
   DEFAULT_DISPLAY_SETTINGS,
   saveDisplaySettings,
   type DisplaySettings
-} from '#lib/browser/DisplaySettings.js';
-import type { MainView, MemorySegment, RegisterBank } from '#lib/browser/DesktopSession.js';
+} from '#lib/browser/preferences/DisplaySettings.js';
+import type { MainView, MemorySegment, RegisterBank } from '#lib/browser/session/DesktopSession.js';
 import { clamp } from '../utils/geometry/clamp.js';
 import {
   DEFAULT_REGISTER_WIDTH,

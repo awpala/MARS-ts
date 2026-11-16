@@ -1,8 +1,8 @@
 <script lang="ts">
   /* Copyright (c) 2003-2013, Pete Sanderson and Kenneth Vollmar. MIT license.
    * Ports the dialog in mars/venus/SettingsExceptionHandlerAction.java. */
-  import { SOURCE_EXTENSION_LABEL } from '#lib/browser/SourceLibrary.js';
-  import { spimExceptionHandler } from '#lib/browser/BundledSources.js';
+  import { SOURCE_EXTENSION_LABEL } from '#lib/browser/sources/SourceLibrary.js';
+  import { spimExceptionHandler } from '#lib/browser/sources/BundledSources.js';
   import { getDesktop } from '../../context/desktop.js';
   import { compareSourceNames } from '../../utils/sources/compareSourceNames.js';
   import Button from '../controls/Button.svelte';

@@ -9,7 +9,7 @@ import { SimulationState } from '#lib/venus/state/SimulationState.svelte.js';
 import { SourceWorkspace } from '#lib/venus/state/SourceWorkspace.svelte.js';
 import { ModalState } from '#lib/venus/state/ModalState.svelte.js';
 import { DisplayPreferences } from '#lib/venus/state/DisplayPreferences.svelte.js';
-import { spimExceptionHandler } from '#lib/browser/BundledSources.js';
+import { spimExceptionHandler } from '#lib/browser/sources/BundledSources.js';
 import { parseTabRows, readOracleJson } from '../oracle/fixtures.js';
 
 const fixture = readOracleJson<{ stdout: string; stderr: string; status: number }>(

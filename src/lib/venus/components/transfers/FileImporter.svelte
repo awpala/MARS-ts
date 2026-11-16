@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
-  import { whenPageActive } from '#lib/browser/pageFocus.js';
-  import { IMPORT_FILE_ACCEPT, readSourceImport } from '#lib/browser/sourceImport.js';
+  import { whenPageActive } from '#lib/browser/transfers/pageFocus.js';
+  import { IMPORT_FILE_ACCEPT, readSourceImport } from '#lib/browser/transfers/sourceImport.js';
   import { getDesktop } from '../../context/desktop.js';
   const WAITING = 'Waiting for file selection…';
   const ATTEMPTING = 'Attempting import…';

@@ -3,7 +3,7 @@
    * Ports the view in mars/venus/LabelsWindow.java.
    * Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license.
    */
-  import { sourceBasename } from '#lib/browser/SourceLibrary.js';
+  import { sourceBasename } from '#lib/browser/sources/SourceLibrary.js';
   import {
     compareLabels,
     LABEL_COLUMNS,

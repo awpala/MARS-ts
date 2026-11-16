@@ -2,7 +2,7 @@
   import { tick } from 'svelte';
   import TabbedPane from '../layout/TabbedPane.svelte';
   import Button from '../controls/Button.svelte';
-  import { MESSAGE_TABS } from '#lib/browser/DesktopSession.js';
+  import { MESSAGE_TABS } from '#lib/browser/session/DesktopSession.js';
   import { getDesktop } from '../../context/desktop.js';
   import { requireAction } from '../../utils/commands/actions.js';
   import { ariaKeyShortcuts } from '../../utils/commands/shortcuts.js';

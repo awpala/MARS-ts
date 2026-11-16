@@ -6,10 +6,10 @@ import type {
   MessageTab,
   SavedExecution,
   SavedLabelSelection
-} from '#lib/browser/DesktopSession.js';
-import { browserEnginePreferences } from '#lib/browser/EnginePreferences.js';
-import { CooperativeScheduler } from '#lib/browser/CooperativeScheduler.js';
-import { WebAudioToneHost } from '#lib/browser/WebAudioToneHost.js';
+} from '#lib/browser/session/DesktopSession.js';
+import { browserEnginePreferences } from '#lib/browser/preferences/EnginePreferences.js';
+import { CooperativeScheduler } from '#lib/browser/execution/CooperativeScheduler.js';
+import { WebAudioToneHost } from '#lib/browser/execution/WebAudioToneHost.js';
 import { Globals } from '#lib/engine/Globals.js';
 import { ProcessingException } from '#lib/engine/diagnostics/ProcessingException.js';
 import { Settings } from '#lib/engine/Settings.js';

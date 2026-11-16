@@ -2,7 +2,7 @@
   import SourceEditor from './SourceEditor.svelte';
   import SourceTabs from './SourceTabs.svelte';
   import { getDesktop } from '../../context/desktop.js';
-  import { bundledSource } from '#lib/browser/BundledSources.js';
+  import { bundledSource } from '#lib/browser/sources/BundledSources.js';
   import Button from '../controls/Button.svelte';
   import MaskIcon from '../icons/MaskIcon.svelte';
   const { workspace, simulation } = getDesktop();
