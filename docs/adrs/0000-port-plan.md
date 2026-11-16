@@ -63,6 +63,8 @@ Port correctness is measured against the legacy app, not against reading of its 
 
 The SvelteKit package and configuration are at the repository root (`package.json`, `vite.config.ts`), with all application implementation under `src/` (`/workspace/src` in the devcontainer): engine classes in `src/lib/engine/`, GUI and browser adapters in `src/lib/`, and routes in `src/routes/`. Root scripts and TypeScript/SvelteKit configuration resolve that source tree, including the `$lib` alias. The original Java application is isolated under [_legacy-app/](../../_legacy-app/README.md) until P5, including its sources, runtime resources, packaging files, and generated Javadoc in `_legacy-app/docs/`. The original `MARSlicense.txt` remains at the repository root because both applications use it; `build-legacy` copies it into the Java archive. Root `docs/` holds authored port documentation. Oracle fixtures and runners remain port validation infrastructure under `tests/oracle/`; recorded legacy source identifiers are relative to `_legacy-app/` so relocation preserves their hashes. [ADR 0002](0002-port-fidelity.md) also assigns browser assets to `static/` and oracle fixtures and their runner to `tests/oracle/`.
 
+[ADR 0016](0016-standalone-html-distribution.md) adds `standalone/` as a secondary, manually built single-file HTML distribution. It reuses the application under `src/`, tracks `standalone/MARS-ts.html`, and keeps build captures and validation evidence ignored. CI, publishing, and formal release integration are deferred until the human finalizes MARS-ts 1.0.
+
 ## 6. Milestones
 
 | Milestone | Delivers | Exit evidence |

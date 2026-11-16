@@ -12,15 +12,22 @@ The port runs in one container described by [devcontainer.json](../../.devcontai
 | `run-app`                                 | Start `npm run dev` on `6277` with timestamped `__logs/local/app-*.log` and a latest symlink |
 | `tests`                                   | Run Vitest                                                                                   |
 | `format`                                  | ESLint fixes, then Prettier (stops at the first failure)                                     |
+| `build-standalone`                        | Manually rebuild tracked `standalone/MARS-ts.html` from isolated inputs using installed dependencies |
 | `build-app`                               | Clean generated output, `npm ci`, and build                                                  |
 | `kill-app`                                | Stop only the listener on `6277`, preserving PID identity through bounded escalation         |
 | `cd "$app"`, `cd "$legacy"`               | `/workspace` for the port; `/workspace/_legacy-app` for the Java reference                   |
 
-The root package is scaffolded and app commands are active. Noninteractive callers (agents, CI) can use `run-checks`, `tests`, `format`, `build-app`, `kill-app`, `build-legacy`, and `run-legacy` from `PATH`; `run-app` is an interactive alias, and noninteractive callers run `/scripts/bin/run-local-service.sh app`.
+The root package is scaffolded and app commands are active. Noninteractive callers (agents, CI) can use `run-checks`, `tests`, `format`, `build-app`, `build-standalone`, `kill-app`, `build-legacy`, and `run-legacy` from `PATH`; `run-app` is an interactive alias, and noninteractive callers run `/scripts/bin/run-local-service.sh app`.
 
 Port `6277` is exclusively for the human; agents never start, stop, request, or test against it. `npm run test:browser` allocates available group-server ports starting at `6278`; `MARS_VALIDATION=1 run-checks` isolates other generated SvelteKit files and Vite caches. For ad hoc agent servers, bind an available port `6279` or higher, for example `npm run dev -- --mode browser-test --port 6279`, and stop only that process afterward. Do not use `run-app`, `kill-app`, or a bare `npm run dev` or `npm run preview`; each targets `6277`. Install Chromium and its system libraries with `npm run test:browser:install` when browser validation is needed in a fresh environment.
 
 The browser command wrapper collects the requested cases, freezes application/test/harness/configuration inputs once under `__build/browser-runs/<run-id>/inputs`, then gives every queued group a private copy under `__build/browser-runs/<run-id>/<group>/app` in an independent child process. Each group shares read-only installed dependencies through a link but owns its generated output, `__build/browser-vite-cache`, startup check, server, and results under `__build/browser-results/<run-id>/<group>`. Authorized working-tree fixes and fresh impacted-group invocations can proceed while unaffected snapshots finish; preserve captured inputs and shared installed dependencies. Tests, helpers, and Playwright configuration are included in the copies, with root-owned results, report, and log destinations injected into the children. Tailwind scans runtime `src/` files rather than Markdown or browser tests, and Vite stdout/stderr is preserved for reload/invalidation diagnosis. The [suite guide](../../tests/browser/README.md#server-and-browser-ownership) owns the full snapshot and scheduling contract.
+
+## Manual standalone build
+
+The [standalone module](../../standalone/README.md) owns the single-file HTML distribution, its maintained scripts, and tracked `standalone/MARS-ts.html`. `npm run build:standalone` (or the provisioned `build-standalone` command) uses installed dependencies and captures fresh application inputs under ignored `__build/standalone/`; it never touches the human's server, root generated files, or shared dependencies. The global wrapper captures its own timestamped log. Existing containers can refresh just this command with `ln -sf /workspace/standalone/scripts/build-standalone.sh /usr/local/bin/build-standalone`; a full setup rerun is unnecessary. Direct npm invocations and all checks follow the test log contract below. `npm run check:standalone` runs build-adaptation checks and a focused offline file-URL Chromium probe against the published HTML, independently of the build capture. Browser installation remains opt-in through the existing Playwright install command.
+
+Generally rebuild and validate the artifact alongside application feature development or bundled-asset changes. Keep the generated HTML in version control, with all build captures, metadata, and browser evidence under ignored `__build/` and logs under ignored `__logs/`. If an environment constraint prevents refreshing or validating it, report the stale artifact or missing evidence explicitly. Documentation-only and harness-only changes do not ordinarily need a rebuild. This is an ad hoc secondary distribution: do not add it to CI, scheduled checks, release workflows, or publishing. Formal integration is deferred until MARS-ts 1.0 is finalized and released by the human.
 
 ## Test run logs
 
@@ -72,7 +79,7 @@ The pre-merge path requires an available, configured GitHub merge queue. Enablin
 
 Scripts resolve the workspace from their own real path (following the `/usr/local/bin` and `/scripts` links), so they run unchanged in the container, in CI, and from a Linux checkout with the toolchains installed. Do not add environment-variable overrides or workspace discovery beyond that.
 
-The setup script's `upsert_alias` and `upsert_export` calls are authoritative. Profile entries are replaced idempotently, never appended as competing definitions. Command links point at the live scripts and are never copies. Runtime installation directories (`/usr/local/bin`, Node, the SDKMAN JDK) must not be hidden by persistent volumes.
+The setup script's `upsert_alias` and `upsert_export` calls are authoritative. Profile entries are replaced idempotently, never appended as competing definitions. Command links point at the live scripts and are never copies; the standalone builder is linked directly from its owning `standalone/scripts/` directory. Runtime installation directories (`/usr/local/bin`, Node, the SDKMAN JDK) must not be hidden by persistent volumes.
 
 The devcontainer setup installs `unzip` for the browser tests' independent ZIP archive inspection helper.
 

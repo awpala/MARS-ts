@@ -1,4 +1,4 @@
-# Local research, run logs, and generated build output
+# Local research, run logs, and intermediate build output (including standalone captures/probes)
 __logs/
 __refs/
 __build/

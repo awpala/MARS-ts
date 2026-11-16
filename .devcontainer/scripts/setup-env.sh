@@ -119,6 +119,9 @@ upsert_alias run-app "${SCRIPTS_BIN_DIR}/run-local-service.sh app"
 # The stop helper targets only the configured application listener.
 upsert_alias run-checks "${SCRIPTS_BIN_DIR}/checks.sh"
 upsert_alias build-app "${SCRIPTS_BIN_DIR}/build-app.sh"
+# The manual standalone target owns its builder under standalone/, outside the
+# container harness. Keep this a live checkout command; setup never builds it.
+upsert_alias build-standalone "${WORKSPACE_DIR}/standalone/scripts/build-standalone.sh"
 upsert_alias tests "${SCRIPTS_BIN_DIR}/tests.sh"
 upsert_alias format "${SCRIPTS_BIN_DIR}/format.sh"
 upsert_alias kill-app "${SCRIPTS_BIN_DIR}/kill-app.sh"
@@ -138,6 +141,10 @@ echo
 echo "--- Installing command links for non-interactive shells ---"
 chmod +x "${SCRIPTS_BIN_DIR}"/*.sh
 ln -sf "${SCRIPTS_BIN_DIR}/build-app.sh" /usr/local/bin/build-app
+# Single-file output is refreshed explicitly alongside feature work, not by CI
+# or provisioning. Both shell modes call the same standalone-owned live script.
+chmod +x "${WORKSPACE_DIR}/standalone/scripts/build-standalone.sh"
+ln -sf "${WORKSPACE_DIR}/standalone/scripts/build-standalone.sh" /usr/local/bin/build-standalone
 ln -sf "${SCRIPTS_BIN_DIR}/format.sh" /usr/local/bin/format
 ln -sf "${SCRIPTS_BIN_DIR}/kill-app.sh" /usr/local/bin/kill-app
 ln -sf "${SCRIPTS_BIN_DIR}/checks.sh" /usr/local/bin/run-checks
@@ -251,6 +258,7 @@ Setup log: /tmp/setup-env-debug.log
   tests               Run the Vitest suite
   format              Apply ESLint fixes, then Prettier
   build-app            Clean generated output, npm ci, and build
+  build-standalone     Manually rebuild standalone/MARS-ts.html with installed dependencies
   kill-app             Stop only the configured application listener
   build-legacy         Compile the legacy Java MARS into __build/legacy/Mars.jar
   run-legacy           Run legacy MARS headlessly (CLI mode), e.g. run-legacy nc prog.asm

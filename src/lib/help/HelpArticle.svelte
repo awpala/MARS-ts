@@ -83,6 +83,12 @@
       >.
     </footer>
   {:else if article.id === 'about'}
+    <p>
+      The standalone MARS-ts.html opens directly in a desktop browser, including offline. It carries
+      the application only; saved sources and recovery stay in browser storage. Export your sources
+      before moving, renaming, or replacing the HTML. Read Online and other web links require a
+      connection.
+    </p>
     <h3>MARS — MIPS Assembler and Runtime Simulator</h3>
     <p>MARS-ts 1.0 development</p>
     <p>
@@ -96,6 +102,12 @@
       >
     </p>
   {:else}
+    <p>
+      The standalone MARS-ts.html opens directly in a desktop browser, including offline. It carries
+      the application only; saved sources and recovery stay in browser storage. Export your sources
+      before moving, renaming, or replacing the HTML. Read Online and other web links require a
+      connection.
+    </p>
     <p>
       New creates a source file; Open selects saved files in this browser. Save commits your source
       locally, and Auto Save commits edits automatically when enabled. Open tabs and in-progress

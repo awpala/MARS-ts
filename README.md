@@ -23,6 +23,8 @@ Open the [development container](.devcontainer/devcontainer.json), then use `run
 
 For automated validation, use `MARS_VALIDATION=1 run-checks app` and `npm run test:browser`; browser tests use isolated application snapshots and harness-allocated ports starting at **6278**, leaving 6277 exclusively for human development review. Other checks are documented in the [implementation guide](IMPLEMENTATION.md#reproducing-checks). Coding assistants start at [AGENTS.md](AGENTS.md).
 
+The manual [standalone HTML distribution](standalone/README.md) opens directly in a desktop browser, including offline. Rebuild with `build-standalone` or `npm run build:standalone`; this secondary target has no CI or release automation yet.
+
 ## License
 
 MARS is copyright 2003–2013 Pete Sanderson and Kenneth Vollmar, under the [MIT license](MARSlicense.txt). This port retains that attribution and license. The [legacy application README](_legacy-app/README.md#original-mars-readme) preserves the original project introduction; the [implementation guide](IMPLEMENTATION.md#provenance-and-attribution) records additional attribution.

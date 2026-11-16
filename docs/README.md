@@ -22,6 +22,7 @@ The [deviation catalog](deviations.md) compares implemented UI and Engine behavi
 | [Automatic exception-handler selection](adrs/0013-exception-handler-workflow.md)  | Accepted                        | Saved-library handler selection, legacy commit rules, assembly notices, and loaded-handler recovery                                          |
 | [Random streams and syscall dialogs](adrs/0014-random-and-dialog-syscalls.md)     | Accepted                        | Java-compatible random streams, same-tab dialog contracts, entropy ownership, checkpoints, and Swing oracle evidence                         |
 | [MIDI syscalls as Web Audio sine tones](adrs/0015-midi-web-audio-tones.md)        | Accepted                        | Injected tone host, sine-wave browser output, autoplay preparation, timed synchronous waits, Stop release, and MIDI sequence oracle evidence |
+| [Standalone HTML distribution](adrs/0016-standalone-html-distribution.md) | Accepted; formal release deferred | Manual single-file build, embedded assets and license, GitHub link fallbacks, file-origin persistence limits, and offline validation |
 
 The [Coolify deployment runbook](runbooks/prod-deployment.md) covers ongoing configuration maintenance, releases, smoke checks, and rollback for the live, stable service at `mars-ts.dev`.
 

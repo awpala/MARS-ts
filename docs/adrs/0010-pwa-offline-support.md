@@ -19,7 +19,7 @@ Make the existing static build an installable Progressive Web App with SvelteKit
 
 ## Consequences
 
-After one online visit to the hosted site, or to a copy served from `localhost`, the application starts offline and can be installed from the browser. Opening `index.html` directly from `file://` remains unsupported; a local copy needs a static file server on `localhost`. Screenshots for the richer install dialog are deferred. A single-file build that works from `file://` and a packaged desktop wrapper remain undecided options.
+After one online visit to the hosted site, or to a copy served from `localhost`, the application starts offline and can be installed from the browser. Opening `index.html` directly from `file://` remains unsupported; a local copy needs a static file server on `localhost`. Screenshots for the richer install dialog are deferred. A secondary single-file HTML distribution that works from `file://` is now implemented under [ADR 0016](0016-standalone-html-distribution.md); the direct-file restriction here applies to the hosted split output. A packaged desktop wrapper remains undecided.
 
 Updates reach a user on the next visit after all tabs on the old release close, not instantly. Browser data stays scoped to the origin, so an installed copy from `localhost` and the hosted site hold separate sources; export/import is the migration path. The icons are a 50 × 50 favicon enlarged to 192 and 512 pixels, so they look soft until higher-resolution artwork replaces them. The Nginx configuration in the [runbook](../runbooks/prod-deployment.md) already revalidates non-hashed files, which covers `service-worker.js` and the manifest; browsers also bypass the HTTP cache for the worker script by default.
 

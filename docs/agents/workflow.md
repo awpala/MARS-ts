@@ -44,6 +44,8 @@ Subfolders name a responsibility (`assembler/`, `hardware/`, `instructions/`, `s
 
 Run the affected gates within the user's environment limits: `run-checks` (or one tier: `harness`, `docs`, `legacy`, `app`), defined in [development operations](operations.md). Capture every test/check command's stdout and stderr using the canonical [test run log contract](operations.md#test-run-logs), preserve its actual exit status, and never use `/tmp` logs. Report each command, result, and log path, every skipped tier, and anything you could not validate. A skipped tier is not a passed tier.
 
+Application feature or bundled-asset changes should generally include a refreshed [standalone HTML](../../standalone/MARS-ts.html), its manual offline probe, and an accurate report if rebuilding is deferred. Use the [manual standalone build procedure](operations.md#manual-standalone-build); do not wire this distribution into CI or release automation before the human-owned formal 1.0 release integration.
+
 ### Browser validation scope
 
 For local ad hoc feature development, run only impacted semantic browser modules/groups and relevant cases. Choose the affected contracts before invoking the runner, using named projects such as `npm run test:browser -- --project=settings` and file/case filters where appropriate. Do not substitute an unfiltered full-suite rerun for this scope analysis. Confirm remaining failures through the impacted subset; completing focused feature validation does not require a local full pass.

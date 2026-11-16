@@ -17,7 +17,9 @@
     "lint:fix": "npm run lint -- --fix",
     "format:check": "prettier --check src package.json vite.config.ts tsconfig.json eslint.config.js prettier.config.js playwright.config.ts tests/browser \"tests/**/*.ts\" \"tests/**/*.mjs\"",
     "test:browser": "node tests/browser/harness/run.mjs",
-    "test:browser:install": "playwright install --with-deps chromium"
+    "test:browser:install": "playwright install --with-deps chromium",
+    "build:standalone": "node standalone/scripts/build.mjs",
+    "check:standalone": "node --test standalone/scripts/build.test.mjs && node standalone/scripts/check.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

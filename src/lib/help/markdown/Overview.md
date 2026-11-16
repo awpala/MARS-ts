@@ -1,5 +1,7 @@
 # MARS Help
 
+The standalone MARS-ts.html opens directly in a desktop browser, including offline. It carries the application only; saved sources and recovery stay in browser storage. Export your sources before moving, renaming, or replacing the HTML. Read Online and other web links require a connection.
+
 New creates a source file; Open selects saved files in this browser. Save commits your source locally, and Auto Save commits edits automatically when enabled. Open tabs and in-progress text are recovered after reload. Import reads .asm or .s files, or ZIP archives of them, from your computer; Export downloads copies.
 
 Registers are shown beside Edit and Execute by default; use the Register Banks switch in the menu bar to hide or show them. Use the toolbar toggles to change value display and label visibility.
