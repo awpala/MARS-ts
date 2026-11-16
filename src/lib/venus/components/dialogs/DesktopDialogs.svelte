@@ -16,6 +16,7 @@
   import MemoryConfigurationDialog from './MemoryConfigurationDialog.svelte';
   import ExceptionHandlerDialog from './ExceptionHandlerDialog.svelte';
   import ClearBreakpointsDialog from './ClearBreakpointsDialog.svelte';
+  import ImportMarsDataDialog from './ImportMarsDataDialog.svelte';
   import HelpDialog from './HelpDialog.svelte';
   import TransferStatusDialog from './TransferStatusDialog.svelte';
   const desktop = getDesktop();
@@ -33,6 +34,7 @@
     memoryConfiguration: MemoryConfigurationDialog,
     exceptionHandler: ExceptionHandlerDialog,
     clearBreakpoints: ClearBreakpointsDialog,
+    importMars: ImportMarsDataDialog,
     runInput: RunInputDialog,
     syscall: SyscallDialog
   } satisfies Record<

@@ -4,11 +4,12 @@ import {
   type DesktopSession
 } from './DesktopSession.js';
 
-/** Per-desktop recovery writer. Coalesces changes in a 200 ms window; the owner must flush on page exit and dispose on removal. */
+/** Per-desktop recovery writer. Coalesces changes in a 200 ms window; the owner must flush on page exit and dispose on removal, and may suspend it while another owner replaces the stored record. */
 export class DesktopSessionWriter {
   private pending: DesktopSession | undefined;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private disposed = false;
+  private suspended = false;
   private history: DesktopSession['editHistory'] | undefined;
   private historyJSON = '[]';
   private execution: DesktopSession['execution'] | undefined;
@@ -22,7 +23,7 @@ export class DesktopSessionWriter {
 
   /** Queue the newest detached snapshot, which must remain unchanged after submission. History and execution identities also key the validation/serialization cache. */
   schedule(session: DesktopSession): void {
-    if (this.disposed) return;
+    if (this.disposed || this.suspended) return;
     this.pending = session;
     // Do not restart the timer: continuous typing/scrolling must not postpone the write indefinitely.
     this.timer ??= setTimeout(() => this.flush(), 200);
@@ -63,6 +64,19 @@ export class DesktopSessionWriter {
       this.report(error);
     }
   };
+
+  /** Drop the queued snapshot, cancel the timer, and ignore submissions until `resume`, so a record another owner writes into storage is not overwritten by this desktop, including by the flush on page exit or disposal. */
+  suspend(): void {
+    clearTimeout(this.timer);
+    this.timer = undefined;
+    this.pending = undefined;
+    this.suspended = true;
+  }
+
+  /** Accept submissions again; the owner resubmits its current snapshot, since those offered while suspended were dropped. */
+  resume(): void {
+    this.suspended = false;
+  }
 
   /** Flush pending recovery once, cancel the timer, and release retained snapshots and encoded payloads. */
   dispose(): void {

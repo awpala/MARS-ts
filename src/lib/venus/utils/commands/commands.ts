@@ -31,7 +31,7 @@ export type SimulationCommand =
   | 'toggleBreakpoints';
 
 /** Browser file-transfer capabilities registered by mounted behavior components. */
-export type FileTransferCommand = 'import' | 'export' | 'exportAll';
+export type FileTransferCommand = 'import' | 'export' | 'exportAll' | 'importMars' | 'exportMars';
 
 /** Every executable desktop command; adding one requires updating the exhaustive owner dispatch. */
 export type Command =

@@ -10,7 +10,7 @@ type LifetimeWindow = Window &
     fileReads: { resolve: (source: string) => void; reject: (error: Error) => void }[];
     /** Completes a deliberately suspended clipboard request. */
     completeClipboard: (text: string) => void;
-    /** Refuses a deliberately suspended save picker, sending Export down its download-link path. */
+    /** Refuses a deliberately suspended save picker, sending Export File down its download-link path. */
     refuseSavePicker: () => void;
     /** Window blur listeners registered since recording began. */
     blurListeners: number;
@@ -345,7 +345,7 @@ test('an export settling after unmount installs no late save-prompt guard', asyn
         })
     });
   });
-  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  await page.getByRole('button', { name: 'Export File', exact: true }).click();
   await expect(
     page.getByRole('dialog', { name: 'Waiting for save location…', exact: true })
   ).toBeVisible();

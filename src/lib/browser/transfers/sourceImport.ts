@@ -12,7 +12,7 @@ import { errorMessage } from '../errorMessage.js';
 /** The import picker's `accept` value: the assembly extensions plus ZIP archives. */
 export const IMPORT_FILE_ACCEPT = `${SOURCE_FILE_ACCEPT},.zip`;
 
-/** Largest source, selected directly or extracted from an archive, that Import reads. */
+/** Largest source, selected directly or extracted from an archive, that Import File(s) reads. */
 export const IMPORT_SOURCE_LIMIT = 16 * 1024 * 1024;
 
 const TOO_LARGE = `Larger than the ${IMPORT_SOURCE_LIMIT / 1024 / 1024} MiB import limit.`;

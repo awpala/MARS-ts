@@ -105,15 +105,28 @@ export class DesktopPersistence {
       unloadedError: execution?.status === 'error' && checkpoint === null
     };
   }
-  /** Capture and flush current recovery state on page exit. Teardown removes listeners and disposes the writer, flushing its latest submitted snapshot without recapturing historical reactive values during component destruction. */
-  mount(): () => void {
-    const flush = () => {
+  /** Capture current recovery state and write it now, as page exit does, so storage is current before it is read as a whole. Before restoration, after teardown, or while suspended it writes nothing new. */
+  flush = (): void => {
+    if (this.ready) {
+      this.captureStable();
+      this.writer.schedule(this.snapshot());
+    }
+    this.writer.flush();
+  };
+  /** Stop recovery writes, dropping any queued snapshot, while another owner replaces the stored record; page exit then leaves that record intact. The returned resume re-enables writing and queues the current state. */
+  suspend(): () => void {
+    this.writer.suspend();
+    return () => {
+      this.writer.resume();
       if (this.ready) {
         this.captureStable();
         this.writer.schedule(this.snapshot());
       }
-      this.writer.flush();
     };
+  }
+  /** Capture and flush current recovery state on page exit. Teardown removes listeners and disposes the writer, flushing its latest submitted snapshot without recapturing historical reactive values during component destruction. */
+  mount(): () => void {
+    const flush = this.flush;
     const hidden = () => {
       if (document.visibilityState === 'hidden') flush();
     };

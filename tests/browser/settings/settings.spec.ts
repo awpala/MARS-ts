@@ -703,11 +703,11 @@ test('bundled handler opens locked, restores canonical text, and copies to an ed
   await expect(referenceTab).toHaveCount(1);
   await action(page, 'Auto Save').click();
   const exportAll = page.waitForEvent('download');
-  await action(page, 'Export All').click();
+  await action(page, 'Export All Files').click();
   const archive = await exportAll;
   expect(readArchive((await archive.path())!).map((entry) => entry.name)).toEqual(['mips1.asm']);
   const exportOne = page.waitForEvent('download');
-  await action(page, 'Export').click();
+  await action(page, 'Export File').click();
   const exported = await exportOne;
   expect(exported.suggestedFilename()).toBe('exceptions.s');
   expect(readFileSync((await exported.path())!, 'utf8')).toBe(canonical);

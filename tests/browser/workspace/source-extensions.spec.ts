@@ -4,7 +4,7 @@ import { openDesktop, openStoredSources } from '../harness/openDesktop.js';
 
 // The legacy app's Open dialog filters "Assembler Files (*.asm; *.s)" by case-insensitive extension (Config.properties).
 
-test('Import offers and accepts both legacy assembly extensions regardless of case', async ({
+test('Import File(s) offers and accepts both legacy assembly extensions regardless of case', async ({
   page
 }) => {
   await openDesktop(page);
@@ -33,7 +33,7 @@ test('Import offers and accepts both legacy assembly extensions regardless of ca
   );
 });
 
-test('Import skips other extensions with a warning and imports only the assembly sources', async ({
+test('Import File(s) skips other extensions with a warning and imports only the assembly sources', async ({
   page
 }) => {
   await openDesktop(page);
@@ -56,7 +56,9 @@ test('Import skips other extensions with a warning and imports only the assembly
   ).toEqual([{ name: 'good.s', source: 'nop\n' }]);
 });
 
-test('Import offers nothing to commit when every selected file is skipped', async ({ page }) => {
+test('Import File(s) offers nothing to commit when every selected file is skipped', async ({
+  page
+}) => {
   await openDesktop(page);
   await page
     .getByLabel('Import assembly files', { exact: true })
@@ -70,7 +72,7 @@ test('Import offers nothing to commit when every selected file is skipped', asyn
   expect(await page.evaluate(() => localStorage.getItem('mars-ts:sources:v1'))).toBeNull();
 });
 
-test('Export keeps each recognized extension, and Export All keeps same-stem files distinct', async ({
+test('Export File keeps each recognized extension, and Export All Files keeps same-stem files distinct', async ({
   page
 }) => {
   await openDesktop(page);
@@ -85,11 +87,11 @@ test('Export keeps each recognized extension, and Export All keeps same-stem fil
     ['util.s']
   );
   const single = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  await page.getByRole('button', { name: 'Export File', exact: true }).click();
   expect((await single).suggestedFilename()).toBe('util.s');
 
   const all = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export All', exact: true }).click();
+  await page.getByRole('button', { name: 'Export All Files', exact: true }).click();
   const archive = await all;
   expect(archive.suggestedFilename()).toBe('mars-asm-src-files.zip');
   expect(readArchive((await archive.path())!)).toEqual(

@@ -4,7 +4,7 @@ import { writeZip } from './zip.js';
 /** How long a handed-off download keeps its object URL; the browser may still be reading it after the click returns. */
 const OBJECT_URL_LIFETIME_MS = 60_000;
 
-/** Default filename of the Export All archive. */
+/** Default filename of the Export All Files archive. */
 export const EXPORT_ALL_FILENAME = 'mars-asm-src-files.zip';
 
 /** A file chosen in the browser's save picker, ready to be written. */

@@ -23,6 +23,7 @@ The [deviation catalog](deviations.md) compares implemented UI and Engine behavi
 | [Random streams and syscall dialogs](adrs/0014-random-and-dialog-syscalls.md)     | Accepted                        | Java-compatible random streams, same-tab dialog contracts, entropy ownership, checkpoints, and Swing oracle evidence                         |
 | [MIDI syscalls as Web Audio sine tones](adrs/0015-midi-web-audio-tones.md)        | Accepted                        | Injected tone host, sine-wave browser output, autoplay preparation, timed synchronous waits, Stop release, and MIDI sequence oracle evidence |
 | [Standalone HTML distribution](adrs/0016-standalone-html-distribution.md) | Accepted; formal release deferred | Manual single-file build, embedded assets and license, GitHub link fallbacks, file-origin persistence limits, and offline validation |
+| [Portable MARS-ts data and schemas](adrs/0017-portable-mars-data.md) | Accepted | Export MARS and Import MARS, the localStorage-mirroring payload and its checked-in schema, validation, replace-and-restart import, and the `schemas/` directory |
 
 The [Coolify deployment runbook](runbooks/prod-deployment.md) covers ongoing configuration maintenance, releases, smoke checks, and rollback for the live, stable service at `mars-ts.dev`.
 

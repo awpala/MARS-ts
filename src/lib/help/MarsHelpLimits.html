@@ -26,11 +26,16 @@ Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSl
     simulators.
   </li>
   <li>
-    Open and Save operate on the browser source library. Import and Export move .asm and .s files
-    between the library and your computer; Import also reads ZIP archives of them, keeping their
-    folder paths, and lists any skipped files before you confirm. Includes use virtual source paths,
-    not arbitrary OS paths; assembly starts with the active source and follows its explicit
-    includes. Other open tabs are not automatically assembled.
+    Open and Save operate on the browser source library. Import File(s) and Export File move .asm
+    and .s files between the library and your computer; Import File(s) also reads ZIP archives of
+    them, keeping their folder paths, and lists any skipped files before you confirm. Includes use
+    virtual source paths, not arbitrary OS paths; assembly starts with the active source and follows
+    its explicit includes. Other open tabs are not automatically assembled.
+  </li>
+  <li>
+    MARS data stays in this browser. Export MARS and Import MARS move all of it as one
+    mars-ts-data.json file; importing replaces the data already in the browser rather than merging
+    with it, and only files written by Export MARS in the current format are accepted.
   </li>
   <li>
     File, time, and sleep syscalls remain unfinished. Random 40–44 and dialog 50–59 services are

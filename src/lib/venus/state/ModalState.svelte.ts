@@ -19,8 +19,8 @@ export type PrimaryModal =
       article: HelpArticle;
     }
   | {
-      /** Settings, dump, or breakpoint confirmation presentation. */
-      kind: 'memoryConfiguration' | 'exceptionHandler' | 'dump' | 'clearBreakpoints';
+      /** Settings, dump, breakpoint confirmation, or MARS data import confirmation presentation. */
+      kind: 'memoryConfiguration' | 'exceptionHandler' | 'dump' | 'clearBreakpoints' | 'importMars';
     };
 
 /** Temporary interaction owner layered above a primary dialog without discarding that dialog's draft. */

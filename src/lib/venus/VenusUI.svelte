@@ -39,7 +39,8 @@
       : null
   );
   const paneId = $props.id();
-  const exportVariants = ['single', 'all'] as const;
+  const importVariants = ['sources', 'mars'] as const;
+  const exportVariants = ['single', 'all', 'mars'] as const;
   /** Main tab descriptions from MainPane.java. */
   const mainViewTooltips = {
     Edit: 'Text editor for composing MIPS programs.',
@@ -81,7 +82,7 @@
   class={['application-controls', { initializing: !desktop.visible }]}
   aria-busy={!desktop.visible}
 >
-  <FileImporter />
+  {#each importVariants as variant (variant)}<FileImporter {variant} />{/each}
   {#each exportVariants as variant (variant)}<FileExporter {variant} />{/each}
   <div
     class="desktop flex h-dvh min-h-120 flex-col overflow-hidden text-[12px]"

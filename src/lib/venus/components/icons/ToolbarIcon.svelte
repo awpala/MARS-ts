@@ -7,6 +7,8 @@
     | 'Dump'
     | 'Export'
     | 'ExportAll'
+    | 'ImportMARS'
+    | 'ExportMARS'
     | 'Assemble'
     | 'Go'
     | 'Step'

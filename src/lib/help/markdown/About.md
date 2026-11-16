@@ -1,6 +1,6 @@
 # About MARS
 
-The standalone MARS-ts.html opens directly in a desktop browser, including offline. It carries the application only; saved sources and recovery stay in browser storage. Export your sources before moving, renaming, or replacing the HTML. Read Online and other web links require a connection.
+The standalone MARS-ts.html opens directly in a desktop browser, including offline. It carries the application only; saved sources and recovery stay in browser storage. Use Export MARS to download all of that data, or export your sources, before moving, renaming, or replacing the HTML, and Import MARS to bring it back. Read Online and other web links require a connection.
 
 ## MARS — MIPS Assembler and Runtime Simulator
 

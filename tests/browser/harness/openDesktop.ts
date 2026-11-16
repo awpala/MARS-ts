@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 
 /**
- * Wait for the desktop's actual hydration/session readiness before testing working controls. Export uses its cross-browser
+ * Wait for the desktop's actual hydration/session readiness before testing working controls. Export File uses its cross-browser
  * download-link path here; scenarios for Chromium's save picker install a stub with `stubSavePicker` after opening.
  */
 export async function openDesktop(page: Page): Promise<void> {

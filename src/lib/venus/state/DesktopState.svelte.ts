@@ -26,6 +26,7 @@ import { SourceWorkspace } from './SourceWorkspace.svelte.js';
 import { SimulationState } from './SimulationState.svelte.js';
 import { DesktopPersistence } from './DesktopPersistence.svelte.js';
 import { SourceSearch } from './SourceSearch.svelte.js';
+import { MarsDataImport } from './MarsDataImport.svelte.js';
 
 import {
   isHelpCommand,
@@ -80,6 +81,13 @@ export class DesktopState {
     this.display,
     this
   );
+  /** Import MARS confirmation and the replacement of this browser's stored application data. */
+  readonly marsDataImport = new MarsDataImport(this.modals, {
+    running: () => this.simulation.running,
+    suspendRecovery: () => this.persistence.suspend(),
+    beginTransfer: (status) => this.beginTransfer(status),
+    restart: () => window.location.reload()
+  });
   /** Whether browser restoration and machine initialization have finished. */
   ready = $state(false);
   /** Whether restored layout has been measured and can replace the loading overlay. */
@@ -282,6 +290,8 @@ export class DesktopState {
       case 'toggleBreakpoints':
         return simulation.breakpoints.length > 0 && !this.breakpointsFrozen;
       case 'import':
+      case 'importMars':
+      case 'exportMars':
         return !simulation.running;
       case 'export':
         return !simulation.running && !!workspace.current;
@@ -359,6 +369,8 @@ export class DesktopState {
       case 'import':
       case 'export':
       case 'exportAll':
+      case 'importMars':
+      case 'exportMars':
         await this.fileTransfers[command]?.();
         return;
       case 'clearBreakpoints':

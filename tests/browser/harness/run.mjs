@@ -59,6 +59,7 @@ const inputs = resolve(root, '__build/browser-runs', runId, 'inputs');
 mkdirSync(inputs, { recursive: true });
 for (const path of [
   'src',
+  'schemas',
   'static',
   'vite.config.ts',
   'tsconfig.json',

@@ -114,7 +114,7 @@ try {
   await expect(page.getByLabel('Run I/O', { exact: true })).toHaveValue(/42/);
   console.log('PASS: reload restores session output in same browser context and path.');
   const importing = '.text\nli $v0, 10\nsyscall\n';
-  await page.locator('input[type=file]').setInputFiles({
+  await page.getByLabel('Import assembly files', { exact: true }).setInputFiles({
     name: 'portable.asm',
     mimeType: 'text/plain',
     buffer: Buffer.from(importing)
@@ -126,10 +126,43 @@ try {
   await expect(page.getByRole('textbox', { name: /^Source / })).toHaveValue(importing);
   console.log('PASS: source import from a selected File.');
   const pendingDownload = page.waitForEvent('download');
-  await button('Export').click();
+  await button('Export File').click();
   const download = await pendingDownload;
   expect(readFileSync(await download.path(), 'utf8')).toBe(importing);
   console.log('PASS: Blob download exports exact imported source:', download.suggestedFilename());
+  // The whole stored data leaves and re-enters the file-origin page: export, clear storage as a moved file would see it, import.
+  const pendingData = page.waitForEvent('download');
+  await button('Export MARS').click();
+  const dataDownload = await pendingData;
+  expect(dataDownload.suggestedFilename()).toBe('mars-ts-data.json');
+  const data = readFileSync(await dataDownload.path());
+  const exported = JSON.parse(data.toString('utf8'));
+  expect(exported.format).toBe('mars-ts-data');
+  expect(exported.storage['mars-ts:sources:v1']).toEqual([
+    { name: 'portable.asm', source: importing }
+  ]);
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await expect(page.getByTestId('desktop-controls')).toHaveAttribute('aria-busy', 'false', {
+    timeout: 30000
+  });
+  await expect(page.getByRole('textbox', { name: /^Source / })).toHaveCount(0);
+  await page.getByLabel('Import MARS data file', { exact: true }).setInputFiles({
+    name: 'mars-ts-data.json',
+    mimeType: 'application/json',
+    buffer: data
+  });
+  const restarted = page.waitForEvent('load');
+  await page
+    .getByRole('dialog', { name: 'Import MARS data', exact: true })
+    .getByRole('button', { name: 'Import', exact: true })
+    .click();
+  await restarted;
+  await expect(page.getByTestId('desktop-controls')).toHaveAttribute('aria-busy', 'false', {
+    timeout: 30000
+  });
+  await expect(page.getByRole('textbox', { name: /^Source / })).toHaveValue(importing);
+  console.log('PASS: Export MARS and Import MARS carry the stored data across cleared storage.');
   // Exercise both Kit deployment-check event paths; console errors and sibling requests fail.
   await page.evaluate(() => {
     window.dispatchEvent(new Event('focus'));
@@ -195,8 +228,11 @@ try {
   expect(requests.filter((url) => /^https?:/.test(url))).toEqual([]);
   expect(consoleErrors).toEqual([]);
   console.log('PASS: no SVG file requests, HTTP requests, or icon console errors.');
-  expect(requests).toEqual([pathToFileURL(file).href, pathToFileURL(file).href]);
-  console.log('PASS: only HTML document requests, including focus/visibility and reload.');
+  // The initial load, the recovery reload, the cleared-storage reload, and the Import MARS restart.
+  expect(requests).toEqual(Array(4).fill(pathToFileURL(file).href));
+  console.log(
+    'PASS: only HTML document requests, including focus/visibility, reloads, and the Import MARS restart.'
+  );
   expect(errors).toEqual([]);
 } finally {
   console.log('Page errors:', errors);

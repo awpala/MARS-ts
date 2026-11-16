@@ -7,6 +7,7 @@ import {
   fileActions,
   helpActions,
   keyboardAction,
+  menus,
   physicalKeyAction,
   requireAction,
   runActions,
@@ -65,20 +66,31 @@ describe('command catalog', () => {
     for (const group of toolbarGroups)
       for (const action of group.actions) expect(action.icon, action.command).toBeDefined();
   });
-  it('places Close All directly after Open in the file toolbar', () => {
+  it('orders the file toolbar with Import before Open, Close All after it, and the MARS data pair after Export All Files', () => {
     const file = toolbarGroups.find((group) => group.id === 'file')!;
     expect(file.actions.map((action) => action.command)).toEqual([
       'new',
+      'import',
       'open',
       'closeAll',
       'save',
       'saveAs',
       'autoSave',
-      'import',
       'export',
       'exportAll',
+      'importMars',
+      'exportMars',
       'dump'
     ]);
+  });
+  it('lists the File menu in toolbar order, adding only its text-only commands', () => {
+    const file = toolbarGroups.find((group) => group.id === 'file')!;
+    expect(fileActions.filter((action) => action.icon)).toEqual(file.actions);
+    expect(fileActions.filter((action) => !action.icon).map((action) => action.command)).toEqual([
+      'close',
+      'saveAll'
+    ]);
+    expect(menus.find((menu) => menu.name === 'File')!.groups).toEqual([fileActions]);
   });
 });
 
@@ -91,6 +103,12 @@ describe('keyboardAction', () => {
     );
     expect(keyboardAction(key({ key: 's' }))).toBeUndefined();
     expect(keyboardAction(key({ key: 'F5' }))?.command).toBe('go');
+  });
+  it('binds Import File(s) to Ctrl+I, accepting Meta and requiring exact modifiers', () => {
+    expect(keyboardAction(key({ key: 'i', ctrlKey: true }))?.command).toBe('import');
+    expect(keyboardAction(key({ key: 'i', metaKey: true }))?.command).toBe('import');
+    expect(keyboardAction(key({ key: 'I', ctrlKey: true, shiftKey: true }))).toBeUndefined();
+    expect(keyboardAction(key({ key: 'i' }))).toBeUndefined();
   });
   it('binds Dump Memory to the legacy menu-modifier+D accelerator', () => {
     expect(keyboardAction(key({ key: 'd', ctrlKey: true }))?.command).toBe('dump');

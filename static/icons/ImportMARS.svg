@@ -1,0 +1,15 @@
+<!-- Original theme-aware Import MARS glyph: the Export MARS rocket mirrored to descend nose-down, flanked by paired descent arrows. ToolbarIcon references #icon, so the page theme's variables and current text color apply; the fallbacks render the light theme standalone. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22">
+  <g
+    id="icon"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="M12 21.5c2.2-2 3-4.3 3-7V10H9v4.5c0 2.7.8 5 3 7ZM9 13.5 6 10.5V7.5l3 2M15 13.5l3-3v-3l-3 2" />
+    <circle cx="12" cy="15.5" r="1.2" />
+    <path d="M12 7V3.5M8.5 5.5 7.5 3.5M15.5 5.5l1-2M2.5 13.5 4.7 15.7 6.9 13.5M2.5 18l2.2 2.2L6.9 18M17.1 13.5l2.2 2.2 2.2-2.2M17.1 18l2.2 2.2L21.5 18" stroke="var(--theme-icon-blue, #236ba5)" />
+  </g>
+</svg>

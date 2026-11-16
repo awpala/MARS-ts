@@ -35,7 +35,7 @@ export type Action = {
 const glyph = (name: ToolbarIconName): ActionIcon => ({ glyph: name });
 const image = (name: IconName): ActionIcon => ({ image: name });
 
-/** File commands in their displayed order. */
+/** File commands in their displayed order, shared by the File menu and, for those with an icon, the toolbar. */
 export const fileActions: readonly Action[] = [
   {
     label: 'New',
@@ -44,6 +44,7 @@ export const fileActions: readonly Action[] = [
     shortcut: 'Alt/Option+N',
     noRepeat: true
   },
+  { label: 'Import File(s) ...', icon: glyph('Import'), command: 'import', shortcut: 'Ctrl+I' },
   { label: 'Open ...', icon: image('Open'), command: 'open', shortcut: 'Ctrl+O' },
   { label: 'Close', command: 'close', shortcut: 'Alt/Option+W', noRepeat: true },
   {
@@ -57,10 +58,11 @@ export const fileActions: readonly Action[] = [
   { label: 'Save as ...', icon: image('SaveAs'), command: 'saveAs', shortcut: 'Ctrl+Shift+S' },
   { label: 'Save All', command: 'saveAll' },
   { label: 'Auto Save', icon: glyph('AutoSave'), command: 'autoSave' },
-  { label: 'Import ...', icon: glyph('Import'), command: 'import' },
-  { label: 'Dump Memory ...', icon: glyph('Dump'), command: 'dump', shortcut: 'Ctrl+D' },
-  { label: 'Export', icon: glyph('Export'), command: 'export' },
-  { label: 'Export All', icon: glyph('ExportAll'), command: 'exportAll' }
+  { label: 'Export File', icon: glyph('Export'), command: 'export' },
+  { label: 'Export All Files', icon: glyph('ExportAll'), command: 'exportAll' },
+  { label: 'Import MARS ...', icon: glyph('ImportMARS'), command: 'importMars' },
+  { label: 'Export MARS', icon: glyph('ExportMARS'), command: 'exportMars' },
+  { label: 'Dump Memory ...', icon: glyph('Dump'), command: 'dump', shortcut: 'Ctrl+D' }
 ];
 /** Editor commands shared by menu, toolbar, and shortcuts. */
 export const editActions: readonly Action[] = [
@@ -225,10 +227,7 @@ export const toolbarGroups = [
   {
     id: 'file',
     label: 'File actions',
-    actions: [
-      ...fileActions.filter((item) => item.icon && item.command !== 'dump'),
-      requireAction('dump')
-    ]
+    actions: fileActions.filter((item) => item.icon)
   },
   { id: 'edit', label: 'Editing actions', actions: editActions.filter((item) => item.icon) },
   {

@@ -1,0 +1,615 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/awpala/MARS-ts/main/schemas/mars-ts-data.v1.schema.json",
+  "title": "MARS-ts data",
+  "description": "Portable copy of the MARS-ts application data kept in one browser's localStorage, as written by Export MARS and read by Import MARS. The `storage` object mirrors localStorage: each property name is a storage key, and each value is that key's stored record.",
+  "type": "object",
+  "required": ["format", "version", "storage"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "description": "Optional identifier of this schema, written by Export MARS so editors can validate the file.",
+      "type": "string"
+    },
+    "format": {
+      "description": "Fixed payload identity, distinguishing this file from any other JSON document.",
+      "const": "mars-ts-data"
+    },
+    "version": {
+      "description": "Version of this envelope and of the set of storage keys it mirrors.",
+      "const": 1
+    },
+    "exportedAt": {
+      "description": "UTC time of the export in ISO 8601 form; informational only.",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$"
+    },
+    "storage": {
+      "description": "Mirror of the application's localStorage keys. A key whose schema type is `string` holds the stored text unchanged; every other key holds the parsed JSON of the stored text. An absent key was not stored, and importing removes it so the application uses its defaults.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mars-ts:sources:v1": { "$ref": "#/$defs/sourceLibrary" },
+        "mars-ts:workspace:v1": { "$ref": "#/$defs/sourceWorkspace" },
+        "mars-ts:display-settings:v1": { "$ref": "#/$defs/displaySettings" },
+        "mars-ts:panes:v1": { "$ref": "#/$defs/paneLayout" },
+        "mars-ts:theme:v1": { "$ref": "#/$defs/theme" },
+        "mars-ts:desktop-session:v1": { "$ref": "#/$defs/desktopSession" },
+        "mars-ts:engine-settings:v1:ExtendedAssembler": { "$ref": "#/$defs/booleanPreference" },
+        "mars-ts:engine-settings:v1:BareMachine": { "$ref": "#/$defs/booleanPreference" },
+        "mars-ts:engine-settings:v1:AssembleOnOpen": { "$ref": "#/$defs/booleanPreference" },
+        "mars-ts:engine-settings:v1:AssembleAll": { "$ref": "#/$defs/booleanPreference" },
+        "mars-ts:engine-settings:v1:LabelWindowVisibility": {
+          "$ref": "#/$defs/booleanPreference"
+        },
+        "mars-ts:engine-settings:v1:DisplayAddressesInHex": {
+          "$ref": "#/$defs/booleanPreference"
+        },
+        "mars-ts:engine-settings:v1:DisplayValuesInHex": { "$ref": "#/$defs/booleanPreference" },
+        "mars-ts:engine-settings:v1:LoadExceptionHandler": {
+          "$ref": "#/$defs/booleanPreference"
+        },
+        "mars-ts:engine-settings:v1:DelayedBranching": { "$ref": "#/$defs/booleanPreference" },
+        "mars-ts:engine-settings:v1:EditorLineNumbersDisplayed": {
+          "$ref": "#/$defs/booleanPreference"
+        },
+        "mars-ts:engine-settings:v1:WarningsAreErrors": { "$ref": "#/$defs/booleanPreference" },
+        "mars-ts:engine-settings:v1:ProgramArguments": { "$ref": "#/$defs/booleanPreference" },
+        "mars-ts:engine-settings:v1:DataSegmentHighlighting": {
+          "$ref": "#/$defs/booleanPreference"
+        },
+        "mars-ts:engine-settings:v1:RegistersHighlighting": {
+          "$ref": "#/$defs/booleanPreference"
+        },
+        "mars-ts:engine-settings:v1:StartAtMain": { "$ref": "#/$defs/booleanPreference" },
+        "mars-ts:engine-settings:v1:EditorCurrentLineHighlighting": {
+          "$ref": "#/$defs/booleanPreference"
+        },
+        "mars-ts:engine-settings:v1:PopupInstructionGuidance": {
+          "$ref": "#/$defs/booleanPreference"
+        },
+        "mars-ts:engine-settings:v1:PopupSyscallInput": { "$ref": "#/$defs/booleanPreference" },
+        "mars-ts:engine-settings:v1:GenericTextEditor": { "$ref": "#/$defs/booleanPreference" },
+        "mars-ts:engine-settings:v1:AutoIndent": { "$ref": "#/$defs/booleanPreference" },
+        "mars-ts:engine-settings:v1:SelfModifyingCode": { "$ref": "#/$defs/booleanPreference" },
+        "mars-ts:engine-settings:v1:ExceptionHandler": { "$ref": "#/$defs/stringPreference" },
+        "mars-ts:engine-settings:v1:TextColumnOrder": { "$ref": "#/$defs/stringPreference" },
+        "mars-ts:engine-settings:v1:LabelSortState": { "$ref": "#/$defs/stringPreference" },
+        "mars-ts:engine-settings:v1:MemoryConfiguration": { "$ref": "#/$defs/stringPreference" },
+        "mars-ts:engine-settings:v1:CaretBlinkRate": { "$ref": "#/$defs/stringPreference" },
+        "mars-ts:engine-settings:v1:EditorTabSize": { "$ref": "#/$defs/stringPreference" },
+        "mars-ts:engine-settings:v1:EditorPopupPrefixLength": {
+          "$ref": "#/$defs/stringPreference"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "word": {
+      "description": "Signed 32-bit machine word.",
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
+    },
+    "offset": {
+      "description": "Nonnegative integer offset.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "offsetPair": {
+      "description": "Two nonnegative integer offsets.",
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": { "$ref": "#/$defs/offset" }
+    },
+    "textMap": {
+      "description": "Object whose every property value is text.",
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "textList": {
+      "description": "List of texts.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "booleanPreference": {
+      "description": "Engine boolean setting, stored as text.",
+      "type": "string",
+      "enum": ["true", "false"]
+    },
+    "stringPreference": {
+      "description": "Engine string setting, stored unchanged.",
+      "type": "string"
+    },
+    "theme": {
+      "description": "Appearance choice, stored as text.",
+      "type": "string",
+      "enum": ["light", "dark"]
+    },
+    "sourceLibrary": {
+      "description": "Explicitly saved assembly sources. Names are unique relative virtual filenames.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "source"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "description": "Relative virtual filename, also used for include resolution.",
+            "type": "string",
+            "minLength": 1
+          },
+          "source": { "description": "Exact saved assembly text.", "type": "string" }
+        }
+      }
+    },
+    "sourceWorkspace": {
+      "description": "Open working buffers in tab order, including unsaved text. Names are unique.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "source", "savedSource", "isNew", "selected"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "description": "Relative virtual filename, or the reserved identity of a bundled read-only reference.",
+            "type": "string",
+            "minLength": 1
+          },
+          "source": { "description": "Exact current buffer text.", "type": "string" },
+          "savedSource": {
+            "description": "Exact text at the last explicit save or open.",
+            "type": "string"
+          },
+          "isNew": {
+            "description": "Whether the buffer has never been explicitly saved.",
+            "type": "boolean"
+          },
+          "selected": {
+            "description": "Whether the buffer was the selected editor tab.",
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "displaySettings": {
+      "description": "Working editor and display preferences. The five required properties are the original record; later additions take their defaults when absent.",
+      "type": "object",
+      "required": ["showLabels", "showLines", "hexValues", "hexAddresses", "speed"],
+      "additionalProperties": false,
+      "properties": {
+        "autoSave": { "type": "boolean" },
+        "clearAllOutputsOnGo": { "type": "boolean" },
+        "promptClearBreakpoints": { "type": "boolean" },
+        "ascii": { "type": "boolean" },
+        "showRegisters": { "type": "boolean" },
+        "showLabels": { "type": "boolean" },
+        "showDataLabels": { "type": "boolean" },
+        "showTextLabels": { "type": "boolean" },
+        "labelSortState": {
+          "description": "Labels pane column and direction selection.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 7
+        },
+        "showLines": { "type": "boolean" },
+        "highlightCurrentLine": { "type": "boolean" },
+        "hexValues": { "type": "boolean" },
+        "hexAddresses": { "type": "boolean" },
+        "speed": {
+          "description": "Run-speed slider position; forty is maximum speed.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 40
+        }
+      }
+    },
+    "paneLayout": {
+      "description": "Desktop divider positions. The application rounds and clamps these values when it loads them.",
+      "type": "object",
+      "required": ["registerWidth", "editorFraction"],
+      "additionalProperties": false,
+      "properties": {
+        "registerWidth": {
+          "description": "Register pane width in CSS pixels.",
+          "type": "number"
+        },
+        "editorFraction": {
+          "description": "Editor share of the left pane height, from zero through one.",
+          "type": "number"
+        },
+        "dataSegmentHeight": {
+          "description": "Data Segment height in CSS pixels, or null for its natural height.",
+          "type": ["number", "null"]
+        }
+      }
+    },
+    "desktopSession": {
+      "description": "Desktop recovery record: presentation, editor history, consoles, breakpoints, and the last stable execution.",
+      "type": "object",
+      "required": [
+        "view",
+        "registerTab",
+        "messageTab",
+        "editHistory",
+        "dataView",
+        "source",
+        "selection",
+        "scroll",
+        "breakpoints",
+        "breakpointsEnabled",
+        "messages",
+        "runIO",
+        "execution",
+        "unloadedError"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "programArguments": {
+          "description": "Argument draft for the next initial Go or Step.",
+          "type": "string"
+        },
+        "view": { "description": "Selected primary workspace.", "enum": ["Edit", "Execute"] },
+        "registerTab": {
+          "description": "Selected register bank.",
+          "enum": ["Registers", "Coproc 1", "Coproc 0"]
+        },
+        "messageTab": {
+          "description": "Selected message console.",
+          "enum": ["Mars Messages", "Run I/O"]
+        },
+        "help": {
+          "description": "Tabbed Help browser visibility and selection.",
+          "type": "object",
+          "required": ["open", "tab", "articles"],
+          "additionalProperties": false,
+          "properties": {
+            "open": { "type": "boolean" },
+            "tab": { "description": "Selected top-level tab ID.", "type": "string" },
+            "articles": {
+              "description": "Selected nested article ID per top-level tab ID.",
+              "$ref": "#/$defs/textMap"
+            }
+          }
+        },
+        "editHistory": {
+          "description": "Undo and redo branches per open buffer, matched by name and text when restored.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "text", "undo", "redo"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "text": { "type": "string" },
+              "undo": { "$ref": "#/$defs/textList" },
+              "redo": { "$ref": "#/$defs/textList" }
+            }
+          }
+        },
+        "dataView": {
+          "description": "Data Segment range and page.",
+          "type": "object",
+          "required": ["segment", "pageOffset"],
+          "additionalProperties": false,
+          "properties": {
+            "segment": {
+              "enum": ["data", "extern", "heap", "gp", "sp", "text", "kernel", "mmio"]
+            },
+            "pageOffset": {
+              "description": "Word-aligned signed byte offset relative to the range's base.",
+              "$ref": "#/$defs/word",
+              "multipleOf": 4
+            }
+          }
+        },
+        "source": {
+          "description": "Name of the selected source anchoring caret recovery, or null.",
+          "type": ["string", "null"]
+        },
+        "selection": {
+          "description": "Selected source range as start and end offsets.",
+          "$ref": "#/$defs/offsetPair"
+        },
+        "scroll": {
+          "description": "Source viewport top and left offsets in pixels.",
+          "$ref": "#/$defs/offsetPair"
+        },
+        "breakpoints": {
+          "description": "Instruction breakpoint addresses.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/word" }
+        },
+        "breakpointsEnabled": { "type": "boolean" },
+        "messages": { "description": "Mars Messages console text.", "type": "string" },
+        "runIO": { "description": "Run I/O console text.", "type": "string" },
+        "execution": {
+          "description": "Last stable program with the sources it was assembled from, or null. `sources` must contain the checkpoint's `filename`.",
+          "type": ["object", "null"],
+          "required": ["machine", "sources"],
+          "additionalProperties": false,
+          "properties": {
+            "machine": { "$ref": "#/$defs/runCheckpoint" },
+            "sources": {
+              "description": "Virtual source texts by name, including explicit includes.",
+              "$ref": "#/$defs/textMap"
+            },
+            "labelSelection": {
+              "description": "Selected label of this program, or null.",
+              "type": ["object", "null"],
+              "required": ["filename", "name", "address"],
+              "additionalProperties": false,
+              "properties": {
+                "filename": {
+                  "description": "Owning source filename; null is the global symbol table.",
+                  "type": ["string", "null"]
+                },
+                "name": { "type": "string", "minLength": 1 },
+                "address": { "$ref": "#/$defs/word" }
+              }
+            }
+          }
+        },
+        "unloadedError": {
+          "description": "Whether an assembly error is shown without a loaded program.",
+          "type": "boolean"
+        }
+      }
+    },
+    "runCheckpoint": {
+      "description": "Idle machine state and bounded debugger history of the loaded program.",
+      "type": "object",
+      "required": [
+        "filename",
+        "settings",
+        "configuration",
+        "memory",
+        "registers",
+        "coprocessor0",
+        "coprocessor1",
+        "conditionFlags",
+        "branch",
+        "interrupt",
+        "stepped",
+        "status",
+        "started",
+        "reset",
+        "reason",
+        "error",
+        "history",
+        "historyStatements"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "filename": {
+          "description": "Lead source identity.",
+          "type": "string",
+          "minLength": 1
+        },
+        "settings": {
+          "description": "Engine settings in canonical setting-ID order.",
+          "type": "object",
+          "required": ["booleans", "strings"],
+          "additionalProperties": false,
+          "properties": {
+            "booleans": {
+              "type": "array",
+              "minItems": 21,
+              "maxItems": 21,
+              "items": { "type": "boolean" }
+            },
+            "strings": {
+              "type": "array",
+              "minItems": 7,
+              "maxItems": 7,
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "assemblyExceptionHandler": {
+          "description": "Exception handler source used by the loaded assembly, or null.",
+          "type": ["string", "null"]
+        },
+        "configuration": {
+          "description": "Memory configuration identifier.",
+          "type": "string"
+        },
+        "memory": { "$ref": "#/$defs/memoryState" },
+        "randomStreams": {
+          "description": "Random stream IDs with their 48-bit seeds; IDs are unique.",
+          "type": "array",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "prefixItems": [
+              { "$ref": "#/$defs/word" },
+              { "type": "integer", "minimum": 0, "maximum": 281474976710655 }
+            ]
+          }
+        },
+        "registers": {
+          "description": "The 32 integer registers followed by HI, LO, and PC.",
+          "type": "array",
+          "minItems": 35,
+          "maxItems": 35,
+          "items": { "$ref": "#/$defs/word" }
+        },
+        "coprocessor0": {
+          "description": "Exception registers in hardware order.",
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": { "$ref": "#/$defs/word" }
+        },
+        "coprocessor1": {
+          "description": "Floating-point registers as raw words.",
+          "type": "array",
+          "minItems": 32,
+          "maxItems": 32,
+          "items": { "$ref": "#/$defs/word" }
+        },
+        "conditionFlags": {
+          "description": "The eight floating-point condition bits.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "branch": {
+          "description": "Pending delayed branch.",
+          "type": "object",
+          "required": ["state", "target"],
+          "additionalProperties": false,
+          "properties": {
+            "state": { "enum": ["clear", "registered", "triggered"] },
+            "target": { "$ref": "#/$defs/word" }
+          }
+        },
+        "interrupt": {
+          "description": "Unconsumed device interrupt identifier.",
+          "$ref": "#/$defs/word"
+        },
+        "stepped": { "type": "boolean" },
+        "status": { "enum": ["idle", "assembled", "paused", "terminated", "error"] },
+        "started": { "type": "boolean" },
+        "reset": { "type": "boolean" },
+        "reason": { "description": "Simulator stop reason.", "$ref": "#/$defs/word" },
+        "error": { "type": "boolean" },
+        "lastExecutedAddress": {
+          "description": "Program counter of the last simulator stop, or null.",
+          "type": ["integer", "null"],
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "history": {
+          "description": "Backstep recording preference and its oldest-first records.",
+          "type": "object",
+          "required": ["enabled", "records"],
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "records": {
+              "type": "array",
+              "maxItems": 2000,
+              "items": {
+                "type": "object",
+                "required": ["action", "pc", "param1", "param2", "inDelaySlot", "statement"],
+                "additionalProperties": false,
+                "properties": {
+                  "action": { "type": "integer", "minimum": 0, "maximum": 10 },
+                  "pc": { "$ref": "#/$defs/word" },
+                  "param1": { "$ref": "#/$defs/word" },
+                  "param2": { "$ref": "#/$defs/word" },
+                  "inDelaySlot": { "type": "boolean" },
+                  "statement": {
+                    "description": "Index into `historyStatements`, or null.",
+                    "type": ["integer", "null"],
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "historyStatements": {
+          "description": "Statement identities referenced by history records.",
+          "type": "array",
+          "maxItems": 2000,
+          "items": {
+            "type": "object",
+            "required": ["address", "word", "live"],
+            "additionalProperties": false,
+            "properties": {
+              "address": { "$ref": "#/$defs/word" },
+              "word": { "$ref": "#/$defs/word" },
+              "live": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
+    "memoryState": {
+      "description": "Sparse memory. Each table lists its allocated 1024-word blocks as [block index, words] pairs with unique indexes.",
+      "type": "object",
+      "required": ["words", "text", "heapAddress", "littleEndian"],
+      "additionalProperties": false,
+      "properties": {
+        "words": {
+          "description": "Data, kernel data, stack, and memory-mapped I/O tables, in that order.",
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "prefixItems": [
+            { "$ref": "#/$defs/wordTable" },
+            { "$ref": "#/$defs/wordTable" },
+            { "$ref": "#/$defs/wordTable" },
+            { "$ref": "#/$defs/mmioTable" }
+          ]
+        },
+        "text": {
+          "description": "User and kernel text tables, in that order.",
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "$ref": "#/$defs/textTable" }
+        },
+        "heapAddress": { "description": "Next heap allocation address.", "$ref": "#/$defs/word" },
+        "littleEndian": { "type": "boolean" }
+      }
+    },
+    "blockIndex": { "type": "integer", "minimum": 0, "maximum": 1023 },
+    "wordBlock": {
+      "type": "array",
+      "minItems": 1024,
+      "maxItems": 1024,
+      "items": { "$ref": "#/$defs/word" }
+    },
+    "wordTable": {
+      "type": "array",
+      "maxItems": 1024,
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "prefixItems": [{ "$ref": "#/$defs/blockIndex" }, { "$ref": "#/$defs/wordBlock" }]
+      }
+    },
+    "mmioTable": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "prefixItems": [
+          { "type": "integer", "minimum": 0, "maximum": 15 },
+          { "$ref": "#/$defs/wordBlock" }
+        ]
+      }
+    },
+    "textTable": {
+      "type": "array",
+      "maxItems": 1024,
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "prefixItems": [
+          { "$ref": "#/$defs/blockIndex" },
+          {
+            "description": "Instruction words, with null for an empty slot.",
+            "type": "array",
+            "minItems": 1024,
+            "maxItems": 1024,
+            "items": {
+              "type": ["integer", "null"],
+              "minimum": -2147483648,
+              "maximum": 2147483647
+            }
+          }
+        ]
+      }
+    }
+  }
+}

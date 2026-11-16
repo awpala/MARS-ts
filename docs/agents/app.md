@@ -29,7 +29,7 @@ The simulator engine (assembler, instruction set, hardware, simulator, syscalls,
 
 - File-based routing under `src/routes/`. The static adapter emits prerendered output; the simulator runs entirely in the browser, and the [service worker](../../src/service-worker/README.md) adds offline support ([ADR 0010](../adrs/0010-pwa-offline-support.md)).
 - The root route launches directly into the main GUI. Do not port `MarsSplashScreen` or introduce a splash or intermediary launch screen.
-- SvelteKit 3 takes configuration through `sveltekit(...)` in the root `vite.config.ts`; do not add a competing `svelte.config.js`. Imports use the declared `#lib/*` package subpath.
+- SvelteKit 3 takes configuration through `sveltekit(...)` in the root `vite.config.ts`; do not add a competing `svelte.config.js`. Imports use the declared `#lib/*` package subpath. Checked-in payload definitions under [schemas/](../../schemas/README.md) are imported through `#schemas/*` and evaluated as written; change a stored record and its schema together, and add a schema only for a payload the application reads or writes ([ADR 0017](../adrs/0017-portable-mars-data.md)).
 - Import shared modules through the package's declared subpath imports or SvelteKit's library alias, consistently, with whatever extension rule the scaffold's TypeScript configuration enforces.
 - Internal links resolve through SvelteKit's typed path helpers rather than bare string paths.
 - Normal development and preview use port `6277`, exclusively for the human. Agents must not start, stop, request, or test against that listener. `npm run test:browser` owns per-group application snapshots and available ports starting at `6278`, and ad hoc agent servers bind available ports `6279` or higher ([development operations](operations.md)); `MARS_VALIDATION=1` isolates other validation output under `__build/`. Browser-test mode and Vitest also use isolated generated files and dependency caches. The host bind mount uses polling (`server.watch.usePolling`).
@@ -44,7 +44,7 @@ The simulator engine (assembler, instruction set, hardware, simulator, syscalls,
 
 - Tailwind 4 through its Vite plugin; no `tailwind.config.js` or PostCSS configuration.
 - Utility classes on elements; extract a Svelte component rather than `@apply` for repeated class lists. The application stylesheet explicitly scans runtime Svelte/TypeScript/JavaScript/HTML under `src/`, excluding test/spec files; Markdown, browser tests, and legacy files must not generate utilities or invalidate the stylesheet.
-- The Venus UI is the initial visual and functional reference: preserve its desktop layout, compact styling, pane arrangement, and workflows. Convert raster UI icons to SVG, retain the existing MARS favicon, use the local source library for Open/Save and the browser file picker for Import, and render application dialogs in the current tab ([ADR 0002](../adrs/0002-port-fidelity.md)).
+- The Venus UI is the initial visual and functional reference: preserve its desktop layout, compact styling, pane arrangement, and workflows. Convert raster UI icons to SVG, retain the existing MARS favicon, use the local source library for Open/Save and the browser file picker for Import File(s), and render application dialogs in the current tab ([ADR 0002](../adrs/0002-port-fidelity.md)).
 
 ## Browser test selectors
 

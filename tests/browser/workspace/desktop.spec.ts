@@ -517,7 +517,7 @@ test('Close All confirms from the toolbar or File menu before resolving every bu
   ]);
   const toolbar = page.getByLabel('Toolbar', { exact: true });
   const closeAll = toolbar.getByRole('button', { name: 'Close All', exact: true });
-  await expectButtonSequence(toolbar, ['Open ...', 'Close All']);
+  await expectButtonSequence(toolbar, ['Import File(s) ...', 'Open ...', 'Close All']);
   await page.getByRole('textbox', { name: 'Source two.asm', exact: true }).fill('two changed\n');
   await closeAll.click();
   const confirm = page.getByRole('dialog', { name: 'Close all files?', exact: true });
@@ -817,11 +817,11 @@ test('Save As cancel preserves edits and a new name retains the original local s
   await expect(page).toHaveTitle('copy.asm - MARS');
 });
 
-test('Export and Export All download exact working source and closed library files without saving drafts', async ({
+test('Export File and Export All Files download exact working source and closed library files without saving drafts', async ({
   page
 }) => {
   await openDesktop(page);
-  const exportAll = page.getByRole('button', { name: 'Export All', exact: true });
+  const exportAll = page.getByRole('button', { name: 'Export All Files', exact: true });
   await expect(exportAll).toBeDisabled();
   await openStoredSources(
     page,
@@ -848,8 +848,9 @@ test('Export and Export All download exact working source and closed library fil
   const current = '.text\nli $t0, 99\n# latest working source\n';
   await page.getByRole('textbox', { name: 'Source working.asm', exact: true }).fill(current);
   await expectButtonSequence(page.getByLabel('Toolbar', { exact: true }), [
-    'Auto Save',
-    'Import ...'
+    'New',
+    'Import File(s) ...',
+    'Open ...'
   ]);
   await expect(
     page.getByLabel('Toolbar', { exact: true }).getByRole('button', { name: /^Print/ })
@@ -861,12 +862,36 @@ test('Export and Export All download exact working source and closed library fil
       .getByRole('button', { name: /^Print/ })
   ).toHaveCount(0);
   await page.getByTestId('menu-file-trigger').click();
-  const exportButton = page.getByRole('button', { name: 'Export', exact: true });
-  await expectButtonSequence(page.getByLabel('Toolbar', { exact: true }), ['Import ...', 'Export']);
-  await expectButtonSequence(page.getByLabel('Toolbar', { exact: true }), ['Export', 'Export All']);
+  const exportButton = page.getByRole('button', { name: 'Export File', exact: true });
   await expectButtonSequence(page.getByLabel('Toolbar', { exact: true }), [
-    'Export All',
+    'Auto Save',
+    'Export File',
+    'Export All Files',
+    'Import MARS ...',
+    'Export MARS',
     'Dump Memory ...'
+  ]);
+  // The File menu lists the same commands in toolbar order, adding its text-only Close and Save All.
+  expect(
+    await page
+      .getByTestId('menu-file-content')
+      .getByTestId(/^menu-item-/)
+      .evaluateAll((items) => items.map((item) => item.getAttribute('data-testid')))
+  ).toEqual([
+    'menu-item-new',
+    'menu-item-import',
+    'menu-item-open',
+    'menu-item-close',
+    'menu-item-close-all',
+    'menu-item-save',
+    'menu-item-save-as',
+    'menu-item-save-all',
+    'menu-item-auto-save',
+    'menu-item-export',
+    'menu-item-export-all',
+    'menu-item-import-mars',
+    'menu-item-export-mars',
+    'menu-item-dump'
   ]);
   const downloaded = page.waitForEvent('download');
   await exportButton.click();
@@ -902,13 +927,13 @@ test('Export and Export All download exact working source and closed library fil
   await expect(page).toHaveTitle('* working.asm - MARS');
 });
 
-test('Import reads multiple assembly files into local sources and confirms clean replacements', async ({
+test('Import File(s) reads multiple assembly files into local sources and confirms clean replacements', async ({
   page
 }) => {
   await openDesktop(page);
   const picker = page.getByLabel('Import assembly files', { exact: true });
   const chosen = page.waitForEvent('filechooser');
-  await page.getByRole('button', { name: 'Import ...', exact: true }).click();
+  await page.getByRole('button', { name: 'Import File(s) ...', exact: true }).click();
   const fileChooser = await chosen;
   expect(fileChooser.isMultiple()).toBe(true);
   await fileChooser.setFiles([
@@ -983,7 +1008,7 @@ test('Save As requires confirmation before replacing a closed local source', asy
   ).toContainEqual({ name: 'existing.asm', source: 'replacement source\n' });
 });
 
-test('Import refuses to overwrite a dirty open source and retains its full recovery text', async ({
+test('Import File(s) refuses to overwrite a dirty open source and retains its full recovery text', async ({
   page
 }) => {
   await openDesktop(page);
@@ -1013,7 +1038,7 @@ test('Import refuses to overwrite a dirty open source and retains its full recov
   await expect(page).toHaveTitle('* working.asm - MARS');
 });
 
-test('Import expands ZIP archives under their folder paths, summarizes skipped entries, and keeps includes resolvable', async ({
+test('Import File(s) expands ZIP archives under their folder paths, summarizes skipped entries, and keeps includes resolvable', async ({
   page
 }) => {
   await openDesktop(page);
@@ -1062,7 +1087,7 @@ test('Import expands ZIP archives under their folder paths, summarizes skipped e
   );
 });
 
-test('Import covers the desktop while the picker is open and relays only the reported outcome', async ({
+test('Import File(s) covers the desktop while the picker is open and relays only the reported outcome', async ({
   page
 }) => {
   await openDesktop(page);
@@ -1070,7 +1095,7 @@ test('Import covers the desktop while the picker is open and relays only the rep
   const waiting = page.getByRole('dialog', { name: 'Waiting for file selection…', exact: true });
   const picker = page.getByLabel('Import assembly files', { exact: true });
   const chosen = page.waitForEvent('filechooser');
-  await page.getByRole('button', { name: 'Import ...', exact: true }).click();
+  await page.getByRole('button', { name: 'Import File(s) ...', exact: true }).click();
   await chosen;
   await expect(waiting).toBeVisible();
   await expect(waiting.getByRole('status')).toHaveText('Waiting for file selection…');
@@ -1088,13 +1113,47 @@ test('Import covers the desktop while the picker is open and relays only the rep
   await expect(page.getByRole('textbox', { name: /^Source mips\d+\.asm$/ })).toBeVisible();
 });
 
-test('Import relays a selection as Attempting import until focus returns, never as Canceling', async ({
+test('Ctrl+I opens the Import File(s) picker from a focused editor and is advertised by its controls', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await page.getByRole('button', { name: 'New', exact: true }).click();
+  const source = page.getByRole('textbox', { name: 'Source mips1.asm', exact: true });
+  await source.fill('# keep\n');
+  const trigger = page.getByRole('button', { name: 'Import File(s) ...', exact: true });
+  await trigger.hover();
+  await expect(trigger).toHaveAccessibleDescription('Import File(s) ... Ctrl+I');
+  await page.mouse.move(5, 200);
+  await page.getByTestId('menu-file-trigger').click();
+  await expect(
+    page
+      .getByTestId('menu-file-content')
+      .getByRole('button', { name: 'Import File(s) ... Ctrl+I', exact: true })
+  ).toBeEnabled();
+  await page.keyboard.press('Escape');
+  const chosen = page.waitForEvent('filechooser');
+  await source.press('Control+i');
+  const chooser = await chosen;
+  await expect(
+    page.getByRole('dialog', { name: 'Waiting for file selection…', exact: true })
+  ).toBeVisible();
+  // The chord belongs to the application: nothing is typed into the focused source.
+  await expect(source).toHaveValue('# keep\n');
+  await chooser.setFiles([
+    { name: 'shortcut.asm', mimeType: 'text/plain', buffer: Buffer.from('# shortcut\n') }
+  ]);
+  await expect(page.getByRole('dialog', { name: 'Import sources', exact: true })).toContainText(
+    'shortcut.asm'
+  );
+});
+
+test('Import File(s) relays a selection as Attempting import until focus returns, never as Canceling', async ({
   page
 }) => {
   await openDesktop(page);
   const statuses = await recordTransferStatuses(page);
   const chosen = page.waitForEvent('filechooser');
-  await page.getByRole('button', { name: 'Import ...', exact: true }).click();
+  await page.getByRole('button', { name: 'Import File(s) ...', exact: true }).click();
   const fileChooser = await chosen;
   await losePageFocus(page);
   await fileChooser.setFiles([
@@ -1109,7 +1168,7 @@ test('Import relays a selection as Attempting import until focus returns, never 
   expect(await statuses()).toEqual(['Waiting for file selection…', 'Attempting import…']);
 });
 
-test('Export covers the desktop during a download-link save prompt until focus returns', async ({
+test('Export File covers the desktop during a download-link save prompt until focus returns', async ({
   page
 }) => {
   await openDesktop(page);
@@ -1126,7 +1185,7 @@ test('Export covers the desktop during a download-link save prompt until focus r
     )
   );
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  await page.getByRole('button', { name: 'Export File', exact: true }).click();
   const status = page.getByRole('dialog', { name: 'Exporting…', exact: true });
   await expect(status.getByRole('status')).toHaveText('Exporting…');
   expect((await download).suggestedFilename()).toBe('prompted.asm');
@@ -1134,12 +1193,12 @@ test('Export covers the desktop during a download-link save prompt until focus r
   await expect(status).toBeVisible();
   await restorePageFocus(page);
   await expect(status).toBeHidden();
-  await expect(page.getByRole('button', { name: 'Export', exact: true })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Export File', exact: true })).toBeFocused();
   await page.getByRole('button', { name: 'New', exact: true }).click();
   await expect(page.getByRole('textbox', { name: /^Source mips\d+\.asm$/ })).toBeVisible();
 });
 
-test('Export saves through the browser save picker and relays a canceled picker only as Canceling export', async ({
+test('Export File saves through the browser save picker and relays a canceled picker only as Canceling export', async ({
   page
 }) => {
   await openDesktop(page);
@@ -1147,7 +1206,7 @@ test('Export saves through the browser save picker and relays a canceled picker 
   const downloads: string[] = [];
   page.on('download', (download) => downloads.push(download.suggestedFilename()));
   await stubSavePicker(page, 'save');
-  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  await page.getByRole('button', { name: 'Export File', exact: true }).click();
   await expect
     .poll(() => page.evaluate(() => (window as unknown as { savedFiles: unknown[] }).savedFiles))
     .toEqual([{ name: 'picked.s', text: '# picked\n' }]);
@@ -1155,7 +1214,7 @@ test('Export saves through the browser save picker and relays a canceled picker 
   await stubSavePicker(page, 'cancel');
   const statuses = await recordTransferStatuses(page);
   await losePageFocus(page);
-  await page.getByRole('button', { name: 'Export All', exact: true }).click();
+  await page.getByRole('button', { name: 'Export All Files', exact: true }).click();
   const canceling = page.getByRole('dialog', { name: 'Canceling export…', exact: true });
   await expect(canceling.getByRole('status')).toHaveText('Canceling export…');
   await restorePageFocus(page);
@@ -1177,7 +1236,7 @@ test('a save prompt that opens after the download hand-off brings the export sta
   await openDesktop(page);
   await openStoredSources(page, [{ name: 'late.asm', source: '# late\n' }]);
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  await page.getByRole('button', { name: 'Export File', exact: true }).click();
   await download;
   const status = page.getByRole('dialog', { name: 'Exporting…', exact: true });
   await expect(status).toBeHidden();
@@ -1189,13 +1248,13 @@ test('a save prompt that opens after the download hand-off brings the export sta
   await expect(status).toBeHidden();
 });
 
-test('Export All releases the desktop as soon as the download is handed off without a prompt', async ({
+test('Export All Files releases the desktop as soon as the download is handed off without a prompt', async ({
   page
 }) => {
   await openDesktop(page);
   await openStoredSources(page, [{ name: 'quick.asm', source: '# quick\n' }]);
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export All', exact: true }).click();
+  await page.getByRole('button', { name: 'Export All Files', exact: true }).click();
   expect(readArchive((await (await download).path())!)).toEqual([
     { name: 'quick.asm', source: '# quick\n' }
   ]);
@@ -1770,7 +1829,7 @@ test('an empty browser library prompts to create or import a source until one is
   const prompt = page.getByText('No source files are saved in this browser yet.');
   await expect(prompt).toBeVisible();
   await expect(prompt).toContainText('File → New (Alt/Option+N)');
-  await expect(prompt).toContainText('File → Import ... to add .asm or .s files');
+  await expect(prompt).toContainText('File → Import File(s) ... to add .asm or .s files');
   await page.getByRole('button', { name: 'New', exact: true }).click();
   await expect(prompt).toBeHidden();
   await page.getByRole('button', { name: 'Close mips1.asm', exact: true }).click();

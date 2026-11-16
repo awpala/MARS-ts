@@ -28,6 +28,7 @@ const release = resolve(root, 'standalone');
 if (process.argv.length !== 2) throw new Error('Usage: node standalone/scripts/build.mjs');
 for (const path of [
   'src',
+  'schemas',
   'standalone/scripts',
   'static',
   'tests',
@@ -191,7 +192,7 @@ config =
 config = replace(config, 'tailwindcss(),', 'standaloneRuntime(),\n      tailwindcss(),');
 // Stable input-derived version: identical captures produce identical distributable bytes.
 const digest = createHash('sha256');
-for (const directory of ['src', 'static', 'standalone/scripts']) {
+for (const directory of ['src', 'schemas', 'static', 'standalone/scripts']) {
   for (const name of readdirSync(resolve(snapshot, directory), { recursive: true }).sort()) {
     const path = resolve(snapshot, directory, name);
     if (statSync(path).isFile())

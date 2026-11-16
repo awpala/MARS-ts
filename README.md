@@ -2,7 +2,7 @@
 
 A TypeScript/SvelteKit web application porting of **MARS**, the educational MIPS Assembler and Runtime Simulator, targeting **MARS-ts 1.0** (with version 1.0 targeting feature and behavioral parity with legacy Java/Swing-based desktop MARS app's final-release version 4.5, distributed as corresponding JAR file). Core assembly, execution, and desktop debugging are implemented; the full port remains in progress.
 
-Read the [implementation guide](IMPLEMENTATION.md) for the current architecture, module responsibilities, browser working filesystem, supported behavior, validation evidence, and remaining limitations. The original Java app and generated Javadoc are isolated under [_legacy-app/](_legacy-app/README.md). The [port plan](docs/adrs/0000-port-plan.md) and [decision records](docs/README.md) describe scope and design choices.
+Read the [implementation guide](IMPLEMENTATION.md) for the current architecture, module responsibilities, browser working filesystem, supported behavior, validation evidence, and remaining limitations. Work is stored in the browser; **Export MARS** and **Import MARS** move all of it between browsers as one `mars-ts-data.json` file defined by the checked-in [schema](schemas/README.md). The original Java app and generated Javadoc are isolated under [_legacy-app/](_legacy-app/README.md). The [port plan](docs/adrs/0000-port-plan.md) and [decision records](docs/README.md) describe scope and design choices.
 
 The [deviation catalog](docs/deviations.md) records current behavioral differences from MARS 4.5 in UI and Engine subsets, with browser/platform adaptations separated from UI/UX changes. It excludes pending features and minor styling and will define the formal comparison baseline when MARS-ts 1.0 is released.
 

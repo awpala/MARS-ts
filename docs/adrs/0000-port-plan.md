@@ -65,6 +65,8 @@ The SvelteKit package and configuration are at the repository root (`package.jso
 
 [ADR 0016](0016-standalone-html-distribution.md) adds `standalone/` as a secondary, manually built single-file HTML distribution. It reuses the application under `src/`, tracks `standalone/MARS-ts.html`, and keeps build captures and validation evidence ignored. CI, publishing, and formal release integration are deferred until the human finalizes MARS-ts 1.0.
 
+[ADR 0017](0017-portable-mars-data.md) adds `schemas/` for checked-in JSON Schema definitions of bounded payloads. It currently defines the portable `mars-ts-data.json` file; the application imports the definition from `src/` at build time, and the browser-test and standalone builds copy the directory with the sources.
+
 ## 6. Milestones
 
 | Milestone | Delivers | Exit evidence |
