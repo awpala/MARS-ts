@@ -2,7 +2,7 @@ import { RandomStreams } from '#lib/engine/syscalls/random/RandomStreams.js';
 import { DialogIO } from '#lib/engine/io/DialogIO.js';
 import { ToneGenerator } from '#lib/engine/syscalls/midi/ToneGenerator.js';
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ProgramStatement } from '../assembler/programs/ProgramStatement.js';
 import { TokenList } from '../assembler/tokenization/TokenList.js';
 import { Tokenizer } from '../assembler/tokenization/Tokenizer.js';
@@ -19,6 +19,7 @@ import { SyscallLoader } from './SyscallLoader.js';
 import { SyscallPrintInt } from './console/SyscallPrintInt.js';
 import { SyscallReadInt } from './console/SyscallReadInt.js';
 import { JavaFloatingPoint } from '../formatting/JavaFloatingPoint.js';
+import { NumberFormatException } from '../formatting/Binary.js';
 
 const fixture = JSON.parse(readFileSync('tests/oracle/core-syscalls/golden.json', 'utf8')) as {
   stdout: string;
@@ -131,6 +132,41 @@ function machine() {
 }
 
 describe('canonical core console syscalls', () => {
+  it.each([
+    [5, 'readInteger', 'integer'],
+    [6, 'readFloat', 'float'],
+    [7, 'readDouble', 'double']
+  ] as const)(
+    'numeric service %i keeps parser failures separate from register failures',
+    async (number, method, kind) => {
+      const local = machine();
+      const syscall = local.loader.findSyscall(number)!;
+      syscall.setNumber(number + 100);
+      const unexpected = new Error('input host failed');
+      const read = vi.spyOn(local.systemIO, method).mockRejectedValueOnce(unexpected);
+      await expect(syscall.simulate(local.statement)).rejects.toBe(unexpected);
+      expect(read).toHaveBeenCalledWith(number + 100);
+      expect(local.registerFile.getValue(2)).toBe(0);
+      expect(local.coprocessor1.getValue(0)).toBe(0);
+      read.mockRejectedValueOnce(new NumberFormatException());
+      const failure = await Promise.resolve(syscall.simulate(local.statement)).catch(
+        (error: unknown) => error
+      );
+      expect(failure).toBeInstanceOf(ProcessingException);
+      expect((failure as ProcessingException).errors()?.generateErrorReport()).toContain(
+        `invalid ${kind} input (syscall ${number + 100})`
+      );
+      read.mockResolvedValueOnce(12);
+      const writeFailure = new NumberFormatException();
+      vi.spyOn(
+        number === 5 ? local.registerFile : local.coprocessor1,
+        'updateRegister'
+      ).mockImplementation(() => {
+        throw writeFailure;
+      });
+      await expect(syscall.simulate(local.statement)).rejects.toBe(writeFailure);
+    }
+  );
   const m = machine();
   for (const [number, cases] of Map.groupBy(rows, (row) => Number(row[0]))) {
     it(`service ${number} matches Java registers, output, memory, errors, and exit across12 cases`, async () => {

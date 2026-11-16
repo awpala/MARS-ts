@@ -70,7 +70,10 @@ export class RunController {
   private disposalPromise: Promise<void> | null = null;
   private readonly unsubscribeSimulator: () => void;
   /** Bind one GUI controller to one machine; constructor owns one simulator subscription. */
-  constructor(readonly machine: Globals) {
+  constructor(
+    /** Machine owned by this controller and released after execution settles during disposal. */
+    readonly machine: Globals
+  ) {
     this.unsubscribeSimulator = machine.simulator.subscribe((notice) => {
       this.observingWrites = observesWrites(notice);
       if (notice.getAction() === SimulatorNotice.SIMULATOR_STOP)
@@ -78,7 +81,7 @@ export class RunController {
       this.refresh();
     });
   }
-  /** Return the latest immutable state record; referenced program/statement objects remain engine-owned. */
+  /** Return the latest read-only state record; referenced program/statement objects remain engine-owned. */
   getState(): RunState {
     return this.state;
   }
@@ -301,7 +304,7 @@ export class RunController {
       throw error;
     }
   }
-  /** Stop and await execution before releasing controller/machine subscriptions and host file resources. */
+  /** Detach controller subscriptions and observers and request Stop immediately. Dispose the machine after pending execution settles; repeated calls return the same completion promise. */
   dispose(): Promise<void> {
     if (this.disposalPromise !== null) return this.disposalPromise;
     this.disposed = true;

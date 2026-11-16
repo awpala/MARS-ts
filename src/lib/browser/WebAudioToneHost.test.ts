@@ -85,10 +85,26 @@ beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 describe('Web Audio tone host', () => {
+  it('does not retain duration waits for asynchronous tones, including silent long tones', async () => {
+    const { context, host } = setup();
+    for (let i = 0; i < 10000; i++)
+      void host.playTone(tone({ duration: 2147483647, volume: 0 }), false);
+    expect(vi.getTimerCount()).toBe(0);
+    await host.playTone(tone({ duration: 2147483647 }), false);
+    expect(context.oscillators).toHaveLength(1);
+    expect(vi.getTimerCount()).toBe(0);
+    const sync = track(host.playTone(tone({ duration: 100 }), true));
+    expect(sync.settled).toBe(false);
+    expect(vi.getTimerCount()).toBe(1);
+    host.release();
+    await Promise.resolve();
+    expect(sync.settled).toBe(true);
+    host.dispose();
+  });
   it('sounds an equal-tempered sine with square-law velocity gain and a clickless envelope', () => {
     const { context, host } = setup();
-    void host.playTone(tone());
-    void host.playTone(tone({ pitch: 60, volume: 64, instrument: 40 }));
+    void host.playTone(tone(), true);
+    void host.playTone(tone({ pitch: 60, volume: 64, instrument: 40 }), true);
     const [a, b] = context.oscillators;
     expect(a.type).toBe('sine');
     expect(a.frequency.value).toBe(440);
@@ -108,7 +124,7 @@ describe('Web Audio tone host', () => {
       12
     );
     // A tone shorter than two attack periods peaks at its midpoint.
-    void host.playTone(tone({ duration: 4 }));
+    void host.playTone(tone({ duration: 4 }), true);
     const [kind, peak, time] = context.gains[2].gain.events[1];
     expect([kind, peak]).toEqual(['ramp', WebAudioToneHost.PEAK_GAIN]);
     expect(time).toBeCloseTo(10.002, 12);
@@ -116,14 +132,14 @@ describe('Web Audio tone host', () => {
   it('waits exactly the duration, with or without audio, up to the signed 32-bit maximum', async () => {
     for (const context of [new FakeContext(), undefined]) {
       const { host } = setup(context);
-      const wait = track(host.playTone(tone({ duration: 300 })));
+      const wait = track(host.playTone(tone({ duration: 300 }), true));
       await vi.advanceTimersByTimeAsync(299);
       expect(wait.settled).toBe(false);
       await vi.advanceTimersByTimeAsync(1);
       expect(wait.settled).toBe(true);
     }
     const { host } = setup();
-    const longest = track(host.playTone(tone({ duration: 2 ** 31 - 1 })));
+    const longest = track(host.playTone(tone({ duration: 2 ** 31 - 1 }), true));
     await vi.advanceTimersByTimeAsync(2 ** 31 - 2);
     expect(longest.settled).toBe(false);
     await vi.advanceTimersByTimeAsync(1);
@@ -131,8 +147,8 @@ describe('Web Audio tone host', () => {
   });
   it('keeps silent tones timed without creating voices', async () => {
     const { context, host } = setup();
-    const quiet = track(host.playTone(tone({ volume: 0, duration: 100 })));
-    const empty = track(host.playTone(tone({ duration: 0 })));
+    const quiet = track(host.playTone(tone({ volume: 0, duration: 100 }), true));
+    const empty = track(host.playTone(tone({ duration: 0 }), true));
     expect(context.oscillators).toHaveLength(0);
     await vi.advanceTimersByTimeAsync(0);
     expect(empty.settled).toBe(true);
@@ -142,7 +158,7 @@ describe('Web Audio tone host', () => {
   });
   it('releases every pending wait without silencing sounding tones', async () => {
     const { context, host } = setup();
-    const wait = track(host.playTone(tone({ duration: 60000 })));
+    const wait = track(host.playTone(tone({ duration: 60000 }), true));
     host.release();
     await Promise.resolve();
     expect(wait.settled).toBe(true);
@@ -150,7 +166,7 @@ describe('Web Audio tone host', () => {
   });
   it('fades out the oldest voice beyond the voice limit', () => {
     const { context, host } = setup();
-    for (let i = 0; i <= WebAudioToneHost.MAX_VOICES; i++) void host.playTone(tone());
+    for (let i = 0; i <= WebAudioToneHost.MAX_VOICES; i++) void host.playTone(tone(), true);
     const [oldest, next] = context.oscillators;
     expect(oldest.stopped).toEqual([
       10.5 + WebAudioToneHost.RELEASE,
@@ -163,7 +179,7 @@ describe('Web Audio tone host', () => {
     expect(next.stopped).toHaveLength(1);
     // A cut-off voice's later end notice does not count as the last voice ending.
     oldest.onended?.();
-    void host.playTone(tone());
+    void host.playTone(tone(), true);
     expect(context.oscillators[1].stopped).toHaveLength(2);
   });
   it('creates the context on first need, resumes it in a gesture, and suspends it when idle', async () => {
@@ -175,7 +191,7 @@ describe('Web Audio tone host', () => {
     expect(context.resume).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(WebAudioToneHost.IDLE_SUSPEND_DELAY);
     expect(context.suspend).toHaveBeenCalledTimes(1);
-    void host.playTone(tone());
+    void host.playTone(tone(), true);
     expect(context.resume).toHaveBeenCalledTimes(2);
     await vi.advanceTimersByTimeAsync(WebAudioToneHost.IDLE_SUSPEND_DELAY);
     expect(context.suspend).toHaveBeenCalledTimes(1);
@@ -197,21 +213,21 @@ describe('Web Audio tone host', () => {
       setup(failing).host
     ]) {
       host.prepare();
-      const wait = track(host.playTone(tone({ duration: 20 })));
+      const wait = track(host.playTone(tone({ duration: 20 }), true));
       await vi.advanceTimersByTimeAsync(20);
       expect(wait.settled).toBe(true);
     }
   });
   it('silences voices, releases waits, and closes the context on disposal', async () => {
     const { context, host } = setup();
-    const wait = track(host.playTone(tone({ duration: 60000 })));
+    const wait = track(host.playTone(tone({ duration: 60000 }), true));
     host.dispose();
     await Promise.resolve();
     expect(wait.settled).toBe(true);
     expect(context.oscillators[0].stopped.at(-1)).toBeUndefined();
     expect(context.oscillators[0].onended).toBeNull();
     expect(context.close).toHaveBeenCalledTimes(1);
-    const later = track(host.playTone(tone()));
+    const later = track(host.playTone(tone(), true));
     host.prepare();
     await Promise.resolve();
     expect(later.settled).toBe(true);

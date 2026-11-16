@@ -29,13 +29,13 @@
 
   "features": {
     // web port toolchain: Node.js active LTS line for SvelteKit (npm only)
-    "ghcr.io/devcontainers/features/node:2.1.1": {
-      "version": "24",
+    "ghcr.io/devcontainers/features/node:2.1.2": {
+      "version": "26",
       "pnpmVersion": "none",
     },
-    // global `tsc` for ad hoc use, pinned to the TypeScript major the planned
-    // SvelteKit stack supports; the app's own devDependency stays
-    // authoritative for its gates once the app is scaffolded
+    // Keep global `tsc` on TypeScript 6 until the SvelteKit 3 / Svelte 5
+    // toolchain supports TypeScript 7. The app's devDependency and lockfile
+    // remain authoritative for project checks.
     "ghcr.io/devcontainers-extra/features/typescript:2.0.16": {
       "version": "6.0.3",
     },

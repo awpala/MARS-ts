@@ -9,7 +9,7 @@ export class SyscallSbrk extends AbstractSyscall {
   constructor(host: SyscallHost) {
     super(9, 'Sbrk', host);
   }
-  /** Execute the canonical register, memory, console, and error behavior. */
+  /** Allocate the byte count in $a0 and return the original heap address in $v0. Invalid sizes become syscall diagnostics before $v0 changes. */
   override simulate(statement: ProgramStatement): void {
     let address: number;
     try {

@@ -9,7 +9,7 @@ export class SyscallPrintIntUnsigned extends AbstractSyscall {
   constructor(host: SyscallHost) {
     super(36, 'PrintIntUnsigned', host);
   }
-  /** Execute the canonical register, memory, console, and error behavior. */
+  /** Print $a0 as unsigned decimal without changing registers. */
   override simulate(): void {
     this.host.systemIO.printString(
       Binary.unsignedIntToIntString(this.host.registerFile.getValue(4))

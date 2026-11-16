@@ -23,6 +23,34 @@ const settings = {
 };
 
 describe('working display preference persistence', () => {
+  it('accepts the original five-field record while preserving false values and defaulting later additions', () => {
+    const original = {
+      showLabels: false,
+      showLines: false,
+      hexValues: false,
+      hexAddresses: false,
+      speed: 0
+    };
+    const read = (value: unknown) =>
+      loadDisplaySettings(() => ({ getItem: () => JSON.stringify(value), setItem() {} }));
+    expect(read(original)).toEqual({
+      ...original,
+      autoSave: false,
+      clearAllOutputsOnGo: false,
+      promptClearBreakpoints: false,
+      ascii: false,
+      showRegisters: true,
+      showDataLabels: true,
+      showTextLabels: true,
+      labelSortState: 0,
+      highlightCurrentLine: true
+    });
+    for (const key of Object.keys(original)) {
+      const missing: Record<string, unknown> = { ...original };
+      delete missing[key];
+      expect(read(missing)).toBeUndefined();
+    }
+  });
   it('round-trips false values and retains only the supported fields', () => {
     const values = new Map<string, string>();
     const storage = () => ({
@@ -51,7 +79,10 @@ describe('working display preference persistence', () => {
       { ...settings, speed: 1.5 },
       { ...settings, speed: '12' },
       { ...settings, showDataLabels: 'false' },
-      { ...settings, labelSortState: 8 }
+      { ...settings, labelSortState: 8 },
+      { ...settings, labelSortState: -1 },
+      { ...settings, labelSortState: 1.5 },
+      { ...settings, labelSortState: null }
     ]) {
       expect(
         loadDisplaySettings(() => ({ getItem: () => JSON.stringify(value), setItem: () => {} }))

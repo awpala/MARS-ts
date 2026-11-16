@@ -79,7 +79,7 @@ export class Globals {
   static readonly maximumMessageCharacters = 1000000;
   /** Canonical assembler diagnostic limit from Config.properties. */
   static readonly maximumErrorMessages = 200;
-  /** Canonical undo-history limit from Config.properties. */
+  /** Canonical backstep-record capacity from Config.properties; independent of editor undo history. */
   static readonly maximumBacksteps = 2000;
   /** Original attribution. */
   static readonly copyrightHolders = 'Pete Sanderson and Kenneth Vollmar';

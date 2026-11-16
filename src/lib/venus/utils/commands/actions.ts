@@ -5,9 +5,16 @@ import type { IconSource } from '../../components/icons/Icon.svelte';
 import type { IconName } from '../../components/icons/MaskIcon.svelte';
 import type { ToolbarIconName } from '../../components/icons/ToolbarIcon.svelte';
 import { shortcutChords } from './shortcuts.js';
+import type { Command } from './commands.js';
 
 /** Toolbar icon of an action: an inline SVG glyph or a full-color bundled image. */
-export type ActionIcon = Exclude<IconSource, { mask: IconName }>;
+export type ActionIcon = Exclude<
+  IconSource,
+  {
+    /** Mask-only icon variant excluded from toolbar action presentation. */
+    mask: IconName;
+  }
+>;
 
 /** Immutable command presentation; execution and enablement belong to the desktop. */
 export type Action = {
@@ -16,7 +23,7 @@ export type Action = {
   /** Optional toolbar icon; omitted for text-only actions. */
   icon?: ActionIcon;
   /** Stable identifier used by the desktop dispatcher. */
-  command: string;
+  command: Command;
   /** Optional displayed keyboard shortcut. */
   shortcut?: string;
   /** True for a deliberately unavailable command; defaults to false. */
@@ -126,7 +133,9 @@ const allActions: readonly Action[] = [
   memoryConfigurationAction,
   exceptionHandlerAction
 ];
-const actionsByCommand = new Map(allActions.map((action) => [action.command, action]));
+const actionsByCommand = new Map<string, Action>(
+  allActions.map((action) => [action.command, action])
+);
 
 /** The action registered for a command, or undefined for a command without presentation. */
 export function actionFor(command: string): Action | undefined {
@@ -182,7 +191,12 @@ export function physicalKeyAction(event: KeyboardEvent): Action | undefined {
 }
 
 /** Primary menus and their shared command definitions, in separator-delimited groups. */
-export const menus: readonly { name: string; groups: readonly (readonly Action[])[] }[] = [
+export const menus: readonly {
+  /** Visible menu heading. */
+  name: string;
+  /** Ordered action groups, separated visually by the menu renderer. */
+  groups: readonly (readonly Action[])[];
+}[] = [
   { name: 'File', groups: [fileActions] },
   { name: 'Edit', groups: [editActions] },
   { name: 'Run', groups: [runActions, [...breakpointActions].reverse()] }

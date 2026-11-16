@@ -40,6 +40,8 @@
     simulation
   );
   setExecuteView(view);
+  $effect(() => view.observeWrites());
+  $effect(() => view.resetObservation());
   // Reopening Execute or restoring a session reveals the selection after the PC attachment runs.
   $effect(() => view.revealSelection());
 </script>

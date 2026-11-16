@@ -5,15 +5,10 @@ import { self } from '$app/service-worker';
 import { version } from '$app/env';
 import { assets, immutable, prerendered } from '$app/manifest';
 
-/**
- * Offline support for the static build. Everything the simulator needs (the prerendered page, the hashed
- * Vite output, and `static/` files) is precached under a per-release cache name, so a visited origin keeps
- * working without a network. The simulator performs no API requests, and all user data lives in
- * localStorage, which the cache never touches.
- */
+/** Offline support for the static build after successful precaching and worker activation. The per-release cache holds the prerendered page, hashed Vite output, and static assets. Persisted sources, preferences, and recovery data remain in localStorage, which this cache does not touch. */
 const CACHE = `mars-ts-${version}`;
 
-/** Pathname of the prerendered desktop document, the offline answer for every navigation. */
+/** Prerendered desktop pathname used as the fallback for uncached same-origin navigations when the network request fails. */
 const SHELL = pathnameOf('/');
 
 /**

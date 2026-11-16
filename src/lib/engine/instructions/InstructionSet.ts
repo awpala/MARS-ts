@@ -1758,22 +1758,7 @@ export class InstructionSet {
         BasicInstructionFormat.R_FORMAT,
         '010001 10000 00000 sssss fffff 001111',
         {
-          simulate: (statement) => {
-            const operands = statement.getOperands()!;
-            const floatValue = Math.fround(
-              this.intBitsToFloat(this.host.coprocessor1.getValue(operands[1]))
-            );
-            let floor = JavaFloatingPoint.doubleToInt(Math.floor(floatValue)) | 0;
-            if (
-              Number.isNaN(floatValue) ||
-              this.isInfinite(floatValue) ||
-              floatValue < Math.fround(-2147483648) ||
-              floatValue > Math.fround(2147483647)
-            ) {
-              floor = 2147483647;
-            }
-            this.host.coprocessor1.updateRegister(operands[0], floor);
-          }
+          simulate: (statement) => this.convertToWord(statement, 'single', 'floor')
         },
         this.host
       )
@@ -1785,22 +1770,7 @@ export class InstructionSet {
         BasicInstructionFormat.R_FORMAT,
         '010001 10000 00000 sssss fffff 001110',
         {
-          simulate: (statement) => {
-            const operands = statement.getOperands()!;
-            const floatValue = Math.fround(
-              this.intBitsToFloat(this.host.coprocessor1.getValue(operands[1]))
-            );
-            let ceiling = JavaFloatingPoint.doubleToInt(Math.ceil(floatValue)) | 0;
-            if (
-              Number.isNaN(floatValue) ||
-              this.isInfinite(floatValue) ||
-              floatValue < Math.fround(-2147483648) ||
-              floatValue > Math.fround(2147483647)
-            ) {
-              ceiling = 2147483647;
-            }
-            this.host.coprocessor1.updateRegister(operands[0], ceiling);
-          }
+          simulate: (statement) => this.convertToWord(statement, 'single', 'ceil')
         },
         this.host
       )
@@ -1812,37 +1782,7 @@ export class InstructionSet {
         BasicInstructionFormat.R_FORMAT,
         '010001 10000 00000 sssss fffff 001100',
         {
-          simulate: (statement) => {
-            const operands = statement.getOperands()!;
-            const floatValue = Math.fround(
-              this.intBitsToFloat(this.host.coprocessor1.getValue(operands[1]))
-            );
-            let below: number, above: number;
-            let round = JavaFloatingPoint.doubleToInt(Math.round(floatValue));
-            if (
-              Number.isNaN(floatValue) ||
-              this.isInfinite(floatValue) ||
-              floatValue < Math.fround(-2147483648) ||
-              floatValue > Math.fround(2147483647)
-            ) {
-              round = 2147483647;
-            } else {
-              if (floatValue < 0.0) {
-                above = JavaFloatingPoint.doubleToInt(floatValue);
-                below = (above - 1) | 0;
-              } else {
-                below = JavaFloatingPoint.doubleToInt(floatValue);
-                above = (below + 1) | 0;
-              }
-              if (
-                Math.fround(floatValue - Math.fround(below)) ==
-                Math.fround(Math.fround(above) - floatValue)
-              ) {
-                round = above % 2 == 0 ? above : below;
-              }
-            }
-            this.host.coprocessor1.updateRegister(operands[0], round);
-          }
+          simulate: (statement) => this.convertToWord(statement, 'single', 'round')
         },
         this.host
       )
@@ -1854,22 +1794,7 @@ export class InstructionSet {
         BasicInstructionFormat.R_FORMAT,
         '010001 10000 00000 sssss fffff 001101',
         {
-          simulate: (statement) => {
-            const operands = statement.getOperands()!;
-            const floatValue = Math.fround(
-              this.intBitsToFloat(this.host.coprocessor1.getValue(operands[1]))
-            );
-            let truncate = JavaFloatingPoint.doubleToInt(floatValue) | 0;
-            if (
-              Number.isNaN(floatValue) ||
-              this.isInfinite(floatValue) ||
-              floatValue < Math.fround(-2147483648) ||
-              floatValue > Math.fround(2147483647)
-            ) {
-              truncate = 2147483647;
-            }
-            this.host.coprocessor1.updateRegister(operands[0], truncate);
-          }
+          simulate: (statement) => this.convertToWord(statement, 'single', 'trunc')
         },
         this.host
       )
@@ -2059,28 +1984,7 @@ export class InstructionSet {
         BasicInstructionFormat.R_FORMAT,
         '010001 10001 00000 sssss fffff 001111',
         {
-          simulate: (statement) => {
-            const operands = statement.getOperands()!;
-            if (operands[1] % 2 == 1) {
-              throw this.failure(statement, 'second register must be even-numbered');
-            }
-            const doubleValue = this.longBitsToDouble(
-              Binary.twoIntsToLong(
-                this.host.coprocessor1.getValue(operands[1] + 1),
-                this.host.coprocessor1.getValue(operands[1])
-              )
-            );
-            let floor = JavaFloatingPoint.doubleToInt(Math.floor(doubleValue)) | 0;
-            if (
-              Number.isNaN(doubleValue) ||
-              this.isInfinite(doubleValue) ||
-              doubleValue < Number(-2147483648) ||
-              doubleValue > Number(2147483647)
-            ) {
-              floor = 2147483647;
-            }
-            this.host.coprocessor1.updateRegister(operands[0], floor);
-          }
+          simulate: (statement) => this.convertToWord(statement, 'double', 'floor')
         },
         this.host
       )
@@ -2092,28 +1996,7 @@ export class InstructionSet {
         BasicInstructionFormat.R_FORMAT,
         '010001 10001 00000 sssss fffff 001110',
         {
-          simulate: (statement) => {
-            const operands = statement.getOperands()!;
-            if (operands[1] % 2 == 1) {
-              throw this.failure(statement, 'second register must be even-numbered');
-            }
-            const doubleValue = this.longBitsToDouble(
-              Binary.twoIntsToLong(
-                this.host.coprocessor1.getValue(operands[1] + 1),
-                this.host.coprocessor1.getValue(operands[1])
-              )
-            );
-            let ceiling = JavaFloatingPoint.doubleToInt(Math.ceil(doubleValue)) | 0;
-            if (
-              Number.isNaN(doubleValue) ||
-              this.isInfinite(doubleValue) ||
-              doubleValue < Number(-2147483648) ||
-              doubleValue > Number(2147483647)
-            ) {
-              ceiling = 2147483647;
-            }
-            this.host.coprocessor1.updateRegister(operands[0], ceiling);
-          }
+          simulate: (statement) => this.convertToWord(statement, 'double', 'ceil')
         },
         this.host
       )
@@ -2125,40 +2008,7 @@ export class InstructionSet {
         BasicInstructionFormat.R_FORMAT,
         '010001 10001 00000 sssss fffff 001100',
         {
-          simulate: (statement) => {
-            const operands = statement.getOperands()!;
-            if (operands[1] % 2 == 1) {
-              throw this.failure(statement, 'second register must be even-numbered');
-            }
-            const doubleValue = this.longBitsToDouble(
-              Binary.twoIntsToLong(
-                this.host.coprocessor1.getValue(operands[1] + 1),
-                this.host.coprocessor1.getValue(operands[1])
-              )
-            );
-            let below: number, above: number;
-            let round = JavaFloatingPoint.doubleToInt(Math.round(doubleValue)) | 0;
-            if (
-              Number.isNaN(doubleValue) ||
-              this.isInfinite(doubleValue) ||
-              doubleValue < Number(-2147483648) ||
-              doubleValue > Number(2147483647)
-            ) {
-              round = 2147483647;
-            } else {
-              if (doubleValue < 0.0) {
-                above = JavaFloatingPoint.doubleToInt(doubleValue);
-                below = (above - 1) | 0;
-              } else {
-                below = JavaFloatingPoint.doubleToInt(doubleValue);
-                above = (below + 1) | 0;
-              }
-              if (doubleValue - below == above - doubleValue) {
-                round = above % 2 == 0 ? above : below;
-              }
-            }
-            this.host.coprocessor1.updateRegister(operands[0], round);
-          }
+          simulate: (statement) => this.convertToWord(statement, 'double', 'round')
         },
         this.host
       )
@@ -2170,28 +2020,7 @@ export class InstructionSet {
         BasicInstructionFormat.R_FORMAT,
         '010001 10001 00000 sssss fffff 001101',
         {
-          simulate: (statement) => {
-            const operands = statement.getOperands()!;
-            if (operands[1] % 2 == 1) {
-              throw this.failure(statement, 'second register must be even-numbered');
-            }
-            const doubleValue = this.longBitsToDouble(
-              Binary.twoIntsToLong(
-                this.host.coprocessor1.getValue(operands[1] + 1),
-                this.host.coprocessor1.getValue(operands[1])
-              )
-            );
-            let truncate = JavaFloatingPoint.doubleToInt(doubleValue) | 0;
-            if (
-              Number.isNaN(doubleValue) ||
-              this.isInfinite(doubleValue) ||
-              doubleValue < Number(-2147483648) ||
-              doubleValue > Number(2147483647)
-            ) {
-              truncate = 2147483647;
-            }
-            this.host.coprocessor1.updateRegister(operands[0], truncate);
-          }
+          simulate: (statement) => this.convertToWord(statement, 'double', 'trunc')
         },
         this.host
       )
@@ -3602,6 +3431,60 @@ export class InstructionSet {
     );
     return matches.length ? matches : null;
   }
+  // Shared floor/ceil/round/trunc callbacks from InstructionSet.java; metadata remains at each registration.
+  private convertToWord(
+    statement: ProgramStatement,
+    precision: 'single' | 'double',
+    rounding: 'floor' | 'ceil' | 'round' | 'trunc'
+  ): void {
+    const operands = statement.getOperands()!;
+    let value: number;
+    if (precision === 'single') {
+      value = Math.fround(this.intBitsToFloat(this.host.coprocessor1.getValue(operands[1])));
+    } else {
+      if (operands[1] % 2 == 1) {
+        throw this.failure(statement, 'second register must be even-numbered');
+      }
+      value = this.longBitsToDouble(
+        Binary.twoIntsToLong(
+          this.host.coprocessor1.getValue(operands[1] + 1),
+          this.host.coprocessor1.getValue(operands[1])
+        )
+      );
+    }
+    let result = JavaFloatingPoint.doubleToInt(
+      rounding === 'floor'
+        ? Math.floor(value)
+        : rounding === 'ceil'
+          ? Math.ceil(value)
+          : rounding === 'round'
+            ? Math.round(value)
+            : value
+    );
+    // Java promotes integer bounds to float for .s, including MAX_VALUE rounding up to 2^31.
+    const minimum = precision === 'single' ? Math.fround(-2147483648) : -2147483648;
+    const maximum = precision === 'single' ? Math.fround(2147483647) : 2147483647;
+    if (Number.isNaN(value) || this.isInfinite(value) || value < minimum || value > maximum) {
+      result = 2147483647;
+    } else if (rounding === 'round') {
+      let below: number, above: number;
+      if (value < 0.0) {
+        above = JavaFloatingPoint.doubleToInt(value);
+        below = (above - 1) | 0;
+      } else {
+        below = JavaFloatingPoint.doubleToInt(value);
+        above = (below + 1) | 0;
+      }
+      // Keep the original tie test and its single-precision intermediate rounding, including integer wrap.
+      const halfway =
+        precision === 'single'
+          ? Math.fround(value - Math.fround(below)) == Math.fround(Math.fround(above) - value)
+          : value - below == above - value;
+      if (halfway) result = above % 2 == 0 ? above : below;
+    }
+    this.host.coprocessor1.updateRegister(operands[0], result);
+  }
+
   private equalsIgnoreCase(left: string, right: string): boolean {
     if (left.length !== right.length) return false;
     for (let i = 0; i < left.length; i++) {

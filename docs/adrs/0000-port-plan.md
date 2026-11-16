@@ -28,7 +28,7 @@ Program-argument controls and runtime argument setup are in scope under [ADR 000
 
 ## 2. Planned stack
 
-The planned baseline matches a current SvelteKit portfolio stack: SvelteKit with Svelte 5 runes, TypeScript in strict mode, Tailwind CSS 4, Vitest, ESLint, Prettier, Node 24, and static output (`@sveltejs/adapter-static`), because a simulator needs no server. The installed P1 scaffold uses SvelteKit 3, Svelte 5, Vite 8, TypeScript 6, Tailwind 4, Vitest 4, ESLint 10, and Prettier 3; exact versions belong to the root manifest and lockfile. Playwright is development-only browser validation tooling; it adds no application runtime.
+The planned baseline matches a current SvelteKit portfolio stack: SvelteKit with Svelte 5 runes, TypeScript in strict mode, Tailwind CSS 4, Vitest, ESLint, Prettier, Node 26, and static output (`@sveltejs/adapter-static`), because a simulator needs no server. The installed P1 scaffold uses SvelteKit 3, Svelte 5, Vite 8, TypeScript 6, Tailwind 4, Vitest 5, ESLint 10, and Prettier 3; exact versions belong to the root manifest and lockfile. Playwright is development-only browser validation tooling; it adds no application runtime.
 
 ## 3. Legacy architecture and target mapping
 

@@ -7,6 +7,7 @@ import { isRunCheckpoint } from '#lib/venus/RunCheckpoint.js';
 import { buildFileNameList } from '#lib/venus/utils/execution/buildFileNameList.js';
 import { SimulationState } from '#lib/venus/state/SimulationState.svelte.js';
 import { SourceWorkspace } from '#lib/venus/state/SourceWorkspace.svelte.js';
+import { ModalState } from '#lib/venus/state/ModalState.svelte.js';
 import { DisplayPreferences } from '#lib/venus/state/DisplayPreferences.svelte.js';
 import { spimExceptionHandler } from '#lib/browser/BundledSources.js';
 import { parseTabRows, readOracleJson } from '../oracle/fixtures.js';
@@ -50,14 +51,19 @@ function session() {
 
 function presentation() {
   const display = new DisplayPreferences();
-  const workspace = new SourceWorkspace(display, {
-    invalidate: () => {},
-    report: () => {},
-    running: () => false,
-    assembleOnOpen: () => false,
-    assemble: () => {}
-  });
-  return { workspace, simulation: new SimulationState(workspace, display) };
+  const modals = new ModalState();
+  const workspace = new SourceWorkspace(
+    display,
+    {
+      invalidate: () => {},
+      report: () => {},
+      running: () => false,
+      assembleOnOpen: () => false,
+      assemble: () => {}
+    },
+    modals
+  );
+  return { workspace, simulation: new SimulationState(workspace, display, modals) };
 }
 
 describe('automatic exception handlers', () => {

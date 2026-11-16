@@ -11,7 +11,7 @@ export class SyscallReadString extends AbstractSyscall {
   constructor(host: SyscallHost) {
     super(8, 'ReadString', host);
   }
-  /** Execute the canonical register, memory, console, and error behavior. */
+  /** Await bounded input using $a1, then write characters at $a0, adding a newline when space remains and a null terminator when enabled by the length. Address errors preserve prior writes and become ProcessingException. */
   override async simulate(statement: ProgramStatement): Promise<void> {
     const buffer = this.host.registerFile.getValue(4);
     let maxLength = (this.host.registerFile.getValue(5) - 1) | 0;

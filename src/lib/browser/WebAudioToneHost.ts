@@ -46,8 +46,8 @@ export class WebAudioToneHost implements ToneGeneratorHost {
     if (context.state !== 'running') void context.resume().catch(() => {});
     if (this.voices.size === 0) this.scheduleIdleSuspend();
   }
-  /** Sound one sine tone now and resolve after its duration, whether or not audio is available; the signed 32-bit duration fits the browser timer range. */
-  playTone(tone: Tone): Promise<void> {
+  /** Sound one sine tone now. Only synchronous callers allocate a duration timer, even when audio is unavailable. */
+  playTone(tone: Tone, waitForEnd: boolean): Promise<void> {
     if (this.disposed) return Promise.resolve();
     if (tone.duration > 0 && tone.volume > 0)
       try {
@@ -55,6 +55,7 @@ export class WebAudioToneHost implements ToneGeneratorHost {
       } catch {
         // Like Java's swallowed MIDI exceptions, an audio failure leaves the tone silent but timed.
       }
+    if (!waitForEnd) return Promise.resolve();
     return new Promise((resolve) => {
       const timer = setTimeout(() => {
         this.waits.delete(timer);

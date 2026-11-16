@@ -8,7 +8,7 @@ export class SyscallPrintInt extends AbstractSyscall {
   constructor(host: SyscallHost) {
     super(1, 'PrintInt', host);
   }
-  /** Execute the canonical register, memory, console, and error behavior. */
+  /** Print $a0 as signed decimal without changing registers. */
   override simulate(): void {
     this.host.systemIO.printString(String(this.host.registerFile.getValue(4)));
   }

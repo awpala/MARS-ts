@@ -19,7 +19,10 @@ export interface DiagnosticProgram {
   /** Expanded source mapping, or null before tokenization. */
   getSourceLineList(): readonly DiagnosticSourceLine[] | null;
   /** Local macro expansion history, or null before macro processing. */
-  getLocalMacroPool(): { getExpansionHistory(): string } | null;
+  getLocalMacroPool(): {
+    /** Expansion-site line numbers used to prefix the diagnostic location. */
+    getExpansionHistory(): string;
+  } | null;
 }
 
 /** Narrow ProgramStatement contract used to reconstruct runtime source locations. */

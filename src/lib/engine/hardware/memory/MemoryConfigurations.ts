@@ -7,7 +7,7 @@ import { MemoryConfiguration } from './MemoryConfiguration.js';
 export class MemoryConfigurations {
   private readonly configurations: MemoryConfiguration[];
   private current: MemoryConfiguration;
-  /** Creates all three canonical layouts; onChange clears memory and resets the owner's register file. */
+  /** Create all three layouts and select initial, falling back to Default for an unknown ID. A change from Default invokes onChange; the owner supplies any memory clearing or register resets. */
   constructor(
     private readonly onChange: (configuration: MemoryConfiguration) => void = () => {},
     initial = 'Default'
@@ -86,7 +86,7 @@ export class MemoryConfigurations {
   getCurrentConfiguration(): MemoryConfiguration {
     return this.current;
   }
-  /** Switches by identity and invokes the owner's reset callback exactly once when changed. */
+  /** Switch by identity and invoke the owner's change callback once; null or the already selected object returns false without invoking it. */
   setCurrentConfiguration(configuration: MemoryConfiguration | null): boolean {
     if (configuration === null || configuration === this.current) return false;
     this.current = configuration;

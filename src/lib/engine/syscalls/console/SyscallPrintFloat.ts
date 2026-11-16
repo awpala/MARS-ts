@@ -8,7 +8,7 @@ export class SyscallPrintFloat extends AbstractSyscall {
   constructor(host: SyscallHost) {
     super(2, 'PrintFloat', host);
   }
-  /** Execute the canonical register, memory, console, and error behavior. */
+  /** Format the single-precision value in $f12 through the session runtime and print it without changing registers. */
   override simulate(): void {
     this.host.systemIO.printString(
       this.host.systemIO.formatFloat(this.host.coprocessor1.getFloatFromRegister(12))

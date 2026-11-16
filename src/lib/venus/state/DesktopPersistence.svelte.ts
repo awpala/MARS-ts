@@ -1,9 +1,6 @@
 import { untrack } from 'svelte';
-import {
-  loadDesktopSession,
-  saveDesktopSession,
-  type DesktopSession
-} from '#lib/browser/DesktopSession.js';
+import { loadDesktopSession, type DesktopSession } from '#lib/browser/DesktopSession.js';
+import { DesktopSessionWriter } from '#lib/browser/DesktopSessionWriter.js';
 import { errorMessage } from '#lib/browser/errorMessage.js';
 import type { DisplayPreferences } from './DisplayPreferences.svelte.js';
 import type { SourceWorkspace } from './SourceWorkspace.svelte.js';
@@ -19,7 +16,7 @@ export type HelpRecovery = {
   helpTabArticles: Record<string, string>;
 };
 
-/** Per-desktop recovery boundary; effects are owned by the creating component and storage starts only after restoration. */
+/** Per-desktop recovery boundary; effects belong to the creating component and recovery writes begin only after restoration. */
 export class DesktopPersistence {
   /** Visible recovery failure; in-memory work and prior successful storage remain usable. */
   error = $state('');
@@ -28,6 +25,13 @@ export class DesktopPersistence {
     Pick<DesktopSession, 'execution' | 'messages' | 'runIO' | 'unloadedError'>
   >({ execution: null, messages: '', runIO: '', unloadedError: false });
   private revision = -1;
+  private readonly snapshot: () => DesktopSession;
+  private readonly writer = new DesktopSessionWriter((error) => {
+    this.error =
+      error === undefined
+        ? ''
+        : `Session recovery could not be saved: ${errorMessage(error)}. Keep this tab open or export your sources.`;
+  });
   /** Connect existing state owners without introducing another machine, buffer library, or execution loop. */
   constructor(
     private readonly workspace: SourceWorkspace,
@@ -35,58 +39,40 @@ export class DesktopPersistence {
     private readonly display: DisplayPreferences,
     private readonly help: HelpRecovery
   ) {
+    const editHistory = $derived.by(() => {
+      void workspace.tabs;
+      return workspace.editor.captureHistory();
+    });
+    const savedExecution = $derived(
+      this.stable.execution
+        ? { ...this.stable.execution, labelSelection: simulation.labelSelection }
+        : null
+    );
     $effect(() => {
-      if (!this.ready) return;
-      const execution = simulation.execution;
-      const messages = simulation.messages;
-      const runIO = simulation.runIO;
-      // Hardware and its console buffers advance together only after the execution operation settles.
-      if (execution?.status === 'running' || simulation.controller?.isBusy()) return;
-      let checkpoint = untrack(() => this.stable.execution);
-      if (execution && execution.revision !== this.revision) {
-        const machine = simulation.controller?.captureCheckpoint();
-        if (machine) checkpoint = { machine, sources: { ...simulation.checkpointSources } };
-        else if (!execution.statements.length) checkpoint = null;
-        this.revision = execution.revision;
-      }
-      this.stable = {
-        execution: checkpoint,
-        messages,
-        runIO,
-        unloadedError: execution?.status === 'error' && checkpoint === null
-      };
+      if (this.ready) this.captureStable();
+    });
+    this.snapshot = () => ({
+      programArguments: simulation.programArguments,
+      view: display.view,
+      registerTab: display.registerTab,
+      messageTab: simulation.messageTab,
+      help: {
+        open: help.helpBrowserOpen,
+        tab: help.helpTab,
+        articles: { ...help.helpTabArticles }
+      },
+      source: workspace.current?.name ?? null,
+      editHistory,
+      dataView: { segment: display.dataSegment, pageOffset: display.dataPageOffset | 0 },
+      selection: [workspace.selectionStart, workspace.selectionEnd],
+      scroll: [Math.round(workspace.sourceScrollTop), Math.round(workspace.sourceScrollLeft)],
+      breakpoints: [...simulation.breakpoints],
+      breakpointsEnabled: simulation.breakpointsEnabled,
+      ...this.stable,
+      execution: savedExecution
     });
     $effect(() => {
-      if (!this.ready) return;
-      void workspace.tabs;
-      const stable = this.stable;
-      try {
-        saveDesktopSession({
-          programArguments: simulation.programArguments,
-          view: display.view,
-          registerTab: display.registerTab,
-          messageTab: simulation.messageTab,
-          help: {
-            open: help.helpBrowserOpen,
-            tab: help.helpTab,
-            articles: { ...help.helpTabArticles }
-          },
-          source: workspace.current?.name ?? null,
-          editHistory: workspace.editor.captureHistory(),
-          dataView: { segment: display.dataSegment, pageOffset: display.dataPageOffset | 0 },
-          selection: [workspace.selectionStart, workspace.selectionEnd],
-          scroll: [Math.round(workspace.sourceScrollTop), Math.round(workspace.sourceScrollLeft)],
-          breakpoints: [...simulation.breakpoints],
-          breakpointsEnabled: simulation.breakpointsEnabled,
-          ...stable,
-          execution: stable.execution
-            ? { ...stable.execution, labelSelection: simulation.labelSelection }
-            : null
-        });
-        this.error = '';
-      } catch (error) {
-        this.error = `Session recovery could not be saved: ${errorMessage(error)}. Keep this tab open or export your sources.`;
-      }
+      if (this.ready) this.writer.schedule(this.snapshot());
     });
     $effect(() => {
       const input = workspace.sourceInput;
@@ -98,6 +84,50 @@ export class DesktopPersistence {
         input.scrollLeft = workspace.sourceScrollLeft;
       });
     });
+  }
+  /** Capture idle hardware and paired consoles synchronously, also covering exit before pending effects have run. */
+  private captureStable(): void {
+    const execution = this.simulation.execution;
+    const messages = this.simulation.messages;
+    const runIO = this.simulation.runIO;
+    if (execution?.status === 'running' || this.simulation.controller?.isBusy()) return;
+    let checkpoint = untrack(() => this.stable.execution);
+    if (execution && execution.revision !== this.revision) {
+      const machine = this.simulation.controller?.captureCheckpoint();
+      if (machine) checkpoint = { machine, sources: { ...this.simulation.checkpointSources } };
+      else if (!execution.statements.length) checkpoint = null;
+      this.revision = execution.revision;
+    }
+    this.stable = {
+      execution: checkpoint,
+      messages,
+      runIO,
+      unloadedError: execution?.status === 'error' && checkpoint === null
+    };
+  }
+  /** Capture and flush current recovery state on page exit. Teardown removes listeners and disposes the writer, flushing its latest submitted snapshot without recapturing historical reactive values during component destruction. */
+  mount(): () => void {
+    const flush = () => {
+      if (this.ready) {
+        this.captureStable();
+        this.writer.schedule(this.snapshot());
+      }
+      this.writer.flush();
+    };
+    const hidden = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+    window.addEventListener('pagehide', flush);
+    window.addEventListener('beforeunload', flush);
+    document.addEventListener('visibilitychange', hidden);
+    return () => {
+      // Svelte teardown can expose historical reactive values; preserve the latest submitted snapshot.
+      this.ready = false;
+      window.removeEventListener('pagehide', flush);
+      window.removeEventListener('beforeunload', flush);
+      document.removeEventListener('visibilitychange', hidden);
+      this.writer.dispose();
+    };
   }
   /** Restore after source recovery and machine creation, before enabling any persistence effects. */
   restore(): void {

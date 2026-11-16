@@ -1,3 +1,5 @@
+import type { ModalState, WorkspaceDialog } from './ModalState.svelte.js';
+import { DEFAULT_DISPLAY_SETTINGS } from '#lib/browser/DisplaySettings.js';
 import { tick } from 'svelte';
 import { Editor, type EditPane } from '#lib/editor/Editor.js';
 import { bundledSource } from '#lib/browser/BundledSources.js';
@@ -13,6 +15,7 @@ import type { SourceImportPlan } from '#lib/browser/sourceImport.js';
 import type { DisplayPreferences } from './DisplayPreferences.svelte.js';
 import { errorMessage } from '#lib/browser/errorMessage.js';
 import { isSavableSource } from '../utils/sources/savableSource.js';
+import { unhandledCommand, type WorkspaceCommand } from '../utils/commands/commands.js';
 /** Cross-domain capabilities injected by the desktop; the workspace never creates a machine. */
 export type WorkspaceHost = {
   /** Invalidate assembly after source changes. */
@@ -34,7 +37,7 @@ export class SourceWorkspace {
   /** Framework-free editor model owned by this workspace. */
   editor = new Editor();
   private revision = $state(0);
-  /** Reactive snapshots of open editor buffers. */
+  /** Shallow reactive snapshots of open editor buffers; history arrays remain editor-owned and consumers must not mutate them. */
   tabs = $derived.by(() => {
     void this.revision;
     return this.editor.getEditPanes().map((tab) => ({ ...tab }));
@@ -54,7 +57,7 @@ export class SourceWorkspace {
       readOnly: tab.readOnly ?? false
     }))
   );
-  /** Names of open buffers that differ from their saved baselines. */
+  /** Names of unsaved new or changed writable buffers, including empty new buffers. */
   unsavedNames = $derived(this.tabSummaries.filter((tab) => tab.dirty).map((tab) => tab.name));
   private sourceLibrary = new SourceLibrary();
   /** Last successfully read or committed source library. */
@@ -68,7 +71,7 @@ export class SourceWorkspace {
   /** Recoverable workspace-backup failure shown by the desktop. */
   backupError = $state('');
   /** Whether source mutations commit to the local library. */
-  autoSave = $state(false);
+  autoSave = $state(DEFAULT_DISPLAY_SETTINGS.autoSave);
   /** Auto Save failure or recovered-draft conflict message. */
   autoSaveError = $state('');
   private workspaceWritable = false;
@@ -76,13 +79,18 @@ export class SourceWorkspace {
   replaceSave = $state(false);
   /** Whether Save As also removes the old library name. */
   renameSource = $state(false);
-  /** Current source-workflow dialog; Help and syscall input have separate owners. */
-  modal = $state<
-    'open' | 'delete' | 'import' | 'save' | 'close' | 'close-all' | 'find' | 'rename-warning' | null
-  >(null);
+  /** Source-workflow selection supplied by the shared modal state machine. */
+  get modal(): WorkspaceDialog | null {
+    const modal = this.modals.primary;
+    return modal?.kind === 'workspace' ? modal.name : null;
+  }
+  set modal(name: WorkspaceDialog | null) {
+    if (name === null) this.modals.close('workspace');
+    else this.modals.open({ kind: 'workspace', name });
+  }
   /** Pending Save As filename. */
   filename = $state('');
-  /** Buffer currently being saved, retained across dialog steps. */
+  /** Buffer retained across Save As steps; released after success, cancellation, or workspace disposal. */
   saveTarget = $state.raw<EditPane>();
   private closeQueue: number[] = [];
   private saveQueue: number[] = [];
@@ -97,8 +105,10 @@ export class SourceWorkspace {
   sourceScrollTop = $state(0);
   /** Current source viewport left offset, restored with the desktop session. */
   sourceScrollLeft = $state(0);
-  /** Mounted source textarea supplied by SourceEditor; cleared on unmount. */
+  /** Borrowed source textarea owned by the mounted SourceEditor; its registration releases the reference on removal. */
   sourceInput = $state<HTMLTextAreaElement>();
+  private sourceView:
+    { element: HTMLTextAreaElement; revealLine: (line: number) => void } | undefined;
   /** Line and column derived from the selected source and caret. */
   position = $derived.by(() => {
     const before = this.current?.text.slice(0, this.selectionStart) ?? '';
@@ -109,7 +119,8 @@ export class SourceWorkspace {
   /** Compose with display navigation and explicit execution/reporting capabilities. */
   constructor(
     private readonly display: DisplayPreferences,
-    private readonly host: WorkspaceHost
+    private readonly host: WorkspaceHost,
+    private readonly modals: ModalState
   ) {}
   /** Restore saved sources and recovery drafts; conflicting drafts disable Auto Save without discarding either version. */
   restore(): void {
@@ -153,11 +164,29 @@ export class SourceWorkspace {
     this.ready = true;
     this.refresh();
   }
-  /** Stop persistence and ignore pending clipboard reads when the owning desktop unmounts. */
+  /** Stop persistence, release borrowed editor handles and the pending save target, close the workspace dialog, and ignore pending clipboard completions after disposal. */
   dispose(): void {
     this.disposed = true;
     this.ready = false;
     this.sourceInput = undefined;
+    this.sourceView = undefined;
+    this.saveTarget = undefined;
+    this.modals.close('workspace');
+  }
+  /** Borrow the mounted editor's input and rendered-line navigation. The attachment must release its registration on removal; a stale release cannot clear a newer registration. */
+  registerSourceInput(
+    element: HTMLTextAreaElement,
+    revealLine: (line: number) => void
+  ): () => void {
+    if (this.disposed) return () => {};
+    const view = { element, revealLine };
+    this.sourceView = view;
+    this.sourceInput = element;
+    return () => {
+      if (this.sourceView !== view) return;
+      this.sourceView = undefined;
+      this.sourceInput = undefined;
+    };
   }
   /** Resolve immutable bundled identities first; user sources prefer open buffers over committed library text. */
   readSource = (name: string): string => {
@@ -171,14 +200,39 @@ export class SourceWorkspace {
     if (!saved) throw new Error(`Source file "${name}" is not in the source library.`);
     return saved.source;
   };
+  /** Shared source-command availability; both presentation and execution enforce the same read-only and running rules. */
+  enabled(command: WorkspaceCommand): boolean {
+    if (this.disposed || (this.host.running() && command !== 'copy')) return false;
+    const current = this.current;
+    switch (command) {
+      case 'new':
+      case 'open':
+      case 'autoSave':
+        return true;
+      case 'save':
+      case 'saveAs':
+        return !!current && isSavableSource(current);
+      case 'undo':
+        return !!current && !current.readOnly && current.undo.length > 0;
+      case 'redo':
+        return !!current && !current.readOnly && current.redo.length > 0;
+      case 'cut':
+      case 'paste':
+        return !!current && !current.readOnly;
+      case 'close':
+      case 'closeAll':
+      case 'saveAll':
+      case 'copy':
+      case 'selectAll':
+      case 'find':
+        return !!current;
+      default:
+        return unhandledCommand(command);
+    }
+  }
   /** Execute source/file actions against this workspace, preserving normal dirty-buffer workflows. */
-  execute = async (command: string): Promise<void> => {
-    if (this.disposed) return;
-    if (
-      this.current?.readOnly &&
-      ['cut', 'paste', 'undo', 'redo', 'save', 'saveAs'].includes(command)
-    )
-      return;
+  execute = async (command: WorkspaceCommand): Promise<void> => {
+    if (!this.enabled(command)) return;
     switch (command) {
       case 'new': {
         const tab = this.createSource();
@@ -232,6 +286,8 @@ export class SourceWorkspace {
       case 'find':
         this.modal = 'find';
         break;
+      default:
+        unhandledCommand(command);
     }
   };
   /** Create and initialize a new buffer synchronously; optional source records one normal edit before persistence. Returns nothing after disposal or while running. */
@@ -303,7 +359,7 @@ export class SourceWorkspace {
       .reduce((total, text) => total + text.length + 1, 0);
     this.sourceInput?.focus();
     this.sourceInput?.setSelectionRange(offset, offset);
-    if (this.sourceInput) this.sourceInput.scrollTop = Math.max(0, (line - 3) * 21);
+    this.sourceView?.revealLine(line);
     this.selection();
   };
   /** Publish editor snapshots, optionally commit edits, and preserve recovery backups. */
@@ -378,6 +434,7 @@ export class SourceWorkspace {
     this.fileError = '';
     this.replaceSave = false;
     this.importPlan = EMPTY_IMPORT;
+    this.saveTarget = undefined;
   };
   private fileFailure = (error: unknown) => {
     this.fileError = errorMessage(error);
@@ -400,6 +457,7 @@ export class SourceWorkspace {
   /** Close a buffer and publish the change. */
   private closeBuffer(id: number): void {
     this.editor.close(id);
+    if (this.saveTarget?.id === id) this.saveTarget = undefined;
     this.refresh();
   }
   private showOpen = () => {
@@ -594,13 +652,14 @@ export class SourceWorkspace {
         this.replaceSave = true;
         return;
       }
-      if (!this.persistSource(this.saveTarget, name, this.renameSource && !this.saveTarget.isNew))
-        return;
+      const target = this.saveTarget;
+      if (!this.persistSource(target, name, this.renameSource && !target.isNew)) return;
+      this.saveTarget = undefined;
       this.modal = null;
       this.replaceSave = false;
       if (this.closingAfterSave) {
         this.closingAfterSave = false;
-        this.closeBuffer(this.saveTarget.id);
+        this.closeBuffer(target.id);
         this.nextClose();
       } else this.nextSave();
     } catch (error) {
@@ -662,7 +721,7 @@ export class SourceWorkspace {
       this.nextClose();
     }
   };
-  private clipboard = async (command: string) => {
+  private clipboard = async (command: 'cut' | 'copy' | 'paste') => {
     if (!this.current) return;
     if (this.current.readOnly && command !== 'copy') return;
     const tab = this.current,

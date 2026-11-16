@@ -38,53 +38,58 @@ export interface DisplaySettings {
   speed: number;
 }
 
+type PreferenceField<T> = { default: T; required?: true } & (T extends number
+  ? { maximum: number }
+  : object);
+
+// The original five fields remain required; later additions default when older records omit them.
+const fields = {
+  autoSave: { default: false },
+  clearAllOutputsOnGo: { default: false },
+  promptClearBreakpoints: { default: false },
+  ascii: { default: false },
+  showRegisters: { default: true },
+  showLabels: { default: true, required: true },
+  showDataLabels: { default: true },
+  showTextLabels: { default: true },
+  labelSortState: { default: 0, maximum: 7 },
+  showLines: { default: true, required: true },
+  highlightCurrentLine: { default: true },
+  hexValues: { default: true, required: true },
+  hexAddresses: { default: true, required: true },
+  speed: { default: MAX_SPEED_POSITION, required: true, maximum: MAX_SPEED_POSITION }
+} satisfies { [Key in keyof DisplaySettings]: PreferenceField<DisplaySettings[Key]> };
+
+/** Shared GUI defaults and persisted field vocabulary, derived from the adapter's validation schema. */
+export const DEFAULT_DISPLAY_SETTINGS: Readonly<DisplaySettings> = Object.freeze(
+  Object.fromEntries(
+    Object.entries(fields).map(([key, field]) => [key, field.default])
+  ) as unknown as DisplaySettings
+);
+
 function validate(value: unknown): DisplaySettings | undefined {
   if (!value || typeof value !== 'object') return;
   const data = value as Record<string, unknown>;
-  if (
-    typeof data.showLabels !== 'boolean' ||
-    typeof data.showLines !== 'boolean' ||
-    typeof data.hexValues !== 'boolean' ||
-    typeof data.hexAddresses !== 'boolean' ||
-    typeof data.speed !== 'number' ||
-    !Number.isInteger(data.speed) ||
-    data.speed < 0 ||
-    data.speed > MAX_SPEED_POSITION
-  )
-    return;
-  if (
-    (data.showRegisters !== undefined && typeof data.showRegisters !== 'boolean') ||
-    (data.clearAllOutputsOnGo !== undefined && typeof data.clearAllOutputsOnGo !== 'boolean') ||
-    (data.promptClearBreakpoints !== undefined &&
-      typeof data.promptClearBreakpoints !== 'boolean') ||
-    (data.highlightCurrentLine !== undefined && typeof data.highlightCurrentLine !== 'boolean') ||
-    (data.autoSave !== undefined && typeof data.autoSave !== 'boolean') ||
-    (data.ascii !== undefined && typeof data.ascii !== 'boolean') ||
-    (data.showDataLabels !== undefined && typeof data.showDataLabels !== 'boolean') ||
-    (data.showTextLabels !== undefined && typeof data.showTextLabels !== 'boolean') ||
-    (data.labelSortState !== undefined &&
-      (typeof data.labelSortState !== 'number' ||
-        !Number.isInteger(data.labelSortState) ||
-        data.labelSortState < 0 ||
-        data.labelSortState > 7))
-  )
-    return;
-  return {
-    autoSave: data.autoSave ?? false,
-    clearAllOutputsOnGo: data.clearAllOutputsOnGo ?? false,
-    promptClearBreakpoints: data.promptClearBreakpoints ?? false,
-    showRegisters: data.showRegisters ?? true,
-    ascii: data.ascii ?? false,
-    showLabels: data.showLabels,
-    showDataLabels: data.showDataLabels ?? true,
-    showTextLabels: data.showTextLabels ?? true,
-    labelSortState: data.labelSortState ?? 0,
-    showLines: data.showLines,
-    highlightCurrentLine: data.highlightCurrentLine ?? true,
-    hexValues: data.hexValues,
-    hexAddresses: data.hexAddresses,
-    speed: data.speed
-  };
+  const settings = { ...DEFAULT_DISPLAY_SETTINGS };
+  for (const key of Object.keys(fields) as (keyof DisplaySettings)[]) {
+    const field = fields[key];
+    const choice = data[key];
+    if (choice === undefined) {
+      if ('required' in field) return;
+      continue;
+    }
+    if (typeof choice !== typeof field.default) return;
+    if (
+      'maximum' in field &&
+      (typeof choice !== 'number' ||
+        !Number.isInteger(choice) ||
+        choice < 0 ||
+        choice > field.maximum)
+    )
+      return;
+    Object.assign(settings, { [key]: choice });
+  }
+  return settings;
 }
 
 /** Reads a complete validated preference record; missing, malformed, or unavailable storage returns undefined so the caller keeps its GUI defaults. */

@@ -155,8 +155,9 @@ ln -sf "${SCRIPTS_BIN_DIR}/run-legacy.sh" /usr/local/bin/run-legacy
 # supplies native compilation tools for npm dependency builds.
 #
 # No browser is installed here. The Playwright browser scenarios (`npm run
-# test:browser`, isolated on port 6278) are run separately from `run-checks`
-# and CI, so Chromium and its system libraries are fetched on demand with
+# test:browser`, on harness-allocated ports starting at 6278) run separately
+# from `run-checks`, locally or in the dedicated browser CI workflow, so
+# Chromium and its system libraries are fetched on demand with
 # `npm run test:browser:install` (`playwright install --with-deps chromium`)
 # only in environments that run them. Install it here only if a gate starts
 # consuming it, rather than carrying dormant tooling.

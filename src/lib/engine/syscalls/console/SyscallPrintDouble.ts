@@ -8,7 +8,7 @@ export class SyscallPrintDouble extends AbstractSyscall {
   constructor(host: SyscallHost) {
     super(3, 'PrintDouble', host);
   }
-  /** Execute the canonical register, memory, console, and error behavior. */
+  /** Format the double in $f12/$f13 through the session runtime and print it without changing registers. */
   override simulate(): void {
     this.host.systemIO.printString(
       this.host.systemIO.formatDouble(this.host.coprocessor1.getDoubleFromRegisterPair(12))

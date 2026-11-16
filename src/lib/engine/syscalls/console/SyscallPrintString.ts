@@ -11,7 +11,7 @@ export class SyscallPrintString extends AbstractSyscall {
   constructor(host: SyscallHost) {
     super(4, 'PrintString', host);
   }
-  /** Execute the canonical register, memory, console, and error behavior. */
+  /** Read bytes from the address in $a0 until a null character and print each character. Wrap address errors in ProcessingException; earlier output remains visible. */
   override simulate(statement: ProgramStatement): void {
     let address = this.host.registerFile.getValue(4);
     try {

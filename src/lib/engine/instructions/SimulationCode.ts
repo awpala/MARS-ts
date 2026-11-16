@@ -3,6 +3,6 @@
 
 /** One instruction's simulation operation; the owning session supplies the implementation. */
 export interface SimulationCode<Statement> {
-  /** Execute the supplied ProgramStatement; asynchronous host I/O suspends completion, and failures propagate ProcessingException. */
+  /** Execute the supplied ProgramStatement; asynchronous host I/O suspends completion. Instruction and host failures propagate to the simulator. */
   simulate(statement: Statement): void | Promise<void>;
 }

@@ -54,4 +54,4 @@ This policy applies to READMEs, ADRs, `AGENTS.md`, `docs/agents/`, `.agents/`, `
 ### Standing do-not-bump notes
 
 - **The JDK stays on 21 until offboarding.** It is the oracle's toolchain; changing it changes nothing the port ships but can change oracle output (for example float formatting or `java.util.prefs` behavior). If it must change, regenerate the golden fixtures in the same change and review every diff.
-- **The global TypeScript feature stays on 6** until the scaffolded app's lint and check tooling supports a newer major.
+- **TypeScript stays on 6 in both the package manifest and the global dev-container feature** until the existing SvelteKit 3 / Svelte 5 toolchain supports TypeScript 7. A general dependency refresh must preserve this compatibility constraint.

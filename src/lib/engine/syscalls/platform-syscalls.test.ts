@@ -269,13 +269,14 @@ describe('MIDI canonical syscall captures', () => {
     };
   };
   it(`matches every captured tone, default, register state, and wait (${rows.length} cases)`, async () => {
-    const played: { tone: Tone; end: () => void; ended: boolean }[] = [];
+    const played: { tone: Tone; end: () => void; ended: boolean; waitForEnd: boolean }[] = [];
     const local = machine({
       tones: {
-        playTone: (tone) =>
+        playTone: (tone, waitForEnd) =>
           new Promise((resolve) => {
             const entry = {
               tone,
+              waitForEnd,
               ended: false,
               end: () => {
                 entry.ended = true;
@@ -313,6 +314,7 @@ describe('MIDI canonical syscall captures', () => {
           }
           const expected = captured(observations[call]);
           const entry = played[first + call];
+          expect(entry.waitForEnd, label).toBe(service === 33);
           expect(entry.tone, label).toEqual({
             pitch: expected.pitch,
             duration: expected.duration,

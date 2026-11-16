@@ -1,25 +1,18 @@
 /* Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license.
  * Ports mars/mips/instructions/syscalls/SyscallReadDouble.java; see MARSlicense.txt. */
-import { AbstractSyscall } from '../AbstractSyscall.js';
+import { AbstractReadNumberSyscall } from './AbstractReadNumberSyscall.js';
 import type { SyscallHost } from '../SyscallHost.js';
 import type { ProgramStatement } from '../../assembler/programs/ProgramStatement.js';
-import { NumberFormatException } from '../../formatting/Binary.js';
 import { Binary } from '../../formatting/Binary.js';
 /** Canonical ReadDouble service; hardware and I/O remain owned by the injected session. */
-export class SyscallReadDouble extends AbstractSyscall {
+export class SyscallReadDouble extends AbstractReadNumberSyscall {
   /** Construct service 7 (ReadDouble) for this session. */
   constructor(host: SyscallHost) {
     super(7, 'ReadDouble', host);
   }
-  /** Execute the canonical register, memory, console, and error behavior. */
+  /** Await a parsed double, then write its high word to $f1 before its low word to $f0. Numeric-input failures become syscall diagnostics before register writes. */
   override async simulate(statement: ProgramStatement): Promise<void> {
-    let value: number;
-    try {
-      value = await this.host.systemIO.readDouble(this.getNumber());
-    } catch (error) {
-      if (!(error instanceof NumberFormatException)) throw error;
-      throw this.syscallException(statement, 'invalid double input');
-    }
+    const value = await this.readNumber(statement, 'double');
     const bits = new DataView(new ArrayBuffer(8));
     bits.setFloat64(0, value);
     const raw = bits.getBigInt64(0);

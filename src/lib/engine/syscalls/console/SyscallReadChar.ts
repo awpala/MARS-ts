@@ -9,7 +9,7 @@ export class SyscallReadChar extends AbstractSyscall {
   constructor(host: SyscallHost) {
     super(12, 'ReadChar', host);
   }
-  /** Execute the canonical register, memory, console, and error behavior. */
+  /** Await one input character and write its code to $v0; a RangeError from the read becomes a syscall diagnostic before any register write. */
   override async simulate(statement: ProgramStatement): Promise<void> {
     let value: number;
     try {

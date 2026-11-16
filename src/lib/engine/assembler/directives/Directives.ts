@@ -39,7 +39,7 @@ export class Directives {
     '.text',
     'Subsequent items (instructions) stored in Text segment at next available address'
   );
-  /** Store the listed value(s) as 32 bit words on word boundary. */
+  /** Store 32-bit words, aligning the data address to a word boundary when automatic alignment is enabled. */
   static readonly WORD = new Directives(
     '.word',
     'Store the listed value(s) as 32 bit words on word boundary'
@@ -56,12 +56,12 @@ export class Directives {
   );
   /** Store the listed value(s) as 8 bit bytes. */
   static readonly BYTE = new Directives('.byte', 'Store the listed value(s) as 8 bit bytes');
-  /** Align next data item on specified byte boundary (0=byte, 1=half, 2=word, 3=double). */
+  /** For a positive n, align the data address to 2^n bytes; zero disables automatic data alignment until the next .data or .kdata directive. */
   static readonly ALIGN = new Directives(
     '.align',
     'Align next data item on specified byte boundary (0=byte, 1=half, 2=word, 3=double)'
   );
-  /** Store the listed value(s) as 16 bit halfwords on halfword boundary. */
+  /** Store 16-bit halfwords, aligning the data address to a halfword boundary when automatic alignment is enabled. */
   static readonly HALF = new Directives(
     '.half',
     'Store the listed value(s) as 16 bit halfwords on halfword boundary'
@@ -101,7 +101,7 @@ export class Directives {
     '.globl',
     'Declare the listed label(s) as global to enable referencing from other files'
   );
-  /** Set assembler variables.  Currently ignored but included for SPIM compatability. */
+  /** Set assembler variables.  Currently ignored but included for SPIM compatibility. */
   static readonly SET = new Directives(
     '.set',
     'Set assembler variables.  Currently ignored but included for SPIM compatability'
@@ -115,7 +115,7 @@ export class Directives {
   static readonly MACRO = new Directives('.macro', 'Begin macro definition.  See .end_macro');
   /** End macro definition.  See .macro. */
   static readonly END_MACRO = new Directives('.end_macro', 'End macro definition.  See .macro');
-  /** Insert the contents of the specified file.  Put filename in quotes.. */
+  /** Insert the contents of the specified file.  Put filename in quotes. */
   static readonly INCLUDE = new Directives(
     '.include',
     'Insert the contents of the specified file.  Put filename in quotes.'

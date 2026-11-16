@@ -5,7 +5,7 @@
 
 ## Context
 
-Production is live and stable at `https://mars-ts.dev`, connected to `awpala/MARS-ts` through its corresponding GitHub App in Coolify. The existing application prerenders its root route and builds static assets with Node 24. Simulator execution and source persistence belong to the browser. The repository has no production Dockerfile or application server.
+Production is live and stable at `https://mars-ts.dev`, connected to `awpala/MARS-ts` through its corresponding GitHub App in Coolify. The application prerenders its root route; the repository now requires Node 26 to build its static assets. Verify Node 26 selection in the installed builder before the next deployment; updating repository pins does not update an already deployed image. Simulator execution and source persistence belong to the browser. The repository has no production Dockerfile or application server.
 
 ## Decision
 
@@ -15,7 +15,7 @@ Use the corresponding GitHub App for source access and automatic deployment of m
 
 ## Consequences and alternatives
 
-This approach uses the existing build without adding production container files. The generated image and configuration depend on the installed Coolify/Nixpacks versions, so builder or hosting changes repeat checks of Node 24 selection, publication of the correct directory, static routing, and browser asset delivery. Coolify documents Nixpacks as being in maintenance mode and Railpack as Beta; reevaluate the builder if compatibility or reproducibility requirements change. A repository-owned Dockerfile would give tighter image control but adds configuration and validation beyond this runbook. See the [official build-strategy guidance](https://coolify.io/docs/applications/builds/nixpacks/overview).
+This approach uses the existing build without adding production container files. The generated image and configuration depend on the installed Coolify/Nixpacks versions, so builder or hosting changes repeat checks of Node 26 selection, publication of the correct directory, static routing, and browser asset delivery. Coolify documents Nixpacks as being in maintenance mode and Railpack as Beta; reevaluate the builder if compatibility or reproducibility requirements change. A repository-owned Dockerfile would give tighter image control but adds configuration and validation beyond this runbook. See the [official build-strategy guidance](https://coolify.io/docs/applications/builds/nixpacks/overview).
 
 Browser data remains scoped to the public origin. Changing domain or scheme does not migrate saved sources, and rolling back a server image does not roll back browser storage. Export/import is the existing migration path. Deployment does not add cloud synchronization or complete unfinished port milestones.
 

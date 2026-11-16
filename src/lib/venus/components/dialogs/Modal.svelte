@@ -8,9 +8,9 @@
     title: string;
     /** Required modal body; caller handles form submission. */
     children: Snippet;
-    /** Required dismissal callback; removes the modal from its parent. */
+    /** Required dismissal request callback; the caller decides whether to remove the modal, including while an operation is pending. */
     onclose: () => void;
-    /** Optional selector for initial focus inside the dialog; defaults to the first body control. */
+    /** Optional initial-focus selector within the dialog; by default, focus the first enabled body input, button, or textarea if one exists. */
     initialFocus?: string;
   };
   let { title, children, onclose, initialFocus }: Props = $props();
@@ -37,7 +37,7 @@
   }
 </script>
 
-<!-- @component Native same-tab dialog with focus containment, Escape/backdrop dismissal, and focus restoration. --modal-body-display and --modal-body-overflow allow callers to keep actions outside their own scrolling content. -->
+<!-- @component Native same-tab dialog with focus containment and Escape/backdrop dismissal requests. Cleanup restores focus to the previous element if it is still connected. --modal-body-display and --modal-body-overflow let callers keep actions outside their own scrolling content. -->
 <dialog
   {@attach attachDialog}
   aria-labelledby={id}

@@ -1,7 +1,7 @@
 import { loadPaneLayout, MIN_REGISTER_WIDTH, savePaneLayout } from '#lib/browser/PaneLayout.js';
 import {
   loadDisplaySettings,
-  MAX_SPEED_POSITION,
+  DEFAULT_DISPLAY_SETTINGS,
   saveDisplaySettings,
   type DisplaySettings
 } from '#lib/browser/DisplaySettings.js';
@@ -15,21 +15,9 @@ import {
 } from '../utils/geometry/layout.js';
 
 /** Persisted display fields other than Auto Save, which the source workspace owns. */
-const persistedKeys = [
-  'clearAllOutputsOnGo',
-  'promptClearBreakpoints',
-  'showRegisters',
-  'ascii',
-  'showLabels',
-  'showDataLabels',
-  'showTextLabels',
-  'labelSortState',
-  'showLines',
-  'highlightCurrentLine',
-  'hexValues',
-  'hexAddresses',
-  'speed'
-] as const satisfies readonly (keyof DisplaySettings)[];
+const persistedKeys = (Object.keys(DEFAULT_DISPLAY_SETTINGS) as (keyof DisplaySettings)[]).filter(
+  (key) => key !== 'autoSave'
+);
 
 function pick<T, K extends keyof T>(source: T, keys: readonly K[]): Pick<T, K> {
   return Object.fromEntries(keys.map((key) => [key, source[key]])) as Pick<T, K>;
@@ -40,37 +28,37 @@ export class DisplayPreferences {
   /** Selected main pane; Edit by default. */
   view = $state<MainView>('Edit');
   /** Browser-only preference to clear both consoles when Go starts a fresh program run; unselected by default. */
-  clearAllOutputsOnGo = $state(false);
+  clearAllOutputsOnGo = $state(DEFAULT_DISPLAY_SETTINGS.clearAllOutputsOnGo);
   /** Browser-only preference to confirm Clear all breakpoints in a dialog; unselected by default, clearing immediately as in MARS 4.5. */
-  promptClearBreakpoints = $state(false);
+  promptClearBreakpoints = $state(DEFAULT_DISPLAY_SETTINGS.promptClearBreakpoints);
   /** Selected Data Segment range, recovered with the desktop session. */
   dataSegment = $state<MemorySegment>('data');
   /** Relative aligned Data Segment page offset, recovered with the desktop session. */
   dataPageOffset = $state(0);
   /** Whether the register banks pane and its divider are visible; shown by default. */
-  showRegisters = $state(true);
+  showRegisters = $state(DEFAULT_DISPLAY_SETTINGS.showRegisters);
   /** Selected register bank; Registers by default. */
   registerTab = $state<RegisterBank>('Registers');
   /** Whether Execute shows the Labels pane; shown by default. */
-  showLabels = $state(true);
+  showLabels = $state(DEFAULT_DISPLAY_SETTINGS.showLabels);
   /** Include data labels in the Labels pane. */
-  showDataLabels = $state(true);
+  showDataLabels = $state(DEFAULT_DISPLAY_SETTINGS.showDataLabels);
   /** Include text labels in the Labels pane. */
-  showTextLabels = $state(true);
+  showTextLabels = $state(DEFAULT_DISPLAY_SETTINGS.showTextLabels);
   /** Legacy eight-state label sorting selection. */
-  labelSortState = $state(0);
+  labelSortState = $state(DEFAULT_DISPLAY_SETTINGS.labelSortState);
   /** Whether the source editor shows line numbers. */
-  showLines = $state(true);
+  showLines = $state(DEFAULT_DISPLAY_SETTINGS.showLines);
   /** Whether the editor highlights the caret line; on by default, as in Java MARS. */
-  highlightCurrentLine = $state(true);
+  highlightCurrentLine = $state(DEFAULT_DISPLAY_SETTINGS.highlightCurrentLine);
   /** Whether memory values display as ASCII. */
-  ascii = $state(false);
+  ascii = $state(DEFAULT_DISPLAY_SETTINGS.ascii);
   /** Whether register and memory values display in hexadecimal. */
-  hexValues = $state(true);
+  hexValues = $state(DEFAULT_DISPLAY_SETTINGS.hexValues);
   /** Whether addresses display in hexadecimal. */
-  hexAddresses = $state(true);
+  hexAddresses = $state(DEFAULT_DISPLAY_SETTINGS.hexAddresses);
   /** Legacy run-speed slider position from zero through forty. */
-  speed = $state(MAX_SPEED_POSITION);
+  speed = $state(DEFAULT_DISPLAY_SETTINGS.speed);
   /** Measured available width supplied by the workspace element. */
   workspaceWidth = $state(1000);
   /** Requested register banks pane width in pixels. */
@@ -108,7 +96,7 @@ export class DisplayPreferences {
       this.dataSegmentHeight = layout.dataSegmentHeight;
     }
     const settings = loadDisplaySettings();
-    if (!settings) return false;
+    if (!settings) return DEFAULT_DISPLAY_SETTINGS.autoSave;
     Object.assign(this, pick(settings, persistedKeys));
     return settings.autoSave;
   }

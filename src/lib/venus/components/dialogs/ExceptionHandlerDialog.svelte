@@ -27,7 +27,7 @@
   );
 
   function close() {
-    desktop.exceptionHandlerOpen = false;
+    desktop.modals.close('exceptionHandler');
   }
   function browse() {
     const current = kind === 'spim' ? customName : name;

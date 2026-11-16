@@ -10,7 +10,7 @@ export class SyscallRandDouble extends AbstractSyscall {
   constructor(host: SyscallHost) {
     super(44, 'RandDouble', host);
   }
-  /** Execute the canonical random-stream and register behavior. */
+  /** Draw a double in [0, 1) from stream $a0 into $f0/$f1; invalid register-pair access becomes a syscall diagnostic. */
   override simulate(statement: ProgramStatement): void {
     try {
       this.host.coprocessor1.setRegisterPairToDouble(

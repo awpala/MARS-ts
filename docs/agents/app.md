@@ -2,7 +2,7 @@
 
 Read this guide for port implementation and review: the framework-free simulator engine, Svelte components, SvelteKit routes, TypeScript boundaries, and styling. Use the [shared workflow](workflow.md) for ownership and organization, the [legacy guide](legacy.md) for Java semantics, and the [tooling policy](tooling.md) before choosing ecosystem APIs.
 
-The application package is [package.json](../../package.json), with SvelteKit 3 configuration in [vite.config.ts](../../vite.config.ts) and strict TypeScript in [tsconfig.json](../../tsconfig.json). Svelte 5 runes, Tailwind 4, Vite 8, TypeScript 6, and Vitest 4 are installed; the lockfile fixes exact versions. The application lives under [src/](../../src/). P1 and P2 validation is complete; remaining web IDE and platform parity implementation continues.
+The application package is [package.json](../../package.json), with SvelteKit 3 configuration in [vite.config.ts](../../vite.config.ts) and strict TypeScript in [tsconfig.json](../../tsconfig.json). Svelte 5 runes, Tailwind 4, Vite 8, TypeScript 6, and Vitest 5 are installed; the lockfile fixes exact versions. The application lives under [src/](../../src/). P1 and P2 validation is complete; remaining web IDE and platform parity implementation continues.
 
 ## Engine boundary
 
@@ -37,7 +37,7 @@ The simulator engine (assembler, instruction set, hardware, simulator, syscalls,
 ## TypeScript
 
 - Strict mode. Avoid `any`; use `unknown` with narrowing or a proper type.
-- Keep `@types/node` on the same major as the Node runtime (24).
+- Keep `@types/node` on the same major as the Node runtime (26).
 - Represent 32-bit machine words as `number` normalized with `| 0` or `>>> 0`, and 64-bit values as `bigint`. Name the convention in each engine module's README.
 
 ## Tailwind CSS

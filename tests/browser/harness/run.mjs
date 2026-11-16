@@ -14,6 +14,7 @@ import { createServer } from 'node:net';
 import { availableParallelism } from 'node:os';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { runnerArguments } from './runnerArguments.mjs';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const cli = resolve(root, 'node_modules/playwright/cli.js');
@@ -145,14 +146,7 @@ async function runGroup(group, cases) {
     `[${group}] ${cases.length} cases; port ${port}; snapshot ${snapshot}; log ${logPath}`
   );
   // Selection is already frozen in cases.txt; retain execution/reporting flags only.
-  const flags = args.filter(
-    (arg, index) =>
-      !arg.startsWith('--project=') &&
-      arg !== '--project' &&
-      args[index - 1] !== '--project' &&
-      arg !== '--last-failed' &&
-      (arg.startsWith('-') || args[index - 1]?.startsWith('-'))
-  );
+  const flags = runnerArguments(args);
   const selection = [
     `--config=${resolve(snapshot, 'playwright.config.ts')}`,
     `--project=${group}`,

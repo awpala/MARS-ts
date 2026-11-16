@@ -1,4 +1,5 @@
 import { tick } from 'svelte';
+import { ModalState } from './ModalState.svelte.js';
 import { Settings } from '#lib/engine/Settings.js';
 import {
   helpArticles,
@@ -7,8 +8,8 @@ import {
   type HelpArticle
 } from '#lib/help/articles.js';
 import {
-  runActions,
   breakpointActions,
+  requireAction,
   frozenBreakpointsHint,
   type Action
 } from '../utils/commands/actions.js';
@@ -20,15 +21,18 @@ import {
 } from '../utils/commands/settings.js';
 import type { RunState } from '../RunController.js';
 import { runSpeedValue, UNLIMITED_SPEED } from '../utils/execution/runSpeed.js';
-import { isSavableSource } from '../utils/sources/savableSource.js';
 import { DisplayPreferences } from './DisplayPreferences.svelte.js';
 import { SourceWorkspace } from './SourceWorkspace.svelte.js';
 import { SimulationState } from './SimulationState.svelte.js';
 import { DesktopPersistence } from './DesktopPersistence.svelte.js';
 import { SourceSearch } from './SourceSearch.svelte.js';
 
-/** Browser file-transfer capabilities supplied by mounted action components. */
-export type FileTransferCommand = 'import' | 'export' | 'exportAll';
+import {
+  isHelpCommand,
+  unhandledCommand,
+  type Command,
+  type FileTransferCommand
+} from '../utils/commands/commands.js';
 
 /** Footer content that depends on the selected view and the loaded program; the caret position depends on focus and stays with the renderer. */
 export type FooterState = {
@@ -44,19 +48,29 @@ export type FooterState = {
 
 /** Per-component composition root. Coordinates domain capabilities without owning their internal workflows. */
 export class DesktopState {
+  /** Sole owner of dialog selection and temporary blocking overlays. */
+  readonly modals = new ModalState();
   /** Display selection and geometry for this desktop. */
   readonly display = new DisplayPreferences();
-  /** Source buffers, file dialogs, and persistence for this desktop. */
-  readonly workspace: SourceWorkspace = new SourceWorkspace(this.display, {
-    invalidate: () => this.simulation.controller?.invalidate(),
-    report: (error) => this.simulation.report(error),
-    running: () => this.simulation.running,
-    assembleOnOpen: () =>
-      this.simulation.engineSettings[Settings.ASSEMBLE_ON_OPEN_ENABLED] ?? false,
-    assemble: () => this.simulation.assemble()
-  });
+  /** Source buffers, file-workflow drafts and queues, and persistence for this desktop; dialog visibility belongs to modals. */
+  readonly workspace: SourceWorkspace = new SourceWorkspace(
+    this.display,
+    {
+      invalidate: () => this.simulation.controller?.invalidate(),
+      report: (error) => this.simulation.report(error),
+      running: () => this.simulation.running,
+      assembleOnOpen: () =>
+        this.simulation.engineSettings[Settings.ASSEMBLE_ON_OPEN_ENABLED] ?? false,
+      assemble: () => this.simulation.assemble()
+    },
+    this.modals
+  );
   /** Machine host, execution presentation, pending input, and messages for this desktop. */
-  readonly simulation: SimulationState = new SimulationState(this.workspace, this.display);
+  readonly simulation: SimulationState = new SimulationState(
+    this.workspace,
+    this.display,
+    this.modals
+  );
   /** Search dialog state targeting this desktop's workspace. */
   readonly search = new SourceSearch(this.workspace);
   /** Browser-local recovery of the existing state graph and stable execution checkpoints. */
@@ -71,7 +85,10 @@ export class DesktopState {
   /** Whether restored layout has been measured and can replace the loading overlay. */
   visible = $state(false);
   /** Currently displayed help article; null leaves Help closed. */
-  help = $state.raw<HelpArticle | null>(null);
+  get help(): HelpArticle | null {
+    const modal = this.modals.primary;
+    return modal?.kind === 'help' ? modal.article : null;
+  }
   /** Help browser tab shown when Help opens; starts on the overview and is recovered with the session. */
   helpTab = $state(helpTabs[0].id);
   /** Nested Help browser article per top-level tab, retained across openings and recovered with the session. */
@@ -81,20 +98,9 @@ export class DesktopState {
     return this.help === helpBrowserArticle;
   }
   set helpBrowserOpen(open: boolean) {
-    if (open) this.help = helpBrowserArticle;
-    else if (this.helpBrowserOpen) this.help = null;
+    if (open) this.modals.open({ kind: 'help', article: helpBrowserArticle });
+    else if (this.helpBrowserOpen) this.modals.close('help');
   }
-  /** Whether the memory-layout settings dialog owns interaction; closed by default. */
-  memoryConfigurationOpen = $state(false);
-  /** Whether the automatic exception-handler settings dialog owns interaction; closed by default. */
-  exceptionHandlerOpen = $state(false);
-  /** Whether the memory-dump selection dialog owns interaction; closed by default. */
-  dumpOpen = $state(false);
-  /** Whether the Clear all breakpoints confirmation, enabled by its display preference, owns interaction; closed by default. */
-  clearBreakpointsOpen = $state(false);
-  /** Status text of the file transfer currently blocking interaction, such as `Exporting…`; null when none is pending. */
-  transferStatus = $state<string | null>(null);
-  private transferToken = 0;
   private fileTransfers: Partial<Record<FileTransferCommand, () => void | Promise<void>>> = {};
 
   /** Register a mounted file-transfer behavior and return teardown that removes only that registration. */
@@ -109,25 +115,11 @@ export class DesktopState {
   }
   /** Block interaction behind a transfer status until the returned release runs; a later transfer supersedes this one, whose release then does nothing. */
   beginTransfer(status: string): () => void {
-    const token = ++this.transferToken;
-    this.transferStatus = status;
-    return () => {
-      if (this.transferToken === token) this.transferStatus = null;
-    };
+    return this.modals.begin({ kind: 'transfer', status });
   }
-  /** Whether a desktop dialog or pending file transfer currently owns interaction. */
+  /** Whether the modal state machine currently blocks ordinary desktop interaction. */
   get hasModal(): boolean {
-    return !!(
-      this.transferStatus !== null ||
-      this.workspace.modal ||
-      this.help ||
-      this.memoryConfigurationOpen ||
-      this.exceptionHandlerOpen ||
-      this.dumpOpen ||
-      this.clearBreakpointsOpen ||
-      this.simulation.dialogRequest ||
-      this.simulation.inputRequest?.prompt
-    );
+    return this.modals.isOpen;
   }
   /** Live state of one engine setting: its value, whether execution blocks changing it, and the request to invert it. */
   private engineState(id: number) {
@@ -207,10 +199,11 @@ export class DesktopState {
     });
   }
 
-  /** Start in onMount; return teardown for initialization/reveal frames and the owned session. */
+  /** Start in onMount. Teardown cancels initialization/reveal frames, flushes recovery, seals modal transitions, releases workspace handles, and starts simulation cleanup. */
   mount = (): (() => void) => {
     let disposed = false;
     let cleanup: (() => void) | undefined;
+    let releasePersistence: (() => void) | undefined;
     let revealFrame: number | undefined;
     // Let the loading indicator paint before synchronous engine initialization.
     let initializeFrame = requestAnimationFrame(() => {
@@ -218,6 +211,7 @@ export class DesktopState {
         this.workspace.autoSave = this.display.restore();
         this.workspace.restore();
         cleanup = this.simulation.start();
+        releasePersistence = this.persistence.mount();
         this.persistence.restore();
         this.workspace.activate();
         this.ready = true;
@@ -236,6 +230,8 @@ export class DesktopState {
       disposed = true;
       cancelAnimationFrame(initializeFrame);
       if (revealFrame !== undefined) cancelAnimationFrame(revealFrame);
+      releasePersistence?.();
+      this.modals.dispose();
       this.workspace.dispose();
       cleanup?.();
     };
@@ -246,54 +242,73 @@ export class DesktopState {
     // History and program ownership mutate inside the raw engine; subscribe before short-circuiting.
     void this.simulation.execution?.revision;
     if (action.unavailable) return false;
-    if (action.command === 'exceptionHandler') return !!this.simulation.machine;
-    if (action.command === 'memoryConfiguration')
-      return !!this.simulation.machine && !this.simulation.controller?.isBusy();
-    if (['clearOutput', 'clearAllOutput'].includes(action.command)) return true;
-    if (action.command === 'assemble')
-      return (
-        !!this.workspace.current && !this.workspace.current.readOnly && !this.simulation.running
-      );
-    if (['pause', 'stop'].includes(action.command)) return this.simulation.running;
-    if (['go', 'step'].includes(action.command))
-      return (
-        this.simulation.execution?.status === 'assembled' ||
-        this.simulation.execution?.status === 'paused'
-      );
-    if (action.command === 'backstep')
-      return (
-        !!this.simulation.machine?.program?.getBackStepper() &&
-        !this.simulation.machine.program.getBackStepper()!.empty() &&
-        !this.simulation.running &&
-        this.simulation.execution?.status !== 'idle'
-      );
-    if (action.command === 'dump')
-      return (
-        !!this.simulation.loadedFilename &&
-        !this.simulation.controller?.isBusy() &&
-        this.simulation.execution?.status !== 'idle'
-      );
-    if (action.command === 'reset')
-      return !!this.simulation.execution?.statements.length && !this.simulation.running;
-    if (['clearBreakpoints', 'toggleBreakpoints'].includes(action.command))
-      return this.simulation.breakpoints.length > 0 && !this.breakpointsFrozen;
-    if (helpArticles.some((article) => article.id === action.command)) return true;
-    if (this.simulation.running && action.command !== 'copy') return false;
-    if (['new', 'open', 'import', 'autoSave'].includes(action.command)) return true;
-    if (action.command === 'exportAll')
-      return (
-        this.workspace.tabs.some((tab) => !tab.readOnly) || this.workspace.libraryFiles.length > 0
-      );
-    if (!this.workspace.current) return false;
-    if (
-      this.workspace.current.readOnly &&
-      ['cut', 'paste', 'undo', 'redo', 'save', 'saveAs'].includes(action.command)
-    )
-      return false;
-    if (['save', 'saveAs'].includes(action.command)) return isSavableSource(this.workspace.current);
-    if (action.command === 'undo') return this.workspace.current.undo.length > 0;
-    if (action.command === 'redo') return this.workspace.current.redo.length > 0;
-    return true;
+    const command = action.command;
+    if (isHelpCommand(command)) return true;
+    const { simulation, workspace } = this;
+    switch (command) {
+      case 'exceptionHandler':
+        return !!simulation.machine;
+      case 'memoryConfiguration':
+        return !!simulation.machine && !simulation.controller?.isBusy();
+      case 'clearOutput':
+      case 'clearAllOutput':
+        return true;
+      case 'assemble':
+        return !!workspace.current && !workspace.current.readOnly && !simulation.running;
+      case 'pause':
+      case 'stop':
+        return simulation.running;
+      case 'go':
+      case 'step':
+        return (
+          simulation.execution?.status === 'assembled' || simulation.execution?.status === 'paused'
+        );
+      case 'backstep':
+        return (
+          !!simulation.machine?.program?.getBackStepper() &&
+          !simulation.machine.program.getBackStepper()!.empty() &&
+          !simulation.running &&
+          simulation.execution?.status !== 'idle'
+        );
+      case 'dump':
+        return (
+          !!simulation.loadedFilename &&
+          !simulation.controller?.isBusy() &&
+          simulation.execution?.status !== 'idle'
+        );
+      case 'reset':
+        return !!simulation.execution?.statements.length && !simulation.running;
+      case 'clearBreakpoints':
+      case 'toggleBreakpoints':
+        return simulation.breakpoints.length > 0 && !this.breakpointsFrozen;
+      case 'import':
+        return !simulation.running;
+      case 'export':
+        return !simulation.running && !!workspace.current;
+      case 'exportAll':
+        return (
+          !simulation.running &&
+          (workspace.tabs.some((tab) => !tab.readOnly) || workspace.libraryFiles.length > 0)
+        );
+      case 'new':
+      case 'open':
+      case 'autoSave':
+      case 'close':
+      case 'closeAll':
+      case 'save':
+      case 'saveAs':
+      case 'saveAll':
+      case 'undo':
+      case 'redo':
+      case 'cut':
+      case 'copy':
+      case 'paste':
+      case 'selectAll':
+      case 'find':
+        return workspace.enabled(command);
+      default:
+        return unhandledCommand(command);
+    }
   };
   /** Explain why an action is disabled, for its tooltip, or undefined when no explanation applies. */
   disabledReason = (action: Action): string | undefined =>
@@ -301,7 +316,7 @@ export class DesktopState {
       ? frozenBreakpointsHint
       : undefined;
   /** Read toggle state for command presentation, or undefined for a momentary command. */
-  isPressed = (command: string): boolean | undefined =>
+  isPressed = (command: Command): boolean | undefined =>
     command === 'autoSave'
       ? this.workspace.autoSave
       : command === 'toggleBreakpoints'
@@ -309,62 +324,90 @@ export class DesktopState {
         : undefined;
 
   /** Close menus and route a command to its owning domain. */
-  execute = async (command: string): Promise<void> => {
+  execute = async (command: Command): Promise<void> => {
+    if (!this.enabled(requireAction(command))) return;
     if (command === 'clearOutput' || command === 'clearAllOutput') {
       this.simulation.clearOutput(command === 'clearAllOutput');
       return;
     }
-    const article = helpArticles.find((entry) => entry.id === command);
     const confirmClear = command === 'clearBreakpoints' && this.display.promptClearBreakpoints;
     if (command !== 'autoSave')
       this.closeMenus(
-        !!article ||
+        isHelpCommand(command) ||
           command === 'memoryConfiguration' ||
           command === 'exceptionHandler' ||
           command === 'dump' ||
           confirmClear
       );
-    if (confirmClear) {
-      this.clearBreakpointsOpen = true;
+    if (isHelpCommand(command)) {
+      this.modals.open({
+        kind: 'help',
+        article: helpArticles.find((article) => article.id === command)!
+      });
       return;
     }
-    if (command === 'dump') {
-      if (this.enabled({ command, label: 'Dump Memory' })) this.dumpOpen = true;
-      return;
+    switch (command) {
+      case 'dump':
+        this.modals.open({ kind: 'dump' });
+        return;
+      case 'memoryConfiguration':
+        this.modals.open({ kind: 'memoryConfiguration' });
+        return;
+      case 'exceptionHandler':
+        this.modals.open({ kind: 'exceptionHandler' });
+        return;
+      case 'import':
+      case 'export':
+      case 'exportAll':
+        await this.fileTransfers[command]?.();
+        return;
+      case 'clearBreakpoints':
+        if (confirmClear) {
+          this.modals.open({ kind: 'clearBreakpoints' });
+          return;
+        }
+        await this.simulation.runCommand(command);
+        return;
+      case 'assemble':
+      case 'go':
+      case 'step':
+      case 'backstep':
+      case 'pause':
+      case 'stop':
+      case 'reset':
+      case 'toggleBreakpoints':
+        await this.simulation.runCommand(command);
+        return;
+      case 'new':
+      case 'open':
+      case 'autoSave':
+      case 'close':
+      case 'closeAll':
+      case 'save':
+      case 'saveAs':
+      case 'saveAll':
+      case 'undo':
+      case 'redo':
+      case 'cut':
+      case 'copy':
+      case 'paste':
+      case 'selectAll':
+      case 'find':
+        if (command === 'find') this.search.findStatus = '';
+        await this.workspace.execute(command);
+        return;
+      default:
+        unhandledCommand(command);
     }
-    if (command === 'memoryConfiguration') {
-      if (this.simulation.machine && !this.simulation.controller?.isBusy())
-        this.memoryConfigurationOpen = true;
-      return;
-    }
-    if (command === 'exceptionHandler') {
-      if (this.simulation.machine) this.exceptionHandlerOpen = true;
-      return;
-    }
-    if (article) {
-      this.help = article;
-      return;
-    }
-    const transfer = this.fileTransfers[command as FileTransferCommand];
-    if (transfer) {
-      await transfer();
-      return;
-    }
-    if ([...runActions, ...breakpointActions].some((entry) => entry.command === command)) {
-      await this.simulation.runCommand(command);
-      return;
-    }
-    if (command === 'find') this.search.findStatus = '';
-    await this.workspace.execute(command);
   };
   /** Clear breakpoints after confirmation, unless maximum speed locked them while the dialog was open. */
   confirmClearBreakpoints = async (): Promise<void> => {
-    this.clearBreakpointsOpen = false;
+    this.modals.close('clearBreakpoints');
     if (!this.breakpointsFrozen) await this.simulation.runCommand('clearBreakpoints');
   };
   /** Dismiss Help without resetting source-workflow queues. */
   closeHelp = (): void => {
-    this.help = null;
+    this.modals.close('help');
   };
   /** Transfer a displayed example through the normal new-file/edit workflow and focus its source. */
   openHelpSource = async (source: string): Promise<void> => {

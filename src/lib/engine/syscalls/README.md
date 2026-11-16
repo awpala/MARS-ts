@@ -16,7 +16,9 @@ Each class and interface lives in its own source file. The module root owns the 
 | [dialogs/](dialogs/)         | Dialog syscall algorithms and their shared abstract base, using the injected dialog adapter                                                          |
 | [midi/](midi/)               | MIDI tone services, their shared argument-validation base, and the session tone generator with its injected sound-host contract                      |
 
-The folders partition the legacy syscall package by service responsibility; translated class names, service numbers, and algorithms remain unchanged. Random state and its generator stay with the random services, the shared dialog base stays with its subclasses, and `ToneGenerator` stays with the MIDI services, as it does in the Java package. Add a service to its semantic family and register its factory in the root loader. The root tests cover interactions across these families; this README documents the entire module.
+The folders partition the legacy syscall package by service responsibility; translated class names, service numbers, and algorithms remain unchanged. Random state and its generator stay with the random services, the shared numeric console-input and dialog bases stay with their subclasses, and `ToneGenerator` stays with the MIDI services, as it does in the Java package. Add a service to its semantic family and register its factory in the root loader. The root tests cover interactions across these families; this README documents the entire module.
+
+`console/AbstractReadNumberSyscall` extracts the repeated read-and-catch algorithm from `SyscallReadInt.java`, `SyscallReadFloat.java`, and `SyscallReadDouble.java`. It awaits the selected `SystemIO` parser and translates only `NumberFormatException`, using the current assigned service number. Concrete services retain their register destinations, raw-bit conversion, and write order outside that catch boundary. Console trimming and dialog parsing remain distinct; dialog input does not inherit this console-only base.
 
 ## Class and interface relationships
 
@@ -35,7 +37,9 @@ flowchart LR
 
   subgraph console["console/"]
     ConsoleOutput["SyscallPrintInt<br/>SyscallPrintFloat<br/>SyscallPrintDouble<br/>SyscallPrintString<br/>SyscallPrintChar<br/>SyscallPrintIntHex<br/>SyscallPrintIntBinary<br/>SyscallPrintIntUnsigned"]
-    ConsoleInput["SyscallReadInt<br/>SyscallReadFloat<br/>SyscallReadDouble<br/>SyscallReadString<br/>SyscallReadChar"]
+    AbstractReadNumberSyscall([AbstractReadNumberSyscall])
+    NumericInput["SyscallReadInt<br/>SyscallReadFloat<br/>SyscallReadDouble"]
+    ConsoleInput["SyscallReadString<br/>SyscallReadChar"]
   end
 
   subgraph heap["heap/"]
@@ -76,6 +80,8 @@ flowchart LR
 
   Syscall --> SimulationCode
   AbstractSyscall ==> Syscall
+  AbstractReadNumberSyscall --> AbstractSyscall
+  NumericInput --> AbstractReadNumberSyscall
   AbstractDialogSyscall --> AbstractSyscall
   ConsoleOutput & ConsoleInput & SyscallSbrk & Termination & Random --> AbstractSyscall
   Dialogs --> AbstractDialogSyscall
@@ -118,3 +124,5 @@ The [random and Swing dialog captures](../../../../tests/oracle/platform-syscall
 `ToneGenerator.java` holds three classes, which follow the module's one class or interface per file rule: `ToneGenerator` keeps its class, the package-private `Tone` becomes the validated `Tone` record, and the `ToneGeneratorHost` interface replaces `Tone`'s sequencer playback and the `EndOfTrackListener` wait, while `SyscallMidiOut` and `SyscallMidiOutSync` keep their Java names and service numbers. `AbstractMidiSyscall` extracts the argument validation that both Java classes repeat: `$a0`–`$a3` are read as signed 32-bit values, and an out-of-range pitch, instrument, or volume (outside 0–127) or a negative duration becomes 60, 0, 100, or 1000 before any byte conversion, so values with high bits set take the default rather than wrapping. Neither service writes registers. Each machine owns one `ToneGenerator`, which passes the validated `Tone` to an optional injected `ToneGeneratorHost` instead of opening a `javax.sound.midi` sequencer. MidiOut ignores the host's completion; MidiOutSync returns the host's promise, so the simulator suspends the current instruction until the host ends the wait. Without a host, tones are silent and MidiOutSync returns synchronously, as Java does without a MIDI device, without reproducing Java's stack trace. Host failures are swallowed as Java's tone code swallows its MIDI exceptions. The engine's stop listener calls the host release that ends a pending wait, so Stop and Pause apply at the syscall boundary immediately rather than after the tone. The browser's sine-wave host, autoplay preparation, timer-based waits, and voice limit belong to the [browser module](../../browser/README.md) and [ADR 0015](../../../../docs/adrs/0015-midi-web-audio-tones.md).
 
 The [MIDI sequence captures](../../../../tests/oracle/platform-syscalls/README.md) record what the actual Java services request through a substituted output device: a program change and note-on at tick 0 and a note-off at tick `duration` on channel 0, at 1000 microseconds per tick of a resolution-1 sequence, so ticks are milliseconds. The [engine comparison](platform-syscalls.test.ts) checks every captured tone, default, register state, and synchronous/asynchronous return, together with the no-device path, host failures, and suspension and Stop release through the actual syscall instruction. Timbre and Java's sequencer latency are not parity targets.
+
+The MIDI host receives an explicit `waitForEnd` flag: service 31 starts playback without retaining a completion waiter, while service 33 requests its duration promise. Argument validation, oracle-observed return ordering, register effects, and Stop release remain unchanged.

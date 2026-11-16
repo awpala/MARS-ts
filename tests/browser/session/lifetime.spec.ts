@@ -47,6 +47,157 @@ async function deferFileReads(page: Page) {
   });
 }
 
+test('finished and canceled save workflows release their buffer and history', async ({ page }) => {
+  await openIsolatedDesktop(page);
+  const result = await page.evaluate(async () => {
+    const workspacePath = '/src/lib/venus/state/SourceWorkspace.svelte.ts';
+    const displayPath = '/src/lib/venus/state/DisplayPreferences.svelte.ts';
+    const modalPath = '/src/lib/venus/state/ModalState.svelte.ts';
+    const { ModalState } = (await import(
+      /* @vite-ignore */ modalPath
+    )) as typeof import('../../../src/lib/venus/state/ModalState.svelte.js');
+    const modals = new ModalState();
+    const { SourceWorkspace } = (await import(
+      /* @vite-ignore */ workspacePath
+    )) as typeof import('../../../src/lib/venus/state/SourceWorkspace.svelte.js');
+    const { DisplayPreferences } = (await import(
+      /* @vite-ignore */ displayPath
+    )) as typeof import('../../../src/lib/venus/state/DisplayPreferences.svelte.js');
+    const workspace = new SourceWorkspace(
+      new DisplayPreferences(),
+      {
+        invalidate() {},
+        report(error) {
+          throw error;
+        },
+        running: () => false,
+        assembleOnOpen: () => false,
+        assemble() {}
+      },
+      modals
+    );
+    workspace.createSource('nop');
+    await workspace.execute('saveAs');
+    const prompted = !!workspace.saveTarget;
+    workspace.dismiss();
+    const canceled = workspace.saveTarget === undefined;
+    workspace.startClose([workspace.current!.id]);
+    workspace.saveAndClose();
+    workspace.confirmSave();
+    const closed =
+      workspace.editor.getEditPanes().length === 0 && workspace.saveTarget === undefined;
+    workspace.createSource('add $t0, $t0, $t0');
+    await workspace.execute('saveAs');
+    workspace.dispose();
+    modals.dispose();
+    return { prompted, canceled, closed, disposed: workspace.saveTarget === undefined };
+  });
+  expect(result).toEqual({ prompted: true, canceled: true, closed: true, disposed: true });
+});
+
+test('an unknown simulation command cannot fall through to Go', async ({ page }) => {
+  await openIsolatedDesktop(page);
+  const result = await page.evaluate(async () => {
+    const workspacePath = '/src/lib/venus/state/SourceWorkspace.svelte.ts';
+    const displayPath = '/src/lib/venus/state/DisplayPreferences.svelte.ts';
+    const modalPath = '/src/lib/venus/state/ModalState.svelte.ts';
+    const { ModalState } = (await import(
+      /* @vite-ignore */ modalPath
+    )) as typeof import('../../../src/lib/venus/state/ModalState.svelte.js');
+    const modals = new ModalState();
+    const simulationPath = '/src/lib/venus/state/SimulationState.svelte.ts';
+    const { SourceWorkspace } = (await import(
+      /* @vite-ignore */ workspacePath
+    )) as typeof import('../../../src/lib/venus/state/SourceWorkspace.svelte.js');
+    const { DisplayPreferences } = (await import(
+      /* @vite-ignore */ displayPath
+    )) as typeof import('../../../src/lib/venus/state/DisplayPreferences.svelte.js');
+    const { SimulationState } = (await import(
+      /* @vite-ignore */ simulationPath
+    )) as typeof import('../../../src/lib/venus/state/SimulationState.svelte.js');
+    const display = new DisplayPreferences();
+    const workspace = new SourceWorkspace(
+      display,
+      {
+        invalidate() {},
+        report(error) {
+          throw error;
+        },
+        running: () => false,
+        assembleOnOpen: () => false,
+        assemble() {}
+      },
+      modals
+    );
+    workspace.createSource('.text\naddiu $t0, $zero, 42\n');
+    const simulation = new SimulationState(workspace, display, modals);
+    const release = simulation.start();
+    simulation.assemble();
+    await simulation.runCommand('g0' as never);
+    const result = {
+      status: simulation.controller!.getState().status,
+      started: simulation.controller!.getState().started,
+      register: simulation.machine!.registerFile.getValue(8),
+      reported: simulation.messages.includes('Unknown command: g0')
+    };
+    release();
+    workspace.dispose();
+    modals.dispose();
+    return result;
+  });
+  expect(result).toEqual({ status: 'assembled', started: false, register: 0, reported: true });
+});
+
+for (const submission of ['effect', 'pagehide'] as const) {
+  test(`desktop removal preserves the latest ${submission} recovery snapshot`, async ({ page }) => {
+    await openIsolatedDesktop(page);
+    await page.getByRole('button', { name: 'New', exact: true }).click();
+    const source = page.getByRole('textbox', { name: 'Source mips1.asm', exact: true });
+    await source.fill('nop\nnop\n');
+    await page.evaluate(async (submission) => {
+      const input = document.querySelector<HTMLTextAreaElement>('[data-testid="source-input"]')!;
+      input.setSelectionRange(3, 5);
+      input.dispatchEvent(new Event('select', { bubbles: true }));
+      if (submission === 'effect') {
+        // Submit the reactive snapshot, then remove the desktop before the 200 ms write window.
+        await Promise.resolve();
+      } else window.dispatchEvent(new PageTransitionEvent('pagehide'));
+      await (window as LifetimeWindow).releaseDesktop();
+    }, submission);
+    const saved = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('mars-ts:desktop-session:v1')!)
+    );
+    expect(saved.selection).toEqual([3, 5]);
+    expect(saved.editHistory[0].text).toBe('nop\nnop\n');
+    await mountDesktop(page);
+    await expect(source).toHaveValue('nop\nnop\n');
+    await expect
+      .poll(() =>
+        source.evaluate((input: HTMLTextAreaElement) => [input.selectionStart, input.selectionEnd])
+      )
+      .toEqual([3, 5]);
+  });
+}
+
+test('page exit after a same-turn edit drops the preceding executable checkpoint', async ({
+  page
+}) => {
+  await openIsolatedDesktop(page);
+  await page.getByRole('button', { name: 'New', exact: true }).click();
+  const source = page.getByRole('textbox', { name: 'Source mips1.asm', exact: true });
+  await source.fill('.text\nnop\n');
+  await page.getByRole('button', { name: 'Assemble', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit', exact: true }).click();
+  const saved = await source.evaluate((input: HTMLTextAreaElement) => {
+    input.value = '.text\naddiu $t0, $zero, 42\n';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    window.dispatchEvent(new PageTransitionEvent('pagehide'));
+    return JSON.parse(localStorage.getItem('mars-ts:desktop-session:v1')!);
+  });
+  expect(saved.execution).toBeNull();
+  expect(saved.editHistory[0].text).toBe('.text\naddiu $t0, $zero, 42\n');
+});
+
 for (const staleResult of ['success', 'error'] as const) {
   test(`a newer import selection supersedes an older ${staleResult}`, async ({ page }) => {
     await openIsolatedDesktop(page);

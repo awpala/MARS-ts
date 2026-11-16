@@ -4,12 +4,13 @@ import { createContext, tick } from 'svelte';
 import type { Symbol as AssemblySymbol } from '#lib/engine/assembler/symbols/Symbol.js';
 import { Binary, NumberFormatException } from '#lib/engine/formatting/Binary.js';
 import type { Globals } from '#lib/engine/Globals.js';
+import { Settings } from '#lib/engine/Settings.js';
 import { AccessNotice } from '#lib/engine/hardware/notices/AccessNotice.js';
+import type { MemoryAccessNotice } from '#lib/engine/hardware/notices/MemoryAccessNotice.js';
 import type { RunController, RunState } from '../../RunController.js';
 import type { DisplayPreferences } from '../../state/DisplayPreferences.svelte.js';
 import type { SimulationState } from '../../state/SimulationState.svelte.js';
 import { errorMessage } from '#lib/browser/errorMessage.js';
-import { observesWrites } from '../../utils/execution/runSpeed.js';
 import {
   locateAddress,
   pageStart,
@@ -32,11 +33,7 @@ export interface ExecuteSource {
   readonly snapshot: RunState;
 }
 
-/**
- * Navigation, formatting, memory access, and write observation shared by the Text Segment, Labels, and Data Segment panes.
- * One instance serves one mounted Execute view. The desktop's display and simulation owners keep every persisted value (range, page, label selection, display bases),
- * which the view reads and writes directly, and the view holds only transient highlight state. Panes reach it through context; its owner starts `observeWrites` and `revealSelection` from component effects.
- */
+/** Navigation, formatting, memory access, and write observation for one mounted Execute view. Display and simulation owners retain persisted range, page, label selection, and display bases; this view owns transient highlights and edit errors. Panes access it through context; the mounting component starts observeWrites, resetObservation, and revealSelection in effects and owns their cleanup. */
 export class ExecuteView {
   private readonly source: ExecuteSource;
   private readonly display: DisplayPreferences;
@@ -206,16 +203,10 @@ export class ExecuteView {
     };
   }
 
-  /**
-   * Follow observed writes with the highlight, the matching page, and a scroll to the word. Writes are observed during stepped and timed runs
-   * and Backstep; TextSegmentWindow forwards changed code even when ordinary data observation is off. Returns the teardown for an effect.
-   */
+  /** Follow stepped, timed, and Backstep writes with a highlight, page selection, and scroll. Controller publications synchronously adjust subscriptions: unlimited runs observe only text ranges when self-modification is enabled, and changes to loaded instructions remain visible when ordinary data observation is off. Return effect teardown for subscriptions and pending reveals. */
   observeWrites(): () => void {
     const { machine, controller } = this.source;
-    const releaseSimulator = machine.simulator.subscribe((notice) => {
-      if (observesWrites(notice)) this.memoryHighlighting = true;
-    });
-    const releaseMemory = machine.memory.addObserver((notice) => {
+    const observe = (notice: MemoryAccessNotice) => {
       if (notice.getAccessType() !== AccessNotice.WRITE) return;
       const address = notice.getAddress() & ~3;
       const previousCode = this.observedText[address];
@@ -233,11 +224,40 @@ export class ExecuteView {
         if (reveal === this.memoryReveal)
           this.revealTarget(document.getElementById(this.memoryId(address)));
       });
+    };
+    let mode: 'all' | 'text' | 'none' | undefined;
+    let releases: (() => void)[] = [];
+    // Controller publication is synchronous, so the first Step/timed write is observed before Svelte effects run.
+    const releaseController = controller.subscribe((state) => {
+      if (controller.isObservingWrites()) this.memoryHighlighting = true;
+      const next =
+        state.status !== 'running' || controller.isObservingWrites()
+          ? 'all'
+          : machine.getSettings().getBooleanSetting(Settings.SELF_MODIFYING_CODE_ENABLED)
+            ? 'text'
+            : 'none';
+      if (next === mode) return;
+      mode = next;
+      releases.forEach((release) => release());
+      const memory = machine.memory;
+      releases =
+        mode === 'all'
+          ? [memory.addObserver(observe)]
+          : mode === 'text'
+            ? [
+                memory.addObserver(observe, memory.textBaseAddress, memory.textLimitAddress - 4),
+                memory.addObserver(
+                  observe,
+                  memory.kernelTextBaseAddress,
+                  memory.kernelTextLimitAddress - 4
+                )
+              ]
+            : [];
     });
     return () => {
       this.memoryReveal++;
-      releaseMemory();
-      releaseSimulator();
+      releaseController();
+      releases.forEach((release) => release());
     };
   }
 

@@ -3,11 +3,12 @@ import { on } from 'svelte/events';
 import { getDesktop } from '../context/desktop.js';
 import { keyboardAction, physicalKeyAction } from '../utils/commands/actions.js';
 import { useKeyboard } from './useKeyboard.js';
+import type { Command } from '../utils/commands/commands.js';
 
 /** Bind desktop shortcuts and the dirty-source unload guard to the providing component's lifetime. */
 export function useDesktopKeyboard(
   closeMenus: () => void,
-  highlightShortcut: (command: string) => void
+  highlightShortcut: (command: Command) => void
 ): void {
   const desktop = getDesktop();
   const { workspace } = desktop;

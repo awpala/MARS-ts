@@ -137,7 +137,7 @@ export class SourceLibrary {
     return records;
   }
 
-  /** Writes an import batch in one storage operation so quota failures cannot partially import. */
+  /** Commit a source batch in one storage operation, rejecting duplicate normalized names before writing; quota failures leave the prior library intact. */
   saveMany(sources: readonly SavedSource[]): SavedSource[] {
     const records = this.read();
     const names = new Set<string>();
@@ -190,7 +190,7 @@ export class SourceLibrary {
     });
   }
 
-  /** Synchronously backs up all current text after edits, without changing explicit save baselines. */
+  /** Synchronously back up the supplied workspace drafts without changing their explicit save baselines. */
   saveWorkspace(drafts: readonly SourceDraft[]): void {
     this.storage().setItem(SOURCE_WORKSPACE_STORAGE_KEY, JSON.stringify(drafts));
   }

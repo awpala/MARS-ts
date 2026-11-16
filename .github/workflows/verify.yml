@@ -26,7 +26,7 @@ jobs:
           java-version: '21'
       - uses: actions/setup-node@v7
         with:
-          node-version: '24'
+          node-version: '26'
       # Xvfb/xauth are provisional oracle dependencies for actual Swing dialog probes.
       - name: Install harness and Swing oracle dependencies
         run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends shellcheck xvfb xauth libxtst6 libxi6 libxrender1 fontconfig fonts-dejavu-core

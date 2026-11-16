@@ -7,7 +7,7 @@
   const { simulation } = getDesktop();
 </script>
 
-<!-- @component Prompted syscall input; simulation context owns completion and cancellation. -->
+<!-- @component Prompted console-syscall input; simulation owns the request, draft, completion, and cancellation, while the desktop modal state owns visibility. -->
 {#if simulation.inputRequest?.prompt}<Modal title="Run Input" onclose={() => simulation.stop()}
     ><form
       onsubmit={(event) => {

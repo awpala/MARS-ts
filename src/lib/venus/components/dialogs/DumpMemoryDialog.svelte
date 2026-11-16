@@ -29,7 +29,7 @@
   const format = $derived(formats.find((item) => item.descriptor === descriptor)!);
 
   function close() {
-    if (!saving) desktop.dumpOpen = false;
+    if (!saving) desktop.modals.close('dump');
   }
   async function dump() {
     const segment = segments.find((item) => item.name === segmentName);
@@ -48,7 +48,7 @@
           'Canceling dump…'
         )
       )
-        desktop.dumpOpen = false;
+        desktop.modals.close('dump');
     } catch (failure) {
       error = errorMessage(failure);
     } finally {
@@ -58,7 +58,7 @@
   onDestroy(() => download.dispose());
 </script>
 
-<!-- @component Dump the current machine's populated text or data range using one of the six legacy formats. Draft choices and the save lifecycle belong to this mounted dialog; canceling the OS picker keeps the choices open. No source record or native handle is retained. -->
+<!-- @component Dump the current machine's populated text or data range using one of the six legacy formats. Draft choices and the save lifecycle belong to this mounted dialog; canceling the OS picker keeps the choices open. No source-library record is created, and a native save handle is used only during its transfer. -->
 <Modal title="Dump Memory To File" onclose={close} initialFocus="select">
   {#if segments.length}
     <form

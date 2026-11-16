@@ -21,7 +21,7 @@ export type HelpArticle = {
 };
 
 /** All Help menu entries, including the existing F1 overview and About article. */
-export const helpArticles: readonly HelpArticle[] = [
+const definitions = [
   { id: 'help', label: 'Help', title: 'MARS Help', markdownFile: 'Overview.md' },
   { id: 'about', label: 'About MARS', title: 'About MARS', markdownFile: 'About.md' },
   {
@@ -101,7 +101,16 @@ export const helpArticles: readonly HelpArticle[] = [
     markdownFile: 'Acknowledgements.md',
     loadHtml: () => import('./Acknowledgements.html?raw')
   }
-];
+] as const satisfies readonly HelpArticle[];
+
+/** Closed set of command identities derived from the bundled article catalog. */
+export type HelpArticleId = (typeof definitions)[number]['id'];
+
+/** All Help menu entries with typed identities and a uniform optional loader contract. */
+export const helpArticles: readonly (HelpArticle & {
+  /** Catalog-constrained desktop command and article identifier. */
+  readonly id: HelpArticleId;
+})[] = definitions;
 
 /** Direct GitHub view of an article's Markdown companion on the repository's main branch. */
 export function helpArticleOnlineUrl(article: HelpArticle): string {

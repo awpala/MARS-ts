@@ -11,10 +11,12 @@ Addresses and values are signed 32-bit `number` patterns; double bits use signed
 | Access family                               | Contract                                                                                                                             |
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | Byte, halfword, word, and general transfers | Preserve each operation's alignment, byte order, notifications, recording, and partial-boundary behavior                             |
-| Raw word operations                         | Use separate range and notification paths; they are not universal substitutes for ordinary access                                    |
+| Raw word operations                         | Share segment dispatch with ordinary transfers while retaining raw storage, alignment, diagnostics, notices, and undo behavior       |
 | Statement storage/fetch                     | Retain references in text and call the injected decoder for permitted word-based decoding, including self-modifying-code paths       |
 | Null/block inspection                       | Distinguish unallocated storage where exposed; ordinary missing data reads produce zero                                              |
 | Heap allocation                             | Return the prior heap address, round the new position to a word, and preserve negative-request, capacity, and Java-overflow behavior |
+
+`set` and `setRawWord` share `writeStorage`; `readBytes` and `getRawWord` share `readStorage`. These private helpers consolidate repeated segment selection from the corresponding Java methods. Writes still check text before MMIO, while reads check MMIO first. Table helpers select the existing byte-transfer or raw-word algorithm without allocating per-access descriptors or closures. Entry points retain their debug, alignment, notification, and backstep order, including the raw-write-specific out-of-range message. `getRawWordOrNull` keeps its distinct text/null/MMIO policy.
 
 `MemoryStatement` describes only `getBinaryStatement()`. Production composition supplies real `ProgramStatement` objects and decoding through `InstructionSet`; the interface does not introduce a replacement program model. `getStatementNoNotify()` suppresses text-fetch notices, but permitted execution from data still follows the notifying data-read path.
 

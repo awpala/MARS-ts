@@ -58,7 +58,7 @@
   }
 </script>
 
-<!-- @component Help article presentation, including the overview and About; the app-wide Modal owns dialog behavior. Adapted articles credit MARS, copyright 2003–2013 Pete Sanderson and Kenneth Vollmar, MIT. -->
+<!-- @component Help article presentation, including the overview and About; the caller's Modal owns dialog behavior. Adapted articles credit MARS, copyright 2003–2013 Pete Sanderson and Kenneth Vollmar, MIT. -->
 <article class="help-article" tabindex="-1" aria-label={article.title}>
   {#if article.loadHtml}
     {#key article.id}

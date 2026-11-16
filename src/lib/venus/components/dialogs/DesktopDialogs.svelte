@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Component } from 'svelte';
+  import type { DesktopModal, WorkspaceDialog } from '../../state/ModalState.svelte.js';
   import { getDesktop } from '../../context/desktop.js';
   import SyscallDialog from './SyscallDialog.svelte';
   import RunInputDialog from './RunInputDialog.svelte';
@@ -18,7 +19,6 @@
   import HelpDialog from './HelpDialog.svelte';
   import TransferStatusDialog from './TransferStatusDialog.svelte';
   const desktop = getDesktop();
-  const { workspace } = desktop;
   const dialogs = {
     open: OpenSourcesDialog,
     delete: DeleteSourcesDialog,
@@ -27,20 +27,26 @@
     'rename-warning': RenameWarningDialog,
     close: CloseSourceDialog,
     'close-all': CloseAllSourcesDialog,
-    find: FindReplaceDialog
-  } satisfies Record<NonNullable<typeof workspace.modal>, Component>;
-  let WorkspaceDialog = $derived(workspace.modal ? dialogs[workspace.modal] : null);
+    find: FindReplaceDialog,
+    help: HelpDialog,
+    dump: DumpMemoryDialog,
+    memoryConfiguration: MemoryConfigurationDialog,
+    exceptionHandler: ExceptionHandlerDialog,
+    clearBreakpoints: ClearBreakpointsDialog,
+    runInput: RunInputDialog,
+    syscall: SyscallDialog
+  } satisfies Record<
+    Exclude<DesktopModal['kind'], 'workspace' | 'transfer'> | WorkspaceDialog,
+    Component
+  >;
 </script>
 
-<!-- @component Selects context-owned dialog variants. Modal owns the shell; each variant renders one workflow. -->
-<RunInputDialog />
-{#if WorkspaceDialog}<WorkspaceDialog />{/if}
-<HelpDialog />
-
-{#if desktop.dumpOpen}<DumpMemoryDialog />{/if}
-{#if desktop.memoryConfigurationOpen}<MemoryConfigurationDialog />{/if}
-{#if desktop.exceptionHandlerOpen}<ExceptionHandlerDialog />{/if}
-{#if desktop.clearBreakpointsOpen}<ClearBreakpointsDialog />{/if}
-{#if desktop.transferStatus !== null}<TransferStatusDialog status={desktop.transferStatus} />{/if}
-
-<SyscallDialog />
+<!-- @component Renders the shared modal state machine through an exhaustive registry. Underlying dialogs remain mounted while temporary overlays own interaction, preserving drafts and save lifetimes. -->
+{#each desktop.modals.layers as modal (modal.kind)}
+  {#if modal.kind === 'transfer'}
+    <TransferStatusDialog status={modal.status} />
+  {:else}
+    {@const Dialog = dialogs[modal.kind === 'workspace' ? modal.name : modal.kind]}
+    <Dialog />
+  {/if}
+{/each}

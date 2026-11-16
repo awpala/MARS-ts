@@ -9,7 +9,7 @@
   let { status }: Props = $props();
 </script>
 
-<!-- @component Native modal dialog showing a spinner and status text while a file transfer is pending. It cannot be dismissed: Escape is ignored and the rest of the page is inert until the owner removes it, after which focus returns to the element that had it. -->
+<!-- @component Native modal dialog showing a spinner and status text while a file transfer is pending. Escape is ignored and the rest of the page is inert until the owner removes it; cleanup restores focus to the previous element if it is still connected. -->
 <dialog
   {@attach openModalDialog}
   aria-label={status}

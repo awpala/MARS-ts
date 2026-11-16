@@ -28,7 +28,7 @@ export class SyntaxStyle {
   isBold(): boolean {
     return this.bold;
   }
-  /** Returns fresh style objects in the canonical persisted token-ID order. */
+  /** Return fresh style objects from the bundled legacy lexical data in token-ID order. */
   static getDefaultSyntaxStyles(): readonly SyntaxStyle[] {
     return data.styles.map((style) => new SyntaxStyle(style.color, style.italic, style.bold));
   }

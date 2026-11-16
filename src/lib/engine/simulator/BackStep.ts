@@ -29,7 +29,7 @@ export enum BackStepAction {
 
 /** Session services needed to associate an undo record with its original instruction. */
 export interface BackStepContext<Statement> {
-  /** Resolve the actual stored statement object without instruction-fetch notification. */
+  /** Resolve the statement using getStatementNoNotify: text fetches are silent, while decoding instructions from data may emit read notices. */
   getStatementNoNotify(address: number): Statement | null;
   /** Whether the current simulated instruction is in a delayed branch slot. */
   inDelaySlot(): boolean;

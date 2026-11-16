@@ -19,7 +19,7 @@ The [deviation catalog](docs/deviations.md) records current behavioral differenc
 
 ## Development
 
-Open the [development container](.devcontainer/devcontainer.json), then use `run-app` to start the IDE on **port 6277**. The environment provides Node 24 and a provisional JDK 21 for the unchanged Java reference. See [development operations](docs/agents/operations.md) for setup, build, test, and cleanup commands.
+Open the [development container](.devcontainer/devcontainer.json), then use `run-app` to start the IDE on **port 6277**. The environment provides Node 26 and a provisional JDK 21 for the unchanged Java reference. See [development operations](docs/agents/operations.md) for setup, build, test, and cleanup commands.
 
 For automated validation, use `MARS_VALIDATION=1 run-checks app` and `npm run test:browser`; browser tests use isolated application snapshots and harness-allocated ports starting at **6278**, leaving 6277 exclusively for human development review. Other checks are documented in the [implementation guide](IMPLEMENTATION.md#reproducing-checks). Coding assistants start at [AGENTS.md](AGENTS.md).
 

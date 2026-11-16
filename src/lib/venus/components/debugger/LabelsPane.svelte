@@ -22,9 +22,11 @@
   const view = getExecuteView();
   const sortColumn = $derived(labelSortColumn(display.labelSortState));
   const sortDescending = $derived(labelSortDescending(display.labelSortState));
+  const programs = $derived(view.snapshot.programs);
   const labelGroups = $derived.by(() => {
-    void view.snapshot.revision;
-    const { machine, snapshot } = view;
+    // Reset reuses programs but replaces statements and symbol tables; execution revisions do neither.
+    void view.statements;
+    const { machine } = view;
     return [
       {
         owner: machine.symbolTable,
@@ -32,7 +34,7 @@
         filename: null,
         symbols: machine.symbolTable.getAllSymbols()
       },
-      ...snapshot.programs.map((program) => ({
+      ...programs.map((program) => ({
         owner: program,
         file: program.getFilename() ?? '',
         filename: program.getFilename() ?? '',

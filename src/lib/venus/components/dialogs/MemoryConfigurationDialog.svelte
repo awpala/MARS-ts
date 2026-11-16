@@ -31,7 +31,7 @@
       });
   });
   function close() {
-    desktop.memoryConfigurationOpen = false;
+    desktop.modals.close('memoryConfiguration');
   }
   function apply() {
     simulation.updateMemoryConfiguration(selected);

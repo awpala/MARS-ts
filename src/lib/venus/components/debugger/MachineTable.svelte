@@ -1,10 +1,5 @@
 <script module lang="ts">
-  /**
-   * Highlight roles a MachineTable paints on caller-rendered body rows or cells through `data-highlight`:
-   * `pc` and `delay-slot` mark Text Segment rows, `memory` marks an edited Data Segment word cell, and
-   * `register` marks the last-written register row. Mirrors the highlight categories of
-   * mars/venus/SettingsHighlightingAction.java.
-   */
+  /** Highlight roles painted through data-highlight: pc and delay-slot mark Text Segment rows, memory marks the last observed Data Segment write, and register marks the last observed register write. Mirrors the highlight categories of mars/venus/SettingsHighlightingAction.java. */
   export type MachineHighlight = 'pc' | 'delay-slot' | 'memory' | 'register';
 </script>
 

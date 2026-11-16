@@ -9,7 +9,7 @@ export class SyscallRandIntRange extends AbstractSyscall {
   constructor(host: SyscallHost) {
     super(42, 'RandIntRange', host);
   }
-  /** Execute the canonical random-stream and register behavior. */
+  /** Resolve stream $a0, then draw into $a0 below the positive exclusive bound in $a1. Nonpositive bounds become syscall diagnostics without writing $a0. */
   override simulate(statement: ProgramStatement): void {
     const stream = this.host.randomStreams.get(this.host.registerFile.getValue(4));
     try {

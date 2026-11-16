@@ -1,10 +1,10 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  /** Shared labeled input layout; callers retain input attributes and bindings. */
+  /** Shared labeled form-control layout; callers retain control attributes and bindings. */
   type Props = {
-    /** Required visible label, associated with the single nested input. */
+    /** Required visible label, implicitly associated with the single nested labelable form control. */
     label: string;
-    /** Required single native input; the caller owns its value and validation. */
+    /** Required single labelable form control, such as an input, select, or textarea; the caller owns its value and validation. */
     children: Snippet;
   };
   let { label, children }: Props = $props();

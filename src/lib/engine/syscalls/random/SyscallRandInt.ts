@@ -8,7 +8,7 @@ export class SyscallRandInt extends AbstractSyscall {
   constructor(host: SyscallHost) {
     super(41, 'RandInt', host);
   }
-  /** Execute the canonical random-stream and register behavior. */
+  /** Draw a signed 32-bit integer from the stream identified by $a0, replacing $a0 with the result. */
   override simulate(): void {
     this.host.registerFile.updateRegister(
       4,

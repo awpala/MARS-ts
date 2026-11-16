@@ -67,7 +67,12 @@ export function pageLimits(
   memory: PageBounds,
   segment: MemorySegment,
   start: number
-): { low: number; high: number } {
+): {
+  /** Inclusive minimum page-start address, interpreted as unsigned. */
+  low: number;
+  /** Inclusive maximum page-start address that leaves room for a full page. */
+  high: number;
+} {
   const kernelText = segment === 'text' && start >>> 0 >= memory.kernelTextBaseAddress >>> 0;
   const kernel = kernelText || segment === 'kernel' || segment === 'mmio';
   return {
@@ -91,7 +96,12 @@ export function pagedOffset(
   segment: MemorySegment,
   start: number,
   bytes: number,
-  limits: { low: number; high: number }
+  limits: {
+    /** Inclusive minimum unsigned page-start address. */
+    low: number;
+    /** Inclusive maximum unsigned page-start address. */
+    high: number;
+  }
 ): number {
   return (
     clamp((start >>> 0) + bytes, limits.low, limits.high) - (alignedBase(bases, segment) >>> 0)
@@ -109,7 +119,14 @@ export function locateAddress(
   bases: SegmentBases,
   address: number,
   current: MemorySegment
-): { segment: MemorySegment; pageOffset: number; textLabel: boolean } {
+): {
+  /** Data Segment range selected to contain the address. */
+  segment: MemorySegment;
+  /** Byte offset from that range's aligned base to the selected page. */
+  pageOffset: number;
+  /** Whether the address is in user or kernel text. */
+  textLabel: boolean;
+} {
   const textLabel = memory.inTextSegment(address) || memory.inKernelTextSegment(address);
   let segment = current;
   if (textLabel) segment = 'text';

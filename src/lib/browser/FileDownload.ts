@@ -1,7 +1,7 @@
 import { downloadBlob, requestSaveTarget, writeSaveTarget } from './download.js';
 import { whenPageActive } from './pageFocus.js';
 
-/** A mounted desktop's save/download workflow; dispose it when its owning component unmounts. */
+/** Component-owned save/download workflow using the desktop's blocking-status capability; dispose it when that component unmounts. */
 export class FileDownload {
   private stopLatePromptGuard: (() => void) | undefined;
   private disposed = false;
@@ -44,24 +44,25 @@ export class FileDownload {
 
   private guardLatePrompt(status: string) {
     this.stopLatePromptGuard?.();
-    const prompted = async () => {
+    const prompted = () => {
       stop();
       const release = this.beginTransfer(status);
-      const active = () => {
-        release();
-        this.stopLatePromptGuard = undefined;
-      };
       const onFocus = () => {
         cleanup();
-        void whenPageActive().then(active);
+        void whenPageActive().then(stopActive);
       };
       const cleanup = () => {
         window.removeEventListener('focus', onFocus);
       };
-      this.stopLatePromptGuard = () => {
+      let active = true;
+      const stopActive = () => {
+        if (!active) return;
+        active = false;
         cleanup();
         release();
+        if (this.stopLatePromptGuard === stopActive) this.stopLatePromptGuard = undefined;
       };
+      this.stopLatePromptGuard = stopActive;
       window.addEventListener('focus', onFocus, { once: true });
     };
     const timer = setTimeout(() => stop(), 3000);
@@ -74,7 +75,7 @@ export class FileDownload {
     this.stopLatePromptGuard = stop;
   }
 
-  /** Remove late-prompt listeners; an already requested save may settle but cannot install another guard. */
+  /** Release the late-prompt guard, its timer/listeners, and any status it owns. Repeated disposal is harmless; an in-flight save continues but cannot install another guard, and stale completions cannot clear a replacement guard. */
   dispose(): void {
     this.disposed = true;
     this.stopLatePromptGuard?.();

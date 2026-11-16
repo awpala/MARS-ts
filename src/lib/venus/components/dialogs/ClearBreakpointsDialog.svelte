@@ -8,7 +8,7 @@
   const { simulation, display } = desktop;
   const count = $derived(simulation.breakpoints.length);
   function close() {
-    desktop.clearBreakpointsOpen = false;
+    desktop.modals.close('clearBreakpoints');
   }
 </script>
 

@@ -8,7 +8,7 @@ export class SyscallRandFloat extends AbstractSyscall {
   constructor(host: SyscallHost) {
     super(43, 'RandFloat', host);
   }
-  /** Execute the canonical random-stream and register behavior. */
+  /** Draw a single-precision value in [0, 1) from stream $a0 into $f0. */
   override simulate(): void {
     this.host.coprocessor1.setRegisterToFloat(
       0,

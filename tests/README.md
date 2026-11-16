@@ -11,6 +11,7 @@ This directory owns cross-module TypeScript comparisons, browser workflow scenar
 | [Session](session/README.md)           | Exercise settings, machine composition, controller workflows, program arguments, exception handlers, and whole-program execution | Verify production integration and per-session ownership                                                                 |
 | [Java oracle](oracle/README.md)        | Produce and recheck deterministic whole-program captures and class-level probes from the unchanged legacy implementation         | A successful Java recheck establishes fixture reproducibility; the TypeScript consumers establish covered port behavior |
 | [Browser scenarios](browser/README.md) | Exercise the mounted desktop, real execution, source persistence, controls, and component lifetimes                              | Establish browser integration behavior within the tested workflows                                                      |
+| [Development tooling](tooling/README.md) | Exercise installed tool APIs against supported source constructs and production modules | Establish analyzer compatibility without changing application behavior |
 
 The [Vitest configuration](../vite.config.ts) discovers `tests/**/*.test.ts` together with JavaScript and TypeScript tests under `src/`, excluding Svelte component test files. It runs in a Node environment, limits workers to two, and requires assertions. Browser `.spec.ts` files belong to the separate Playwright suite.
 
@@ -18,7 +19,7 @@ The [whole-program consumer](session/core-programs.test.ts) runs all 21 cases of
 
 ## Running checks
 
-Run commands from the repository root with dependencies installed and Node 24 available:
+Run commands from the repository root with dependencies installed and Node 26 available:
 
 ```sh
 npm test

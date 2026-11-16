@@ -9,7 +9,7 @@ export class SyscallPrintIntHex extends AbstractSyscall {
   constructor(host: SyscallHost) {
     super(34, 'PrintIntHex', host);
   }
-  /** Execute the canonical register, memory, console, and error behavior. */
+  /** Print $a0 as eight hexadecimal digits with a 0x prefix without changing registers. */
   override simulate(): void {
     this.host.systemIO.printString(Binary.intToHexString(this.host.registerFile.getValue(4)));
   }

@@ -17,7 +17,7 @@ export class ToneGenerator {
   constructor(private readonly host?: ToneGeneratorHost) {}
   /** Start a tone and return immediately; host failures are swallowed as Java's tone thread reports and abandons them. */
   generateTone(pitch: number, duration: number, instrument: number, volume: number): void {
-    this.host?.playTone({ pitch, duration, instrument, volume }).catch(() => {});
+    this.host?.playTone({ pitch, duration, instrument, volume }, false).catch(() => {});
   }
   /** Start a tone and wait for its end; without a host, or on host failure, return without waiting as Java does. */
   generateToneSynchronously(
@@ -27,6 +27,6 @@ export class ToneGenerator {
     volume: number
   ): void | Promise<void> {
     if (!this.host) return;
-    return this.host.playTone({ pitch, duration, instrument, volume }).catch(() => {});
+    return this.host.playTone({ pitch, duration, instrument, volume }, true).catch(() => {});
   }
 }

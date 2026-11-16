@@ -51,7 +51,7 @@ Tailwind scans runtime source files under `src/`, excluding test/spec files; Mar
 
 ## Running scenarios
 
-From the repository root, with Node 24 and project dependencies installed, the unfiltered command runs the complete suite. Use it for broad validation assignments; local ad hoc feature work selects only the impacted projects/cases below. The configured CI matrix remains the full browser sentinel.
+From the repository root, with Node 26 and project dependencies installed, the unfiltered command runs the complete suite. Use it for broad validation assignments; local ad hoc feature work selects only the impacted projects/cases below. The configured CI matrix remains the full browser sentinel.
 
 ```sh
 npm run test:browser:install
@@ -70,6 +70,8 @@ Headed runs require a graphical display. Group results and retained failure trac
 
 Capture each browser command's stdout/stderr according to the canonical [test run log contract](../../docs/agents/operations.md#test-run-logs), including targeted reruns, and preserve its exit status. These logs complement the configured traces and HTML reports; the contract includes a logged shell invocation.
 
+Discovery applies file/project filters once and freezes the selected cases. [Argument forwarding](harness/runnerArguments.mjs) consumes values according to the pinned Playwright CLI option vocabulary; child runners receive execution/reporting options plus their case list, without the original project or positional file filters. Supported filters work before or after options, including `--project=...` and boolean flags. Update the value-taking option sets when changing the Playwright pin; the colocated tests cover option arity and ordering.
+
 The runner captures each child's complete stdout/stderr in `<timestamp>_<pid>_browser-<group>-runner.log` under `__logs/__test-runs/`, alongside collection evidence. The additive [project log reporter](harness/SuiteLogReporter.ts) writes `<timestamp>_browser-<project>-<pid>.log` for groups, their startup checks, and infrastructure events. It records starts, actual outcomes/errors, worker stdout/stderr, and summaries that distinguish `notRun` from completed results. A log-write failure fails validation; inventory-only `--list` runs create no project logs. Keep the configured reporters in normal invocations: local console output remains available, CI adds GitHub/HTML reports, and overriding `--reporter` would replace the project logger. Retain the master invocation log for wrapper/npm output as well.
 
 ## Failure triage and confirmation
@@ -86,7 +88,7 @@ Actively monitor the master and project logs during browser runs and give progre
 
 The separate [Browser tests workflow](../../.github/workflows/browser.yml) runs the suite on pushes to `main` and merge-queue `merge_group` events of type `checks_requested` targeting `main`. It does not run on ordinary feature-branch pushes or pull-request updates. The existing [Verify workflow](../../.github/workflows/verify.yml) keeps its push/pull-request triggers and harness, documentation, Java oracle, Vitest, and build gates.
 
-A discovery job uses the same Node-only suite discovery as the local runner to build the semantic-group matrix. At most four group jobs run concurrently on separate Ubuntu runners, and a failed group does not cancel the other matrix jobs. Each job installs Node 24, `npm ci`, `unzip`, and Chromium/system dependencies through `npm run test:browser:install`, then runs the same snapshot wrapper through `npm run test:browser -- --project=<group>`. Its application, server, results, and startup check remain group-owned. The 30-minute job allowance covers provisioning and that group's files; the 60-second scenario and 30-second readiness deadlines remain independent and unchanged.
+A discovery job uses the same Node-only suite discovery as the local runner to build the semantic-group matrix. At most four group jobs run concurrently on separate Ubuntu runners, and a failed group does not cancel the other matrix jobs. Each job installs Node 26, `npm ci`, `unzip`, and Chromium/system dependencies through `npm run test:browser:install`, then runs the same snapshot wrapper through `npm run test:browser -- --project=<group>`. Its application, server, results, and startup check remain group-owned. The 30-minute job allowance covers provisioning and that group's files; the 60-second scenario and 30-second readiness deadlines remain independent and unchanged.
 
 CI retains the configured GitHub, HTML, and project-file reporters. Each runner captures the complete command through `tee` with `pipefail`, preserving failures and a master log under `__logs/__test-runs/`. Non-canceled jobs upload available HTML reports, browser results/failure traces, and run logs as `browser-results-<group>`, retained for 14 days. The stable `Chromium browser suite` aggregate check requires discovery and every matrix group to succeed. Read actual outcomes, including setup failures and dependent scenarios that did not run, before claiming browser coverage passed.
 

@@ -51,7 +51,7 @@ export interface SavedExecution {
   labelSelection?: SavedLabelSelection | null;
 }
 
-/** Tabbed Help browser presentation; IDs are opaque here and fall back to the overview when unknown. */
+/** Tabbed Help browser presentation; IDs are opaque here. The presenter falls back to the overview for an unknown tab and to the selected tab's first article for an unknown article. */
 export interface SavedHelpBrowser {
   /** Whether the tabbed Help browser was open. */
   open: boolean;

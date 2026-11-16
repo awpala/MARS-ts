@@ -8,6 +8,7 @@ import type {
   SavedLabelSelection
 } from '#lib/browser/DesktopSession.js';
 import { browserEnginePreferences } from '#lib/browser/EnginePreferences.js';
+import { CooperativeScheduler } from '#lib/browser/CooperativeScheduler.js';
 import { WebAudioToneHost } from '#lib/browser/WebAudioToneHost.js';
 import { Globals } from '#lib/engine/Globals.js';
 import { ProcessingException } from '#lib/engine/diagnostics/ProcessingException.js';
@@ -19,7 +20,9 @@ import { engineOption, engineOptions } from '../utils/commands/settings.js';
 import { errorMessage } from '#lib/browser/errorMessage.js';
 import { describeRunOutcome, type RunCommand } from '../utils/execution/runOutcome.js';
 import { buildFileNameList } from '../utils/execution/buildFileNameList.js';
+import { unhandledCommand, type SimulationCommand } from '../utils/commands/commands.js';
 import type { SourceWorkspace } from './SourceWorkspace.svelte.js';
+import type { ModalState } from './ModalState.svelte.js';
 import type { DisplayPreferences } from './DisplayPreferences.svelte.js';
 /** Browser-owned simulation presentation, input completion, and scheduling around a framework-free RunController. */
 export class SimulationState {
@@ -27,7 +30,7 @@ export class SimulationState {
   machine = $state.raw<Globals>();
   /** Framework-free execution coordinator owned by this desktop. */
   controller = $state.raw<RunController>();
-  /** Latest immutable controller snapshot. */
+  /** Latest read-only controller snapshot; referenced programs and statements remain engine-owned. */
   execution = $state.raw<ReturnType<RunController['getState']>>();
   /** Selected label owned by the loaded program, independent of the currently displayed Edit source. */
   labelSelection = $state.raw<SavedLabelSelection | null>(null);
@@ -39,12 +42,14 @@ export class SimulationState {
   engineSettings = $state<Record<number, boolean>>({});
   /** Desktop-owned argument draft; retained across assemblies and saved with desktop presentation. */
   programArguments = $state('');
-  /** Pending syscall request, or null when no input is owed. */
+  /** Pending console-input request, or null when none is owed; console/popup presentation follows the input setting and shared modal owner. */
   inputRequest = $state.raw<InputRequest | null>(null);
-  /** Pending service 50–59 modal, independent of optional console-input popups. */
+  /** Pending service 50–59 payload; its resolver and draft belong here, while the shared modal state owns visibility. */
   dialogRequest = $state.raw<DialogRequest | null>(null);
   /** Draft dialog value; the engine receives it without console trimming, bounds, or echo. */
   dialogText = $state('');
+  private releaseDialogModal: (() => void) | undefined;
+  private releaseInputModal: (() => void) | undefined;
   private resolveDialog: ((value: string | number | null) => void) | undefined;
   /** Current pending input buffer. */
   inputText = $state('');
@@ -73,10 +78,11 @@ export class SimulationState {
   private disposed = false;
   /** Sound output of the current machine; Go and Step prepare it within their user gesture. */
   private tones: WebAudioToneHost | undefined;
-  /** Compose the machine host with source resolution and display navigation owned by this desktop. */
+  /** Compose the machine host with desktop-owned source resolution, display navigation, and modal visibility. */
   constructor(
     private readonly workspace: SourceWorkspace,
-    private readonly display: DisplayPreferences
+    private readonly display: DisplayPreferences,
+    private readonly modals: ModalState
   ) {}
   /** Publish a revision after a manual machine edit so execution views re-read the hardware. */
   refresh = (): void => this.controller?.refresh();
@@ -87,20 +93,12 @@ export class SimulationState {
     if (all || this.messageTab === 'Mars Messages') this.messages = '';
     if (all || this.messageTab === 'Run I/O') this.runIO = '';
   };
-  /** Initialize browser host services and the machine; return teardown for subscriptions, pending input, tones, and scheduler timers. */
+  /** Initialize browser host services and the machine. Teardown releases presentation subscriptions, tones, and scheduler tasks, then requests controller disposal. The controller's Stop releases pending input; the machine remains available until execution settles. */
   start(): () => void {
     let disposed = false;
     const tones = new WebAudioToneHost();
     this.tones = tones;
-    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- Scheduler handles are owned resources, never rendered reactive state.
-    const timers = new Map<ReturnType<typeof setTimeout>, () => void>();
-    const wake = () => {
-      for (const [timer, resolve] of timers) {
-        clearTimeout(timer);
-        resolve();
-      }
-      timers.clear();
-    };
+    const scheduler = new CooperativeScheduler();
     const session: Globals = new Globals({
       readSource: (filename) => {
         if (this.recoverySources && !Object.hasOwn(this.recoverySources, filename))
@@ -124,6 +122,7 @@ export class SimulationState {
           }
           this.inputText = '';
           this.inputRequest = request;
+          if (request.prompt) this.releaseInputModal = this.modals.begin({ kind: 'runInput' });
           this.resolveInput = resolve;
           this.messageTab = 'Run I/O';
         }),
@@ -155,10 +154,8 @@ export class SimulationState {
       },
       tones: {
         // A tone started after Stop or Pause still sounds, but the stopping run does not wait for it.
-        playTone: (tone) => {
-          const end = tones.playTone(tone);
-          return disposed || session.simulator.isStopRequested() ? Promise.resolve() : end;
-        }
+        playTone: (tone, waitForEnd) =>
+          tones.playTone(tone, waitForEnd && !disposed && !session.simulator.isStopRequested())
       },
       printString: (text) => {
         if (!disposed) {
@@ -166,19 +163,12 @@ export class SimulationState {
           this.messageTab = 'Run I/O';
         }
       },
-      yieldControl: (milliseconds) =>
-        new Promise<void>((resolve) => {
-          const timer = setTimeout(() => {
-            timers.delete(timer);
-            resolve();
-          }, milliseconds);
-          timers.set(timer, resolve);
-        }),
+      yieldControl: scheduler.yieldControl,
       releaseInput: () => {
         this.completeInput(false);
         this.completeDialog(null);
         tones.release();
-        wake();
+        scheduler.wake();
       },
       refresh: () => this.controller?.refresh(),
       preferences: browserEnginePreferences()
@@ -205,13 +195,11 @@ export class SimulationState {
       release();
       tones.dispose();
       this.tones = undefined;
-      void controls
-        .dispose()
-        .finally(wake)
-        .catch((error: unknown) => {
-          // The removed desktop cannot display a cleanup failure; retain it in browser diagnostics.
-          console.error('MARS desktop teardown failed.', error);
-        });
+      scheduler.dispose();
+      void controls.dispose().catch((error: unknown) => {
+        // The removed desktop cannot display a cleanup failure; retain it in browser diagnostics.
+        console.error('MARS desktop teardown failed.', error);
+      });
     };
   }
   /** Persist an idle-machine setting; delayed branching reassembles loaded code as in SettingsDelayedBranchingAction.java. */
@@ -253,6 +241,7 @@ export class SimulationState {
     if (stopped) return Promise.resolve(null);
     this.dialogText = '';
     this.dialogRequest = request;
+    this.releaseDialogModal = this.modals.begin({ kind: 'syscall' });
     return new Promise((resolve) => {
       this.resolveDialog = resolve;
     });
@@ -263,6 +252,8 @@ export class SimulationState {
     if (!resolve) return;
     this.resolveDialog = undefined;
     this.dialogRequest = null;
+    this.releaseDialogModal?.();
+    this.releaseDialogModal = undefined;
     resolve(value);
   };
   /** Resolve the pending syscall once, preserving echo, newline, and maximum-length rules. */
@@ -274,6 +265,8 @@ export class SimulationState {
     const consoleInput = request.prompt === null;
     const text = this.inputText + (appendNewline && consoleInput ? '\n' : '');
     this.inputRequest = null;
+    this.releaseInputModal?.();
+    this.releaseInputModal = undefined;
     this.appendRunIO(consoleInput ? text : `**** user input : ${text}\n`);
     resolve(consoleInput && request.maxLength >= 0 ? text.slice(0, request.maxLength) : text);
   };
@@ -387,7 +380,7 @@ export class SimulationState {
     }
   }
   /** Dispatch debugger actions through RunController and publish their existing diagnostics. */
-  runCommand = async (command: string) => {
+  runCommand = async (command: SimulationCommand) => {
     if (!this.controller) return;
     try {
       if (command === 'assemble') {
@@ -412,6 +405,15 @@ export class SimulationState {
         this.controller.stop();
         return;
       }
+      switch (command) {
+        case 'reset':
+        case 'backstep':
+        case 'step':
+        case 'go':
+          break;
+        default:
+          return unhandledCommand(command);
+      }
       this.display.view = 'Execute';
       if (command === 'reset') {
         this.controller.reset();
@@ -426,7 +428,8 @@ export class SimulationState {
       this.messageTab = 'Run I/O';
       // Browser autoplay policy permits sound only when the context starts within this user gesture.
       this.tones?.prepare();
-      const run: RunCommand = command === 'step' ? 'step' : 'go';
+      if (command !== 'step' && command !== 'go') return unhandledCommand(command);
+      const run: RunCommand = command;
       const filename = this.machine?.program?.getFilename() ?? '';
       if (run === 'step') await this.controller.step(this.programArguments);
       else {

@@ -187,11 +187,16 @@ test('global label selection restores and invalid stored label identity leaves t
   await waitForDesktop(page);
   await expect(label).toHaveAttribute('aria-pressed', 'true');
   await expect(memoryCell(page, '0x10010000')).toHaveAttribute('data-selected', 'true');
-  await page.evaluate(() => {
+  const invalidRecord = await page.evaluate(() => {
     const record = JSON.parse(localStorage.getItem('mars-ts:desktop-session:v1')!);
     record.execution.labelSelection.name = 'missing';
-    localStorage.setItem('mars-ts:desktop-session:v1', JSON.stringify(record));
+    return JSON.stringify(record);
   });
+  // Seed the next document after the current desktop flushes its latest valid state on exit.
+  await page.addInitScript(
+    (record) => localStorage.setItem('mars-ts:desktop-session:v1', record),
+    invalidRecord
+  );
   await page.reload();
   await waitForDesktop(page);
   await expect(label).toHaveAttribute('aria-pressed', 'false');

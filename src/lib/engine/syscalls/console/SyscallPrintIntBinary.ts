@@ -9,7 +9,7 @@ export class SyscallPrintIntBinary extends AbstractSyscall {
   constructor(host: SyscallHost) {
     super(35, 'PrintIntBinary', host);
   }
-  /** Execute the canonical register, memory, console, and error behavior. */
+  /** Print all 32 bits of $a0 without changing registers. */
   override simulate(): void {
     this.host.systemIO.printString(Binary.intToBinaryString(this.host.registerFile.getValue(4)));
   }

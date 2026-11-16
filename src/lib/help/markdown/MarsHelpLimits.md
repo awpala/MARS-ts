@@ -9,7 +9,7 @@ Original article: Release 4.5 · August 2014
 
 ## Browser requirements
 
-MARS-ts runs its TypeScript assembler and simulator in a modern browser with JavaScript enabled. No Java runtime, Swing installation, or JAR is required. Browser storage retains sources, recovery text, and preferences when available. Storage failures are reported; export files for copies outside the browser.
+MARS-ts runs its TypeScript assembler and simulator in a modern browser with JavaScript enabled. No Java runtime, Swing installation, or JAR is required. Browser storage retains sources, recovery text, and preferences when available. Desktop presentation and undo recovery are saved in short batches and flushed when leaving the page; an abrupt browser failure can lose a pending batch. Source drafts are backed up after each edit. Storage failures are reported; export files for copies outside the browser.
 
 ## Current limits
 

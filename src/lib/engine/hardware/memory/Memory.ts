@@ -116,49 +116,49 @@ export class Memory<Statement extends MemoryStatement = MemoryStatement> {
   /** Whether a teardown ran during dispatch and its records still await removal. */
   private releasePending = false;
   private readonly floatBits = new DataView(new ArrayBuffer(8));
-  /** Signed configured textBaseAddress address. */
+  /** Base of the user text segment, represented as a signed 32-bit value. */
   textBaseAddress = 0;
-  /** Signed configured dataSegmentBaseAddress address. */
+  /** Base of the user data segment, including extern storage, represented as a signed 32-bit value. */
   dataSegmentBaseAddress = 0;
-  /** Signed configured externBaseAddress address. */
+  /** Initial address for .extern allocation, represented as a signed 32-bit value. */
   externBaseAddress = 0;
-  /** Signed configured globalPointer address. */
+  /** Initial $gp value for the selected layout, represented as a signed 32-bit value. */
   globalPointer = 0;
-  /** Signed configured dataBaseAddress address. */
+  /** Initial address for .data allocation, represented as a signed 32-bit value. */
   dataBaseAddress = 0;
-  /** Signed configured heapBaseAddress address. */
+  /** Initial heap allocation address, represented as a signed 32-bit value. */
   heapBaseAddress = 0;
-  /** Signed configured stackPointer address. */
+  /** Initial $sp value for the selected layout, represented as a signed 32-bit value. */
   stackPointer = 0;
-  /** Signed configured stackBaseAddress address. */
+  /** Highest word address accepted by stack storage, represented as a signed 32-bit value. */
   stackBaseAddress = 0;
-  /** Signed configured userHighAddress address. */
+  /** Configured highest user-space byte address, represented as a signed 32-bit value. */
   userHighAddress = 0;
-  /** Signed configured kernelBaseAddress address. */
+  /** Configured kernel-space base, represented as a signed 32-bit value. */
   kernelBaseAddress = 0;
-  /** Signed configured kernelTextBaseAddress address. */
+  /** Base of the kernel text segment, represented as a signed 32-bit value. */
   kernelTextBaseAddress = 0;
-  /** Signed configured exceptionHandlerAddress address. */
+  /** Entry address used for exception handling, represented as a signed 32-bit value. */
   exceptionHandlerAddress = 0;
-  /** Signed configured kernelDataBaseAddress address. */
+  /** Base of the kernel data segment, represented as a signed 32-bit value. */
   kernelDataBaseAddress = 0;
-  /** Signed configured memoryMapBaseAddress address. */
+  /** Base of memory-mapped I/O, represented as a signed 32-bit value. */
   memoryMapBaseAddress = 0;
-  /** Signed configured kernelHighAddress address. */
+  /** Configured highest kernel-space byte address, represented as a signed 32-bit value. */
   kernelHighAddress = 0;
-  /** Signed heapAddress; limits retain the canonical exclusive/inclusive segment conventions. */
+  /** Next heap allocation address, represented as a signed 32-bit value. */
   heapAddress = 0;
-  /** Signed dataSegmentLimitAddress; limits retain the canonical exclusive/inclusive segment conventions. */
+  /** Exclusive upper bound for user data storage, clamped to table capacity and represented as a signed 32-bit value. */
   dataSegmentLimitAddress = 0;
-  /** Signed textLimitAddress; limits retain the canonical exclusive/inclusive segment conventions. */
+  /** Exclusive upper bound for user text storage, clamped to table capacity and represented as a signed 32-bit value. */
   textLimitAddress = 0;
-  /** Signed kernelDataSegmentLimitAddress; limits retain the canonical exclusive/inclusive segment conventions. */
+  /** Exclusive upper bound for kernel data storage, clamped to table capacity and represented as a signed 32-bit value. */
   kernelDataSegmentLimitAddress = 0;
-  /** Signed kernelTextLimitAddress; limits retain the canonical exclusive/inclusive segment conventions. */
+  /** Exclusive upper bound for kernel text storage, clamped to table capacity and represented as a signed 32-bit value. */
   kernelTextLimitAddress = 0;
-  /** Signed stackLimitAddress; limits retain the canonical exclusive/inclusive segment conventions. */
+  /** Exclusive lower bound for descending stack storage, clamped to table capacity and represented as a signed 32-bit value. */
   stackLimitAddress = 0;
-  /** Signed memoryMapLimitAddress; limits retain the canonical exclusive/inclusive segment conventions. */
+  /** Exclusive upper bound for MMIO storage, clamped to table capacity and represented as a signed 32-bit value. */
   memoryMapLimitAddress = 0;
   /** Creates isolated memory using the supplied decoder and optional configuration collection. */
   constructor(
@@ -317,53 +317,12 @@ export class Memory<Statement extends MemoryStatement = MemoryStatement> {
   getByteOrder(): boolean {
     return this.byteOrder;
   }
-  /** Writes bytes without alignment checking, returning the previous bytes; text writes require self-modification. */
+  /** Write endian-aware bytes and return their previous value without data alignment checks. Permitted self-modifying user-text writes require word alignment and replace the entire instruction regardless of length. */
   set(address: number, value: number, length: number): number {
     address |= 0;
     value |= 0;
     this.host.debug?.(`memory[${address}] set to ${value}(${length} bytes)`);
-    let oldValue = 0;
-    if (this.inDataSegment(address))
-      oldValue = this.storeBytesInTable(
-        this.dataBlockTable,
-        (address - this.dataSegmentBaseAddress) | 0,
-        length,
-        value
-      );
-    else if (address > this.stackLimitAddress && address <= this.stackBaseAddress)
-      oldValue = this.storeBytesInTable(
-        this.stackBlockTable,
-        (this.stackBaseAddress - address) | 0,
-        length,
-        value
-      );
-    else if (this.inTextSegment(address)) {
-      if (this.host.isSelfModifyingCodeEnabled?.()) {
-        const old = this.getStatementNoNotify(address);
-        if (old !== null) oldValue = old.getBinaryStatement();
-        this.setStatement(address, this.host.decodeStatement(value, address));
-      } else throw new AddressErrorException('Cannot write directly to text segment!', 5, address);
-    } else if (address >= this.memoryMapBaseAddress && address < this.memoryMapLimitAddress)
-      oldValue = this.storeBytesInTable(
-        this.memoryMapBlockTable,
-        (address - this.memoryMapBaseAddress) | 0,
-        length,
-        value
-      );
-    else if (this.inKernelDataSegment(address))
-      oldValue = this.storeBytesInTable(
-        this.kernelDataBlockTable,
-        (address - this.kernelDataBaseAddress) | 0,
-        length,
-        value
-      );
-    else if (this.inKernelTextSegment(address))
-      throw new AddressErrorException(
-        'DEVELOPER: You must use setStatement() to write to kernel text segment!',
-        5,
-        address
-      );
-    else throw new AddressErrorException('address out of range ', 5, address);
+    const oldValue = this.writeStorage(address, value, length, false);
     this.notifyAnyObservers(AccessNotice.WRITE, address, length, value);
     return oldValue;
   }
@@ -373,18 +332,29 @@ export class Memory<Statement extends MemoryStatement = MemoryStatement> {
     value |= 0;
     if (address % 4 !== 0)
       throw new AddressErrorException('store address not aligned on word boundary ', 5, address);
+    const oldValue = this.writeStorage(address, value, 4, true);
+    this.notifyAnyObservers(AccessNotice.WRITE, address, 4, value);
+    this.host.addMemoryRestoreRawWord?.(address, oldValue);
+    return oldValue;
+  }
+  // Both write families use Java's same segment precedence; alignment, notices, and undo stay at their entry points.
+  private writeStorage(address: number, value: number, length: number, raw: boolean): number {
     let oldValue = 0;
     if (this.inDataSegment(address))
-      oldValue = this.storeWordInTable(
+      oldValue = this.storeInTable(
         this.dataBlockTable,
-        (address - this.dataSegmentBaseAddress) >> 2,
-        value
+        (address - this.dataSegmentBaseAddress) | 0,
+        length,
+        value,
+        raw
       );
     else if (address > this.stackLimitAddress && address <= this.stackBaseAddress)
-      oldValue = this.storeWordInTable(
+      oldValue = this.storeInTable(
         this.stackBlockTable,
-        (this.stackBaseAddress - address) >> 2,
-        value
+        (this.stackBaseAddress - address) | 0,
+        length,
+        value,
+        raw
       );
     else if (this.inTextSegment(address)) {
       if (this.host.isSelfModifyingCodeEnabled?.()) {
@@ -393,16 +363,20 @@ export class Memory<Statement extends MemoryStatement = MemoryStatement> {
         this.setStatement(address, this.host.decodeStatement(value, address));
       } else throw new AddressErrorException('Cannot write directly to text segment!', 5, address);
     } else if (address >= this.memoryMapBaseAddress && address < this.memoryMapLimitAddress)
-      oldValue = this.storeWordInTable(
+      oldValue = this.storeInTable(
         this.memoryMapBlockTable,
-        (address - this.memoryMapBaseAddress) >> 2,
-        value
+        (address - this.memoryMapBaseAddress) | 0,
+        length,
+        value,
+        raw
       );
     else if (this.inKernelDataSegment(address))
-      oldValue = this.storeWordInTable(
+      oldValue = this.storeInTable(
         this.kernelDataBlockTable,
-        (address - this.kernelDataBaseAddress) >> 2,
-        value
+        (address - this.kernelDataBaseAddress) | 0,
+        length,
+        value,
+        raw
       );
     else if (this.inKernelTextSegment(address))
       throw new AddressErrorException(
@@ -410,10 +384,24 @@ export class Memory<Statement extends MemoryStatement = MemoryStatement> {
         5,
         address
       );
-    else throw new AddressErrorException('store address out of range ', 5, address);
-    this.notifyAnyObservers(AccessNotice.WRITE, address, 4, value);
-    this.host.addMemoryRestoreRawWord?.(address, oldValue);
+    else
+      throw new AddressErrorException(
+        raw ? 'store address out of range ' : 'address out of range ',
+        5,
+        address
+      );
     return oldValue;
+  }
+  private storeInTable(
+    table: WordTable,
+    relative: number,
+    length: number,
+    value: number,
+    raw: boolean
+  ): number {
+    return raw
+      ? this.storeWordInTable(table, relative >> 2, value)
+      : this.storeBytesInTable(table, relative, length, value);
   }
   /** Writes an aligned endian-aware word and records a restore through the host. */
   setWord(address: number, value: number): number {
@@ -423,7 +411,7 @@ export class Memory<Statement extends MemoryStatement = MemoryStatement> {
     const old = this.set(address, value, 4);
     return this.host.addMemoryRestoreWord?.(address, old) ?? old;
   }
-  /** Writes the low halfword at an aligned address and records a restore through the host. */
+  /** Write an aligned low halfword and record its previous value through the host. Permitted user-text writes instead require word alignment and replace the entire instruction. */
   setHalf(address: number, value: number): number {
     address |= 0;
     if (address % 2 !== 0)
@@ -435,7 +423,7 @@ export class Memory<Statement extends MemoryStatement = MemoryStatement> {
     const old = this.set(address, value, 2);
     return this.host.addMemoryRestoreHalf?.(address, old) ?? old;
   }
-  /** Writes the low byte and records a restore through the host. */
+  /** Write the low byte and record its previous value through the host. Permitted user-text writes instead require word alignment and replace the entire instruction. */
   setByte(address: number, value: number): number {
     address |= 0;
     const old = this.set(address, value, 1);
@@ -471,47 +459,12 @@ export class Memory<Statement extends MemoryStatement = MemoryStatement> {
         this.kernelTextBlockTable
       );
   }
-  /** Reads up to four bytes without alignment checks and emits a read notice. */
+  /** Read up to four endian-aware data bytes without alignment checks and emit a read notice. Permitted user-text reads require word alignment and return the entire instruction regardless of length. */
   get(address: number, length: number): number {
     return this.readBytes(address | 0, length, true);
   }
   private readBytes(address: number, length: number, notify: boolean): number {
-    let value: number;
-    if (this.inDataSegment(address))
-      value = this.fetchBytesFromTable(
-        this.dataBlockTable,
-        (address - this.dataSegmentBaseAddress) | 0,
-        length
-      );
-    else if (address > this.stackLimitAddress && address <= this.stackBaseAddress)
-      value = this.fetchBytesFromTable(
-        this.stackBlockTable,
-        (this.stackBaseAddress - address) | 0,
-        length
-      );
-    else if (address >= this.memoryMapBaseAddress && address < this.memoryMapLimitAddress)
-      value = this.fetchBytesFromTable(
-        this.memoryMapBlockTable,
-        (address - this.memoryMapBaseAddress) | 0,
-        length
-      );
-    else if (this.inTextSegment(address)) {
-      if (this.host.isSelfModifyingCodeEnabled?.())
-        value = this.getStatementNoNotify(address)?.getBinaryStatement() ?? 0;
-      else throw new AddressErrorException('Cannot read directly from text segment!', 4, address);
-    } else if (this.inKernelDataSegment(address))
-      value = this.fetchBytesFromTable(
-        this.kernelDataBlockTable,
-        (address - this.kernelDataBaseAddress) | 0,
-        length
-      );
-    else if (this.inKernelTextSegment(address))
-      throw new AddressErrorException(
-        'DEVELOPER: You must use getStatement() to read from kernel text segment!',
-        4,
-        address
-      );
-    else throw new AddressErrorException('address out of range ', 4, address);
+    const value = this.readStorage(address, length, false);
     if (notify) this.notifyAnyObservers(AccessNotice.READ, address, length, value);
     return value;
   }
@@ -520,27 +473,44 @@ export class Memory<Statement extends MemoryStatement = MemoryStatement> {
     address |= 0;
     if (address % 4 !== 0)
       throw new AddressErrorException('address for fetch not aligned on word boundary', 4, address);
+    const value = this.readStorage(address, 4, true);
+    this.notifyAnyObservers(AccessNotice.READ, address, 4, value);
+    return value;
+  }
+  // Reads intentionally check MMIO before text, unlike writes. Null/dump inspection retains its separate policy.
+  private readStorage(address: number, length: number, raw: boolean): number {
     let value: number;
     if (this.inDataSegment(address))
-      value = this.fetchWordFromTable(
+      value = this.fetchFromTable(
         this.dataBlockTable,
-        (address - this.dataSegmentBaseAddress) >> 2
+        (address - this.dataSegmentBaseAddress) | 0,
+        length,
+        raw
       );
     else if (address > this.stackLimitAddress && address <= this.stackBaseAddress)
-      value = this.fetchWordFromTable(this.stackBlockTable, (this.stackBaseAddress - address) >> 2);
+      value = this.fetchFromTable(
+        this.stackBlockTable,
+        (this.stackBaseAddress - address) | 0,
+        length,
+        raw
+      );
     else if (address >= this.memoryMapBaseAddress && address < this.memoryMapLimitAddress)
-      value = this.fetchWordFromTable(
+      value = this.fetchFromTable(
         this.memoryMapBlockTable,
-        (address - this.memoryMapBaseAddress) >> 2
+        (address - this.memoryMapBaseAddress) | 0,
+        length,
+        raw
       );
     else if (this.inTextSegment(address)) {
       if (this.host.isSelfModifyingCodeEnabled?.())
         value = this.getStatementNoNotify(address)?.getBinaryStatement() ?? 0;
       else throw new AddressErrorException('Cannot read directly from text segment!', 4, address);
     } else if (this.inKernelDataSegment(address))
-      value = this.fetchWordFromTable(
+      value = this.fetchFromTable(
         this.kernelDataBlockTable,
-        (address - this.kernelDataBaseAddress) >> 2
+        (address - this.kernelDataBaseAddress) | 0,
+        length,
+        raw
       );
     else if (this.inKernelTextSegment(address))
       throw new AddressErrorException(
@@ -549,8 +519,12 @@ export class Memory<Statement extends MemoryStatement = MemoryStatement> {
         address
       );
     else throw new AddressErrorException('address out of range ', 4, address);
-    this.notifyAnyObservers(AccessNotice.READ, address, 4, value);
     return value;
+  }
+  private fetchFromTable(table: WordTable, relative: number, length: number, raw: boolean): number {
+    return raw
+      ? this.fetchWordFromTable(table, relative >> 2)
+      : this.fetchBytesFromTable(table, relative, length);
   }
   /** Reads dump data silently; returns null for unallocated blocks/instructions and deliberately rejects MMIO. */
   getRawWordOrNull(address: number): number | null {
@@ -605,7 +579,7 @@ export class Memory<Statement extends MemoryStatement = MemoryStatement> {
       throw new AddressErrorException('fetch address not aligned on word boundary ', 4, address);
     return this.readBytes(address, 4, false);
   }
-  /** Reads an unsigned aligned halfword into the low sixteen bits. */
+  /** Read an unsigned aligned data halfword into the low sixteen bits. Permitted user-text reads instead require word alignment and return the entire instruction word. */
   getHalf(address: number): number {
     address |= 0;
     if (address % 2 !== 0)
@@ -616,7 +590,7 @@ export class Memory<Statement extends MemoryStatement = MemoryStatement> {
       );
     return this.get(address, 2);
   }
-  /** Reads an unsigned byte into the low eight bits. */
+  /** Read an unsigned data byte into the low eight bits. Permitted user-text reads instead require word alignment and return the entire instruction word. */
   getByte(address: number): number {
     return this.get(address, 1);
   }
@@ -666,22 +640,22 @@ export class Memory<Statement extends MemoryStatement = MemoryStatement> {
       address = (address > 0 ? address + (4 - (address % 4)) : address - (4 - (address % 4))) | 0;
     return address;
   }
-  /** Tests membership in the allocated user text address range. */
+  /** Test membership in the configured, capacity-limited user text address range; no allocated block is required. */
   inTextSegment(address: number): boolean {
     address |= 0;
     return address >= this.textBaseAddress && address < this.textLimitAddress;
   }
-  /** Tests membership in the allocated kernel text address range. */
+  /** Test membership in the configured, capacity-limited kernel text address range; no allocated block is required. */
   inKernelTextSegment(address: number): boolean {
     address |= 0;
     return address >= this.kernelTextBaseAddress && address < this.kernelTextLimitAddress;
   }
-  /** Tests membership in the allocated user data address range. */
+  /** Test membership in the configured, capacity-limited user data address range; no allocated block is required. */
   inDataSegment(address: number): boolean {
     address |= 0;
     return address >= this.dataSegmentBaseAddress && address < this.dataSegmentLimitAddress;
   }
-  /** Tests membership in the allocated kernel data address range. */
+  /** Test membership in the configured, capacity-limited kernel data address range; no allocated block is required. */
   inKernelDataSegment(address: number): boolean {
     address |= 0;
     return address >= this.kernelDataBaseAddress && address < this.kernelDataSegmentLimitAddress;

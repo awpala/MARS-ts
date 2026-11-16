@@ -52,10 +52,9 @@
   const dataHeightRestorable = $derived(
     display.dataSegmentHeight !== null && displayedDataHeight < naturalDataHeight
   );
-  $effect(() => view.observeWrites());
   $effect(() => {
     // Assembly and Reset replace the statement list after initializing data memory.
-    view.resetObservation();
+    void view.statements;
     if (dataScroll) dataScroll.scrollTop = 0;
   });
   const segmentOptions = $derived([

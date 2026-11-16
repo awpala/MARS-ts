@@ -94,7 +94,7 @@
 
 <svelte:window onfocus={pickerReturned} />
 
-<!-- @component Owns the browser import picker, the reading of selected sources and ZIP archives, and its registered desktop command. The desktop blocks interaction behind "Waiting for file selection…" from the moment the picker opens; once the browser reports the outcome it reads "Attempting import…" while the selection is read, or "Canceling import…" for a canceled picker, and it is released as soon as the page has focus again. The workspace owns the import summary, confirmation, and persistence. Superseded reads and completions after unmount are ignored. -->
+<!-- @component Owns the browser import picker, selected source/ZIP reads, and its registered desktop command. A blocking status covers selection, reading, or cancellation until that operation finishes and the page is active; a picker that reports no outcome releases its status after a focus-return grace period. The workspace owns the import summary, confirmation, and persistence. Superseded reads and completions after unmount are ignored. -->
 <input
   class="hidden"
   type="file"

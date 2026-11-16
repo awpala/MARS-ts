@@ -1,24 +1,17 @@
 /* Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license.
  * Ports mars/mips/instructions/syscalls/SyscallReadInt.java; see MARSlicense.txt. */
-import { AbstractSyscall } from '../AbstractSyscall.js';
+import { AbstractReadNumberSyscall } from './AbstractReadNumberSyscall.js';
 import type { SyscallHost } from '../SyscallHost.js';
 import type { ProgramStatement } from '../../assembler/programs/ProgramStatement.js';
-import { NumberFormatException } from '../../formatting/Binary.js';
 /** Canonical ReadInt service; hardware and I/O remain owned by the injected session. */
-export class SyscallReadInt extends AbstractSyscall {
+export class SyscallReadInt extends AbstractReadNumberSyscall {
   /** Construct service 5 (ReadInt) for this session. */
   constructor(host: SyscallHost) {
     super(5, 'ReadInt', host);
   }
-  /** Execute the canonical register, memory, console, and error behavior. */
+  /** Await a parsed signed integer, then write $v0. Numeric-input failures become syscall diagnostics before the register write. */
   override async simulate(statement: ProgramStatement): Promise<void> {
-    let value: number;
-    try {
-      value = await this.host.systemIO.readInteger(this.getNumber());
-    } catch (error) {
-      if (!(error instanceof NumberFormatException)) throw error;
-      throw this.syscallException(statement, 'invalid integer input');
-    }
+    const value = await this.readNumber(statement, 'integer');
     this.host.registerFile.updateRegister(2, value);
   }
 }

@@ -4,7 +4,7 @@ This directory owns deterministic inputs and captured behavior for the TypeScrip
 
 ## Capture and verify
 
-From the repository root, with Node 24 and JDK 21 available:
+From the repository root, with Node 26 and JDK 21 available:
 
 ```sh
 node tests/oracle/run.mjs --update

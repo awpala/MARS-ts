@@ -11,7 +11,7 @@ Determine exact language, runtime, framework, and dependency versions from manif
 | Legacy behavior | The Java sources and the oracle ([legacy guide](legacy.md)), not the MARS website or third-party forks |
 | CI runtimes | [verify.yml](../../.github/workflows/verify.yml), which must match the container's Node and JDK majors |
 
-The installed stack is Svelte 5, SvelteKit 3, Vite 8, Tailwind 4, Vitest 4, and TypeScript 6. The global TypeScript feature is pinned to major 6 because the scaffolded SvelteKit lint and check tooling supports it; the app's own TypeScript devDependency is authoritative for its gates.
+The installed stack is Node 26 LTS, Svelte 5, SvelteKit 3, Vite 8, Tailwind 4, Vitest 5, and TypeScript 6. Keep both project and global TypeScript on major 6 until the existing SvelteKit 3 / Svelte 5 toolchain, including svelte-check and typescript-eslint, supports TypeScript 7; the app's TypeScript devDependency and lockfile remain authoritative for its gates.
 
 ## Authoritative implementation policy
 
@@ -25,5 +25,7 @@ The installed stack is Svelte 5, SvelteKit 3, Vite 8, Tailwind 4, Vitest 4, and 
 ## MCP servers
 
 [.mcp.json](../../.mcp.json) (Claude Code) and [.codex/config.toml](../../.codex/config.toml) (Codex) declare the same first-party `svelte` server. Both configurations launch `/workspace/node_modules/.bin/svelte-mcp`, provided by the exact-pinned `@sveltejs/mcp` devDependency. Restart an existing MCP connection to select the local server; tools already connected to the hosted endpoint remain usable during the transition.
+
+After upgrading the pinned package, reconnect existing local MCP clients so their server processes load the new code. The [tooling integration checks](../../tests/tooling/README.md) exercise its public analyzer with constructor parameter properties, enums, real compiler diagnostics, and the production desktop state modules. Run these checks when updating the analyzer; do not rewrite valid application TypeScript to accommodate an analyzer crash or suppress its diagnostics.
 
 Agent tooling for a technology comes only from that technology's authors. Do not add community MCP servers, third-party plugins, or third-party skill installers. No first-party agent tooling is configured for Java; the legacy tree is read with ordinary file tools and the Red Hat Java extension in the editor.

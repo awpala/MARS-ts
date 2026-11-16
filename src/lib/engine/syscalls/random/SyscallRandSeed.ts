@@ -8,7 +8,7 @@ export class SyscallRandSeed extends AbstractSyscall {
   constructor(host: SyscallHost) {
     super(40, 'RandSeed', host);
   }
-  /** Execute the canonical random-stream and register behavior. */
+  /** Seed or reseed stream $a0 with signed $a1 without changing registers. */
   override simulate(): void {
     this.host.randomStreams.setSeed(
       this.host.registerFile.getValue(4),

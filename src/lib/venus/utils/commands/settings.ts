@@ -112,7 +112,15 @@ export const exceptionHandlerDescription =
 export type DisplayToggleKey = 'showLabels' | 'hexAddresses' | 'hexValues' | 'ascii';
 
 /** Source of a display toggle's value: a display preference or an engine setting. */
-export type ToggleTarget = { display: DisplayToggleKey } | { engine: number };
+export type ToggleTarget =
+  | {
+      /** Boolean preference owned by the desktop's display state. */
+      display: DisplayToggleKey;
+    }
+  | {
+      /** Numeric Settings identifier owned by the current machine. */
+      engine: number;
+    };
 
 /** Presentation and target of one preference shown as a toolbar toggle and, usually, a Settings menu checkbox. */
 export type ToggleSpec = {

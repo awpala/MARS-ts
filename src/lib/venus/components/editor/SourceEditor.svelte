@@ -111,12 +111,12 @@
       sourceHelp = null;
   }
 
-  /** Publish the mounted textarea to the workspace for its editor commands, and withdraw it on removal. */
+  /** Publish this surface's input and line geometry for workspace navigation, and withdraw both on removal. */
   function registerInput(element: HTMLTextAreaElement) {
-    workspace.sourceInput = element;
-    return () => {
-      workspace.sourceInput = undefined;
-    };
+    return workspace.registerSourceInput(element, (line) => {
+      const height = Number.parseFloat(getComputedStyle(element).lineHeight);
+      if (Number.isFinite(height)) element.scrollTop = Math.max(0, (line - 3) * height);
+    });
   }
   useKeyboard(
     (event) => {
@@ -126,7 +126,7 @@
   );
 </script>
 
-<!-- @component Highlighted source surface with local scrolling and hover state. With no open source and an empty browser library, it shows how to create or import one. The source workspace owns the buffer, selection, scroll position, and the textarea handle its editor commands use; this view publishes the handle while mounted and delegates every mutation to the workspace. -->
+<!-- @component Highlighted source surface with view-owned DOM geometry, scrolling, and hover state. With no open source and an empty browser library, it shows how to create or import one. The workspace owns buffers and persisted selection/scroll positions; it borrows this view's textarea and line-reveal capability through a mounted registration and handles source mutations. -->
 {#if current}<div
     class="editor-area"
     style:--editor-font={editorPreset.font}

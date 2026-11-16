@@ -11,8 +11,11 @@ export const EXPORT_ALL_FILENAME = 'mars-asm-src-files.zip';
 export interface SaveTarget {
   /** Opens the chosen file for writing; the caller closes the stream, or aborts it after a failure. */
   createWritable: () => Promise<{
+    /** Stage the file contents; close must succeed before the write is committed. */
     write: (data: Blob) => Promise<void>;
+    /** Commit pending contents and release the writable stream. */
     close: () => Promise<void>;
+    /** Request that pending contents be discarded and the stream released. */
     abort: (reason?: unknown) => Promise<void>;
   }>;
 }
@@ -29,16 +32,19 @@ export function sourceBlob(source: string): Blob {
 }
 
 /** UTF-8 sources as one uncompressed ZIP; callers supply unique, flat filenames. */
-export function sourceArchiveBlob(files: readonly { name: string; source: string }[]): Blob {
+export function sourceArchiveBlob(
+  files: readonly {
+    /** Unique, flat filename for this archive entry. */
+    name: string;
+    /** Exact source text to encode as UTF-8. */
+    source: string;
+  }[]
+): Blob {
   const encoder = new TextEncoder();
   return writeZip(files.map((file) => ({ name: file.name, data: encoder.encode(file.source) })));
 }
 
-/**
- * Opens the browser's save picker where one exists (Chromium) and resolves with the chosen file, or `canceled` when the picker
- * reports cancellation. Resolves undefined when there is no picker or the browser refuses it (for example after user activation
- * has expired), so the caller falls back to `downloadBlob`. Call it synchronously from the user's action, before other awaits.
- */
+/** Open the browser save picker from the initiating user action, before other awaits. Return the chosen target, `canceled` for AbortError, or undefined when unavailable or rejected with another DOMException so the caller can use downloadBlob. Other errors propagate. */
 export async function requestSaveTarget(
   name: string,
   blob: Blob,
@@ -57,10 +63,7 @@ export async function requestSaveTarget(
   }
 }
 
-/**
- * Writes a blob to a file chosen in the save picker. A failed write or close aborts the stream, so the browser discards
- * its pending data and temporary file instead of holding them until garbage collection, then rethrows the failure.
- */
+/** Write and close the chosen file stream. If either step fails, attempt to abort, suppress any abort failure, and rethrow the original error. Failure to open the stream propagates directly. */
 export async function writeSaveTarget(target: SaveTarget, blob: Blob): Promise<void> {
   const writable = await target.createWritable();
   try {

@@ -88,7 +88,7 @@ const COPROCESSOR0_WORDS = 4;
 /** Words in `coprocessor1`: the floating registers. */
 const COPROCESSOR1_WORDS = 32;
 
-/** Validate the complete serialized payload before any restored machine mutation. */
+/** Validate the serialized shape, numeric bounds, and history references without mutating a machine. The restoring controller separately checks the configuration identity and rebuilds source metadata. */
 export function isRunCheckpoint(value: unknown): value is RunCheckpoint {
   if (!value || typeof value !== 'object') return false;
   const s = value as RunCheckpoint;
@@ -168,7 +168,7 @@ function checkpointRegisters(machine: Globals) {
   ];
 }
 
-/** Capture idle hardware, bounded history, and the exact simulator stop address (default null) without notices or mutable engine references. */
+/** Capture idle hardware, bounded history, and the exact simulator stop address (default null) as a detached payload. Historical statement lookup uses getStatementNoNotify, which can still emit reads for instructions executed from data. */
 export function captureRunCheckpoint(
   machine: Globals,
   state: RunState,

@@ -8,7 +8,7 @@ export class SyscallPrintChar extends AbstractSyscall {
   constructor(host: SyscallHost) {
     super(11, 'PrintChar', host);
   }
-  /** Execute the canonical register, memory, console, and error behavior. */
+  /** Print the low byte of $a0 as one character without changing registers. */
   override simulate(): void {
     this.host.systemIO.printString(String.fromCharCode(this.host.registerFile.getValue(4) & 0xff));
   }

@@ -46,7 +46,7 @@ export class Editor {
   getEditPanes(): readonly EditPane[] {
     return this.documents;
   }
-  /** Returns the selected tab, or undefined when no source is open. */
+  /** Return the selected editor-owned tab, or undefined when no source is open; text and history changes must use editor methods. */
   getCurrentEditTab(): EditPane | undefined {
     return this.documents.find((tab) => tab.id === this.selectedId);
   }
@@ -97,7 +97,7 @@ export class Editor {
     tab.savedText = savedText;
     return tab;
   }
-  /** Records one source edit and discards the redo branch. */
+  /** Record a changed writable source and discard its redo branch; missing, read-only, or unchanged buffers are left untouched. */
   setText(text: string): void {
     const tab = this.getCurrentEditTab();
     if (!tab || tab.readOnly || tab.text === text) return;
@@ -114,7 +114,7 @@ export class Editor {
       redo: [...tab.redo]
     }));
   }
-  /** Recover history only for an exact source identity/text match, leaving conflicting drafts untouched. */
+  /** Recover history for writable buffers with an exact source name/text match; leave read-only references and conflicting drafts untouched. */
   restoreHistory(records: readonly EditHistory[]): void {
     for (const tab of this.documents) {
       if (tab.readOnly) continue;

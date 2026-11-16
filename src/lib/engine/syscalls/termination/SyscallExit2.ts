@@ -9,7 +9,7 @@ export class SyscallExit2 extends AbstractSyscall {
   constructor(host: SyscallHost) {
     super(17, 'Exit2', host);
   }
-  /** Execute the canonical register, memory, console, and error behavior. */
+  /** Throw the normal-exit ProcessingException sentinel without reading an exit status or changing registers. */
   override simulate(): void {
     throw new ProcessingException();
   }

@@ -81,34 +81,42 @@
   });
   $effect(() => {
     let statements = controller.getState().statements;
-    const releaseController = controller.subscribe((state) => {
-      if (state.statements !== statements) changed = {};
-      statements = state.statements;
-    });
     const banks = [
       { name: 'Registers' as const, registers: general },
       { name: 'Coproc 0' as const, registers: coprocessor0.getRegisters() },
       { name: 'Coproc 1' as const, registers: coprocessor1.getRegisters() }
     ];
-    const releases = banks.flatMap((bank) =>
-      bank.registers.map((register) =>
-        register.subscribe((notice) => {
-          if (notice.getAccessType() === AccessNotice.WRITE) {
-            if (
-              register !== registers.getProgramCounterRegister() &&
-              (controller.isObservingWrites() || controller.isBackStepping())
-            ) {
-              changed[bank.name] = register.getName();
-              display.registerTab = bank.name;
-            }
-            revision++;
-          }
-        })
-      )
-    );
-    return () => {
+    let observing = false;
+    let releases: (() => void)[] = [];
+    const releaseController = controller.subscribe((state) => {
+      if (state.statements !== statements) changed = {};
+      statements = state.statements;
+      const observe = state.status !== 'running' || controller.isObservingWrites();
+      if (observe === observing) return;
+      observing = observe;
       releases.forEach((release) => release());
+      releases = observe
+        ? banks.flatMap((bank) =>
+            bank.registers.map((register) =>
+              register.subscribe((notice) => {
+                if (notice.getAccessType() === AccessNotice.WRITE) {
+                  if (
+                    register !== registers.getProgramCounterRegister() &&
+                    (controller.isObservingWrites() || controller.isBackStepping())
+                  ) {
+                    changed[bank.name] = register.getName();
+                    display.registerTab = bank.name;
+                  }
+                  revision++;
+                }
+              })
+            )
+          )
+        : [];
+    });
+    return () => {
       releaseController();
+      releases.forEach((release) => release());
     };
   });
   function format(value: number, unsigned = false) {

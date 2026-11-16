@@ -7,7 +7,12 @@
     /** Optional parent-resolved filename annotation; defaults to no prefix and stays regular weight. */
     filenamePrefix?: string;
     /** Required editor caret position, or null when the source editor is not focused in Edit. */
-    position: { line: number; column: number } | null;
+    position: {
+      /** One-based source line containing the selection start. */
+      line: number;
+      /** One-based UTF-16 column within the source line. */
+      column: number;
+    } | null;
     /** Required execution status from the controller snapshot, or null to hide the right-side annotation. */
     status: RunState['status'] | null;
     /** Required parent-owned breakpoint activation flag; false adds the suspension annotation. */
