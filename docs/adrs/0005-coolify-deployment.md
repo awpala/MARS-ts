@@ -5,7 +5,7 @@
 
 ## Context
 
-Production is live and stable at `https://mars-ide.portfolio-projects.dev`, connected to `awpala/MARS-ts` through its corresponding GitHub App in Coolify. The existing application prerenders its root route and builds static assets with Node 24. Simulator execution and source persistence belong to the browser. The repository has no production Dockerfile or application server.
+Production is live and stable at `https://mars-ts.dev`, connected to `awpala/MARS-ts` through its corresponding GitHub App in Coolify. The existing application prerenders its root route and builds static assets with Node 24. Simulator execution and source persistence belong to the browser. The repository has no production Dockerfile or application server.
 
 ## Decision
 

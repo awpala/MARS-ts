@@ -6,7 +6,7 @@ Read the [implementation guide](IMPLEMENTATION.md) for the current architecture,
 
 The [deviation catalog](docs/deviations.md) records current behavioral differences from MARS 4.5 in UI and Engine subsets, with browser/platform adaptations separated from UI/UX changes. It excludes pending features and minor styling and will define the formal comparison baseline when MARS-ts 1.0 is released.
 
-[_See `MARS-ts` deployed live here!_](https://mars-ide.portfolio-projects.dev)
+[_See `MARS-ts` deployed live here!_](https://mars-ts.dev)
 
 > [!IMPORTANT]
 > This is a good faith feature-parity attempt/interpretation **only** (via corresponding TypeScript porting of equivalent Java implementation). The repo owner makes **no** guarantee of 100% fidelity to the original Java-based implementation; user discretion/discernment is therefore advised accordingly!

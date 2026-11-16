@@ -92,7 +92,7 @@ Each becomes an ADR when it is decided.
 - Execution model resolved in [ADR 0004](0004-cooperative-simulation.md): cooperative execution through an injected scheduler and asynchronous input services.
 - The current editor uses a native textarea with the translated MIPS highlighter, bundled presets, and an instance-owned buffer/history model ([ADR 0002](0002-port-fidelity.md), [current behavioral differences](../deviations.md#ui-subset)). Remaining editor parity work does not imply that the existing component selection is still undecided.
 - Implementation order of the bundled tools.
-- Deployment target and public origin resolved in [ADR 0005](0005-coolify-deployment.md): live, stable static hosting on Coolify at `https://mars-ide.portfolio-projects.dev` through the corresponding GitHub App.
+- Deployment target and public origin resolved in [ADR 0005](0005-coolify-deployment.md): live, stable static hosting on Coolify at `https://mars-ts.dev` through the corresponding GitHub App.
 
 ## 9. Consequences
 

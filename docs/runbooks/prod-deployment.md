@@ -1,6 +1,6 @@
 # Coolify deployment runbook
 
-MARS-ts is live and stable at `https://mars-ide.portfolio-projects.dev`, deployed from `awpala/MARS-ts` through the corresponding GitHub App in Coolify. This runbook covers maintenance of that existing deployment, routine releases, configuration changes, and recovery.
+MARS-ts is live and stable at `https://mars-ts.dev`, deployed from `awpala/MARS-ts` through the corresponding GitHub App in Coolify. This runbook covers maintenance of that existing deployment, routine releases, configuration changes, and recovery.
 
 For an ordinary release, use steps 4–6 to validate the revision, follow its deployment, and run release smoke checks. Consult steps 1–3 when changing configuration or recreating the service, step 7 when maintaining deployment filters, and step 8 for rollback. The configuration and smoke checks are operating procedures for the live service.
 
@@ -100,7 +100,7 @@ Save and **redeploy/rebuild** after editing the Nginx configuration; restarting 
 
 ### Domain
 
-Open **Configuration → Domains → Add domain**, choose HTTPS, enter `mars-ide.portfolio-projects.dev`, and select internal port `80` if requested. Enable HTTP-to-HTTPS redirection. In older layouts, set **General → Domains** to `https://mars-ide.portfolio-projects.dev`. Save and keep Coolify-managed proxy routing. The [domain settings documentation](https://coolify.io/docs/applications/configuration/general#domains) distinguishes the internal target port from the visitor-facing HTTPS origin.
+Open **Configuration → Domains → Add domain**, choose HTTPS, enter `mars-ts.dev`, and select internal port `80` if requested. Enable HTTP-to-HTTPS redirection. In older layouts, set **General → Domains** to `https://mars-ts.dev`. Save and keep Coolify-managed proxy routing. The [domain settings documentation](https://coolify.io/docs/applications/configuration/general#domains) distinguishes the internal target port from the visitor-facing HTTPS origin.
 
 ### Healthcheck and image retention
 
@@ -156,15 +156,14 @@ npm run test:browser
 
 Require the harness, documentation, legacy oracle, and app tiers to pass. Install browser prerequisites with `npm run test:browser:install` if needed. Browser tests allocate isolated group-server ports starting at `6278`; leave `6277` exclusively for human review. These commands verify source and the isolated static build, not Coolify's generated image. CI runs the aggregate gates and a separate semantic-group Playwright workflow under the [documented trigger policy](../agents/operations.md#gates); it does not perform a production-container HTTP test.
 
-Ordinary application releases retain the current domain and DNS. When moving servers or changing DNS, update the `mars-ide` record in the **DNS provider's dashboard for `portfolio-projects.dev`** using the server's public address from **Coolify → Servers** or the server provider. Publish an AAAA record only when that server's IPv6 routing and proxy are configured. Keep public ports `80` and `443` routed to the Coolify proxy for this hostname.
+Ordinary application releases retain the current domain and DNS. When moving servers or changing DNS, update the existing apex (`@`) A record in **Porkbun's DNS dashboard for `mars-ts.dev`** using the server's public address from **Coolify → Servers** or the server provider. Publish an AAAA record only when that server's IPv6 routing and proxy are configured. Keep public ports `80` and `443` routed to the Coolify proxy for this hostname.
 
 After DNS or ingress changes, inspect the records from the **devcontainer terminal** using `dig` if available, or an equivalent DNS lookup tool:
 
 ```sh
-dig +short A mars-ide.portfolio-projects.dev
-dig +short AAAA mars-ide.portfolio-projects.dev
-dig +short CAA mars-ide.portfolio-projects.dev
-dig +short CAA portfolio-projects.dev
+dig +short A mars-ts.dev
+dig +short AAAA mars-ts.dev
+dig +short CAA mars-ts.dev
 ```
 
 Confirm A/AAAA answers match the intended ingress and that any effective CAA policy permits the configured certificate issuer. Check the public HTTPS origin after DNS, ingress, or certificate changes.
@@ -186,19 +185,19 @@ Use the existing release pipeline below after validating the intended revision o
 Use these checks after application or hosting changes, rollback, or incident recovery. Run the requests without disabling certificate validation:
 
 ```sh
-curl --connect-timeout 10 --max-time 30 -i https://mars-ide.portfolio-projects.dev/
-curl --connect-timeout 10 --max-time 30 -I http://mars-ide.portfolio-projects.dev/
-curl --connect-timeout 10 --max-time 30 -i https://mars-ide.portfolio-projects.dev/MARSlicense.txt
-curl --connect-timeout 10 --max-time 30 -i https://mars-ide.portfolio-projects.dev/llms.txt
-curl --connect-timeout 10 --max-time 30 -i https://mars-ide.portfolio-projects.dev/robots.txt
-curl --connect-timeout 10 --max-time 30 -I https://mars-ide.portfolio-projects.dev/_app/version.json
-curl --connect-timeout 10 --max-time 30 -I https://mars-ide.portfolio-projects.dev/_app/immutable/missing-chunk.js
-curl --connect-timeout 10 --max-time 30 -i https://mars-ide.portfolio-projects.dev/missing-page/
+curl --connect-timeout 10 --max-time 30 -i https://mars-ts.dev/
+curl --connect-timeout 10 --max-time 30 -I http://mars-ts.dev/
+curl --connect-timeout 10 --max-time 30 -i https://mars-ts.dev/MARSlicense.txt
+curl --connect-timeout 10 --max-time 30 -i https://mars-ts.dev/llms.txt
+curl --connect-timeout 10 --max-time 30 -i https://mars-ts.dev/robots.txt
+curl --connect-timeout 10 --max-time 30 -I https://mars-ts.dev/_app/version.json
+curl --connect-timeout 10 --max-time 30 -I https://mars-ts.dev/_app/immutable/missing-chunk.js
+curl --connect-timeout 10 --max-time 30 -i https://mars-ts.dev/missing-page/
 ```
 
 | Request                            | Required result                                                                                                                  |
 | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| HTTPS `/`                          | HTTP `200`, MARS HTML with one canonical link to `https://mars-ide.portfolio-projects.dev/`, valid certificate for this hostname |
+| HTTPS `/`                          | HTTP `200`, MARS HTML with one canonical link to `https://mars-ts.dev/`, valid certificate for this hostname |
 | HTTP `/`                           | Redirect to the HTTPS origin, without an internal port or hostname                                                               |
 | `/MARSlicense.txt`                 | HTTP `200`, the bundled Pete Sanderson and Kenneth Vollmar license text                                                          |
 | `/llms.txt`                        | HTTP `200`, plain-text MARS agent guidance matching the shipped asset; cache revalidation                                        |
@@ -211,7 +210,7 @@ The current application has only the root route. Do not copy the calculator's ne
 
 In a clean **browser profile**, open the HTTPS site:
 
-1. Confirm the desktop becomes interactive, toolbar icons load, and developer tools show no failed `/_app/` JavaScript/CSS requests or uncaught startup errors. Refresh the root URL directly. In the page head, confirm one `rel="canonical"` link points to `https://mars-ide.portfolio-projects.dev/` and the `rel="describedby"` link resolves to `/llms.txt`.
+1. Confirm the desktop becomes interactive, toolbar icons load, and developer tools show no failed `/_app/` JavaScript/CSS requests or uncaught startup errors. Refresh the root URL directly. In the page head, confirm one `rel="canonical"` link points to `https://mars-ts.dev/` and the `rel="describedby"` link resolves to `/llms.txt`.
 2. Create a new file, paste the following program, and save it as `deployment-smoke.asm` in the browser library:
 
    ```asm
