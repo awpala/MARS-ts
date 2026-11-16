@@ -24,7 +24,7 @@ const iconUrls = [...new Set(html.match(/data:image\/svg\+xml;base64,[A-Za-z0-9+
 expect(iconUrls).toHaveLength(metadata.icons.length);
 const testDirectory = resolve(output, 'isolated path with spaces/renamed 日本語');
 mkdirSync(testDirectory, { recursive: true });
-cpSync(resolve(metadata.release, 'MARS-ts.html'), resolve(testDirectory, 'MARS renamed.html'));
+cpSync(resolve(metadata.release, 'MARS-ts.html'), resolve(testDirectory, 'MARS-ts renamed.html'));
 console.log('PASS: artifact embeds all', iconUrls.length, 'SVG image/mask payloads.');
 
 const browser = await chromium.launch();
@@ -44,7 +44,7 @@ page.on('console', (message) => {
 const button = (name) => page.getByRole('button', { name, exact: true });
 try {
   console.log('Browser:', browser.version());
-  const file = resolve(testDirectory, 'MARS renamed.html');
+  const file = resolve(testDirectory, 'MARS-ts renamed.html');
   await page.addInitScript(() =>
     Object.defineProperty(window, 'showSaveFilePicker', { configurable: true, value: undefined })
   );

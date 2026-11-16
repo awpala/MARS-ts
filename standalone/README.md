@@ -1,4 +1,4 @@
-# Standalone MARS
+# Standalone MARS-ts
 
 This module owns the manual single-file HTML distribution of MARS-ts: the generated [MARS-ts.html](MARS-ts.html), its build and postprocessing scripts, and the focused offline browser probe. It reuses the root application's engine, desktop, Help, and artwork; it contains no separately maintained application implementation. [ADR 0016](../docs/adrs/0016-standalone-html-distribution.md) records this secondary distribution decision.
 
@@ -52,4 +52,4 @@ Builds are ad hoc. Generally refresh and validate the HTML alongside application
 
 Do not add this target to CI, scheduled automation, release workflows, or publishing yet. Formal integration is deferred until MARS-ts 1.0 is finalized and released by the repository owner. The hosted/PWA build remains available independently.
 
-MARS is copyright 2003–2013 Pete Sanderson and Kenneth Vollmar, MIT licensed. The artifact preserves original code/data/artwork notices and the complete [canonical license](../MARSlicense.txt).
+Original MARS is copyright 2003–2013 Pete Sanderson and Kenneth Vollmar, MIT licensed. The artifact preserves original code/data/artwork notices and the complete [canonical license](../MARSlicense.txt).
