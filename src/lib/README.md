@@ -16,9 +16,9 @@ flowchart TB
     Platform["Browser APIs<br/>DOM, storage, clipboard, files, timers, audio"]
 
     subgraph VenusModule["Venus · <code>venus/</code>"]
-        Views["Desktop presentation<br/>VenusUI, components, contexts, hooks"]
+        Views["Desktop presentation<br/><code>VenusUI</code>, components, contexts, hooks"]
         State["Desktop state owners<br/>workspace, simulation, preferences,<br/>search, recovery"]
-        Controller["RunController<br/>framework-free run workflows<br/>and checkpoints"]
+        Controller["<code>RunController</code><br/>framework-free run workflows<br/>and checkpoints"]
         Views -->|typed contexts| State
         State --> Controller
     end

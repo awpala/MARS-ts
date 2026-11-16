@@ -27,55 +27,55 @@ Subgraphs follow the source-folder boundaries, with external engine collaborator
 ```mermaid
 flowchart LR
   subgraph shared["<code>syscalls/</code> (module root)"]
-    SyscallLoader[SyscallLoader]
-    SyscallRegistration{{SyscallRegistration}}
-    SyscallOverride{{SyscallOverride}}
-    Syscall{{Syscall}}
-    AbstractSyscall([AbstractSyscall])
-    SyscallHost{{SyscallHost}}
+    SyscallLoader["<code>SyscallLoader</code>"]
+    SyscallRegistration{{"<code>SyscallRegistration</code>"}}
+    SyscallOverride{{"<code>SyscallOverride</code>"}}
+    Syscall{{"<code>Syscall</code>"}}
+    AbstractSyscall(["<code>AbstractSyscall</code>"])
+    SyscallHost{{"<code>SyscallHost</code>"}}
   end
 
   subgraph console["<code>console/</code>"]
-    ConsoleOutput["SyscallPrintInt<br/>SyscallPrintFloat<br/>SyscallPrintDouble<br/>SyscallPrintString<br/>SyscallPrintChar<br/>SyscallPrintIntHex<br/>SyscallPrintIntBinary<br/>SyscallPrintIntUnsigned"]
-    AbstractReadNumberSyscall([AbstractReadNumberSyscall])
-    NumericInput["SyscallReadInt<br/>SyscallReadFloat<br/>SyscallReadDouble"]
-    ConsoleInput["SyscallReadString<br/>SyscallReadChar"]
+    ConsoleOutput["<code>SyscallPrintInt</code><br/><code>SyscallPrintFloat</code><br/><code>SyscallPrintDouble</code><br/><code>SyscallPrintString</code><br/><code>SyscallPrintChar</code><br/><code>SyscallPrintIntHex</code><br/><code>SyscallPrintIntBinary</code><br/><code>SyscallPrintIntUnsigned</code>"]
+    AbstractReadNumberSyscall(["<code>AbstractReadNumberSyscall</code>"])
+    NumericInput["<code>SyscallReadInt</code><br/><code>SyscallReadFloat</code><br/><code>SyscallReadDouble</code>"]
+    ConsoleInput["<code>SyscallReadString</code><br/><code>SyscallReadChar</code>"]
   end
 
   subgraph heap["<code>heap/</code>"]
-    SyscallSbrk[SyscallSbrk]
+    SyscallSbrk["<code>SyscallSbrk</code>"]
   end
 
   subgraph termination["<code>termination/</code>"]
-    Termination["SyscallExit<br/>SyscallExit2"]
+    Termination["<code>SyscallExit</code><br/><code>SyscallExit2</code>"]
   end
 
   subgraph random["<code>random/</code>"]
-    Random["SyscallRandSeed<br/>SyscallRandInt<br/>SyscallRandIntRange<br/>SyscallRandFloat<br/>SyscallRandDouble"]
-    RandomStreams[RandomStreams]
-    JavaRandom[JavaRandom]
+    Random["<code>SyscallRandSeed</code><br/><code>SyscallRandInt</code><br/><code>SyscallRandIntRange</code><br/><code>SyscallRandFloat</code><br/><code>SyscallRandDouble</code>"]
+    RandomStreams["<code>RandomStreams</code>"]
+    JavaRandom["<code>JavaRandom</code>"]
   end
 
   subgraph dialogs["<code>dialogs/</code>"]
-    AbstractDialogSyscall([AbstractDialogSyscall])
-    Dialogs["SyscallConfirmDialog<br/>SyscallInputDialogInt<br/>SyscallInputDialogFloat<br/>SyscallInputDialogDouble<br/>SyscallInputDialogString<br/>SyscallMessageDialog<br/>SyscallMessageDialogInt<br/>SyscallMessageDialogFloat<br/>SyscallMessageDialogDouble<br/>SyscallMessageDialogString"]
+    AbstractDialogSyscall(["<code>AbstractDialogSyscall</code>"])
+    Dialogs["<code>SyscallConfirmDialog</code><br/><code>SyscallInputDialogInt</code><br/><code>SyscallInputDialogFloat</code><br/><code>SyscallInputDialogDouble</code><br/><code>SyscallInputDialogString</code><br/><code>SyscallMessageDialog</code><br/><code>SyscallMessageDialogInt</code><br/><code>SyscallMessageDialogFloat</code><br/><code>SyscallMessageDialogDouble</code><br/><code>SyscallMessageDialogString</code>"]
   end
 
   subgraph midi["<code>midi/</code>"]
-    AbstractMidiSyscall([AbstractMidiSyscall])
-    Midi["SyscallMidiOut<br/>SyscallMidiOutSync"]
-    ToneGenerator[ToneGenerator]
-    ToneGeneratorHost{{ToneGeneratorHost}}
+    AbstractMidiSyscall(["<code>AbstractMidiSyscall</code>"])
+    Midi["<code>SyscallMidiOut</code><br/><code>SyscallMidiOutSync</code>"]
+    ToneGenerator["<code>ToneGenerator</code>"]
+    ToneGeneratorHost{{"<code>ToneGeneratorHost</code>"}}
   end
 
   subgraph collaborators[External engine collaborators]
-    SimulationCode{{SimulationCode}}
-    RegisterFile[RegisterFile]
-    Coprocessor1[Coprocessor1]
-    Memory[Memory]
-    SystemIO[SystemIO]
-    DialogIO[DialogIO]
-    ProcessingExceptionHost{{ProcessingExceptionHost}}
+    SimulationCode{{"<code>SimulationCode</code>"}}
+    RegisterFile["<code>RegisterFile</code>"]
+    Coprocessor1["<code>Coprocessor1</code>"]
+    Memory["<code>Memory</code>"]
+    SystemIO["<code>SystemIO</code>"]
+    DialogIO["<code>DialogIO</code>"]
+    ProcessingExceptionHost{{"<code>ProcessingExceptionHost</code>"}}
   end
 
   Syscall --> SimulationCode

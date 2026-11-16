@@ -6,23 +6,23 @@ The diagram shows how the coordinator composes the owners and which models and a
 
 ```mermaid
 flowchart TB
-    Desktop["DesktopState<br/>coordinator and command routing"]
-    Desktop --> Display["DisplayPreferences"]
-    Desktop --> Modals["ModalState"]
-    Desktop --> Workspace["SourceWorkspace"]
-    Desktop --> Simulation["SimulationState"]
-    Desktop --> Search["SourceSearch"]
-    Desktop --> Persistence["DesktopPersistence"]
+    Desktop["<code>DesktopState</code><br/>coordinator and command routing"]
+    Desktop --> Display["<code>DisplayPreferences</code>"]
+    Desktop --> Modals["<code>ModalState</code>"]
+    Desktop --> Workspace["<code>SourceWorkspace</code>"]
+    Desktop --> Simulation["<code>SimulationState</code>"]
+    Desktop --> Search["<code>SourceSearch</code>"]
+    Desktop --> Persistence["<code>DesktopPersistence</code>"]
     Search --> Workspace
     Persistence -->|captures and restores| Workspace & Simulation & Display
     Workspace & Simulation -->|dialogs and overlays| Modals
     Simulation -->|source reads| Workspace
     Workspace -.->|"invalidation, reporting, running-state,<br/>and assemble-on-open callbacks"| Simulation
-    Workspace --> Editor["Editor model<br/>buffers and history"]
+    Workspace --> Editor["<code>Editor</code> model<br/>buffers and history"]
     Workspace & Display & Simulation & Persistence --> Browser["Browser adapters"]
     Workspace -->|editor clipboard actions| Platform["Browser APIs"]
-    Simulation --> Controller["RunController"]
-    Simulation -->|constructs machine with host| Engine["Globals<br/>one engine machine"]
+    Simulation --> Controller["<code>RunController</code>"]
+    Simulation -->|constructs machine with host| Engine["<code>Globals</code><br/>one engine machine"]
     Controller --> Engine
     Engine -.->|calls supplied host interfaces| Simulation
 ```

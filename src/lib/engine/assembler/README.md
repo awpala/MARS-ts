@@ -23,21 +23,21 @@ Import directly from the owning group; retired flat paths have no wrappers or ba
 
 ```mermaid
 flowchart TB
-    Host["Injected current source and path services"] --> Program["MIPSprogram<br/>read, order, and tokenize supplied files"]
-    Program --> Tokenizer["Tokenizer<br/>includes, literals, eqv, and classification"]
-    Tokenizer --> Tokens["SourceLine and TokenList<br/>current and original positions"]
-    Tokens --> First["Assembler first pass<br/>labels, directives, macros,<br/>data writes, and forward references"]
+    Host["Injected current source and path services"] --> Program["<code>MIPSprogram</code><br/>read, order, and tokenize supplied files"]
+    Program --> Tokenizer["<code>Tokenizer</code><br/>includes, literals, eqv, and classification"]
+    Tokenizer --> Tokens["<code>SourceLine</code> and <code>TokenList</code><br/>current and original positions"]
+    Tokens --> First["<code>Assembler</code> first pass<br/>labels, directives, macros,<br/>data writes, and forward references"]
     Directives["Directive metadata and data ranges"] --> First
-    Macros["Program MacroPool"] --> First
+    Macros["Program <code>MacroPool</code>"] --> First
     Symbols["Local and session-global symbols"] <--> First
     First --> Second["Pseudo expansion<br/>and operand resolution"]
-    Instructions["InstructionSet<br/>basic descriptors and pseudo templates"] --> Tokenizer
+    Instructions["<code>InstructionSet</code><br/>basic descriptors and pseudo templates"] --> Tokenizer
     Instructions --> Second
-    Second --> Statements["ProgramStatement<br/>basic text and machine encoding"]
+    Second --> Statements["<code>ProgramStatement</code><br/>basic text and machine encoding"]
     First --> Memory["Actual session text/data memory"]
     Statements --> Memory
     Statements --> Results["Program machine list<br/>and fresh undo history"]
-    Tokenizer --> Errors["Source-mapped ErrorList"]
+    Tokenizer --> Errors["Source-mapped <code>ErrorList</code>"]
     First --> Errors
     Second --> Errors
     Statements --> Errors

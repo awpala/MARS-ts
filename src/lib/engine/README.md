@@ -16,14 +16,14 @@ The diagram shows ownership and service use, not an exhaustive import graph. Das
 
 ```mermaid
 flowchart TB
-    Controller["Venus RunController<br/>assembly and execution workflows"] --> Globals["Globals<br/>one machine's composition"]
-    Globals --> Settings["Settings and memory configurations"]
-    Globals --> Hardware["Memory, RegisterFile,<br/>Coprocessor0 and Coprocessor1"]
-    Globals --> Registry["InstructionSet and SyscallLoader"]
-    Globals --> Runtime["Simulator, DelayedBranch,<br/>and SystemIO"]
-    Globals --> Current["Current MIPSprogram reference"]
+    Controller["Venus <code>RunController</code><br/>assembly and execution workflows"] --> Globals["<code>Globals</code><br/>one machine's composition"]
+    Globals --> Settings["<code>Settings</code> and memory configurations"]
+    Globals --> Hardware["<code>Memory</code>, <code>RegisterFile</code>,<br/><code>Coprocessor0</code> and <code>Coprocessor1</code>"]
+    Globals --> Registry["<code>InstructionSet</code> and <code>SyscallLoader</code>"]
+    Globals --> Runtime["<code>Simulator</code>, <code>DelayedBranch</code>,<br/>and <code>SystemIO</code>"]
+    Globals --> Current["Current <code>MIPSprogram</code> reference"]
     Current --> Source["Source, tokens, symbols,<br/>macros, and statements"]
-    Current --> Undo["BackStepper<br/>program-owned machine history"]
+    Current --> Undo["<code>BackStepper</code><br/>program-owned machine history"]
     Runtime --> Hardware
     Runtime --> Registry
     Registry --> Hardware
@@ -74,7 +74,7 @@ The diagram shows the principal composition and API use among the engine's modul
 
 ```mermaid
 flowchart TB
-    Globals["Globals and Settings<br/>session-local machine composition"]
+    Globals["<code>Globals</code> and <code>Settings</code><br/>session-local machine composition"]
     Assembly["<code>assembler/</code><br/>source preparation, tokens, directives,<br/>symbols, macros, assembly"]
     Instructions["<code>instructions/</code><br/>registry, definitions, decoding,<br/>execution callbacks"]
     Hardware["<code>hardware/</code><br/>registers, coprocessors, memory,<br/>layouts, access notices"]
@@ -121,11 +121,11 @@ The browser runs this engine cooperatively on the main thread. Tests supply dete
 
 ```mermaid
 flowchart TB
-    Host["Host-provided current source texts"] --> Programs["MIPSprogram preparation<br/>lead and optional handler ordering"]
-    Programs --> Tokens["Tokenizer<br/>includes, literals, eqv, classification"]
-    Tokens --> Pass1["Assembler first pass<br/>labels, directives, macros,<br/>data writes, and forward references"]
-    Pass1 --> Pass2["Pseudo expansion and encoding<br/>ProgramStatement machine representations"]
-    Instructions["InstructionSet<br/>basic definitions and pseudo templates"] --> Tokens
+    Host["Host-provided current source texts"] --> Programs["<code>MIPSprogram</code> preparation<br/>lead and optional handler ordering"]
+    Programs --> Tokens["<code>Tokenizer</code><br/>includes, literals, eqv, classification"]
+    Tokens --> Pass1["<code>Assembler</code> first pass<br/>labels, directives, macros,<br/>data writes, and forward references"]
+    Pass1 --> Pass2["Pseudo expansion and encoding<br/><code>ProgramStatement</code> machine representations"]
+    Instructions["<code>InstructionSet</code><br/>basic definitions and pseudo templates"] --> Tokens
     Instructions --> Pass2
     Pass1 --> Memory["Initialized data and text memory"]
     Pass2 --> Memory
@@ -133,7 +133,7 @@ flowchart TB
     Tokens --> Diagnostics["Source-mapped warnings and errors"]
     Pass1 --> Diagnostics
     Pass2 --> Diagnostics
-    MachineList --> Simulator["Simulator"]
+    MachineList --> Simulator["<code>Simulator</code>"]
     Memory --> Simulator
 ```
 

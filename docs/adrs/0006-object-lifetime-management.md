@@ -23,16 +23,16 @@ The coordinator connects capabilities and routes commands. The workspace owns ed
 
 ```mermaid
 flowchart TB
-    Root["Mounted VenusUI"] --> Desktop["Desktop coordinator"]
-    Desktop --> Workspace["Source workspace<br/>Editor, drafts, file workflows"]
+    Root["Mounted <code>VenusUI</code>"] --> Desktop["Desktop coordinator"]
+    Desktop --> Workspace["Source workspace<br/><code>Editor</code>, drafts, file workflows"]
     Desktop --> Simulation["Simulation owner<br/>browser host and presentation"]
     Desktop --> Display["Display and search owners"]
     Desktop --> Modals["Modal state machine<br/>primary workflow and temporary overlays"]
     Root --> Views["Mounted component groups"]
     Context["Typed desktop and command contexts"] -. references .-> Desktop
     Views --> Context
-    Simulation --> Controller["RunController"]
-    Controller --> Machine["Globals session<br/>memory, registers, program, simulator"]
+    Simulation --> Controller["<code>RunController</code>"]
+    Controller --> Machine["<code>Globals</code> session<br/>memory, registers, program, simulator"]
     Views --> Local["View subscriptions, listeners,<br/>tooltips, dialogs, picker reads"]
     Persistent["Origin storage and page theme"] -. restored or committed explicitly .-> Desktop
     Root --> Teardown["Invalidate owners and release resources"]

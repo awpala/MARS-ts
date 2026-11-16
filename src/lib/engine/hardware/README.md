@@ -18,16 +18,16 @@ Import directly from the responsible group. This directory provides no barrel ex
 
 ```mermaid
 flowchart TB
-    Globals["Globals<br/>session composition"] --> Configs["Memory configurations<br/>selected layout and reset callback"]
+    Globals["<code>Globals</code><br/>session composition"] --> Configs["Memory configurations<br/>selected layout and reset callback"]
     Globals --> Registers["Register banks<br/>integer, CP0, CP1, and PC"]
     Globals --> Memory["Memory<br/>sparse words and statement references"]
     Configs -->|layout values| Registers
     Configs -->|layout values| Memory
     Registers --> Notices["Access notices<br/>type, payload, and origin"]
     Memory --> Notices
-    Registers -.-> History["Enabled program BackStepper<br/>injected restore callbacks"]
+    Registers -.-> History["Enabled program <code>BackStepper</code><br/>injected restore callbacks"]
     Memory -.-> History
-    Memory -.-> Decoder["ProgramStatement and InstructionSet<br/>injected statement decoder"]
+    Memory -.-> Decoder["<code>ProgramStatement</code> and <code>InstructionSet</code><br/>injected statement decoder"]
     Consumers["Simulator, instructions,<br/>assembler, and debugger"] --> Registers
     Consumers --> Memory
     Notices --> Observers["Caller-owned observers"]

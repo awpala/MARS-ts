@@ -14,7 +14,7 @@ The root constructs the owners once during component initialization and publishe
 
 ```mermaid
 flowchart TB
-    Route["Root route"] --> Root["VenusUI<br/>layout and component lifetime"]
+    Route["Root route"] --> Root["<code>VenusUI</code><br/>layout and component lifetime"]
     Root --> State["Per-desktop state<br/>coordination and workflow owners"]
     Root --> Context["Typed contexts<br/>desktop and command capabilities"]
     Context -->|references| State
@@ -31,9 +31,9 @@ flowchart TB
     Views -->|syntax highlighting| Editor
     State --> Browser["Browser adapters<br/>source library, preferences,<br/>recovery, downloads"]
     Views -->|"vocabularies, extension rules,<br/>downloads, theme storage"| Browser
-    State --> Controller["RunController<br/>execution coordination and checkpoints"]
+    State --> Controller["<code>RunController</code><br/>execution coordination and checkpoints"]
     Browser -->|"recovery checkpoint validation"| Controller
-    Controller --> Engine["Globals and engine<br/>assembly, hardware, simulation"]
+    Controller --> Engine["<code>Globals</code> and engine<br/>assembly, hardware, simulation"]
     Controller -->|"write-observation rule"| Utilities
     Views -->|"public hardware, numeric,<br/>and instruction APIs"| Engine
     State -->|constructs per-desktop machine| Engine

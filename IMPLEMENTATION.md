@@ -64,23 +64,23 @@ The shipped application is static HTML, CSS, JavaScript, and assets. SvelteKit p
 ```mermaid
 flowchart TB
     subgraph Browser["Browser presentation and integration"]
-        Route["Static SvelteKit route"] --> Desktop["VenusUI: renderer and context lifetime"]
+        Route["Static SvelteKit route"] --> Desktop["<code>VenusUI</code>: renderer and context lifetime"]
         Desktop --> Components["Components: panes, tabs, menus, toolbar, dialogs"]
         Desktop --> State["Per-desktop state: workspace, simulation, preferences, search"]
         Commands["Typed desktop and command context"] -->|references| State
         Components --> Commands
         State --> Adapters["Browser adapters: sources, preferences, downloads, tones"]
-        Adapters --> Storage[("localStorage")]
+        Adapters --> Storage[("<code>localStorage</code>")]
         Adapters --> Files["OS file picker and downloads"]
         Adapters --> Audio["Web Audio output"]
         Components --> Files
     end
     subgraph Models["Framework-free application models"]
         Editor["Editor: buffers, history, highlighting"]
-        Controller["RunController: desktop execution workflows"]
+        Controller["<code>RunController</code>: desktop execution workflows"]
     end
     subgraph Core["Framework-free MIPS engine"]
-        Engine["Globals: one composed MIPS machine"]
+        Engine["<code>Globals</code>: one composed MIPS machine"]
         Engine --> Assembly["Assembler and instruction registry"]
         Engine --> Hardware["Registers, coprocessors, sparse memory"]
         Engine --> Simulation["Simulator, exceptions, backstepping, syscalls"]
@@ -160,18 +160,18 @@ Assemble reads the current source text, including unsaved edits. It assembles th
 ```mermaid
 flowchart TB
     Sources["Open buffers and committed library"] --> Host["Injected virtual-source reader"]
-    Host --> Programs["MIPSprogram preparation and source mapping"]
-    Programs --> Tokens["Tokenizer: includes, literals, eqv, token classification"]
-    Tokens --> Pass1["Assembler pass 1: labels, directives, macros, symbols, data"]
-    Pass1 --> Pass2["Assembler pass 2: pseudo expansion and encoding"]
-    Registry["InstructionSet and canonical pseudo templates"] --> Tokens
+    Host --> Programs["<code>MIPSprogram</code> preparation and source mapping"]
+    Programs --> Tokens["<code>Tokenizer</code>: includes, literals, eqv, token classification"]
+    Tokens --> Pass1["<code>Assembler</code> pass 1: labels, directives, macros, symbols, data"]
+    Pass1 --> Pass2["<code>Assembler</code> pass 2: pseudo expansion and encoding"]
+    Registry["<code>InstructionSet</code> and canonical pseudo templates"] --> Tokens
     Registry --> Pass2
-    Pass2 --> Results["ProgramStatement machine list and initialized memory"]
+    Pass2 --> Results["<code>ProgramStatement</code> machine list and initialized memory"]
     Programs --> Errors["Source-mapped diagnostics"]
     Tokens --> Errors
     Pass1 --> Errors
     Pass2 --> Errors
-    Results --> Execute["Execute pane and Simulator"]
+    Results --> Execute["Execute pane and <code>Simulator</code>"]
 ```
 
 The assembler follows the original multi-pass algorithms. Tokenization retains original and expanded positions, include processing, character literal handling, and recursive `.eqv` substitution. Program-owned macro pools retain overloads, parameter conventions, expansion counters, recursion detection, and local-label treatment. Local and session-global symbol tables remain distinct. Directives allocate and initialize data, enforce their canonical range checks, transfer global symbols, and resolve forward references.

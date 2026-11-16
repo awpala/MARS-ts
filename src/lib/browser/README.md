@@ -33,9 +33,9 @@ flowchart TB
         Execution["<code>execution/</code><br/>scheduler and tone host"]
         Transfers -->|name and extension rules| Sources
     end
-    Platform["Browser APIs<br/>localStorage, files, downloads, page focus,<br/>MessageChannel, timers, Web Audio"]
+    Platform["Browser APIs<br/><code>localStorage</code>, files, downloads, page focus,<br/><code>MessageChannel</code>, timers, Web Audio"]
     Engine["Engine host interfaces"]
-    Checkpoint["Venus RunCheckpoint"]
+    Checkpoint["Venus <code>RunCheckpoint</code>"]
     Editor["Editor"]
     Venus --> BrowserModule
     BrowserModule --> Platform
