@@ -338,13 +338,22 @@ test('both consoles reveal the latest line after overflowing, appending, and swi
   await expect.poll(() => output.evaluate(atBottom)).toBe(true);
 
   await page.getByRole('button', { name: 'Edit', exact: true }).click();
-  await source.fill('.text\n' + 'invalid_instruction\n'.repeat(80));
+  // A successful assembly can overflow the transcript with warnings while following new output.
+  await source.fill('.text\n' + '.set noat\n'.repeat(80) + 'nop\n');
   await page.getByRole('button', { name: 'Assemble', exact: true }).click();
   const messages = page.getByRole('textbox', { name: 'Mars Messages', exact: true });
-  await expect(messages).toHaveValue(/Error/);
+  await expect(messages).toHaveValue(/Warning in .*Assemble: operation completed successfully\./s);
   await expect.poll(() => messages.evaluate(atBottom)).toBe(true);
+  const previousLength = (await messages.inputValue()).length;
   await messages.evaluate((element) => (element.scrollTop = 0));
   await page.getByRole('button', { name: 'Assemble', exact: true }).click();
+  await expect
+    .poll(async () => (await messages.inputValue()).slice(previousLength))
+    .toContain('Assemble: operation completed successfully.');
+  await expect.poll(() => messages.evaluate(atBottom)).toBe(true);
+  await messages.evaluate((element) => (element.scrollTop = 0));
+  await page.getByRole('button', { name: 'Run I/O', exact: true }).click();
+  await page.getByRole('button', { name: 'Mars Messages', exact: true }).click();
   await expect.poll(() => messages.evaluate(atBottom)).toBe(true);
   await messages.press('Control+l');
   await expect(messages).toHaveValue('');

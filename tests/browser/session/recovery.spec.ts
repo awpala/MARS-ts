@@ -95,18 +95,22 @@ test('reload retains assembly errors, console diagnostics, source caret, and edi
   await openDesktop(page);
   await action(page, 'New').click();
   const source = page.getByRole('textbox', { name: 'Source mips1.asm', exact: true });
+  const position = page.getByTestId('footer-position');
   await source.fill('invalid_instruction');
-  await source.press('Control+End');
   await action(page, 'Assemble').click();
   await expect(page.getByLabel('Execution status')).toHaveText('Status: error');
   const messages = await page.getByLabel('Mars Messages', { exact: true }).inputValue();
+  // Failed assembly selects the source line. Move the caret after that navigation.
+  await expect(source).toBeFocused();
+  await source.press('Control+End');
+  await expect(position).toHaveText('Line 1, Column 20');
   await page.reload();
   await waitForDesktop(page);
   await expect(page.getByTestId('footer-source')).toHaveText('Editing: mips1.asm');
   await expect(page.getByLabel('Execution status')).toHaveText('Status: error');
   await expect(page.getByLabel('Mars Messages', { exact: true })).toHaveValue(messages);
   await source.focus();
-  await expect(page.getByTestId('desktop-footer')).toContainText('Line 1, Column 20');
+  await expect(position).toHaveText('Line 1, Column 20');
   await action(page, 'Undo').click();
   await expect(source).toHaveValue('');
   await expect(page.getByLabel('Execution status')).toHaveCount(0);
