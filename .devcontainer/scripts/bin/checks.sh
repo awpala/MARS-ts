@@ -17,9 +17,6 @@
 # Usage: checks.sh [harness|docs|legacy|app]   (no argument runs everything)
 #
 # No -e: a failing gate must not hide another diagnostic.
-# Functions are passed to run_gate as command arguments. ShellCheck cannot
-# resolve those indirect calls and otherwise reports their bodies as dead code.
-# shellcheck disable=SC2317
 set -uo pipefail
 
 SCRIPT_PATH=$(readlink -f -- "${BASH_SOURCE[0]}")
@@ -51,6 +48,8 @@ run_gate() {
 
 # Lint every checked-in shell script. bash -n catches syntax errors; ShellCheck
 # catches quoting and portability defects that only surface on unusual input.
+# run_gate invokes this function by name.
+# shellcheck disable=SC2317,SC2329
 lint_shell() {
   local -a scripts=()
   mapfile -t scripts < <(
@@ -72,6 +71,8 @@ lint_shell() {
 # Assemble and run a fixed program through the legacy jar and compare stdout,
 # stderr, and exit status byte for byte. This proves the oracle the port relies
 # on is buildable and deterministic, not that any port behavior is correct.
+# run_gate invokes this function by name.
+# shellcheck disable=SC2317,SC2329
 smoke_legacy() {
   local work status
   work=$(mktemp -d)
