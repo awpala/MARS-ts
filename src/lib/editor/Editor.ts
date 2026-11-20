@@ -3,6 +3,46 @@
  * Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license.
  */
 
+/** Anchor and caret in textarea UTF-16 offsets. The anchor is larger for a backward selection. */
+export type EditorSelection = readonly [anchor: number, caret: number];
+
+/** The selections on either side of a single edit. */
+export interface EditSelections {
+  /** Selection immediately before the edit. */
+  before: EditorSelection;
+  /** Selection immediately after the edit. */
+  after: EditorSelection;
+}
+
+/** Text-only history from earlier sessions and edits without a mounted selection is also supported. */
+type Revision =
+  | string
+  | (EditSelections & {
+      /** Source restored when this entry is popped. */
+      text: string;
+    });
+
+function copyRevision(entry: Revision): Revision {
+  return typeof entry === 'string'
+    ? entry
+    : { text: entry.text, before: [...entry.before], after: [...entry.after] };
+}
+
+/** Locate the end of the changed text when a history entry predates selection recording. */
+function inferredSelection(from: string, to: string): EditorSelection {
+  from = from.replace(/\r\n?/g, '\n');
+  to = to.replace(/\r\n?/g, '\n');
+  let suffix = 0;
+  while (
+    suffix < from.length &&
+    suffix < to.length &&
+    from[from.length - 1 - suffix] === to[to.length - 1 - suffix]
+  )
+    suffix++;
+  const caret = to.length - suffix;
+  return [caret, caret];
+}
+
 /** Detached undo/redo recovery payload, applied only to an identical source buffer. */
 export interface EditHistory {
   /** Virtual source identity. */
@@ -10,9 +50,9 @@ export interface EditHistory {
   /** Exact current text anchoring this history branch. */
   text: string;
   /** Prior revisions, oldest first. */
-  undo: string[];
+  undo: Revision[];
   /** Undone revisions in the editor's stack order. */
-  redo: string[];
+  redo: Revision[];
 }
 
 /** An editor buffer owned by one Editor instance; the view never mutates its history. */
@@ -30,9 +70,9 @@ export interface EditPane {
   /** Whether this is a protected reference buffer; false when omitted. Mutations and saving are unavailable. */
   readOnly?: boolean;
   /** Prior source revisions, owned by Editor. */
-  undo: string[];
+  undo: Revision[];
   /** Undone revisions, owned by Editor. */
-  redo: string[];
+  redo: Revision[];
 }
 
 /** Owns source tabs and edit history; browser dialogs and I/O are supplied by the view. */
@@ -98,10 +138,18 @@ export class Editor {
     return tab;
   }
   /** Record a changed writable source and discard its redo branch; missing, read-only, or unchanged buffers are left untouched. */
-  setText(text: string): void {
+  setText(text: string, before?: EditorSelection, after?: EditorSelection): void {
     const tab = this.getCurrentEditTab();
     if (!tab || tab.readOnly || tab.text === text) return;
-    tab.undo.push(tab.text);
+    tab.undo.push(
+      before
+        ? {
+            text: tab.text,
+            before: [...before],
+            after: after ? [...after] : inferredSelection(tab.text, text)
+          }
+        : tab.text
+    );
     tab.text = text;
     tab.redo = [];
   }
@@ -110,8 +158,8 @@ export class Editor {
     return this.documents.map((tab) => ({
       name: tab.name,
       text: tab.text,
-      undo: [...tab.undo],
-      redo: [...tab.redo]
+      undo: tab.undo.map(copyRevision),
+      redo: tab.redo.map(copyRevision)
     }));
   }
   /** Recover history for writable buffers with an exact source name/text match; leave read-only references and conflicting drafts untouched. */
@@ -120,30 +168,33 @@ export class Editor {
       if (tab.readOnly) continue;
       const record = records.find((r) => r.name === tab.name && r.text === tab.text);
       if (record) {
-        tab.undo = [...record.undo];
-        tab.redo = [...record.redo];
+        tab.undo = record.undo.map(copyRevision);
+        tab.redo = record.redo.map(copyRevision);
       }
     }
   }
-  /** Restores the preceding source revision when available. */
-  undo(): void {
-    const tab = this.getCurrentEditTab();
-    if (tab?.readOnly) return;
-    const previous = tab?.undo.pop();
-    if (tab && previous !== undefined) {
-      tab.redo.push(tab.text);
-      tab.text = previous;
-    }
+  /** Restore the preceding revision and its pre-edit selection. */
+  undo(): EditorSelection | undefined {
+    return this.restoreRevision('undo');
   }
-  /** Reapplies an undone source revision when available. */
-  redo(): void {
+  /** Reapply the undone revision and its post-edit selection. */
+  redo(): EditorSelection | undefined {
+    return this.restoreRevision('redo');
+  }
+  private restoreRevision(command: 'undo' | 'redo'): EditorSelection | undefined {
     const tab = this.getCurrentEditTab();
-    if (tab?.readOnly) return;
-    const next = tab?.redo.pop();
-    if (tab && next !== undefined) {
-      tab.undo.push(tab.text);
-      tab.text = next;
-    }
+    if (!tab || tab.readOnly) return;
+    const entry = tab[command].pop();
+    if (entry === undefined) return;
+    const text = typeof entry === 'string' ? entry : entry.text;
+    const selection =
+      typeof entry === 'string'
+        ? inferredSelection(tab.text, text)
+        : entry[command === 'undo' ? 'before' : 'after'];
+    const opposite = command === 'undo' ? tab.redo : tab.undo;
+    opposite.push(typeof entry === 'string' ? tab.text : { ...entry, text: tab.text });
+    tab.text = text;
+    return selection;
   }
   /** Reports edits since open/save, including unsaved new buffers. */
   isDirty(tab: EditPane): boolean {

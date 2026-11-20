@@ -135,6 +135,7 @@ export class Assembler {
           tokenList[i],
           sourceLineList[i].getSource(),
           sourceLineList[i].getLineNumber(),
+          sourceLineList[i].getFilename(),
           extendedAssemblerEnabled
         );
         if (statements != null) {
@@ -239,7 +240,8 @@ export class Assembler {
               instr,
               this.textAddress.get(),
               statement.getSourceLine(),
-              this.host
+              this.host,
+              statement.getDisplaySourceFile()
             );
             this.textAddress.increment(Instruction.INSTRUCTION_LENGTH);
             ps.buildBasicStatementFromBasicInstruction(this.errors!);
@@ -315,6 +317,7 @@ export class Assembler {
     tokenList: TokenList,
     source: string,
     sourceLineNumber: number,
+    sourceFilename: string | null,
     extendedAssemblerEnabled: boolean
   ): ProgramStatement[] | null {
     const ret: ProgramStatement[] = [];
@@ -388,6 +391,7 @@ export class Assembler {
               // eslint-disable-next-line no-control-regex
               substituted.replace(/^[\x00-\x20]+|[\x00-\x20]+$/g, ''),
             sourceLineNumber,
+            sourceFilename,
             extendedAssemblerEnabled
           );
           if (statements != null) ret.push(...statements);
@@ -452,7 +456,8 @@ export class Assembler {
           inst,
           this.textAddress.get(),
           sourceLineNumber,
-          this.host
+          this.host,
+          sourceFilename
         );
 
         let instLength: number = inst!.getInstructionLength();

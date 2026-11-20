@@ -4,15 +4,11 @@ import { createContext, tick } from 'svelte';
 import type { Symbol as AssemblySymbol } from '#lib/engine/assembler/symbols/Symbol.js';
 import { Binary, NumberFormatException } from '#lib/engine/formatting/Binary.js';
 import type { Globals } from '#lib/engine/Globals.js';
-import { Settings } from '#lib/engine/Settings.js';
-import { AccessNotice } from '#lib/engine/hardware/notices/AccessNotice.js';
-import type { MemoryAccessNotice } from '#lib/engine/hardware/notices/MemoryAccessNotice.js';
 import type { RunController, RunState } from '../../RunController.js';
 import type { DisplayPreferences } from '../../state/DisplayPreferences.svelte.js';
 import type { SimulationState } from '../../state/SimulationState.svelte.js';
 import { errorMessage } from '#lib/browser/errorMessage.js';
 import {
-  locateAddress,
   pageStart,
   readDisplayWord,
   segmentBases,
@@ -33,7 +29,7 @@ export interface ExecuteSource {
   readonly snapshot: RunState;
 }
 
-/** Navigation, formatting, memory access, and write observation for one mounted Execute view. Display and simulation owners retain persisted range, page, label selection, and display bases; this view owns transient highlights and edit errors. Panes access it through context; the mounting component starts observeWrites, resetObservation, and revealSelection in effects and owns their cleanup. */
+/** Navigation, formatting, memory access, and write observation for one mounted Execute view. Display and simulation owners retain persisted range, page, label selection, and display bases; the simulation owns write highlights and this view owns edit errors. Panes access it through context; the mounting component starts revealWrite and revealSelection in effects and owns their cleanup. */
 export class ExecuteView {
   private readonly source: ExecuteSource;
   private readonly display: DisplayPreferences;
@@ -41,9 +37,13 @@ export class ExecuteView {
   /** Failure text from the latest manual memory or code edit; empty when the edit succeeded. */
   memoryError = $state('');
   /** Word address of the most recent observed write, or null after assembly or Reset. */
-  editedAddress = $state<number | null>(null);
+  get editedAddress() {
+    return this.simulation.dataWrites.lastWrite?.address ?? null;
+  }
   /** Whether an observed (stepped or timed) run has started since the last assembly or Reset. */
-  memoryHighlighting = $state(false);
+  get memoryHighlighting() {
+    return this.simulation.dataWrites.highlighting;
+  }
   /** Assembled statements, stable between assemblies. */
   statements = $derived.by(() => this.source.snapshot.statements);
   /** Whether the controller is running. */
@@ -61,8 +61,6 @@ export class ExecuteView {
   selectedLabelWord = $derived.by(() =>
     this.simulation.labelSelection === null ? null : this.simulation.labelSelection.address & ~3
   );
-  private memoryReveal = 0;
-  private observedText: Record<number, number | undefined> = {};
 
   /** Bind to the mounted machine and the desktop owners of the values this view follows. */
   constructor(source: ExecuteSource, display: DisplayPreferences, simulation: SimulationState) {
@@ -148,15 +146,7 @@ export class ExecuteView {
 
   /** Show the page holding an address and return whether it lies in a text segment. */
   selectMemoryPage(address: number): boolean {
-    const located = locateAddress(
-      this.machine.memory,
-      this.bases,
-      address,
-      this.display.dataSegment
-    );
-    this.display.dataSegment = located.segment;
-    this.display.dataPageOffset = located.pageOffset;
-    return located.textLabel;
+    return this.display.selectMemoryAddress(this.machine.memory, this.bases, address);
   }
 
   /** Select or deselect a label and, when selecting, page the Data Segment to it and reveal and focus its target. */
@@ -203,77 +193,17 @@ export class ExecuteView {
     };
   }
 
-  /** Follow stepped, timed, and Backstep writes with a highlight, page selection, and scroll. Controller publications synchronously adjust subscriptions: unlimited runs observe only text ranges when self-modification is enabled, and changes to loaded instructions remain visible when ordinary data observation is off. Return effect teardown for subscriptions and pending reveals. */
-  observeWrites(): () => void {
-    const { machine, controller } = this.source;
-    const observe = (notice: MemoryAccessNotice) => {
-      if (notice.getAccessType() !== AccessNotice.WRITE) return;
-      const address = notice.getAddress() & ~3;
-      const previousCode = this.observedText[address];
-      const currentCode =
-        previousCode === undefined
-          ? undefined
-          : machine.memory.getStatementNoNotify(address)?.getBinaryStatement();
-      const changedCode = previousCode !== undefined && currentCode !== previousCode;
-      if (changedCode && currentCode !== undefined) this.observedText[address] = currentCode;
-      if (!controller.isObservingWrites() && !controller.isBackStepping() && !changedCode) return;
-      this.editedAddress = address;
-      this.selectMemoryPage(address);
-      const reveal = ++this.memoryReveal;
-      void tick().then(() => {
-        if (reveal === this.memoryReveal)
-          this.revealTarget(document.getElementById(this.memoryId(address)));
-      });
-    };
-    let mode: 'all' | 'text' | 'none' | undefined;
-    let releases: (() => void)[] = [];
-    // Controller publication is synchronous, so the first Step/timed write is observed before Svelte effects run.
-    const releaseController = controller.subscribe((state) => {
-      if (controller.isObservingWrites()) this.memoryHighlighting = true;
-      const next =
-        state.status !== 'running' || controller.isObservingWrites()
-          ? 'all'
-          : machine.getSettings().getBooleanSetting(Settings.SELF_MODIFYING_CODE_ENABLED)
-            ? 'text'
-            : 'none';
-      if (next === mode) return;
-      mode = next;
-      releases.forEach((release) => release());
-      const memory = machine.memory;
-      releases =
-        mode === 'all'
-          ? [memory.addObserver(observe)]
-          : mode === 'text'
-            ? [
-                memory.addObserver(observe, memory.textBaseAddress, memory.textLimitAddress - 4),
-                memory.addObserver(
-                  observe,
-                  memory.kernelTextBaseAddress,
-                  memory.kernelTextLimitAddress - 4
-                )
-              ]
-            : [];
+  /** Center the last observed write after its table page renders, preserving focus. */
+  revealWrite(): (() => void) | undefined {
+    const write = this.simulation.dataWrites.lastWrite;
+    if (!write) return;
+    let active = true;
+    void tick().then(() => {
+      if (active) this.revealTarget(document.getElementById(this.memoryId(write.address)));
     });
     return () => {
-      this.memoryReveal++;
-      releaseController();
-      releases.forEach((release) => release());
+      active = false;
     };
-  }
-
-  /** Clear write highlighting and re-capture instruction words after Assemble or Reset replace the statements, as the legacy run actions call clearHighlighting(). */
-  resetObservation(): void {
-    const { machine } = this.source;
-    this.observedText = Object.fromEntries(
-      this.statements.map((statement) => [
-        statement.getAddress(),
-        machine.memory.getStatementNoNotify(statement.getAddress())?.getBinaryStatement() ??
-          statement.getBinaryStatement()
-      ])
-    );
-    this.editedAddress = null;
-    this.memoryHighlighting = false;
-    this.memoryReveal++;
   }
 }
 

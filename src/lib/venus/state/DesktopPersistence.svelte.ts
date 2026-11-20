@@ -178,7 +178,7 @@ export class DesktopPersistence {
       this.simulation.breakpoints = saved.breakpoints;
       this.simulation.breakpointsEnabled = saved.breakpointsEnabled;
       if (saved.source === this.workspace.current?.name) {
-        const length = this.workspace.current?.text.length ?? 0;
+        const length = this.workspace.editorText.length;
         this.workspace.selectionStart = Math.min(length, saved.selection[0]);
         this.workspace.selectionEnd = Math.min(length, saved.selection[1]);
         [this.workspace.sourceScrollTop, this.workspace.sourceScrollLeft] = saved.scroll;

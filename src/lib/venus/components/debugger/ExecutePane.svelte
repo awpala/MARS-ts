@@ -40,13 +40,12 @@
     simulation
   );
   setExecuteView(view);
-  $effect(() => view.observeWrites());
-  $effect(() => view.resetObservation());
+  $effect(() => view.revealWrite());
   // Reopening Execute or restoring a session reveals the selection after the PC attachment runs.
   $effect(() => view.revealSelection());
 </script>
 
-<!-- @component Actual assembled statements, breakpoints, symbol navigation, and editable paged memory for the session. Composes the Text Segment, Labels, and Data Segment panes and shares their navigation, formatting, and write observation through one Execute view context; persisted selection, range, display bases, and sizes live in the desktop's display and simulation owners. -->
+<!-- @component Actual assembled statements, breakpoints, symbol navigation, and editable paged memory for the session. Composes the Text Segment, Labels, and Data Segment panes and shares their navigation, formatting, and scrolling to observed writes through one Execute view context; persisted selection, range, display bases, and sizes live in the desktop's display and simulation owners. -->
 <div
   class="execute-pane"
   bind:clientHeight={executeHeight}

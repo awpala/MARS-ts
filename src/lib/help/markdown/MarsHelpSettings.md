@@ -41,7 +41,7 @@ Before the first Go or Step after Assemble or Reset, MARS places null-terminated
 
 ## Memory Configuration
 
-Choose Default (the SPIM-derived layout), Compact, Data at Address 0, or Compact, Text at Address 0. Selecting a configuration previews its segment addresses without changing the machine. Apply commits the selection and leaves the dialog open; Apply and Close also closes it. Cancel closes without applying the current selection. Reset restores the selection from when the dialog opened without applying it. Applying a different layout resets memory and registers and automatically reassembles a loaded program. The selected layout persists in localStorage.
+Choose Default (the SPIM-derived layout), Compact, Data at Address 0, or Compact, Text at Address 0. Selecting a configuration previews its segment addresses without changing the machine. Apply commits the selection and leaves the dialog open; Apply and Close also closes it. Cancel closes without applying the current selection. Reset restores the selection from when the dialog opened without applying it. Applying a different layout resets memory and registers and automatically reassembles a loaded program. Delayed-branching and layout changes rebuild the loaded source even after switching or closing editor tabs. The selected layout persists in localStorage.
 
 ## Exception Handler
 

@@ -33,3 +33,5 @@ Colocated [program tests](MIPSprogram.test.ts) consume the [program lifecycle fi
 Extend representation or lifecycle behavior here. Keep pass state with `Assembler`, instruction execution with the simulator/registry, and presentation workflow with Venus. Translated source retains Pete Sanderson and Kenneth Vollmar's [MIT attribution](../../../../../MARSlicense.txt); no semantic divergence is intended.
 
 Desktop checkpoint restoration retains the program's last stepped-execution annotation without starting the simulator. Source metadata and Reset inputs are rebuilt by assembling captured original sources before hardware restoration; [ADR 0007](../../../../../docs/adrs/0007-desktop-session-recovery.md) defines that browser workflow.
+
+Each source statement also retains the filename that owns its displayed line. Assembly propagates it through macro calls and every emitted word of a pseudo-instruction, so Text Segment links can follow an included file. The statement’s assembly owner continues to supply symbols and diagnostics.

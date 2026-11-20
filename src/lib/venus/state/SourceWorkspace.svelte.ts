@@ -1,7 +1,13 @@
 import type { ModalState, WorkspaceDialog } from './ModalState.svelte.js';
 import { DEFAULT_DISPLAY_SETTINGS } from '#lib/browser/preferences/DisplaySettings.js';
 import { tick } from 'svelte';
-import { Editor, type EditPane } from '#lib/editor/Editor.js';
+import { EditorInput } from './EditorInput.svelte.js';
+import {
+  Editor,
+  type EditPane,
+  type EditorSelection,
+  type EditSelections
+} from '#lib/editor/Editor.js';
 import { bundledSource } from '#lib/browser/sources/BundledSources.js';
 import {
   isSourceFilename,
@@ -32,6 +38,10 @@ export type WorkspaceHost = {
 /** Import summary with nothing staged. */
 const EMPTY_IMPORT: SourceImportPlan = { sources: [], skipped: [] };
 
+function orderedSelection(start: number, end: number, direction: string): EditorSelection {
+  return direction === 'backward' ? [end, start] : [start, end];
+}
+
 /** Per-desktop source buffers, local-library workflows, selection, and recovery persistence. */
 export class SourceWorkspace {
   /** Framework-free editor model owned by this workspace. */
@@ -48,6 +58,11 @@ export class SourceWorkspace {
     const tab = this.editor.getCurrentEditTab();
     return tab ? { ...tab, undo: [...tab.undo], redo: [...tab.redo] } : undefined;
   });
+  /** Text in the textarea's LF coordinate system for painting and applying selection offsets. */
+  editorText = $derived((this.current?.text ?? '').replace(/\r\n?/g, '\n'));
+  private readonly inputModes = new WeakMap<EditPane, EditorInput>();
+  /** Transient input modes belong to one buffer across editor switches. */
+  inputMode = $state.raw<EditorInput>();
   /** Identity, name, and unsaved state of every open buffer, in tab order. */
   tabSummaries = $derived(
     this.tabs.map((tab) => ({
@@ -108,10 +123,11 @@ export class SourceWorkspace {
   /** Borrowed source textarea owned by the mounted SourceEditor; its registration releases the reference on removal. */
   sourceInput = $state<HTMLTextAreaElement>();
   private sourceView:
-    { element: HTMLTextAreaElement; revealLine: (line: number) => void } | undefined;
+    | { element: HTMLTextAreaElement; revealLine: (line: number, onlyIfHidden?: boolean) => void }
+    | undefined;
   /** Line and column derived from the selected source and caret. */
   position = $derived.by(() => {
-    const before = this.current?.text.slice(0, this.selectionStart) ?? '';
+    const before = this.editorText.slice(0, this.selectionStart);
     return { line: before.split('\n').length, column: before.length - before.lastIndexOf('\n') };
   });
   private ready = $state(false);
@@ -176,7 +192,7 @@ export class SourceWorkspace {
   /** Borrow the mounted editor's input and rendered-line navigation. The attachment must release its registration on removal; a stale release cannot clear a newer registration. */
   registerSourceInput(
     element: HTMLTextAreaElement,
-    revealLine: (line: number) => void
+    revealLine: (line: number, onlyIfHidden?: boolean) => void
   ): () => void {
     if (this.disposed) return () => {};
     const view = { element, revealLine };
@@ -202,7 +218,9 @@ export class SourceWorkspace {
   };
   /** Shared source-command availability; both presentation and execution enforce the same read-only and running rules. */
   enabled(command: WorkspaceCommand): boolean {
-    if (this.disposed || (this.host.running() && command !== 'copy')) return false;
+    if (this.disposed) return false;
+    if (command === 'rectangularSelection') return this.display.view === 'Edit' && !!this.inputMode;
+    if (this.host.running() && command !== 'copy') return false;
     const current = this.current;
     switch (command) {
       case 'new':
@@ -264,26 +282,27 @@ export class SourceWorkspace {
         this.nextSave();
         break;
       case 'undo':
-        this.editor.undo();
-        this.host.invalidate();
-        this.refresh(true);
-        break;
       case 'redo':
-        this.editor.redo();
-        this.host.invalidate();
-        this.refresh(true);
+        this.restoreEdit(command);
         break;
       case 'cut':
       case 'copy':
       case 'paste':
         await this.clipboard(command);
         break;
+      case 'rectangularSelection':
+        this.sourceInput?.focus({ preventScroll: true });
+        this.selection();
+        this.inputMode?.toggleRectangle();
+        break;
       case 'selectAll':
+        if (this.inputMode) this.inputMode.rectangular = false;
         this.sourceInput?.focus();
         this.sourceInput?.select();
         this.selection();
         break;
       case 'find':
+        if (this.inputMode) this.inputMode.rectangular = false;
         this.modal = 'find';
         break;
       default:
@@ -344,26 +363,47 @@ export class SourceWorkspace {
           : !bundledSource(name) && this.normalizePath(entry.name) === path
       );
   };
-  /** Select a source location from Execute and focus the matching editor line. */
-  showSource = async (name: string, line: number) => {
-    const tab = this.findOpenSource(name);
+  /** Focus an open source line. Diagnostic navigation also opens a saved source and selects the erroneous line. */
+  showSource = async (name: string, line: number, diagnostic = false) => {
+    let tab = this.findOpenSource(name);
+    if (!tab && diagnostic && !this.host.running()) {
+      const bundled = bundledSource(name);
+      try {
+        const saved =
+          bundled ??
+          this.sourceLibrary.read().find((file) => file.name === this.normalizePath(name));
+        if (saved) tab = this.editor.openFile(saved.name, saved.source, false, !!bundled);
+      } catch (error) {
+        this.fileFailure(error);
+        return;
+      }
+    }
     if (!tab) return;
     this.select(tab.id);
     this.display.view = 'Edit';
     await tick();
     if (this.disposed || this.editor.getCurrentEditTab() !== tab || this.display.view !== 'Edit')
       return;
-    const offset = tab.text
+    const text = this.editorText;
+    const offset = text
       .split('\n')
       .slice(0, Math.max(0, line - 1))
       .reduce((total, text) => total + text.length + 1, 0);
     this.sourceInput?.focus();
-    this.sourceInput?.setSelectionRange(offset, offset);
+    if (this.inputMode) this.inputMode.rectangular = false;
+    const newline = text.indexOf('\n', offset);
+    this.sourceInput?.setSelectionRange(
+      offset,
+      diagnostic ? (newline < 0 ? text.length : newline) : offset
+    );
     this.sourceView?.revealLine(line);
     this.selection();
   };
   /** Publish editor snapshots, optionally commit edits, and preserve recovery backups. */
   refresh = (commit = false) => {
+    const tab = this.editor.getCurrentEditTab();
+    if (tab && !this.inputModes.has(tab)) this.inputModes.set(tab, new EditorInput());
+    this.inputMode = tab ? this.inputModes.get(tab) : undefined;
     this.revision++;
     if (this.ready && this.autoSave && commit) {
       const changed = this.editor
@@ -411,17 +451,58 @@ export class SourceWorkspace {
     this.editor.reorder(id, targetId, after);
     this.refresh();
   };
+  private restoreEdit(command: 'undo' | 'redo'): void {
+    const range = this.editor[command]();
+    if (!range) return;
+    this.host.invalidate();
+    this.refresh(true);
+    const [anchor, caret] = range;
+    this.selectionStart = Math.min(anchor, caret, this.editorText.length);
+    this.selectionEnd = Math.min(Math.max(anchor, caret), this.editorText.length);
+    this.selectionDirection = anchor > caret ? 'backward' : 'forward';
+    if (this.inputMode) this.inputMode.rectangular = false;
+    if (this.sourceInput) {
+      // Setting a textarea's value moves its caret to EOF; restore the range in the same update.
+      this.sourceInput.value = this.editorText;
+      this.sourceInput.setSelectionRange(
+        this.selectionStart,
+        this.selectionEnd,
+        this.selectionDirection
+      );
+      this.sourceView?.revealLine(this.editorText.slice(0, caret).split('\n').length, true);
+    }
+  }
+
+  /** Commit a native source edit with the selection captured before input and the resulting DOM selection. */
+  editFromInput(input: HTMLTextAreaElement): void {
+    if (this.editorText !== input.value)
+      this.edit(input.value, {
+        before: orderedSelection(this.selectionStart, this.selectionEnd, this.selectionDirection),
+        after: orderedSelection(input.selectionStart, input.selectionEnd, input.selectionDirection)
+      });
+    this.selection();
+  }
+
   /** Record source edits, invalidate assembly, and persist according to workspace policy. */
-  edit = (text: string) => {
+  edit = (text: string, selections?: EditSelections) => {
     if (this.disposed || this.host.running() || this.current?.readOnly) return;
-    this.editor.setText(text);
+    this.editor.setText(
+      text,
+      selections?.before ??
+        orderedSelection(this.selectionStart, this.selectionEnd, this.selectionDirection),
+      selections?.after
+    );
     this.host.invalidate();
     this.refresh(true);
   };
   /** Read selection offsets from the current source textarea. */
   selection = () => {
-    this.selectionStart = this.sourceInput?.selectionStart ?? 0;
-    this.selectionEnd = this.sourceInput?.selectionEnd ?? 0;
+    const start = this.sourceInput?.selectionStart ?? 0;
+    const end = this.sourceInput?.selectionEnd ?? 0;
+    if (start === end && this.selectionStart !== this.selectionEnd && this.inputMode)
+      this.inputMode.rectangular = false;
+    this.selectionStart = start;
+    this.selectionEnd = end;
     this.selectionDirection = this.sourceInput?.selectionDirection ?? 'none';
   };
   /** Dismiss a source dialog and abandon pending save/close/import queues. */
@@ -721,22 +802,62 @@ export class SourceWorkspace {
       this.nextClose();
     }
   };
+  /** Commit a clipboard replacement to the editor model and its mounted textarea in one undoable edit. */
+  replaceSelection(
+    text: string,
+    start = this.selectionStart,
+    end = this.selectionEnd,
+    direction = this.selectionDirection
+  ): void {
+    if (!this.current || !this.inputMode || this.current.readOnly || this.host.running()) return;
+    const result = this.inputMode.replace(
+      this.editorText,
+      start,
+      end,
+      text.replace(/\r\n?/g, '\n')
+    );
+    this.edit(result.text, {
+      before: orderedSelection(start, end, direction),
+      after: [result.caret, result.caret]
+    });
+    if (this.sourceInput) {
+      this.sourceInput.value = result.text;
+      this.sourceInput.setSelectionRange(result.caret, result.caret);
+    }
+    this.selection();
+  }
   private clipboard = async (command: 'cut' | 'copy' | 'paste') => {
-    if (!this.current) return;
+    if (!this.current || !this.inputMode) return;
     if (this.current.readOnly && command !== 'copy') return;
     const tab = this.current,
       start = this.selectionStart,
-      end = this.selectionEnd;
+      end = this.selectionEnd,
+      direction = this.selectionDirection,
+      mode = this.inputMode,
+      rectangular = mode.rectangular;
     try {
       if (command === 'paste') {
         const text = await navigator.clipboard.readText();
-        if (this.disposed || this.current !== tab || this.host.running()) return;
-        this.edit(tab.text.slice(0, start) + text + tab.text.slice(end));
+        if (
+          this.disposed ||
+          this.current !== tab ||
+          this.host.running() ||
+          mode.rectangular !== rectangular
+        )
+          return;
+        this.replaceSelection(mode.counted(text), start, end, direction);
       } else {
-        await navigator.clipboard.writeText(tab.text.slice(start, end));
+        await navigator.clipboard.writeText(
+          mode.counted(mode.selected(this.editorText, start, end))
+        );
         if (this.disposed) return;
-        if (command === 'cut' && this.current === tab && !this.host.running())
-          this.edit(tab.text.slice(0, start) + tab.text.slice(end));
+        if (
+          command === 'cut' &&
+          this.current === tab &&
+          mode.rectangular === rectangular &&
+          !this.host.running()
+        )
+          this.replaceSelection('', start, end, direction);
       }
     } catch {
       if (this.disposed) return;

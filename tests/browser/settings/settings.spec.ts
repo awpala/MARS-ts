@@ -754,3 +754,36 @@ test('bundled handler opens locked, restores canonical text, and copies to an ed
   await expect(referenceTab).toHaveCount(0);
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });
+
+test('delayed branching and memory layout rebuild the loaded source after selecting another file and closing all tabs', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await openStoredSources(page, [
+    { name: 'A.asm', source: '.text\naddiu $t0,$zero,42\n' },
+    { name: 'B.asm', source: '.text\nnop\n' }
+  ]);
+  await action(page, 'A.asm').click();
+  await action(page, 'Assemble').click();
+  await action(page, 'Edit').click();
+  await action(page, 'B.asm').click();
+  await action(page, 'Execute').click();
+  await setting(page, 'Delayed branching', true);
+  await expect(page.getByTestId('text-source').first()).toContainText('addiu');
+  await action(page, 'Edit').click();
+  await action(page, 'Close All').click();
+  await page
+    .getByRole('dialog', { name: 'Close all files?' })
+    .getByRole('button', { name: 'Close All', exact: true })
+    .click();
+  await action(page, 'Execute').click();
+  await openMemory(page);
+  await memoryDialog(page)
+    .getByRole('radio', { name: 'Compact, Data at Address 0', exact: true })
+    .check();
+  await memoryDialog(page).getByRole('button', { name: 'Apply and Close' }).click();
+  await expect(page.getByTestId('text-address').first()).toHaveText('0x00003000');
+  await expect(register(page, '$pc')).toHaveValue('0x00003000');
+  await action(page, 'Step').click();
+  await expect(register(page, '$t0')).toHaveValue('0x0000002a');
+});

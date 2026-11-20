@@ -17,7 +17,7 @@
   import MachineTable, { type MachineHighlight } from './MachineTable.svelte';
   import SegmentPane from './SegmentPane.svelte';
   const desktop = getDesktop();
-  const { simulation, workspace } = desktop;
+  const { simulation, workspace, display } = desktop;
   const lockedBreakpoint = `Breakpoint locked at maximum run speed — ${frozenBreakpointsHint}`;
   const view = getExecuteView();
   const selfModifying = $derived.by(() => {
@@ -51,7 +51,9 @@
         return view.machine.memory.getStatementNoNotify(address) ?? original;
       });
       const code = $derived(live.getBinaryStatement());
-      const basic = $derived(live.getPrintableBasicAssemblyStatement());
+      const basic = $derived(
+        live.getPrintableBasicAssemblyStatement(display.hexAddresses, display.hexValues)
+      );
       const modified = $derived(code !== original.getBinaryStatement());
       return {
         address,
@@ -66,7 +68,7 @@
           return modified;
         },
         line: original.getSourceLine(),
-        filename: original.getSourceFile() ?? ''
+        filename: original.getDisplaySourceFile() ?? ''
       };
     });
   });

@@ -13,15 +13,24 @@
       /** One-based UTF-16 column within the source line. */
       column: number;
     } | null;
+    /** Lower-right acknowledgment of modes active in the current source. */
+    editorFeedback: string;
     /** Required execution status from the controller snapshot, or null to hide the right-side annotation. */
     status: RunState['status'] | null;
     /** Required parent-owned breakpoint activation flag; false adds the suspension annotation. */
     breakpointsEnabled: boolean;
   };
-  let { filename, filenamePrefix = '', position, status, breakpointsEnabled }: Props = $props();
+  let {
+    filename,
+    filenamePrefix = '',
+    position,
+    status,
+    breakpointsEnabled,
+    editorFeedback
+  }: Props = $props();
 </script>
 
-<!-- @component Desktop footer showing the current-view filename, focused editor caret, and execution status supplied by its parent. -->
+<!-- @component Desktop footer showing the current filename, caret position, active editor commands, and execution status supplied by its parent. -->
 <footer data-testid="desktop-footer">
   <span data-testid="footer-source"
     >{filenamePrefix}<strong data-testid="footer-filename">{filename}</strong></span
@@ -29,12 +38,13 @@
   <span data-testid="footer-position"
     >{position ? `Line ${position.line}, Column ${position.column}` : ''}</span
   >
-  <span>
+  <span class={['flex flex-wrap justify-end', editorFeedback && 'gap-x-3']}>
     {#if status !== null}<span aria-label="Execution status"
         >Status: <strong data-testid="execution-status-value">{status}</strong>{!breakpointsEnabled
           ? ' — breakpoints suspended'
           : ''}</span
       >{/if}
+    <span role="status" aria-label="Editor input mode">{editorFeedback}</span>
   </span>
 </footer>
 

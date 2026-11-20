@@ -19,7 +19,15 @@ The original authors’ guiding reference was Computer Organization and Design, 
 
 New creates an editor source. Open selects sources saved in this browser; Save commits the current text to that local library. Auto Save commits edits automatically when enabled. Open tabs and in-progress edits are recovered after reload when browser storage is available. Import File(s) (Ctrl+I) reads .asm or .s files, or ZIP archives of them, from your computer and shows a summary to confirm, and Export File downloads copies. Browser storage can be cleared, so export sources you need to keep. Export MARS downloads everything MARS stores in this browser (saved sources, open files with unsaved edits, settings, and the session with its loaded program) as one mars-ts-data.json file. Import MARS reads such a file, shows what it contains, and after you confirm replaces all MARS data in this browser with it and restarts MARS; a file that is not valid MARS data is listed with its problems and changes nothing. Both are unavailable while a program runs.
 
+Cut, Copy, and Paste use Ctrl+X, Ctrl+C, and Ctrl+V (Command on macOS). Undo (Ctrl+Z) restores the selection before an edit. Redo (Ctrl+Y or Ctrl+Shift+Z) restores the caret or selection after it.
+
+Enter copies the current line’s leading spaces and tabs. Insert toggles overwrite for the current source. Press `Ctrl+\` or choose Edit → Rectangular selection. The lower-right status bar shows “Rectangular selection (Ctrl+\)” while the mode is active. Hold Shift and use the arrow keys to select the width and height of the rectangle. Copy and Cut take those columns from each row. Paste replaces them line by line.
+
+To repeat an editor action, press `Ctrl+Enter` and release both keys. The lower-right status bar shows “Repeat ×1 (Ctrl+Enter)”. Type a count to update it, then press the character or editing key to repeat. Escape cancels a pending repeat.
+
 Assemble (F3) translates the current source, including unsaved edits. To assemble additional source, use explicit `.include` directives in the active program. Included sources resolve from open buffers first and saved library sources second.
+
+When manual assembly fails, Mars Messages selects the first error with a source location and the editor selects its line. Warnings also qualify when treated as errors. Assemble on open selects the message and leaves the editor caret in place. Click a diagnostic to open its source and select the line.
 
 The Execute pane supports Go, Step, Backstep, Pause, Stop, Reset, breakpoints, labels, and inspection and editing of registers and memory while execution is stopped. Registers remain visible beside Edit and Execute unless you hide them with the Register Banks switch in the menu bar; they are shown by default. The toolbar controls labels, program arguments, number formats, ASCII data, line numbers, current-line highlighting, and popup input. Enable Args to enter program arguments below the Text Segment heading; the first Go or Step after assembly or Reset supplies them through `$a0` (argc) and `$a1` (argv).
 

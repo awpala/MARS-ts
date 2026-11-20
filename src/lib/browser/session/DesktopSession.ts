@@ -120,6 +120,9 @@ export function isDesktopSession(value: unknown): value is DesktopSession {
   const s = value as DesktopSession;
   const pair = (v: unknown) =>
     Array.isArray(v) && v.length === 2 && v.every((n) => Number.isInteger(n) && n >= 0);
+  const revision = (entry: DesktopSession['editHistory'][number]['undo'][number]) =>
+    typeof entry === 'string' ||
+    (entry && typeof entry.text === 'string' && pair(entry.before) && pair(entry.after));
   return (
     (s.programArguments === undefined || typeof s.programArguments === 'string') &&
     MAIN_VIEWS.includes(s.view) &&
@@ -140,9 +143,9 @@ export function isDesktopSession(value: unknown): value is DesktopSession {
         typeof r.name === 'string' &&
         typeof r.text === 'string' &&
         Array.isArray(r.undo) &&
-        r.undo.every((t) => typeof t === 'string') &&
+        r.undo.every(revision) &&
         Array.isArray(r.redo) &&
-        r.redo.every((t) => typeof t === 'string')
+        r.redo.every(revision)
     ) &&
     !!s.dataView &&
     MEMORY_SEGMENTS.includes(s.dataView.segment) &&

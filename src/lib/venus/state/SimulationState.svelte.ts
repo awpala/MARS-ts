@@ -11,10 +11,13 @@ import { browserEnginePreferences } from '#lib/browser/preferences/EnginePrefere
 import { CooperativeScheduler } from '#lib/browser/execution/CooperativeScheduler.js';
 import { WebAudioToneHost } from '#lib/browser/execution/WebAudioToneHost.js';
 import { Globals } from '#lib/engine/Globals.js';
+import { ErrorList } from '#lib/engine/diagnostics/ErrorList.js';
 import { ProcessingException } from '#lib/engine/diagnostics/ProcessingException.js';
 import { Settings } from '#lib/engine/Settings.js';
 import type { DialogRequest } from '#lib/engine/io/DialogIO.js';
 import type { InputRequest } from '#lib/engine/io/SystemIO.js';
+import { messageLocation } from '../utils/debugger/messageLocation.js';
+import { DataSegmentWrites } from './DataSegmentWrites.svelte.js';
 import { RunController } from '../RunController.js';
 import { engineOption, engineOptions } from '../utils/commands/settings.js';
 import { errorMessage } from '#lib/browser/errorMessage.js';
@@ -34,6 +37,8 @@ export class SimulationState {
   execution = $state.raw<ReturnType<RunController['getState']>>();
   /** Selected label owned by the loaded program, independent of the currently displayed Edit source. */
   labelSelection = $state.raw<SavedLabelSelection | null>(null);
+  /** Retains write observation while the editor or debugger is visible. */
+  readonly dataWrites = new DataSegmentWrites();
   /** Configured instruction addresses; suspension retains this list. */
   breakpoints = $state.raw<number[]>([]);
   /** Whether Go supplies configured breakpoints to the simulator; a change during Go applies to that run. */
@@ -66,12 +71,22 @@ export class SimulationState {
   consoleInputPending = $derived(this.inputRequest?.prompt === null);
   /** Selected output pane. */
   messageTab = $state<MessageTab>('Mars Messages');
-  /** Assembler and execution diagnostics. */
-  messages = $state('');
+  private transcript = $state('');
+  /** Assembler and execution diagnostics. New output resumes following the transcript. */
+  get messages(): string {
+    return this.transcript;
+  }
+  set messages(value: string) {
+    this.transcript = value;
+    this.selectedDiagnostic = null;
+  }
+  /** Character range of the selected diagnostic in the retained Mars Messages transcript. */
+  selectedDiagnostic = $state.raw<{ start: number; end: number } | null>(null);
   /** Console output and echoed input. */
   runIO = $state('');
   /** Exact virtual sources read for the loaded assembly, independent of later Edit selection. */
   checkpointSources: Record<string, string> = Object.create(null);
+  private rebuildSources: Record<string, string> | null = null;
   private recoverySources: Record<string, string> | null = null;
   /** Machine code of the most recent successful build, or null before one; an identical rebuild keeps breakpoints. */
   private buildSignature: string | null = null;
@@ -90,7 +105,10 @@ export class SimulationState {
   stop = (): void => this.controller?.stop();
   /** Clear selected output, or both outputs when all is true, preserving selection and pending input. */
   clearOutput = (all = false): void => {
-    if (all || this.messageTab === 'Mars Messages') this.messages = '';
+    if (all || this.messageTab === 'Mars Messages') {
+      this.messages = '';
+      this.selectedDiagnostic = null;
+    }
     if (all || this.messageTab === 'Run I/O') this.runIO = '';
   };
   /** Initialize browser host services and the machine. Teardown releases presentation subscriptions, tones, and scheduler tasks, then requests controller disposal. The controller's Stop releases pending input; the machine remains available until execution settles. */
@@ -105,7 +123,7 @@ export class SimulationState {
           throw new Error(`Checkpoint source is missing: ${filename}`);
         const source = this.recoverySources
           ? this.recoverySources[filename]
-          : this.workspace.readSource(filename);
+          : (this.rebuildSources?.[filename] ?? this.workspace.readSource(filename));
         this.checkpointSources[filename] = source;
         return source;
       },
@@ -178,6 +196,7 @@ export class SimulationState {
     this.machine = session;
     const controls = new RunController(session);
     this.controller = controls;
+    const releaseData = this.dataWrites.observe(session, controls, this.display);
     this.engineSettings = this.readEngineSettings(session);
     // Keep publication bookkeeping outside reactive state: refresh may run inside a display effect.
     let programs = controls.getState().programs;
@@ -193,6 +212,7 @@ export class SimulationState {
       disposed = true;
       this.disposed = true;
       release();
+      releaseData();
       tones.dispose();
       this.tones = undefined;
       scheduler.dispose();
@@ -208,7 +228,7 @@ export class SimulationState {
     this.machine.getSettings().setBooleanSetting(id, value);
     this.engineSettings = { ...this.engineSettings, [id]: value };
     if (id === Settings.DELAYED_BRANCHING_ENABLED && this.hasLoadedProgram()) {
-      this.assemble();
+      this.rebuildLoaded();
       return;
     }
     if (engineOption(id)?.invalidatesAssembly ?? true) this.controller?.invalidate();
@@ -222,7 +242,7 @@ export class SimulationState {
     if (!machine.memoryConfigurations.setCurrentConfiguration(configuration)) return;
     machine.getSettings().setMemoryConfiguration(identifier);
     this.display.resetDataView();
-    if (this.hasLoadedProgram()) this.assemble();
+    if (this.hasLoadedProgram()) this.rebuildLoaded();
     else this.controller?.refresh();
   };
   /** Persist handler enablement and selection independently; disabling keeps the selected file, and changes affect only future assemblies, even during execution. */
@@ -299,12 +319,21 @@ export class SimulationState {
   private updateRunningBreakpoints(): void {
     this.controller?.updateBreakpoints(this.activeBreakpoints());
   }
-  /** Assemble the active source and explicit includes, publishing diagnostics and the execution view. */
-  assemble = () => {
-    const filename = this.workspace.current?.readOnly
-      ? this.loadedFilename
-      : this.workspace.current?.name;
+  private rebuildLoaded(): void {
+    this.rebuildSources = this.checkpointSources;
+    try {
+      this.assemble(this.loadedFilename, false);
+    } finally {
+      this.rebuildSources = null;
+    }
+  }
+  /** Assemble a source and its includes. Only explicit Assemble navigates the editor on failure. */
+  assemble = (
+    filename: string | null | undefined = this.workspace.current?.name,
+    navigateOnError = false
+  ) => {
     if (!this.controller || !filename) return;
+    this.selectedDiagnostic = null;
     try {
       this.checkpointSources = Object.create(null);
       const diagnostics = this.controller.assemble([filename], filename, (filenames) => {
@@ -323,11 +352,39 @@ export class SimulationState {
         this.display.view = 'Execute';
       } else this.messages += 'Assemble: operation completed with errors.\n';
     } catch (error) {
+      const reportStart = this.messages.length;
       this.report(error);
+      const warningsAreErrors = this.machine?.getSettings().getWarningsAreErrors();
+      const first =
+        error instanceof ProcessingException
+          ? error
+              .errors()
+              ?.getErrorMessages()
+              .find(
+                (message) =>
+                  message.getFilename() &&
+                  message.getLine() > 0 &&
+                  (!message.isWarning() || warningsAreErrors)
+              )
+          : undefined;
       this.messages += 'Assemble: operation completed with errors.\n\n';
+      if (first) {
+        const offset = this.messages.indexOf(ErrorList.formatMessage(first), reportStart);
+        if (offset >= 0) this.selectDiagnostic(offset, navigateOnError);
+      }
     }
     this.messageTab = 'Mars Messages';
   };
+  /** Select the diagnostic under the transcript caret and optionally reveal its source. */
+  selectDiagnostic(offset: number, navigate: boolean): void {
+    const start = offset === 0 ? 0 : this.messages.lastIndexOf('\n', offset - 1) + 1;
+    const newline = this.messages.indexOf('\n', offset);
+    const end = newline < 0 ? this.messages.length : newline;
+    const location = messageLocation(this.messages.slice(start, end));
+    this.selectedDiagnostic = location ? { start, end } : null;
+    if (navigate && location && !this.running)
+      void this.workspace.showSource(location.filename, location.line, true);
+  }
   /** Filenames, addresses, and binary statements of every loaded program, in assembly order. */
   private loadedBuildSignature(): string {
     return (this.controller?.getState().programs ?? [])
@@ -357,6 +414,7 @@ export class SimulationState {
       const handlerEnabled = settings.getExceptionHandlerEnabled();
       const handlerName = settings.getExceptionHandler();
       this.controller!.restoreCheckpoint(saved.machine);
+      this.dataWrites.captureText(this.machine!, this.controller!.getState().statements);
       // Handler preferences can change during a run while recovery retains the preceding stable machine.
       const restoredSettings = settings.captureState();
       restoredSettings.booleans[Settings.EXCEPTION_HANDLER_ENABLED] = handlerEnabled;
@@ -384,7 +442,7 @@ export class SimulationState {
     if (!this.controller) return;
     try {
       if (command === 'assemble') {
-        this.assemble();
+        this.assemble(this.workspace.current?.name, true);
         return;
       }
       if (command === 'clearBreakpoints') {
@@ -418,10 +476,12 @@ export class SimulationState {
       if (command === 'reset') {
         this.controller.reset();
         this.display.resetExecuteView();
+        this.messageTab = 'Run I/O';
         this.appendRunIO('\nReset: reset completed.\n\n');
         return;
       }
       if (command === 'backstep') {
+        this.messageTab = 'Run I/O';
         this.controller.backStep();
         return;
       }

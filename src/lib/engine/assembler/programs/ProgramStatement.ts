@@ -44,6 +44,7 @@ export class ProgramStatement {
   private instruction: Instruction | null;
   private textAddress: number;
   private sourceLine = 0;
+  private readonly displaySourceFile: string | null;
   private operands: number[] | null;
   private numOperands = 0;
   private binaryStatement = 0;
@@ -61,7 +62,8 @@ export class ProgramStatement {
     instruction: Instruction | null,
     address: number,
     line: number,
-    host: ProgramStatementHost
+    host: ProgramStatementHost,
+    displaySourceFile?: string | null
   );
   /** Decode an existing machine word, including self-modifying text. */
   constructor(binary: number, address: number, host: ProgramStatementHost);
@@ -73,8 +75,11 @@ export class ProgramStatement {
     instruction?: Instruction | null,
     address?: number,
     line?: number,
-    host?: ProgramStatementHost
+    host?: ProgramStatementHost,
+    displaySourceFile?: string | null
   ) {
+    this.displaySourceFile =
+      displaySourceFile ?? (typeof first === 'number' ? null : (first?.getFilename() ?? null));
     if (typeof first !== 'number') {
       this.sourceMIPSprogram = first;
       this.source = second as string;
@@ -280,6 +285,10 @@ export class ProgramStatement {
   getSourceFile(): string | null {
     return this.sourceMIPSprogram === null ? '' : this.sourceMIPSprogram.getFilename();
   }
+  /** File containing the displayed source line, including a macro invocation or a pseudo-instruction in an included file. */
+  getDisplaySourceFile(): string | null {
+    return this.displaySourceFile;
+  }
   /** Original source text. */
   getSource(): string {
     return this.source;
@@ -292,10 +301,11 @@ export class ProgramStatement {
   getBasicAssemblyStatement(): string | null {
     return this.basicAssemblyStatement;
   }
-  /** Render retained elements using the current session display preferences. */
-  getPrintableBasicAssemblyStatement(): string {
-    const addressesHex = this.host.getDisplayAddressesInHex();
-    const valuesHex = this.host.getDisplayValuesInHex();
+  /** Render retained elements in the requested display bases, defaulting to the session settings. */
+  getPrintableBasicAssemblyStatement(
+    addressesHex = this.host.getDisplayAddressesInHex(),
+    valuesHex = this.host.getDisplayValuesInHex()
+  ): string {
     return this.basicStatementList
       .map((element) =>
         element.type === 'string'

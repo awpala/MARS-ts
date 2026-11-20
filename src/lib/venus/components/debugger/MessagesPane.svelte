@@ -16,21 +16,46 @@
   const outputText = $derived(
     simulation.messageTab === 'Mars Messages' ? simulation.messages : simulation.runIO
   );
+  const diagnosticRow = $derived(
+    simulation.messageTab === 'Mars Messages' && simulation.selectedDiagnostic
+      ? outputText.slice(0, simulation.selectedDiagnostic.start).split('\n').length - 1
+      : null
+  );
   const clear = requireAction('clearOutput');
   const clearAll = requireAction('clearAllOutput');
 
   function followOutput(element: HTMLTextAreaElement) {
+    let previousText: string | undefined;
+    let previousTab: string | undefined;
     $effect(() => {
       const text = outputText;
+      const selection =
+        simulation.messageTab === 'Mars Messages' ? simulation.selectedDiagnostic : null;
+      const changed = text !== previousText || previousTab !== simulation.messageTab;
+      previousText = text;
+      previousTab = simulation.messageTab;
       let active = true;
       // Wait for the textarea value and console layout to reflect this output.
       void tick().then(() => {
-        if (active && element.value === text) element.scrollTop = element.scrollHeight;
+        if (!active || element.value !== text) return;
+        if (!selection) {
+          if (changed) element.scrollTop = element.scrollHeight;
+          return;
+        }
+        element.setSelectionRange(selection.start, selection.end);
+        const row = text.slice(0, selection.start).split('\n').length - 1;
+        const height = parseFloat(getComputedStyle(element).lineHeight);
+        element.scrollTop = row * height - element.clientHeight / 2 + height;
       });
       return () => {
         active = false;
       };
     });
+  }
+
+  function navigateMessage(element: HTMLTextAreaElement) {
+    if (simulation.messageTab === 'Mars Messages')
+      simulation.selectDiagnostic(element.selectionStart, true);
   }
 
   function focusInput(element: HTMLTextAreaElement) {
@@ -67,8 +92,24 @@
       onclick={() => simulation.clearOutput(true)}>{clearAll.label}</Button
     >
   {/snippet}
-  <textarea {@attach followOutput} readonly aria-label={simulation.messageTab} value={outputText}
-  ></textarea>
+  <textarea
+    {@attach followOutput}
+    readonly
+    aria-label={simulation.messageTab}
+    value={outputText}
+    class={{ diagnostic: diagnosticRow !== null }}
+    style:--diagnostic-row={diagnosticRow}
+    wrap={simulation.messageTab === 'Mars Messages' ? 'off' : 'soft'}
+    onclick={(event) => {
+      if (event.currentTarget.selectionStart === event.currentTarget.selectionEnd)
+        navigateMessage(event.currentTarget);
+    }}
+    onkeydown={(event) => {
+      if (event.key === 'Enter' && simulation.messageTab === 'Mars Messages') {
+        event.preventDefault();
+        navigateMessage(event.currentTarget);
+      }
+    }}></textarea>
   {#if simulation.consoleInputPending && simulation.messageTab === 'Run I/O'}<form
       class="console-input"
       data-testid="console-input"
@@ -100,6 +141,17 @@
     padding: 6px;
     resize: none;
     font: 13px/1.4 monospace;
+  }
+  /* Keep the selected message visible when its source textarea takes focus. */
+  textarea.diagnostic {
+    background-image: linear-gradient(
+      var(--theme-selection, #ffed9e),
+      var(--theme-selection, #ffed9e)
+    );
+    background-repeat: no-repeat;
+    background-attachment: local;
+    background-position: left calc(6px + var(--diagnostic-row) * 1lh);
+    background-size: 100% 1lh;
   }
   .console-input {
     display: flex;

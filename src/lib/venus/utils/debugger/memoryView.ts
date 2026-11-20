@@ -16,7 +16,12 @@ export const MEMORY_ROW_BYTES = MEMORY_COLUMNS * 4;
 export const MEMORY_PAGE_BYTES = MEMORY_ROWS * MEMORY_ROW_BYTES;
 
 /** Base address of every selectable Data Segment range. */
-export type SegmentBases = Readonly<Record<MemorySegment, number>>;
+export type SegmentBases = Readonly<Record<MemorySegment, number>> & {
+  /** Lowest initial address allowed when selecting a live pointer. */
+  readonly dataFloor: number;
+  /** Last user address in the current layout. */
+  readonly userHigh: number;
+};
 
 /** Memory capabilities needed to place an address in a range. */
 type SegmentLookup = Pick<
@@ -41,6 +46,8 @@ export function segmentBases(machine: Globals): SegmentBases {
   const memory = machine.memory;
   const registers = machine.registerFile.getRegisters();
   return {
+    dataFloor: memory.dataSegmentBaseAddress,
+    userHigh: memory.userHighAddress,
     data: memory.dataBaseAddress,
     extern: memory.externBaseAddress,
     heap: memory.heapBaseAddress,
@@ -52,14 +59,25 @@ export function segmentBases(machine: Globals): SegmentBases {
   };
 }
 
-/** Word-aligned start of a range. */
+/** Initial range address. Pointer choices align to a row and leave room for the full page. */
 export function alignedBase(bases: SegmentBases, segment: MemorySegment): number {
+  if (segment === 'sp' || segment === 'gp') {
+    const row = Math.max(bases.dataFloor, bases[segment]) & ~(MEMORY_ROW_BYTES - 1);
+    return Math.min(row, bases.userHigh - MEMORY_PAGE_BYTES + 1);
+  }
   return bases[segment] & ~3;
 }
 
 /** First address of the page a range and relative page offset display. */
 export function pageStart(bases: SegmentBases, segment: MemorySegment, pageOffset: number): number {
-  return (alignedBase(bases, segment) + pageOffset) | 0;
+  const start = alignedBase(bases, segment) + pageOffset;
+  if (segment === 'sp' || segment === 'gp')
+    return clamp(
+      start,
+      Math.min(bases.text, bases.dataFloor, bases.data),
+      bases.userHigh - MEMORY_PAGE_BYTES + 1
+    );
+  return start | 0;
 }
 
 /** Lowest and highest first addresses of a page for a range; linked kernel-text labels share the text selector with user instructions. */

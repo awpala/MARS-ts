@@ -1,3 +1,5 @@
+import type { Memory } from '#lib/engine/hardware/memory/Memory.js';
+import { locateAddress, type SegmentBases } from '../utils/debugger/memoryView.js';
 import {
   loadPaneLayout,
   MIN_REGISTER_WIDTH,
@@ -107,6 +109,13 @@ export class DisplayPreferences {
   /** Persist the display record, including the workspace owner's Auto Save choice. */
   persist(autoSave: boolean): void {
     saveDisplaySettings({ autoSave, ...pick(this, persistedKeys) });
+  }
+  /** Reveal the page containing a label or observed store and report whether it belongs to text. */
+  selectMemoryAddress(memory: Memory, bases: SegmentBases, address: number): boolean {
+    const location = locateAddress(memory, bases, address, this.dataSegment);
+    this.dataSegment = location.segment;
+    this.dataPageOffset = location.pageOffset;
+    return location.textLabel;
   }
   /** Return the Data Segment to the first page of the data range, as after assembly, Reset, or a memory layout change. */
   resetDataView(): void {

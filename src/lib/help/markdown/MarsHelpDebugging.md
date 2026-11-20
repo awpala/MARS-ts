@@ -16,11 +16,15 @@ Assemble a program to populate the Execute pane. Its Text Segment shows addresse
 - **Backstep (F8)** undoes recorded memory, register, and condition-flag changes one instruction at a time. History holds up to 2000 recent steps. It does not undo console output or other external I/O, and is separate from source-editor Undo. It is available after stepping, pausing, or termination when history remains. The browser has no properties-file control for its capacity.
 - **Reset (F12)** restores post-assembly memory and registers by reassembling the retained program. Editing source requires a fresh Assemble before execution.
 
+Backstep and Reset bring Run I/O to the front. Click an instruction’s Source cell to focus its line in an open file, including a file referenced by .include. The Basic column follows the address and value base settings immediately.
+
 ## Inspecting memory and registers
 
 Toolbar toggles select hexadecimal or decimal addresses and values. Data memory also has an ASCII view. Memory is little-endian: a displayed hexadecimal word places its most significant byte on the left, so four string bytes can appear reversed relative to their order in memory.
 
 The Data Segment shows 512 bytes (16 rows) at a time, initially at `0x10010000`. Navigation and range controls move through memory or select the stack pointer, global pointer, heap (`0x10040000`), extern globals (`0x10000000`), kernel data (`0x90000000`), MMIO (`0xFFFF0000`), or raw text. Raw text inspection was added in Java MARS 4.4. An MMIO region does not imply that device Tools are available.
+
+You can select a range and page through memory during Go. Hold either arrow to page repeatedly. The stack and global pointer choices start on a 32-byte row and keep the whole page within user memory. Switching to Edit and back preserves the last highlighted store. Press Escape to cancel an unfinished numeric cell edit.
 
 While execution is stopped, edit a permitted register or memory input and commit with Enter or by leaving the field. Integers accept decimal or hexadecimal with a leading `0x`, including negative values in signed or two’s-complement form. Invalid input does not change the machine value. The zero register, program counter, and return address are not editable in the general-register table. ASCII memory cells are read-only.
 

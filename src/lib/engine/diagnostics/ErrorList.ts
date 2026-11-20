@@ -87,22 +87,27 @@ export class ErrorList {
     return this.generateWarningReport() + this.generateErrorReport();
   }
 
+  /** Format one entry exactly as it appears in a report, including its macro history. */
+  static formatMessage(message: ErrorMessage): string {
+    let line =
+      (message.isWarning() ? ErrorList.WARNING_MESSAGE_PREFIX : ErrorList.ERROR_MESSAGE_PREFIX) +
+      ErrorList.FILENAME_PREFIX;
+    // java.io.File.getPath on the Linux oracle collapses repeated separators and trailing slashes.
+    const filename = message.getFilename();
+    if (filename === null) throw new TypeError('Null diagnostic filename');
+    const path = filename.replace(/\/{2,}/g, '/');
+    line += path.length > 1 ? path.replace(/\/$/, '') : path;
+    if (message.getLine() > 0)
+      line += ErrorList.LINE_PREFIX + message.getMacroExpansionHistory() + message.getLine();
+    if (message.getPosition() > 0) line += ErrorList.POSITION_PREFIX + message.getPosition();
+    return line + ErrorList.MESSAGE_SEPARATOR + message.getMessage();
+  }
+
   private generateReport(warning: boolean): string {
     let report = '';
     for (const message of this.messages) {
       if (message.isWarning() !== warning) continue;
-      let line =
-        (warning ? ErrorList.WARNING_MESSAGE_PREFIX : ErrorList.ERROR_MESSAGE_PREFIX) +
-        ErrorList.FILENAME_PREFIX;
-      // java.io.File.getPath on the Linux oracle collapses repeated separators and trailing slashes.
-      const filename = message.getFilename();
-      if (filename === null) throw new TypeError('Null diagnostic filename');
-      const path = filename.replace(/\/{2,}/g, '/');
-      line += path.length > 1 ? path.replace(/\/$/, '') : path;
-      if (message.getLine() > 0)
-        line += ErrorList.LINE_PREFIX + message.getMacroExpansionHistory() + message.getLine();
-      if (message.getPosition() > 0) line += ErrorList.POSITION_PREFIX + message.getPosition();
-      report += line + ErrorList.MESSAGE_SEPARATOR + message.getMessage() + '\n';
+      report += ErrorList.formatMessage(message) + '\n';
     }
     return report;
   }

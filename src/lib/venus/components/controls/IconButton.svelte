@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Attachment } from 'svelte/attachments';
   import type { ClassValue } from 'svelte/elements';
   import Button from './Button.svelte';
   import Icon, { type IconSource } from '../icons/Icon.svelte';
@@ -23,6 +24,8 @@
     highlighted?: boolean;
     /** Optional layout classes on the button; none by default. */
     class?: ClassValue;
+    /** Optional native button behavior, released when the element unmounts. */
+    attachment?: Attachment<HTMLButtonElement>;
     /** Required activation callback; owns any asynchronous work. */
     onclick: () => void;
   };
@@ -36,6 +39,7 @@
     pressed,
     highlighted = false,
     class: className,
+    attachment,
     onclick
   }: Props = $props();
   const sizes = { sm: 'size-4.5', md: 'size-5.5', lg: 'size-7.25' } as const;
@@ -55,6 +59,7 @@
   {shortcut}
   {highlighted}
   {disabled}
+  {attachment}
   {onclick}
 >
   <Icon {icon} />

@@ -20,7 +20,26 @@ export function useDesktopKeyboard(
         if (desktop.ready && !desktop.hasModal && event.key === 'Escape') closeMenus();
         return;
       }
-      // Every defined shortcut belongs to the app, including in text fields and when disabled.
+      if (item.command === 'cut' || item.command === 'copy' || item.command === 'paste') {
+        const source = workspace.sourceInput;
+        if (!desktop.ready || desktop.hasModal || !source || !desktop.enabled(item)) return;
+        if (event.target !== source) {
+          const target = event.target;
+          if (
+            !(target instanceof HTMLElement) ||
+            target.isContentEditable ||
+            target.closest('input, textarea, select') ||
+            window.getSelection()?.isCollapsed === false
+          )
+            return;
+          closeMenus();
+          source.focus({ preventScroll: true });
+        }
+        // Let the platform deliver its trusted clipboard event, including when async access is denied.
+        highlightShortcut(item.command);
+        return;
+      }
+      // The remaining desktop shortcuts own the chord even in a text field or when disabled.
       event.preventDefault();
       event.stopPropagation();
       if (!desktop.ready || desktop.hasModal || (event.repeat && item.noRepeat)) return;

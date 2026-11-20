@@ -35,6 +35,13 @@ describe('browser editor buffer lifecycle', () => {
     expect(restored.text).toBe('draft');
     expect(editor.newFile(['mips2.asm']).name).toBe('mips3.asm');
   });
+  it('recovers the changed location from legacy text-only revisions, using textarea line offsets', () => {
+    const editor = new Editor();
+    const tab = editor.openFile('legacy.asm', 'a\r\nb!\r\nc');
+    editor.restoreHistory([{ name: tab.name, text: tab.text, undo: ['a\r\nb\r\nc'], redo: [] }]);
+    expect(editor.undo()).toEqual([3, 3]);
+    expect(editor.redo()).toEqual([4, 4]);
+  });
   it('counts default names independently of opening existing files', () => {
     const editor = new Editor();
     editor.openFile('existing.asm', '');

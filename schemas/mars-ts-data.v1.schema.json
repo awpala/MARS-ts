@@ -108,10 +108,19 @@
       "type": "object",
       "additionalProperties": { "type": "string" }
     },
-    "textList": {
-      "description": "List of texts.",
+    "editRevisions": {
+      "description": "Source revisions with optional pre-edit and post-edit anchor/caret offsets. Earlier sessions store the source string alone.",
       "type": "array",
-      "items": { "type": "string" }
+      "items": {
+        "type": ["string", "object"],
+        "required": ["text", "before", "after"],
+        "additionalProperties": false,
+        "properties": {
+          "text": { "type": "string" },
+          "before": { "$ref": "#/$defs/offsetPair" },
+          "after": { "$ref": "#/$defs/offsetPair" }
+        }
+      }
     },
     "booleanPreference": {
       "description": "Engine boolean setting, stored as text.",
@@ -283,8 +292,8 @@
             "properties": {
               "name": { "type": "string" },
               "text": { "type": "string" },
-              "undo": { "$ref": "#/$defs/textList" },
-              "redo": { "$ref": "#/$defs/textList" }
+              "undo": { "$ref": "#/$defs/editRevisions" },
+              "redo": { "$ref": "#/$defs/editRevisions" }
             }
           }
         },

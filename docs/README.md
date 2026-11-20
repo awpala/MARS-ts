@@ -4,6 +4,8 @@ The [implementation guide](../IMPLEMENTATION.md) describes the current MARS-ts s
 
 The [deviation catalog](deviations.md) compares implemented UI and Engine behavior with final MARS 4.5, separating browser/platform adaptations and excluding unfinished features. It remains a living comparison until the human-owned MARS-ts 1.0 release cut.
 
+The [Swing Venus UI feature audit](audits/0001-swing-venus-ui-features.md) records the accepted November 20, 2026 findings and the interactions used to reproduce them.
+
 | Decision                                                                          | Status                          | Scope                                                                                                                                        |
 | --------------------------------------------------------------------------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | [Port plan](adrs/0000-port-plan.md)                                               | Accepted (P0–P2 complete)       | Scope, stack, legacy-to-target mapping, parity strategy, milestones, open decisions                                                          |

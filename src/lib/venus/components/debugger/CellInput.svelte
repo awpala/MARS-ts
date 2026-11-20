@@ -7,20 +7,33 @@
     /** Smallest rendered width as a CSS length; defaults to `94px` so a hexadecimal word stays visible while the input fills its cell. */
     minWidth?: string;
   };
-  let { minWidth = '94px', class: className, ...attributes }: Props = $props();
+  let { minWidth = '94px', class: className, value, onchange, ...attributes }: Props = $props();
 
-  function commitOnEnter(event: KeyboardEvent & { currentTarget: HTMLInputElement }) {
+  let canceling = false;
+
+  function finishEdit(event: KeyboardEvent & { currentTarget: HTMLInputElement }) {
     // Blurring fires the native change event, so the owner's handler validates and writes the value.
-    if (event.key === 'Enter') event.currentTarget.blur();
+    if (event.isComposing) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      canceling = true;
+      event.currentTarget.value = String(value ?? '');
+      event.currentTarget.blur();
+      canceling = false;
+    } else if (event.key === 'Enter') event.currentTarget.blur();
   }
 </script>
 
-<!-- @component Borderless machine-value input that fills a MachineTable cell. Enter commits by blurring; native readonly, disabled, value, and change handling pass through to the owner. -->
+<!-- @component Borderless machine-value input that fills a MachineTable cell. Escape restores the hardware display and Enter commits by blurring; native readonly, disabled, value, and change handling pass through to the owner. -->
 <input
   {...attributes}
   class={['cell-input', className]}
   style:min-width={minWidth}
-  onkeydown={commitOnEnter}
+  {value}
+  onchange={(event) => {
+    if (!canceling) onchange?.(event);
+  }}
+  onkeydown={finishEdit}
 />
 
 <style>

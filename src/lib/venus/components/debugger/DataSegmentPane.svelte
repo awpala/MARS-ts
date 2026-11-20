@@ -14,6 +14,7 @@
     pageLimits,
     pagedOffset
   } from '../../utils/debugger/memoryView.js';
+  import { repeatPress } from '../../utils/dom/repeatPress.js';
   import IconButton from '../controls/IconButton.svelte';
   import Select from '../controls/Select.svelte';
   import SelectorToggle from '../controls/SelectorToggle.svelte';
@@ -38,7 +39,6 @@
   let dataPaneHeight = $state(0);
   let dataScrollHeight = $state(0);
   let dataTableHeight = $state(0);
-  let dataScroll = $state<HTMLElement>();
   // Compression changes only the scroll viewport, so this stays constant while resizing.
   const naturalDataHeight = $derived(dataPaneHeight - dataScrollHeight + dataTableHeight);
   const maxDataHeight = $derived(
@@ -52,11 +52,13 @@
   const dataHeightRestorable = $derived(
     display.dataSegmentHeight !== null && displayedDataHeight < naturalDataHeight
   );
-  $effect(() => {
-    // Assembly and Reset replace the statement list after initializing data memory.
-    void view.statements;
-    if (dataScroll) dataScroll.scrollTop = 0;
-  });
+  function resetScrollOnAssembly(element: HTMLElement) {
+    $effect(() => {
+      // Assembly and Reset replace the statement list after initializing data memory.
+      void view.statements;
+      element.scrollTop = 0;
+    });
+  }
   const segmentOptions = $derived([
     { value: 'extern', label: `${Binary.intToHexString(view.bases.extern)} (.extern)` },
     { value: 'data', label: `${Binary.intToHexString(view.bases.data)} (.data)` },
@@ -113,7 +115,7 @@
   // Native selects fire no change when an option is reselected. Opening the list selects a
   // hidden placeholder bearing the current label, so choosing the current range resets it.
   function armSegment(event: Event & { currentTarget: HTMLSelectElement }) {
-    if (!view.running) event.currentTarget.selectedIndex = 0;
+    event.currentTarget.selectedIndex = 0;
   }
   function restoreSegment(event: Event & { currentTarget: HTMLSelectElement }) {
     if (event.currentTarget.selectedIndex === 0) event.currentTarget.value = display.dataSegment;
@@ -157,7 +159,7 @@
     <div
       class="data-scroll min-h-0 flex-auto overflow-auto"
       data-testid="data-scroll"
-      bind:this={dataScroll}
+      {@attach resetScrollOnAssembly}
       bind:clientHeight={dataScrollHeight}
     >
       <MachineTable bind:offsetHeight={dataTableHeight}>
@@ -196,13 +198,13 @@
         size="md"
         label="Previous memory page"
         icon={{ glyph: 'Previous' }}
-        disabled={view.running || view.memoryBase >>> 0 <= limits.low}
+        disabled={view.memoryBase >>> 0 <= limits.low}
+        attachment={repeatPress}
         onclick={() => pageMemory(-MEMORY_PAGE_BYTES)}
       /><Select
         class="shrink-0"
         style="padding: 0; border: 0; background: var(--theme-chrome, #eee)"
         aria-label="Data segment base"
-        disabled={view.running}
         bind:value={display.dataSegment}
         onpointerdown={armSegment}
         onkeydown={segmentKey}
@@ -219,7 +221,8 @@
         size="md"
         label="Next memory page"
         icon={{ glyph: 'Next' }}
-        disabled={view.running || view.memoryBase >>> 0 >= limits.high}
+        disabled={view.memoryBase >>> 0 >= limits.high}
+        attachment={repeatPress}
         onclick={() => pageMemory(MEMORY_PAGE_BYTES)}
       />
       <div class="control-separator" role="separator" aria-orientation="vertical"></div>

@@ -150,13 +150,22 @@ test('data highlights follow stores and backstep and clear after Reset and reass
   for (let index = 0; index < 3; index++) await action(page, 'Step').click();
   await expect(highlighted.getByRole('textbox')).toHaveAccessibleName('Memory 0x10010400');
   await expect(highlighted.getByRole('textbox')).toHaveValue('0x0000002a');
+  await action(page, 'Edit').click();
+  await action(page, 'Execute').click();
+  await expect(highlighted.getByRole('textbox')).toHaveAccessibleName('Memory 0x10010400');
   await action(page, 'Step').click();
   await expect(highlighted.getByRole('textbox')).toHaveAccessibleName('Memory 0x10010404');
   await expect(highlighted.getByRole('textbox')).toHaveValue('0x00000000');
+  await action(page, 'Mars Messages').click();
   await action(page, 'Backstep').click();
+  await expect(page.getByRole('textbox', { name: 'Run I/O', exact: true })).toBeVisible();
   await expect(highlighted.getByRole('textbox')).toHaveAccessibleName('Memory 0x10010404');
   await expect(highlighted.getByRole('textbox')).toHaveValue('0x00000016');
+  await action(page, 'Mars Messages').click();
   await action(page, 'Reset').click();
+  await expect(page.getByRole('textbox', { name: 'Run I/O', exact: true })).toHaveValue(
+    /Reset: reset completed/
+  );
   await expect(highlighted).toHaveCount(0);
   await expect(page.getByLabel('Memory 0x10010000', { exact: true })).toBeVisible();
   await expect(
@@ -1502,4 +1511,80 @@ test('Labels name and address cells are hoverable and clickable across the entir
     await page.mouse.click(edge.x, edge.y);
     await expect(row).not.toHaveAttribute('data-selected');
   }
+});
+
+test('display bases reformat Basic operands immediately and Escape discards pending numeric edits', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await source(page, '.text\nmain: addiu $t0,$zero,42\nj main\nnop\n');
+  await action(page, 'Assemble').click();
+  const basic = page.getByTestId('text-basic');
+  await expect(basic.nth(0)).toContainText('0x0000002a');
+  await expect(basic.nth(1)).toContainText('0x00400000');
+  await page.getByRole('checkbox', { name: 'Hexadecimal Values', exact: true }).uncheck();
+  await expect(basic.nth(0)).toContainText(',42');
+  await expect(basic.nth(1)).toContainText('0x00400000');
+  await page.getByRole('checkbox', { name: 'Hexadecimal Addresses', exact: true }).uncheck();
+  await expect(basic.nth(1)).toContainText('4194304');
+  await page.getByTestId('menu-settings-trigger').click();
+  await page.getByLabel('Self-modifying code', { exact: true }).check();
+  await page.getByTestId('menu-settings-trigger').click();
+  for (const name of ['$t0 value', 'Memory 0x10010000', 'Code 0x00400000']) {
+    const cell = page.getByLabel(name, { exact: true });
+    const original = await cell.inputValue();
+    await cell.fill('123');
+    await cell.press('Escape');
+    await expect(cell).toHaveValue(original);
+    await expect(cell).not.toBeFocused();
+  }
+  await action(page, 'Coproc 1').click();
+  for (const name of ['$f0 float value', '$f0 double value']) {
+    const cell = page.getByLabel(name, { exact: true });
+    const original = await cell.inputValue();
+    await cell.fill('12.5');
+    await cell.press('Escape');
+    await expect(cell).toHaveValue(original);
+  }
+  await action(page, 'Registers').click();
+  await action(page, 'Step').click();
+  await expect(page.getByLabel('$t0 value', { exact: true })).toHaveValue('42');
+});
+
+test('live memory inspection pages repeatedly while held and bounds the full pointer page', async ({
+  page
+}) => {
+  await openDesktop(page);
+  await source(page, '.text\nloop: j loop\nnop\n');
+  await action(page, 'Assemble').click();
+  const segment = page.getByLabel('Data segment base', { exact: true });
+  const first = page.getByTestId('data-address').first();
+  await segment.selectOption('sp');
+  await expect(first).toHaveText('0x7fffefe0');
+  const gp = page.getByLabel('$gp value', { exact: true });
+  for (const [value, expected] of [
+    ['1', '0x10000000'],
+    ['0x7ffffffc', '0x7ffffe00']
+  ]) {
+    await gp.fill(value);
+    await gp.press('Enter');
+    await segment.selectOption('gp');
+    await expect(first).toHaveText(expected);
+  }
+  await action(page, 'Decrease run speed').click();
+  await action(page, 'Go').click();
+  await expect(page.getByLabel('Execution status')).toHaveText('Status: running');
+  await segment.selectOption('data');
+  const next = action(page, 'Next memory page');
+  await next.hover();
+  await page.mouse.down();
+  try {
+    await expect
+      .poll(async () => parseInt((await first.textContent())!, 16))
+      .toBeGreaterThanOrEqual(0x10010400);
+  } finally {
+    await page.mouse.up();
+  }
+  await expect(gp).toHaveAttribute('readonly', '');
+  await action(page, 'Pause').click();
 });

@@ -354,7 +354,7 @@ test('both consoles reveal the latest line after overflowing, appending, and swi
   await expect(output).toHaveValue('');
 });
 
-test('every defined shortcut cancels browser defaults across app surfaces, including when modal-blocked', async ({
+test('desktop shortcuts cancel browser defaults when modal-blocked and clipboard chords retain native behavior', async ({
   page
 }) => {
   await openDesktop(page);
@@ -376,13 +376,14 @@ test('every defined shortcut cancels browser defaults across app surfaces, inclu
     const input = document.createElement('input');
     document.querySelector('dialog[open]')!.append(input);
     const targets = [document.body, document.querySelector('[data-testid="source-input"]')!, input];
-    const results: { shortcut: string; canceled: boolean }[] = [];
+    const results: { shortcut: string; shouldCancel: boolean; canceled: boolean }[] = [];
     for (const target of targets) {
       for (const action of actions) {
         for (const shortcut of action.shortcut?.split(' / ') ?? []) {
           const keys = shortcut.toLowerCase().split('+');
           results.push({
             shortcut,
+            shouldCancel: !['cut', 'copy', 'paste'].includes(action.command),
             canceled: !target.dispatchEvent(
               new KeyboardEvent('keydown', {
                 key: keys.at(-1)!,
@@ -401,7 +402,7 @@ test('every defined shortcut cancels browser defaults across app surfaces, inclu
     return results;
   });
   expect(canceled.length).toBeGreaterThan(0);
-  expect(canceled.filter((result) => !result.canceled)).toEqual([]);
+  expect(canceled.filter((result) => result.canceled !== result.shouldCancel)).toEqual([]);
   await expect(page.getByRole('dialog', { name: 'MARS Help', exact: true })).toBeVisible();
 });
 

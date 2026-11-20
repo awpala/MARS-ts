@@ -10,6 +10,8 @@ import {
 } from './memoryView.js';
 
 const bases: SegmentBases = {
+  dataFloor: 0x10000000,
+  userHigh: 0x7fffffff,
   data: 0x10010000,
   extern: 0x10000000,
   heap: 0x10040000,
@@ -42,6 +44,9 @@ const bounds = {
 describe('page addressing', () => {
   it('aligns range bases to words and applies the relative offset', () => {
     expect(alignedBase({ ...bases, gp: 0x10008003 }, 'gp')).toBe(0x10008000);
+    expect(alignedBase(bases, 'sp')).toBe(0x7fffefe0);
+    expect(alignedBase({ ...bases, gp: 1 }, 'gp')).toBe(0x10000000);
+    expect(alignedBase({ ...bases, gp: 0x7ffffffc }, 'gp')).toBe(0x7ffffe00);
     expect(pageStart(bases, 'data', MEMORY_PAGE_BYTES)).toBe(0x10010200);
   });
 });

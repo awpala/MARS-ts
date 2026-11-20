@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { columnRanges } from '#lib/editor/columnSelection.js';
   import { highlightSource } from '#lib/editor/highlighting/MIPSTokenMarker.js';
   import { Token } from '#lib/editor/highlighting/Token.js';
   import { Directives } from '#lib/engine/assembler/directives/Directives.js';
@@ -12,15 +13,16 @@
   const current = $derived(workspace.current);
   const running = $derived(simulation.running);
   const showLines = $derived(display.showLines);
+  const sourceText = $derived(workspace.editorText);
   const caretLine = $derived(
-    (
-      current?.text.slice(
+    sourceText
+      .slice(
         0,
         workspace.selectionDirection === 'backward'
           ? workspace.selectionStart
           : workspace.selectionEnd
-      ) ?? ''
-    ).split('\n').length
+      )
+      .split('\n').length
   );
   /** Instruction hover help is withheld while a dialog owns interaction. */
   const helpEnabled = $derived(!desktop.hasModal);
@@ -29,7 +31,6 @@
   const paneId = $props.id();
   const syntaxStyles = editorPreset.syntaxStyles;
   // Buffer metadata and history can refresh without changing the syntax tokens.
-  const sourceText = $derived(current?.text ?? '');
   const highlighted = $derived(highlightSource(sourceText));
   let sourceHelp = $state.raw<{
     buffer: number;
@@ -41,25 +42,79 @@
     entries: { example: string; description: string }[];
   } | null>(null);
   const visibleSourceHelp = $derived(
-    sourceHelp && sourceHelp.buffer === current?.id && sourceHelp.source === current.text
+    sourceHelp && sourceHelp.buffer === current?.id && sourceHelp.source === sourceText
       ? sourceHelp
       : null
   );
-  function sourceKeydown(event: KeyboardEvent) {
+  const rectangle = $derived(
+    workspace.inputMode?.rectangular && workspace.selectionStart !== workspace.selectionEnd
+      ? columnRanges(sourceText, workspace.selectionStart, workspace.selectionEnd)
+      : []
+  );
+  const firstRectangleLine = $derived(
+    rectangle.length ? sourceText.slice(0, rectangle[0].lineStart).split('\n').length - 1 : 0
+  );
+  function sourceKeydown(event: KeyboardEvent & { currentTarget: HTMLTextAreaElement }) {
     sourceHelp = null;
-    if (running || current?.readOnly) return;
-    // JEditTextArea only intercepts unmodified Tab; insert_tab replaces the selection
-    // with one literal tab. Shift+Tab remains available for keyboard focus traversal.
-    if (event.key !== 'Tab' || event.shiftKey || event.ctrlKey || event.altKey || event.metaKey)
-      return;
     const input = event.currentTarget;
-    if (!(input instanceof HTMLTextAreaElement)) return;
-    event.preventDefault();
-    input.setRangeText('\t', input.selectionStart, input.selectionEnd, 'end');
-    workspace.edit(input.value);
+    workspace.selection();
+    workspace.inputMode?.keydown(event, input, () => workspace.editFromInput(input));
     workspace.selection();
   }
+  function sourceBeforeInput(event: InputEvent & { currentTarget: HTMLTextAreaElement }) {
+    const input = event.currentTarget;
+    workspace.selection();
+    workspace.inputMode?.beforeInput(event, input, () => workspace.editFromInput(input));
+  }
+  // The held key belongs to this editing surface. Mode and repeat count belong to the source tab.
+  let backslashDown = false;
+  function rectangleShortcut(event: KeyboardEvent) {
+    if (event.code !== 'Backslash' && event.key !== '\\') return;
+    const release = event.type === 'keyup';
+    const sawPress = backslashDown;
+    backslashDown = !release;
+    const input = workspace.sourceInput;
+    if (
+      !input ||
+      (event.target !== input && document.activeElement !== input) ||
+      display.view !== 'Edit' ||
+      desktop.hasModal ||
+      !event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey ||
+      event.metaKey ||
+      event.isComposing ||
+      event.getModifierState('AltGraph')
+    )
+      return;
+    event.preventDefault();
+    // Some hosts intercept the press and deliver only the release to Chrome.
+    if (!event.repeat && !(release && sawPress)) workspace.inputMode?.toggleRectangle();
+  }
+  function sourceClipboard(event: ClipboardEvent & { currentTarget: HTMLTextAreaElement }) {
+    const mode = workspace.inputMode;
+    const input = event.currentTarget;
+    if (
+      !mode ||
+      !(mode.repeating || (mode.rectangular && input.selectionStart !== input.selectionEnd)) ||
+      !event.clipboardData
+    )
+      return;
+    event.preventDefault();
+    if (event.type !== 'paste')
+      event.clipboardData.setData(
+        'text/plain',
+        mode.counted(mode.selected(input.value, input.selectionStart, input.selectionEnd))
+      );
+    if (!input.readOnly && event.type !== 'copy')
+      workspace.replaceSelection(
+        event.type === 'cut' ? '' : mode.counted(event.clipboardData.getData('text/plain')),
+        input.selectionStart,
+        input.selectionEnd
+      );
+  }
   function hoverSource(event: PointerEvent) {
+    if (event.buttons & 1 && workspace.inputMode) workspace.inputMode.rectangular = event.ctrlKey;
     if (!current || !instructionSet || event.buttons) {
       sourceHelp = null;
       return;
@@ -90,7 +145,7 @@
       const above = window.innerHeight - rect.bottom < 260;
       sourceHelp = {
         buffer: current.id,
-        source: current.text,
+        source: sourceText,
         start,
         entries,
         above,
@@ -113,9 +168,18 @@
 
   /** Publish this surface's input and line geometry for workspace navigation, and withdraw both on removal. */
   function registerInput(element: HTMLTextAreaElement) {
-    return workspace.registerSourceInput(element, (line) => {
-      const height = Number.parseFloat(getComputedStyle(element).lineHeight);
-      if (Number.isFinite(height)) element.scrollTop = Math.max(0, (line - 3) * height);
+    return workspace.registerSourceInput(element, (line, onlyIfHidden) => {
+      const style = getComputedStyle(element);
+      const height = Number.parseFloat(style.lineHeight);
+      if (!Number.isFinite(height)) return;
+      const top = Number.parseFloat(style.paddingTop) + (line - 1) * height;
+      if (
+        onlyIfHidden &&
+        top >= element.scrollTop &&
+        top + height <= element.scrollTop + element.clientHeight
+      )
+        return;
+      element.scrollTop = Math.max(0, (line - 3) * height);
     });
   }
   useKeyboard(
@@ -125,6 +189,8 @@
     { enabled: () => Boolean(visibleSourceHelp) }
   );
 </script>
+
+<svelte:window onkeydowncapture={rectangleShortcut} onkeyupcapture={rectangleShortcut} />
 
 <!-- @component Highlighted source surface with view-owned DOM geometry, scrolling, and hover state. With no open source and an empty browser library, it shows how to create or import one. The workspace owns buffers and persisted selection/scroll positions; it borrows this view's textarea and line-reveal capability through a mounted registration and handles source mutations. -->
 {#if current}<div
@@ -136,7 +202,7 @@
   >
     {#if showLines}<div class="line-numbers" aria-hidden="true" data-testid="editor-line-numbers">
         <pre style:transform={`translateY(${-workspace.sourceScrollTop}px)`}>{Array.from(
-            { length: current.text.split('\n').length },
+            { length: sourceText.split('\n').length },
             (_, i) => i + 1
           ).join('\n')}</pre>
       </div>{/if}
@@ -149,6 +215,19 @@
           style:--line-index={caretLine - 1}
           style:--scroll-top={`${workspace.sourceScrollTop}px`}
         ></div>
+      {/if}
+      {#if rectangle.length}
+        <pre
+          aria-hidden="true"
+          class="syntax-layer column-layer"
+          style:top={`calc(${firstRectangleLine} * 1lh)`}
+          style:transform={`translate(${-workspace.sourceScrollLeft}px, ${-workspace.sourceScrollTop}px)`}>{#each rectangle as range (range.lineStart)}<span
+              class="column-row"
+              >{sourceText.slice(range.lineStart, range.start)}<mark
+                data-testid="editor-selected-columns"
+                >{sourceText.slice(range.start, range.end)}</mark
+              ></span
+            >{/each}</pre>
       {/if}
       <pre
         class="syntax-layer"
@@ -168,18 +247,27 @@
         {@attach registerInput}
         aria-label={`Source ${current.name}`}
         aria-describedby={visibleSourceHelp ? `${paneId}-source-help` : undefined}
-        value={current.text}
+        value={sourceText}
         readonly={running || current.readOnly}
         style:cursor={visibleSourceHelp && helpEnabled ? 'pointer' : 'text'}
-        oninput={(event) => {
-          workspace.edit(event.currentTarget.value);
-          workspace.selection();
+        class={{
+          'column-selection': rectangle.length > 0,
+          overwriting: workspace.inputMode?.overwrite
         }}
+        oninput={(event) => workspace.editFromInput(event.currentTarget)}
+        onbeforeinput={sourceBeforeInput}
+        oncut={sourceClipboard}
+        oncopy={sourceClipboard}
+        onpaste={sourceClipboard}
         onfocus={workspace.selection}
         onclick={workspace.selection}
         onpointermove={hoverSource}
         onpointerleave={leaveSource}
-        onpointerdown={() => (sourceHelp = null)}
+        onpointerdown={(event) => {
+          sourceHelp = null;
+          if (workspace.inputMode && event.button === 0)
+            workspace.inputMode.rectangular = event.ctrlKey;
+        }}
         onblur={blurSource}
         onkeydown={sourceKeydown}
         onkeyup={workspace.selection}
@@ -262,8 +350,25 @@
     -webkit-text-fill-color: transparent;
     font-variant-ligatures: none;
   }
+  .source-surface textarea.overwriting {
+    caret-shape: underscore;
+  }
   .source-surface textarea::selection {
     background: var(--editor-selection);
+  }
+  .column-layer {
+    color: transparent;
+  }
+  .column-row {
+    display: block;
+    min-height: 1lh;
+  }
+  .column-layer mark {
+    color: transparent;
+    background: var(--editor-selection);
+  }
+  .source-surface textarea.column-selection::selection {
+    background: transparent;
   }
   .source-help {
     cursor: text;
@@ -284,6 +389,25 @@
   @media (forced-colors: active) {
     .syntax-layer {
       display: none;
+    }
+    /* Windows contrast themes override native ::selection colors. Paint the same column
+       ranges above the native editor with the user's system highlight and text colors. */
+    .column-layer {
+      display: block;
+      z-index: 1;
+      forced-color-adjust: none;
+    }
+    .column-layer mark {
+      background: Highlight;
+      color: HighlightText;
+    }
+    .source-surface textarea.column-selection {
+      forced-color-adjust: none;
+      background: Canvas;
+    }
+    .source-surface textarea.column-selection::selection {
+      background: transparent;
+      color: CanvasText;
     }
     .source-surface textarea {
       color: CanvasText;

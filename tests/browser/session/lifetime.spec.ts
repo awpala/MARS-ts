@@ -250,7 +250,7 @@ for (const command of ['Paste', 'Cut'] as const) {
     await page.getByTestId('menu-edit-trigger').click();
     await page
       .getByTestId('menu-edit-content')
-      .getByRole('button', { name: command, exact: true })
+      .getByTestId('menu-item-' + command.toLowerCase())
       .click();
     await page.getByRole('button', { name: 'Assemble', exact: true }).click();
     await page.getByRole('button', { name: 'Go', exact: true }).click();
@@ -388,10 +388,7 @@ test('unmount releases pending work and remounts do not duplicate keyboard comma
     });
   });
   await page.getByTestId('menu-edit-trigger').click();
-  await page
-    .getByTestId('menu-edit-content')
-    .getByRole('button', { name: 'Paste', exact: true })
-    .click();
+  await page.getByTestId('menu-edit-content').getByTestId('menu-item-paste').click();
   // The pending read blocks the desktop behind its status, so it starts after the other pending work.
   await page.getByLabel('Import assembly files', { exact: true }).setInputFiles({
     name: 'late.asm',

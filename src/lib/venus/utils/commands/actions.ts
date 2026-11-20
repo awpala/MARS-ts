@@ -68,11 +68,12 @@ export const fileActions: readonly Action[] = [
 export const editActions: readonly Action[] = [
   { label: 'Undo', icon: image('Undo'), command: 'undo', shortcut: 'Ctrl+Z' },
   { label: 'Redo', icon: image('Redo'), command: 'redo', shortcut: 'Ctrl+Y / Ctrl+Shift+Z' },
-  { label: 'Cut', icon: image('Cut'), command: 'cut' },
-  { label: 'Copy', icon: image('Copy'), command: 'copy' },
-  { label: 'Paste', icon: image('Paste'), command: 'paste' },
+  { label: 'Cut', icon: image('Cut'), command: 'cut', shortcut: 'Ctrl+X' },
+  { label: 'Copy', icon: image('Copy'), command: 'copy', shortcut: 'Ctrl+C' },
+  { label: 'Paste', icon: image('Paste'), command: 'paste', shortcut: 'Ctrl+V' },
   { label: 'Find/Replace', icon: image('Find'), command: 'find', shortcut: 'Ctrl+F' },
-  { label: 'Select All', command: 'selectAll' }
+  { label: 'Select All', command: 'selectAll' },
+  { label: 'Rectangular selection', command: 'rectangularSelection' }
 ];
 /** Execution commands shared by menu, toolbar, and shortcuts. */
 export const runActions: readonly Action[] = [

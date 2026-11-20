@@ -16,6 +16,7 @@ export type WorkspaceCommand =
   | 'copy'
   | 'paste'
   | 'selectAll'
+  | 'rectangularSelection'
   | 'find';
 
 /** Commands dispatched exclusively to the simulation owner. */

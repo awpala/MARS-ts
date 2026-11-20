@@ -62,6 +62,17 @@ describe('desktop browser recovery storage', () => {
       }),
       JSON.stringify({
         ...record(),
+        editHistory: [
+          {
+            name: 'main.asm',
+            text: 'a',
+            undo: [{ text: 'b', before: [-1, 0], after: [1, 1] }],
+            redo: []
+          }
+        ]
+      }),
+      JSON.stringify({
+        ...record(),
         execution: { sources: { 'main.asm': '' }, machine: { status: 'running' } }
       })
     ]) {

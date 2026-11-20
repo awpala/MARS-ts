@@ -106,7 +106,14 @@ async function populatedStorage() {
       messageTab: 'Run I/O',
       help: { open: false, tab: 'mars', articles: { mars: 'help-debugging' } },
       source: 'main.asm',
-      editHistory: [{ name: 'mips1.asm', text: '# draft\n', undo: [''], redo: [] }],
+      editHistory: [
+        {
+          name: 'mips1.asm',
+          text: '# draft\n',
+          undo: ['', { text: '#', before: [1, 1], after: [8, 8] }],
+          redo: []
+        }
+      ],
       dataView: { segment: 'sp', pageOffset: -128 },
       selection: [3, 9],
       scroll: [40, 0],

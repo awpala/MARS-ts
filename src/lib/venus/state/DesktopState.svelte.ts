@@ -41,6 +41,8 @@ export type FooterState = {
   filenamePrefix: string;
   /** Current-view filename or empty-state message. */
   filename: string;
+  /** Transient keyboard-mode acknowledgment for the active source, empty outside Edit. */
+  editorFeedback: string;
   /** Execution status to show, or null to hide it. */
   status: RunState['status'] | null;
   /** Whether configured breakpoints are active. */
@@ -169,6 +171,7 @@ export class DesktopState {
       return {
         filenamePrefix: loadedFilename ? 'Loaded: ' : '',
         filename: loadedFilename ?? 'No program loaded',
+        editorFeedback: '',
         status: status ?? 'idle',
         breakpointsEnabled
       };
@@ -176,6 +179,7 @@ export class DesktopState {
     return {
       filenamePrefix: current ? 'Editing: ' : '',
       filename: current?.name ?? 'No current edits',
+      editorFeedback: this.workspace.inputMode?.feedback ?? '',
       status: status === 'error' ? status : null,
       breakpointsEnabled
     };
@@ -313,6 +317,7 @@ export class DesktopState {
       case 'cut':
       case 'copy':
       case 'paste':
+      case 'rectangularSelection':
       case 'selectAll':
       case 'find':
         return workspace.enabled(command);
@@ -326,13 +331,12 @@ export class DesktopState {
       ? frozenBreakpointsHint
       : undefined;
   /** Read toggle state for command presentation, or undefined for a momentary command. */
-  isPressed = (command: Command): boolean | undefined =>
-    command === 'autoSave'
-      ? this.workspace.autoSave
-      : command === 'toggleBreakpoints'
-        ? this.simulation.breakpointsEnabled
-        : undefined;
-
+  isPressed = (command: Command): boolean | undefined => {
+    if (command === 'autoSave') return this.workspace.autoSave;
+    if (command === 'rectangularSelection') return this.workspace.inputMode?.rectangular ?? false;
+    if (command === 'toggleBreakpoints') return this.simulation.breakpointsEnabled;
+    return undefined;
+  };
   /** Close menus and route a command to its owning domain. */
   execute = async (command: Command): Promise<void> => {
     if (!this.enabled(requireAction(command))) return;
@@ -403,6 +407,7 @@ export class DesktopState {
       case 'cut':
       case 'copy':
       case 'paste':
+      case 'rectangularSelection':
       case 'selectAll':
       case 'find':
         if (command === 'find') this.search.findStatus = '';

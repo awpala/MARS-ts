@@ -19,7 +19,7 @@ export class SourceSearch {
   /** Select the next match, wrapping to the beginning of the active source. */
   findNext = async () => {
     if (!this.workspace.current || !this.findText) return;
-    const text = this.fold(this.workspace.current.text);
+    const text = this.fold(this.workspace.editorText);
     const query = this.fold(this.findText);
     let index = text.indexOf(query, this.workspace.selectionEnd);
     if (index < 0) index = text.indexOf(query);
@@ -41,15 +41,13 @@ export class SourceSearch {
     if (!this.workspace.current || this.workspace.current.readOnly || !this.findText) return;
     const query = this.fold(this.findText);
     if (!all) {
-      const selected = this.workspace.current.text.slice(
-        this.workspace.selectionStart,
-        this.workspace.selectionEnd
-      );
+      const text = this.workspace.editorText;
+      const selected = text.slice(this.workspace.selectionStart, this.workspace.selectionEnd);
       if (this.fold(selected) === query) {
         this.workspace.edit(
-          this.workspace.current.text.slice(0, this.workspace.selectionStart) +
+          text.slice(0, this.workspace.selectionStart) +
             this.replacement +
-            this.workspace.current.text.slice(this.workspace.selectionEnd)
+            text.slice(this.workspace.selectionEnd)
         );
         this.workspace.selectionEnd = this.workspace.selectionStart + this.replacement.length;
       }

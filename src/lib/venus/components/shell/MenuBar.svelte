@@ -49,7 +49,9 @@
         return !commands.isEnabled(item);
       },
       get checked() {
-        return item.command === 'autoSave' ? commands.isPressed(item.command) : undefined;
+        return item.command === 'autoSave' || item.command === 'rectangularSelection'
+          ? commands.isPressed(item.command)
+          : undefined;
       },
       onselect: () => void commands.execute(item.command)
     };
