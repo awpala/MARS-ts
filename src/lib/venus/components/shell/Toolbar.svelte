@@ -17,8 +17,8 @@
     highlightCurrentLine: boolean;
     /** Required run-speed slider position (0–40), bindable to its owner. */
     speed: number;
-    /** Required visibility gate; the desktop shows run speed only in Execute. */
-    showSpeed: boolean;
+    /** Whether to show execution tools in place of editing tools. */
+    executeView: boolean;
     /** Momentary keyboard-activated command to highlight, or null when none. */
     highlightedShortcut: string | null;
   };
@@ -26,7 +26,7 @@
     showLines = $bindable(),
     highlightCurrentLine = $bindable(),
     speed = $bindable(),
-    showSpeed,
+    executeView,
     highlightedShortcut
   }: Props = $props();
   const commands = getDesktopCommands();
@@ -51,38 +51,46 @@
 {/snippet}
 <div class="toolbar" aria-label="Toolbar">
   {#each toolbarGroups as group (group.id)}
-    <ToolbarGroup label={group.label}>
-      {#each group.actions as item (item.command)}{@render commandButton(item)}{/each}
-      {#if group.id === 'edit'}
-        <IconButton
-          label="Show line numbers"
-          icon={{ glyph: 'Lines' }}
-          pressed={showLines}
-          onclick={() => (showLines = !showLines)}
-        />
-        <IconButton
-          label="Highlight current line"
-          icon={{ glyph: 'Highlight' }}
-          pressed={highlightCurrentLine}
-          onclick={() => (highlightCurrentLine = !highlightCurrentLine)}
-        />
-      {/if}
-    </ToolbarGroup>
+    {#if group.id !== 'edit' || !executeView}
+      <ToolbarGroup label={group.label}>
+        {#each group.actions as item (item.command)}
+          {#if group.id !== 'run' || executeView || item.command === 'assemble'}
+            {@render commandButton(item)}
+          {/if}
+        {/each}
+        {#if group.id === 'edit'}
+          <IconButton
+            label="Show line numbers"
+            icon={{ glyph: 'Lines' }}
+            pressed={showLines}
+            onclick={() => (showLines = !showLines)}
+          />
+          <IconButton
+            label="Highlight current line"
+            icon={{ glyph: 'Highlight' }}
+            pressed={highlightCurrentLine}
+            onclick={() => (highlightCurrentLine = !highlightCurrentLine)}
+          />
+        {/if}
+      </ToolbarGroup>
+    {/if}
   {/each}
-  <ToolbarGroup label="Display settings">
-    {#each commands.displayToggles() as toggle (toggle.icon)}
-      <IconButton
-        label={toggle.label}
-        icon={{ glyph: toggle.icon }}
-        pressed={toggle.active}
-        disabled={toggle.disabled}
-        onclick={toggle.toggle}
-      />
-    {/each}
-    {@render commandButton(memoryConfigurationAction)}
-  </ToolbarGroup>
+  {#if executeView}
+    <ToolbarGroup label="Display settings">
+      {#each commands.displayToggles() as toggle (toggle.icon)}
+        <IconButton
+          label={toggle.label}
+          icon={{ glyph: toggle.icon }}
+          pressed={toggle.active}
+          disabled={toggle.disabled}
+          onclick={toggle.toggle}
+        />
+      {/each}
+      {@render commandButton(memoryConfigurationAction)}
+    </ToolbarGroup>
+  {/if}
   <ToolbarGroup label="Help actions">{@render commandButton(helpActions[0])}</ToolbarGroup>
-  {#if showSpeed}<SpeedSlider bind:value={speed} />{/if}
+  {#if executeView}<SpeedSlider bind:value={speed} />{/if}
 </div>
 
 <style>

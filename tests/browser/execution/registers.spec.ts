@@ -1,29 +1,43 @@
 import { expect, test } from '@playwright/test';
 import { openDesktop, waitForDesktop } from '../harness/openDesktop.js';
 
-test('Registers switch hides the pane and divider, fills the workspace, and preserves width and machine across reload', async ({
+test('Register banks and their switch belong to Execute and preserve visibility, width, and machine across reload', async ({
   page
 }) => {
   await openDesktop(page);
   const toggle = page.getByRole('switch', { name: 'Register banks', exact: true });
   const theme = page.getByRole('switch', { name: 'Dark theme', exact: true });
+  const panel = page.getByRole('complementary', { name: 'Registers', exact: true });
+  const divider = page.getByRole('separator', { name: 'Register panel width', exact: true });
+  const edit = page.getByRole('button', { name: 'Edit', exact: true });
+  const execute = page.getByRole('button', { name: 'Execute', exact: true });
+  await expect(toggle).toHaveCount(0);
+  await expect(panel).toHaveCount(0);
+  await expect(divider).toHaveCount(0);
+  await execute.click();
   await expect(toggle).toHaveAttribute('aria-checked', 'true');
   const toggleBox = (await toggle.boundingBox())!;
   const themeBox = (await theme.boundingBox())!;
   expect(toggleBox.x + toggleBox.width).toBeLessThan(themeBox.x);
-  const divider = page.getByRole('separator', { name: 'Register panel width', exact: true });
   await divider.press('ArrowLeft');
   await divider.press('ArrowLeft');
   const width = await divider.getAttribute('aria-valuenow');
-  const rightWidth = (await page
-    .getByRole('complementary', { name: 'Registers', exact: true })
-    .boundingBox())!.width;
+  const rightWidth = (await panel.boundingBox())!.width;
   await page.getByRole('button', { name: 'New', exact: true }).click();
   await page
     .getByRole('textbox', { name: 'Source mips1.asm', exact: true })
     .fill('.text\nli $t0, 19\n');
   await page.getByRole('button', { name: 'Assemble', exact: true }).click();
   await page.getByRole('button', { name: 'Step', exact: true }).click();
+  const coproc = panel.getByRole('button', { name: 'Coproc 1', exact: true });
+  await coproc.click();
+  await edit.click();
+  await expect(toggle).toHaveCount(0);
+  await expect(panel).toHaveCount(0);
+  await expect(divider).toHaveCount(0);
+  await execute.click();
+  await expect(coproc).toHaveAttribute('aria-pressed', 'true');
+  await expect(divider).toHaveAttribute('aria-valuenow', width!);
   const leftWidth = (await page.getByTestId('workspace-panes').boundingBox())!.width;
   await page.mouse.move(5, 250);
   const activeFill = await toggle.evaluate((node) => getComputedStyle(node).backgroundColor);
@@ -65,22 +79,25 @@ test('Registers switch hides the pane and divider, fills the workspace, and pres
   await page.mouse.move(5, 250);
   await expect(toggle).toHaveAttribute('aria-checked', 'false');
   await expect(toggle).not.toHaveCSS('background-color', activeFill);
-  await expect(page.getByRole('complementary', { name: 'Registers', exact: true })).toHaveCount(0);
+  await expect(panel).toHaveCount(0);
   await expect(divider).toHaveCount(0);
   expect((await page.getByTestId('workspace-panes').boundingBox())!.width).toBeGreaterThan(
     leftWidth + rightWidth - 2
   );
+  await edit.click();
   await page.reload();
   await waitForDesktop(page);
+  await expect(toggle).toHaveCount(0);
+  await execute.click();
   await expect(toggle).toHaveAttribute('aria-checked', 'false');
-  await expect(page.getByRole('complementary', { name: 'Registers', exact: true })).toHaveCount(0);
+  await expect(panel).toHaveCount(0);
   await expect(page.getByLabel('Execution status')).toHaveText('Status: paused');
   await toggle.click();
-  await expect(page.getByRole('complementary', { name: 'Registers', exact: true })).toBeVisible();
+  await expect(panel).toBeVisible();
   await expect(divider).toHaveAttribute('aria-valuenow', width!);
-  expect(
-    (await page.getByRole('complementary', { name: 'Registers', exact: true }).boundingBox())!.width
-  ).toBe(rightWidth);
+  await expect.poll(async () => (await panel.boundingBox())!.width).toBe(rightWidth);
+  await expect(coproc).toHaveAttribute('aria-pressed', 'true');
+  await panel.getByRole('button', { name: 'Registers', exact: true }).click();
   await expect(page.getByLabel('$t0 value', { exact: true })).toHaveValue('0x00000013');
   await theme.click();
   await page.mouse.move(5, 250);
@@ -94,6 +111,7 @@ test('Registers switch hides the pane and divider, fills the workspace, and pres
 
 test('register Name cells describe their legacy roles in all three banks', async ({ page }) => {
   await openDesktop(page);
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
   const pane = page.getByRole('complementary', { name: 'Registers', exact: true });
   for (const [bank, descriptions] of [
     [
@@ -155,6 +173,7 @@ test('Coproc 1 condition flags carry the legacy panel and checkbox descriptions'
   page
 }) => {
   await openDesktop(page);
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
   const pane = page.getByRole('complementary', { name: 'Registers', exact: true });
   await pane.getByRole('button', { name: 'Coproc 1', exact: true }).click();
   await pane.getByText('Condition flags', { exact: true }).hover();
@@ -170,6 +189,7 @@ test('Coproc 1 flag group is centered, with Select all and Select none left-alig
   page
 }) => {
   await openDesktop(page);
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
   const pane = page.getByRole('complementary', { name: 'Registers', exact: true });
   await pane.getByRole('button', { name: 'Coproc 1', exact: true }).click();
   const flags = pane.getByRole('group', { name: 'Condition flags', exact: true });

@@ -10,6 +10,14 @@ const register = (page: Page, label: string) =>
 const settings = (page: Page) => page.getByTestId('menu-settings-trigger');
 const assembled = (page: Page) =>
   expect(page.getByLabel('Execution status')).toHaveText('Status: assembled');
+const argsSetting = (page: Page) =>
+  page.getByTestId('menu-settings-content').getByRole('checkbox', { name, exact: true });
+
+async function enableArgs(page: Page) {
+  await settings(page).click();
+  await argsSetting(page).check();
+  await settings(page).click();
+}
 
 async function source(page: Page, text: string) {
   await action(page, 'New').click();
@@ -25,10 +33,12 @@ test('Args shares its persisted setting with the menu and adds a fixed input row
 }) => {
   await openDesktop(page);
   const toggles = page.getByRole('group', { name: 'Display settings', exact: true });
-  await expect(toggles.getByRole('button').nth(0)).toHaveAccessibleName('Show Labels Window');
+  await source(page, program);
+  await expect(toggles.getByRole('button').nth(0)).toHaveAccessibleName(
+    'Show Labels Window (symbol table)'
+  );
   await expect(toggles.getByRole('button').nth(1)).toHaveAccessibleName(name);
   await expect(action(page, name)).toHaveAttribute('aria-pressed', 'false');
-  await source(page, program);
   await expect(args(page)).toHaveCount(0);
   await settings(page).click();
   const menu = page.getByTestId('menu-settings-content');
@@ -77,7 +87,7 @@ test('Step installs arguments once; Backstep and reload preserve applied argumen
   page
 }) => {
   await openDesktop(page);
-  await action(page, name).click();
+  await enableArgs(page);
   await source(page, program);
   await args(page).fill('one two');
   await action(page, 'Step').click();
@@ -101,7 +111,7 @@ test('Go passes literal quote characters and whitespace-separated argv strings t
   page
 }) => {
   await openDesktop(page);
-  await action(page, name).click();
+  await enableArgs(page);
   await source(
     page,
     '.text\nmove $s0,$a0\nmove $s1,$a1\nlw $a0,0($s1)\nli $v0,4\nsyscall\nli $a0,124\nli $v0,11\nsyscall\nlw $a0,4($s1)\nli $v0,4\nsyscall\nli $v0,10\nsyscall\n'
@@ -119,7 +129,7 @@ test('turning Args off retains the draft but does not install it after Reset or 
   page
 }) => {
   await openDesktop(page);
-  await action(page, name).click();
+  await enableArgs(page);
   await source(page, program);
   await args(page).fill('one two');
   await action(page, name).click();
@@ -151,7 +161,7 @@ test('Args toggle is disabled while running and the draft survives pane changes'
   page
 }) => {
   await openDesktop(page);
-  await action(page, name).click();
+  await enableArgs(page);
   await source(page, '.text\nloop: b loop\nnop\n');
   await args(page).fill('one');
   await action(page, 'Go').click();

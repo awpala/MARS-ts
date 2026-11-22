@@ -1,6 +1,55 @@
 import { expect, test } from '@playwright/test';
 import { openDesktop } from '../harness/openDesktop.js';
 
+test('toolbar keeps shared commands and shows tools for the active view', async ({ page }) => {
+  await openDesktop(page);
+  const toolbar = page.getByLabel('Toolbar', { exact: true });
+  const groups = toolbar.getByRole('group');
+  const action = (name: string) => toolbar.getByRole('button', { name, exact: true });
+  const file = toolbar.getByRole('group', { name: 'File actions', exact: true });
+  const display = toolbar.getByRole('group', { name: 'Display settings', exact: true });
+  const execution = toolbar.getByRole('group', { name: 'Execution actions', exact: true });
+  const edit = toolbar.getByRole('group', { name: 'Editing actions', exact: true });
+  const settings = page.getByTestId('menu-settings-trigger');
+  const labels = page.getByTestId('menu-settings-content').getByRole('checkbox', {
+    name: 'Show Labels Window (symbol table)',
+    exact: true
+  });
+  const switchTo = (view: string) => page.getByRole('button', { name: view, exact: true }).click();
+
+  await expect(groups.first()).toHaveAccessibleName('File actions');
+  await expect(action('Open ...')).toBeVisible();
+  const sharedFiles = await file.getByRole('button').count();
+  await expect(edit.getByRole('button', { name: 'Undo', exact: true })).toBeVisible();
+  await expect(execution.getByRole('button')).toHaveCount(1);
+  await expect(action('Assemble')).toBeVisible();
+  await expect(action('Go')).toHaveCount(0);
+  await expect(display).toHaveCount(0);
+  await settings.click();
+  await labels.uncheck();
+  await settings.click();
+
+  await switchTo('Execute');
+  await expect(groups.first()).toHaveAccessibleName('File actions');
+  await expect(action('Open ...')).toBeVisible();
+  await expect(file.getByRole('button')).toHaveCount(sharedFiles);
+  await expect(edit).toHaveCount(0);
+  await expect(action('Assemble')).toBeVisible();
+  await expect(action('Go')).toBeVisible();
+  await expect(action('Toggle all breakpoints')).toBeVisible();
+  await expect(
+    display.getByRole('button', { name: 'Show Labels Window (symbol table)' })
+  ).toHaveAttribute('aria-pressed', 'false');
+  await settings.click();
+  await expect(labels).not.toBeChecked();
+  await settings.click();
+
+  await switchTo('Edit');
+  await expect(edit).toBeVisible();
+  await expect(display).toHaveCount(0);
+  await expect(execution.getByRole('button')).toHaveCount(1);
+});
+
 test('shortcuts highlight only their matching enabled buttons', async ({ page }) => {
   await openDesktop(page);
   const step = page.getByRole('button', { name: 'Step', exact: true });
@@ -89,6 +138,7 @@ test('tooltips support disabled controls, hover, focus, dismissal, themes, and k
   page
 }) => {
   await openDesktop(page);
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
   const tooltip = page.getByTestId('tooltip-content');
   const step = page.getByRole('button', { name: 'Step', exact: true });
   await expect(step).toBeDisabled();
@@ -122,7 +172,8 @@ test('tooltips support disabled controls, hover, focus, dismissal, themes, and k
   await expect(tooltip).toBeHidden();
 
   const create = page.getByRole('button', { name: 'New', exact: true });
-  await create.focus();
+  await create.press('Tab');
+  await page.keyboard.press('Shift+Tab');
   await expect(create).toHaveAccessibleDescription('New Alt/Option+N');
   await expect(tooltip.getByTestId('shortcut-key')).toHaveText(['Alt/Option', 'N']);
   await page.keyboard.press('Escape');
@@ -276,6 +327,20 @@ test('console shortcuts clear selected or all output while preserving pending in
   await expect(input).toBeVisible();
   await input.fill('42');
   await page.getByRole('button', { name: 'Edit', exact: true }).click();
+  const runTab = page.getByRole('button', { name: 'Run I/O', exact: true });
+  const clearAll = page.getByRole('button', { name: 'Clear All', exact: true });
+  const messages = page.getByRole('textbox', { name: 'Mars Messages', exact: true });
+  await expect(runTab).toHaveCount(0);
+  await expect(clearAll).toHaveCount(0);
+  await expect(input).toHaveCount(0);
+  await expect(messages).toHaveValue(/Go: running/);
+  await source.press('Control+l');
+  await expect(messages).toHaveValue('');
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
+  await expect(clearAll).toBeVisible();
+  await expect(output).toHaveValue('7');
+  await expect(input).toHaveValue('42');
+  await page.getByRole('button', { name: 'Edit', exact: true }).click();
   await source.focus();
   // macOS Option+L can report a character rather than the letter L.
   expect(
@@ -291,13 +356,10 @@ test('console shortcuts clear selected or all output while preserving pending in
       )
     )
   ).toBe(false);
-  await expect(output).toHaveValue('');
-  await expect(input).toHaveValue('42');
-  await expect(source).toBeFocused();
-  await page.getByRole('button', { name: 'Mars Messages', exact: true }).click();
-  const messages = page.getByRole('textbox', { name: 'Mars Messages', exact: true });
   await expect(messages).toHaveValue('');
-  await page.getByRole('button', { name: 'Run I/O', exact: true }).click();
+  await expect(source).toBeFocused();
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
+  await expect(output).toHaveValue('');
   await expect(input).toHaveValue('42');
   await input.press('Control+l');
   await expect(output).toHaveValue('');
@@ -423,6 +485,7 @@ test('Alt N creates buffers from console, source, and register focus', async ({ 
   await first.fill('# retained');
   await first.press('Alt+n');
   await expect(page.getByRole('textbox', { name: 'Source mips2.asm', exact: true })).toBeFocused();
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
   await page.getByLabel('$t0 value', { exact: true }).press('Alt+n');
   await expect(page.getByRole('textbox', { name: 'Source mips3.asm', exact: true })).toBeFocused();
   await page.getByRole('button', { name: '* mips1.asm', exact: true }).click();
@@ -455,6 +518,7 @@ test('only toggle tooltips remain visible through pointer clicks until hover end
   expect(await original!.isVisible()).toBe(false);
 
   const banks = page.getByRole('switch', { name: 'Register banks', exact: true });
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
   await banks.hover();
   await expect(banks).toHaveAccessibleDescription('Hide register banks');
   await banks.click();
@@ -477,7 +541,10 @@ test('only toggle tooltips remain visible through pointer clicks until hover end
     );
   await page.getByRole('button', { name: 'Assemble', exact: true }).click();
   // Labels starts visible, so hide it and show it again under the same hover.
-  const labelsToggle = page.getByRole('button', { name: 'Show Labels Window', exact: true });
+  const labelsToggle = page.getByRole('button', {
+    name: 'Show Labels Window (symbol table)',
+    exact: true
+  });
   await expect(labelsToggle).toHaveAttribute('aria-pressed', 'true');
   await labelsToggle.hover();
   await expect(tooltip).toBeVisible();

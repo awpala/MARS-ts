@@ -5,11 +5,11 @@ Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSl
 
 Original article: Release 4.5 · August 2014
 
-Settings menu checkboxes control display, input, assembly, and execution. The first five entries are Show Labels Window, Program arguments provided to MIPS program, Popup dialog for input syscalls (5,6,7,8,12), Addresses displayed in hexadecimal, and Values displayed in hexadecimal. These share their state with the corresponding toolbar buttons; a separator follows Values displayed in hexadecimal. Preferences are stored in this browser’s localStorage when available; if storage is unavailable, changes remain in memory. Java MARS retained settings beginning with Release 3.2 through `java.util.prefs.Preferences` (the Windows Registry on Windows); the browser does not use that mechanism.
+Settings menu checkboxes control display, input, assembly, and execution. The first five entries are Show Labels Window (symbol table), Program arguments provided to MIPS program, Popup dialog for input syscalls (5,6,7,8,12), Addresses displayed in hexadecimal, and Values displayed in hexadecimal. These share their state with the corresponding Execute toolbar buttons. A separator follows Values displayed in hexadecimal. Preferences are stored in this browser’s localStorage when available; if storage is unavailable, changes remain in memory. Java MARS retained settings beginning with Release 3.2 through `java.util.prefs.Preferences` (the Windows Registry on Windows); the browser does not use that mechanism.
 
 ## Display and input
 
-- **Show Labels Window:** on by default. Shows program labels and addresses beside the Text Segment, with Data/Text filters and sorting.
+- **Show Labels Window (symbol table):** on by default. Shows program labels and addresses beside the Text Segment, with Data/Text filters and sorting.
 - **Addresses displayed in hexadecimal:** on by default. Turn it off for decimal addresses.
 - **Values displayed in hexadecimal:** on by default. Turn it off for decimal memory and register values.
 - **ASCII data display:** off by default. Interprets Data Segment bytes as characters and disables editing in that view. Its state is shared by the toolbar and Data Segment checkbox.

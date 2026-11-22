@@ -69,8 +69,12 @@ export class SimulationState {
   );
   /** Whether a syscall is waiting for text typed into the Run I/O console rather than a popup. */
   consoleInputPending = $derived(this.inputRequest?.prompt === null);
-  /** Selected output pane. */
+  /** Selected output pane for Execute, retained while Edit displays Mars Messages. */
   messageTab = $state<MessageTab>('Mars Messages');
+  /** Output currently shown in the active view. */
+  get visibleMessageTab(): MessageTab {
+    return this.display.view === 'Edit' ? 'Mars Messages' : this.messageTab;
+  }
   private transcript = $state('');
   /** Assembler and execution diagnostics. New output resumes following the transcript. */
   get messages(): string {
@@ -103,13 +107,13 @@ export class SimulationState {
   refresh = (): void => this.controller?.refresh();
   /** Request Stop of the running program, releasing pending host input. */
   stop = (): void => this.controller?.stop();
-  /** Clear selected output, or both outputs when all is true, preserving selection and pending input. */
+  /** Clear visible output, or both outputs when all is true, preserving selection and pending input. */
   clearOutput = (all = false): void => {
-    if (all || this.messageTab === 'Mars Messages') {
+    if (all || this.visibleMessageTab === 'Mars Messages') {
       this.messages = '';
       this.selectedDiagnostic = null;
     }
-    if (all || this.messageTab === 'Run I/O') this.runIO = '';
+    if (all || this.visibleMessageTab === 'Run I/O') this.runIO = '';
   };
   /** Initialize browser host services and the machine. Teardown releases presentation subscriptions, tones, and scheduler tasks, then requests controller disposal. The controller's Stop releases pending input; the machine remains available until execution settles. */
   start(): () => void {

@@ -5,9 +5,7 @@
    * Copyright (c) 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license.
    */
   import { onDestroy, onMount } from 'svelte';
-  import { slide } from 'svelte/transition';
   import { MAIN_VIEWS } from '#lib/browser/session/DesktopSession.js';
-  import { MIN_REGISTER_WIDTH } from '#lib/browser/preferences/PaneLayout.js';
   import { DesktopState } from './state/DesktopState.svelte.js';
   import { provideDesktop } from './context/desktop.js';
   import { useDesktopKeyboard } from './hooks/useDesktopKeyboard.js';
@@ -33,6 +31,7 @@
   let highlightTimer: ReturnType<typeof setTimeout> | undefined;
   const desktop = provideDesktop(new DesktopState((restoreFocus) => menuBar?.close(restoreFocus)));
   const { workspace, simulation, display } = desktop;
+  const executingView = $derived(display.view === 'Execute');
   const position = $derived(
     display.view === 'Edit' && workspace.current && activeElement === workspace.sourceInput
       ? workspace.position
@@ -93,6 +92,7 @@
     />
     <MenuBar
       bind:this={menuBar}
+      showRegisterToggle={executingView}
       bind:showRegisters={display.showRegisters}
       bind:clearAllOutputsOnGo={display.clearAllOutputsOnGo}
       bind:promptClearBreakpoints={display.promptClearBreakpoints}
@@ -102,13 +102,9 @@
       bind:showLines={display.showLines}
       bind:highlightCurrentLine={display.highlightCurrentLine}
       bind:speed={display.speed}
-      showSpeed={display.view === 'Execute'}
+      executeView={executingView}
     />
-    <main
-      class="workspace"
-      bind:clientWidth={display.workspaceWidth}
-      style:--register-width={`${display.displayedRegisterWidth}px`}
-    >
+    <main class="workspace" bind:clientWidth={display.workspaceWidth}>
       <div
         data-testid="workspace-panes"
         class="left-panes"
@@ -150,33 +146,15 @@
         />
         <MessagesPane {highlightedShortcut} />
       </div>
-      {#if display.showRegisters}
-        <div
-          class="register-sidebar"
-          data-testid="register-sidebar"
-          transition:slide={{ axis: 'x', duration: desktop.visible ? 220 : 0 }}
-        >
-          <PaneDivider
-            class="register-divider"
-            label="Register panel width"
-            controls={`${paneId}-registers`}
-            orientation="vertical"
-            min={MIN_REGISTER_WIDTH}
-            max={display.maxRegisterWidth}
-            value={display.displayedRegisterWidth}
-            reverse
-            onchange={display.setRegisterWidth}
-            oncommit={display.persistLayout}
-          />
-          {#if simulation.machine}<RegisterBanksPane
-              id={`${paneId}-registers`}
-              registers={simulation.machine.registerFile}
-              coprocessor0={simulation.machine.coprocessor0}
-              coprocessor1={simulation.machine.coprocessor1}
-              machineRevision={simulation.execution?.revision ?? 0}
-              controller={simulation.controller!}
-            />{/if}
-        </div>
+      {#if simulation.machine}
+        <RegisterBanksPane
+          id={`${paneId}-registers`}
+          registers={simulation.machine.registerFile}
+          coprocessor0={simulation.machine.coprocessor0}
+          coprocessor1={simulation.machine.coprocessor1}
+          machineRevision={simulation.execution?.revision ?? 0}
+          controller={simulation.controller!}
+        />
       {/if}
     </main>
     <Footer {...desktop.footer} {position} />
@@ -211,14 +189,6 @@
     min-height: 0;
     padding: 4px;
     gap: 0;
-  }
-  .register-sidebar {
-    display: flex;
-    flex: 0 0 auto;
-    min-height: 0;
-    padding-left: 5px;
-    gap: 5px;
-    overflow: hidden;
   }
   .left-panes {
     display: flex;

@@ -38,8 +38,10 @@ test('reload restores Edit selection independently of the exact loaded machine, 
   await waitForDesktop(page);
   await expect(page.getByTestId('footer-source')).toHaveText('Editing: editing.asm');
   await expect(page.getByLabel('Execution status')).toHaveCount(0);
-  await expect(page.getByLabel('Run I/O', { exact: true })).toHaveValue('42');
+  await expect(action(page, 'Run I/O')).toHaveCount(0);
+  await expect(page.getByLabel('Mars Messages', { exact: true })).toBeVisible();
   await action(page, 'Execute').click();
+  await expect(page.getByLabel('Run I/O', { exact: true })).toHaveValue('42');
   await expect(page.getByTestId('footer-source')).toHaveText('Loaded: loaded.asm');
   await expect(page.getByLabel('Execution status')).toHaveText('Status: paused');
   await expect(page.getByLabel('$t0 value', { exact: true })).toHaveValue('0x00000007');
@@ -125,9 +127,9 @@ test('localStorage retains label selection with the loaded program across Edit s
     { name: 'editing.asm', source: '.text\nmain: nop\nselected: nop\n' }
   ]);
   await action(page, 'loaded.asm').click();
-  const showLabels = action(page, 'Show Labels Window');
-  if ((await showLabels.getAttribute('aria-pressed')) !== 'true') await showLabels.click();
   await action(page, 'Assemble').click();
+  const showLabels = action(page, 'Show Labels Window (symbol table)');
+  if ((await showLabels.getAttribute('aria-pressed')) !== 'true') await showLabels.click();
   const labels = page.getByRole('region', { name: 'Labels', exact: true });
   const selected = labels.getByRole('button', { name: 'selected', exact: true });
   const stored = () =>
@@ -172,9 +174,9 @@ test('global label selection restores and invalid stored label identity leaves t
   await openStoredSources(page, [
     { name: 'global.asm', source: '.data\n.globl shared\nshared: .word 11\n.text\nnop\n' }
   ]);
-  const showLabels = action(page, 'Show Labels Window');
-  if ((await showLabels.getAttribute('aria-pressed')) !== 'true') await showLabels.click();
   await action(page, 'Assemble').click();
+  const showLabels = action(page, 'Show Labels Window (symbol table)');
+  if ((await showLabels.getAttribute('aria-pressed')) !== 'true') await showLabels.click();
   const label = page
     .getByRole('region', { name: 'Labels', exact: true })
     .getByRole('button', { name: 'shared', exact: true });

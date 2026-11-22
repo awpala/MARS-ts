@@ -21,7 +21,9 @@
   import GitHubLink from './GitHubLink.svelte';
   /** Commands and setting toggles come from the desktop command capability; only these parent-owned preferences remain props. */
   type Props = {
-    /** Required parent-owned visibility of the registers sidebar; bindable and shown by default in its owner. */
+    /** Whether the active workspace offers the Register Banks switch. */
+    showRegisterToggle: boolean;
+    /** Required parent-owned Execute sidebar preference; bindable and enabled by default in its owner. */
     showRegisters: boolean;
     /** Required parent-owned console-clearing preference; bindable and false by default in its owner. */
     clearAllOutputsOnGo: boolean;
@@ -29,6 +31,7 @@
     promptClearBreakpoints: boolean;
   };
   let {
+    showRegisterToggle,
     showRegisters = $bindable(),
     clearAllOutputsOnGo = $bindable(),
     promptClearBreakpoints = $bindable()
@@ -195,7 +198,7 @@
     />
   {/each}
   <div class="ml-auto flex items-center gap-3">
-    <RegisterBanksToggle bind:visible={showRegisters} />
+    {#if showRegisterToggle}<RegisterBanksToggle bind:visible={showRegisters} />{/if}
     <ThemeToggle />
     <GitHubLink />
   </div>

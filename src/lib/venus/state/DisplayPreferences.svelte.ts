@@ -41,7 +41,7 @@ export class DisplayPreferences {
   dataSegment = $state<MemorySegment>('data');
   /** Relative aligned Data Segment page offset, recovered with the desktop session. */
   dataPageOffset = $state(0);
-  /** Whether the register banks pane and its divider are visible; shown by default. */
+  /** Whether Execute shows the register banks pane and its divider; enabled by default. */
   showRegisters = $state(DEFAULT_DISPLAY_SETTINGS.showRegisters);
   /** Selected register bank; Registers by default. */
   registerTab = $state<RegisterBank>('Registers');

@@ -15,6 +15,7 @@ import { readFile } from 'node:fs/promises';
 test('Alt and Option N create editor buffers from source and register focus', async ({ page }) => {
   await openDesktop(page);
   const pages = page.context().pages().length;
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
   await page.getByLabel('$t0 value', { exact: true }).press('Alt+n');
   const first = page.getByRole('textbox', { name: 'Source mips1.asm', exact: true });
   await expect(first).toBeFocused();
@@ -238,7 +239,7 @@ test('working display settings and run speed survive reload', async ({ page }) =
   const menu = page.getByTestId('menu-settings-content');
   const toggles = page.getByRole('group', { name: 'Display settings', exact: true });
   const sharedLabels = [
-    'Show Labels Window',
+    'Show Labels Window (symbol table)',
     'Program arguments provided to MIPS program',
     'Popup dialog for input syscalls',
     'Addresses displayed in hexadecimal',
@@ -260,6 +261,9 @@ test('working display settings and run speed survive reload', async ({ page }) =
     sharedLabels[3],
     sharedLabels[4]
   ]);
+  await expect(toggles).toHaveCount(0);
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
+  await settings.click();
   for (const label of sharedLabels) {
     const checkbox = menu.getByRole('checkbox', { name: label });
     const button = toggles.getByRole('button', { name: label, exact: true });
@@ -269,9 +273,12 @@ test('working display settings and run speed survive reload', async ({ page }) =
     await checkbox.click();
     await expect(button).toHaveAttribute('aria-pressed', String(checked));
   }
-  await expect(menu.getByRole('checkbox', { name: 'Show Labels Window' })).toBeChecked();
+  await expect(
+    menu.getByRole('checkbox', { name: 'Show Labels Window (symbol table)' })
+  ).toBeChecked();
   await settings.click();
   await expect(toggles.getByRole('button')).toHaveCount(7);
+  await page.getByRole('button', { name: 'Edit', exact: true }).click();
   const editing = page.getByRole('group', { name: 'Editing actions', exact: true });
   const lines = editing.getByRole('button', { name: 'Show line numbers', exact: true });
   await expect(editing.getByRole('button').last()).toHaveAccessibleName('Highlight current line');
@@ -279,8 +286,10 @@ test('working display settings and run speed survive reload', async ({ page }) =
   await page.keyboard.press('Tab');
   await expect(lines).toHaveAccessibleDescription('Show line numbers');
   await lines.click();
+  await expect(page.getByTestId('editor-line-numbers')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
   for (const label of [
-    'Show Labels Window',
+    'Show Labels Window (symbol table)',
     'Addresses displayed in hexadecimal',
     'Values displayed in hexadecimal',
     'Popup dialog for input syscalls'
@@ -291,7 +300,9 @@ test('working display settings and run speed survive reload', async ({ page }) =
     await expect(button).toHaveAccessibleDescription(label);
     await button.click();
   }
-  await toggles.getByRole('button', { name: 'Show Labels Window', exact: true }).click();
+  await toggles
+    .getByRole('button', { name: 'Show Labels Window (symbol table)', exact: true })
+    .click();
   await settings.click();
   for (const label of sharedLabels) {
     const button = toggles.getByRole('button', { name: label, exact: true });
@@ -300,11 +311,10 @@ test('working display settings and run speed survive reload', async ({ page }) =
     });
   }
   await settings.click();
-  const groupBox = (await toggles.boundingBox())!;
-  const helpBox = (await page.getByRole('button', { name: 'Help', exact: true }).boundingBox())!;
-  expect(groupBox.x + groupBox.width).toBeLessThanOrEqual(helpBox.x);
-  await expect(page.getByTestId('editor-line-numbers')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Execute', exact: true }).click();
+  await expectButtonSequence(page.getByLabel('Toolbar', { exact: true }), [
+    'Memory Configuration ...',
+    'Help'
+  ]);
   const slider = page.getByRole('slider');
   await expect(page.getByTestId('run-speed-controls').getByTestId('slider-label')).toHaveText(
     'Run speed at max (no interaction)'
@@ -322,9 +332,11 @@ test('working display settings and run speed survive reload', async ({ page }) =
   await expect(page.getByRole('button', { name: 'New', exact: true })).toBeEnabled({
     timeout: 30000
   });
+  await page.getByRole('button', { name: 'Edit', exact: true }).click();
   await expect(lines).toHaveAttribute('aria-pressed', 'false');
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
   await expect(
-    toggles.getByRole('button', { name: 'Show Labels Window', exact: true })
+    toggles.getByRole('button', { name: 'Show Labels Window (symbol table)', exact: true })
   ).toHaveAttribute('aria-pressed', 'true');
   await expect(
     toggles.getByRole('button', { name: 'Addresses displayed in hexadecimal', exact: true })
@@ -355,10 +367,15 @@ test('working display settings and run speed survive reload', async ({ page }) =
   await expect(closeLabels).toHaveAccessibleDescription('Hide Labels Window');
   await closeLabels.click();
   await expect(labels).toHaveCount(0);
-  const labelsToggle = toggles.getByRole('button', { name: 'Show Labels Window', exact: true });
+  const labelsToggle = toggles.getByRole('button', {
+    name: 'Show Labels Window (symbol table)',
+    exact: true
+  });
   await expect(labelsToggle).toHaveAttribute('aria-pressed', 'false');
   await settings.click();
-  await expect(menu.getByRole('checkbox', { name: 'Show Labels Window' })).not.toBeChecked();
+  await expect(
+    menu.getByRole('checkbox', { name: 'Show Labels Window (symbol table)' })
+  ).not.toBeChecked();
   await settings.click();
   await page.reload();
   await waitForDesktop(page);
@@ -381,6 +398,7 @@ test('pane sizes persist after reload and the editor divider adjusts height', as
   await page.mouse.up();
   expect(Number(await horizontal.getAttribute('aria-valuenow'))).toBeLessThan(before - 50);
   await horizontal.press('ArrowDown');
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
   await vertical.press('ArrowLeft');
   const width = await vertical.getAttribute('aria-valuenow');
   const height = await horizontal.getAttribute('aria-valuenow');
@@ -395,6 +413,7 @@ test('Coproc 1 condition flags sit below their caption in control-number pairs',
   page
 }) => {
   await openDesktop(page);
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
   await page.getByRole('button', { name: 'Coproc 1', exact: true }).click();
   const caption = (await page.getByText('Condition flags', { exact: true }).boundingBox())!;
   for (let index = 0; index < 8; index++) {
@@ -420,6 +439,7 @@ test('launches the desktop directly, renders original assets, and edits real ses
   await expect(page.getByRole('navigation', { name: 'Application menus' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Execute', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Assemble', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
   await expect(page.getByLabel('$gp value', { exact: true })).toHaveValue('0x10008000');
   await expect(page.getByLabel('$sp value', { exact: true })).toHaveValue('0x7fffeffc');
   await expect(page.getByLabel('pc value', { exact: true })).toHaveValue('0x00400000');
@@ -427,7 +447,6 @@ test('launches the desktop directly, renders original assets, and edits real ses
   await page.getByLabel('$t0 value', { exact: true }).fill('-1');
   await page.getByLabel('$t0 value', { exact: true }).press('Enter');
   await expect(page.getByLabel('$t0 value', { exact: true })).toHaveValue('0xffffffff');
-  await page.getByRole('button', { name: 'Execute', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Text Segment' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Data Segment' })).toBeVisible();
   await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /favicon\.ico$/);
@@ -611,6 +630,7 @@ test('Alt/Option+Shift+W asks to close all files through the same confirmation',
 });
 test('menus dismiss outside and retain usable actions inside', async ({ page }) => {
   await openDesktop(page);
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
   await expect(page.getByRole('button', { name: 'New', exact: true })).toBeEnabled();
   const file = page.getByTestId('menu-file');
   await file.getByTestId('menu-file-trigger').click();
@@ -624,6 +644,7 @@ test('menus dismiss outside and retain usable actions inside', async ({ page }) 
 
 test('register width adjusts horizontally without changing the panel height', async ({ page }) => {
   await openDesktop(page);
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
   await expect(page.getByRole('button', { name: 'New', exact: true })).toBeEnabled();
   const divider = page.getByRole('separator', { name: 'Register panel width' });
   const panel = page.getByRole('complementary', { name: 'Registers', exact: true });
@@ -1583,11 +1604,6 @@ test('Line and Column follows source focus while the selected filename stays vis
   const filename = page.getByTestId('footer-source');
   await expect(filename).toHaveText('Editing: mips1.asm');
   await expect(page.getByLabel('Execution status', { exact: true })).toHaveCount(0);
-  await page.getByLabel('$t0 value', { exact: true }).focus();
-  await expect(position).toBeHidden();
-  await expect(filename).toHaveText('Editing: mips1.asm');
-  await source.focus();
-  await expect(position).toHaveText('Line 3, Column 4');
   await page.getByRole('textbox', { name: 'Mars Messages', exact: true }).focus();
   await expect(position).toBeHidden();
   await expect(filename).toHaveText('Editing: mips1.asm');
@@ -1763,6 +1779,7 @@ test('Alt W and Option W close the current source through the dirty-buffer workf
     )
   ).toBe(false);
   await expect(page.getByRole('button', { name: 'Close three.asm', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Execute', exact: true }).click();
   await page.getByLabel('$t0 value', { exact: true }).press('Alt+w');
   await expect(page.getByRole('button', { name: 'Close three.asm', exact: true })).toHaveCount(0);
   await page.keyboard.press('Alt+w');

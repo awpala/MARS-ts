@@ -154,7 +154,7 @@ function engineToggle(id: number, menuLabel?: string): ToggleSpec {
 export const toggleSpecs: readonly ToggleSpec[] = [
   {
     icon: 'Labels',
-    label: 'Show Labels Window',
+    label: 'Show Labels Window (symbol table)',
     description: 'Toggle visibility of Labels window (symbol table) in the Execute tab',
     inSettings: true,
     target: { display: 'showLabels' }

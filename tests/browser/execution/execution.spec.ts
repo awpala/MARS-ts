@@ -373,6 +373,7 @@ test('breakpoint toolbar and Run menu actions follow Reset and suspend or clear 
   page
 }) => {
   await openDesktop(page);
+  await action(page, 'Execute').click();
   const clear = action(page, 'Clear all breakpoints');
   const toggle = action(page, 'Toggle all breakpoints');
   await expectButtonSequence(page.getByLabel('Toolbar', { exact: true }), [
@@ -558,9 +559,12 @@ test('Labels filters data and text and sorts names or unsigned addresses in both
     page,
     '.data\nzData: .word 1\n.globl AlphaData\nAlphaData: .word 2\n.text\nzText: nop\nalphaText: nop\n.kdata\nKernel: .word 3\n'
   );
-  // Labels starts visible by default.
-  await expect(action(page, 'Show Labels Window')).toHaveAttribute('aria-pressed', 'true');
   await action(page, 'Assemble').click();
+  // Labels starts visible by default.
+  await expect(action(page, 'Show Labels Window (symbol table)')).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  );
   const labels = page.getByRole('region', { name: 'Labels', exact: true });
   const names = labels.getByTestId('label-name-cell');
   const headings = labels.getByRole('rowheader');
@@ -588,8 +592,8 @@ test('Labels filters data and text and sorts names or unsigned addresses in both
   );
   await labels.getByRole('button', { name: 'AlphaData', exact: true }).click();
   await expect(page.getByLabel('Memory 0x10010004', { exact: true })).toHaveValue('0x00000002');
-  await action(page, 'Show Labels Window').click();
-  await action(page, 'Show Labels Window').click();
+  await action(page, 'Show Labels Window (symbol table)').click();
+  await action(page, 'Show Labels Window (symbol table)').click();
   await expect(names).toHaveText(['AlphaData', 'Kernel', 'zData']);
   await page.screenshot({ path: '__build/labels-toolbar.png', fullPage: true });
   page.once('dialog', (dialog) => dialog.accept());
@@ -975,12 +979,17 @@ test('unlimited execution yields to Pause and Stop and source edits invalidate e
   await action(page, 'Reset').click();
   await action(page, 'Edit').click();
   await page.getByRole('textbox', { name: /^Source / }).fill('.text\ninvalid_instruction\n');
-  await expect(action(page, 'Go')).toBeDisabled();
+  const runMenu = page.getByTestId('menu-run-trigger');
+  const menuGo = page.getByTestId('menu-run-content').getByTestId('menu-item-go');
+  await runMenu.click();
+  await expect(menuGo).toBeDisabled();
+  await runMenu.click();
   await action(page, 'Assemble').click();
   await expect(page.getByLabel('Mars Messages', { exact: true })).toHaveValue(
     /invalid_instruction/
   );
-  await expect(action(page, 'Go')).toBeDisabled();
+  await runMenu.click();
+  await expect(menuGo).toBeDisabled();
 });
 
 test('active-source assembly uses explicit unsaved includes and retires saved assemble-all settings', async ({

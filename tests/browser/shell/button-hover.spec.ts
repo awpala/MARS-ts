@@ -84,10 +84,10 @@ for (const theme of ['light', 'dark']) {
       await page.getByRole('switch', { name: 'Dark theme', exact: true }).click();
     const action = (name: string) => page.getByRole('button', { name, exact: true });
     await checkHover(page, action('New'), theme);
-    await checkHover(page, action('Step'), theme);
     await checkHover(page, action('Edit'), theme, false);
     await checkHover(page, action('Execute'), theme);
     await action('Execute').click();
+    await checkHover(page, action('Step'), theme);
     await checkHover(page, action('Execute'), theme, false);
     await checkHover(page, action('Edit'), theme);
     await checkHover(page, action('Increase run speed'), theme);

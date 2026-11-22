@@ -118,9 +118,9 @@
       you confirm, then restarts MARS.
     </p>
     <p>
-      Registers are shown beside Edit and Execute by default; use the Register Banks switch in the
-      menu bar to hide or show them. Use the toolbar toggles to change value display and label
-      visibility.
+      Edit shows Mars Messages and editing tools. Execute adds Run I/O, Clear All, the run and
+      display controls, and the register sidebar, which is on by default. The Register Banks switch
+      remembers your choice. File actions, Assemble, and the Settings menu appear in both views.
     </p>
     <p>
       Assemble (F3) translates the current source. Go (F5), Step (F7), Backstep (F8), Pause (F9),

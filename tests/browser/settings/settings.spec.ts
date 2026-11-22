@@ -588,6 +588,7 @@ test('toolbar settings shortcuts occupy their groups and the bundled SPIM handle
   page
 }) => {
   await openDesktop(page);
+  await action(page, 'Execute').click();
   const execution = page.getByRole('group', { name: 'Execution actions', exact: true });
   const display = page.getByRole('group', { name: 'Display settings', exact: true });
   await expect(execution.getByRole('button').last()).toHaveAccessibleName('Exception Handler ...');

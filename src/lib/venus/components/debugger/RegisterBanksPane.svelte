@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { slide } from 'svelte/transition';
   import { MIN_REGISTER_WIDTH } from '#lib/browser/preferences/PaneLayout.js';
   import { REGISTER_BANKS } from '#lib/browser/session/DesktopSession.js';
   import Tooltip from '../feedback/Tooltip.svelte';
@@ -6,6 +7,7 @@
   import SelectAllNone from '../controls/SelectAllNone.svelte';
   import MultiSelect from '../controls/MultiSelect.svelte';
   import TabbedPane from '../layout/TabbedPane.svelte';
+  import PaneDivider from '../layout/PaneDivider.svelte';
   import { formatInteger } from '../../utils/debugger/tableCells.js';
   import { DEFAULT_REGISTER_WIDTH } from '../../utils/geometry/layout.js';
   import MachineTable from './MachineTable.svelte';
@@ -26,8 +28,8 @@
   import type { RunController } from '../../RunController.js';
   /** Register-bank display contract; the parent session owns all hardware instances, while the selected bank, display base, and edit availability come from the desktop context. */
   type Props = {
-    /** Optional parent-owned pane ID, used by the resize separator to identify its controlled region. */
-    id?: string;
+    /** Required pane ID, used by the resize separator to identify its controlled region. */
+    id: string;
     /** Required session-owned general registers; never replaced while a run is active. */
     registers: RegisterFile;
     /** Required session-owned exception registers. */
@@ -40,7 +42,8 @@
     controller: RunController;
   };
   let { id, registers, coprocessor0, coprocessor1, machineRevision, controller }: Props = $props();
-  const { display, simulation } = getDesktop();
+  const desktop = getDesktop();
+  const { display, simulation } = desktop;
   /** Selected bank; execution errors select Coproc 0 and Reset selects Registers. */
   const selected = $derived(display.registerTab);
   const hexValues = $derived(display.hexValues);
@@ -80,6 +83,8 @@
     });
   });
   $effect(() => {
+    // Keep observing across view changes when the user has enabled the sidebar.
+    if (!display.showRegisters) return;
     let statements = controller.getState().statements;
     const banks = [
       { name: 'Registers' as const, registers: general },
@@ -117,6 +122,8 @@
     return () => {
       releaseController();
       releases.forEach((release) => release());
+      changed = {};
+      error = '';
     };
   });
   function format(value: number, unsigned = false) {
@@ -207,96 +214,127 @@
   }
 </script>
 
-<!-- @component Persistent register banks sidebar (Registers, Coproc 1, and Coproc 0), reading engine-owned hardware and releasing subscriptions on teardown. -->
-<TabbedPane
-  element="aside"
-  label="Registers"
-  tabs={REGISTER_BANKS}
-  bind:selected={display.registerTab}
-  --pane-flex="0 0 auto"
-  --pane-min-width={`${MIN_REGISTER_WIDTH}px`}
-  --pane-width={`var(--register-width, ${DEFAULT_REGISTER_WIDTH}px)`}
-  --pane-overflow="auto"
-  --pane-background="var(--theme-surface, #fafafa)"
-  --tab-padding="4px 9px"
-  {id}
-  class="register-pane"
->
-  <div class="register-scroll">
-    <MachineTable>
-      {#snippet header()}
-        <th>Name</th><th>{selected === 'Coproc 1' ? 'Float' : 'Number'}</th><th
-          >{selected === 'Coproc 1' ? 'Double' : 'Value'}</th
-        >
-      {/snippet}
-      <tbody>
-        {#each rows as row (row.number)}<tr
-            data-testid="register-row"
-            data-highlight={changed[selected] === row.name ? 'register' : undefined}
-            ><td class="identifier" data-testid="register-name-cell">
-              <Tooltip text={row.tooltip}>
-                {#snippet children(trigger, description)}
-                  <span
-                    data-testid="register-name"
-                    class="block cursor-pointer"
-                    {@attach trigger}
-                    aria-describedby={description}>{row.name}</span
-                  >
-                {/snippet}
-              </Tooltip>
-            </td>{#if selected === 'Coproc 1'}<td class="numeric" data-testid="register-float"
-                ><CellInput
-                  aria-label={`${row.name} float value`}
-                  value={floatValue(row.number)}
-                  readonly={running}
-                  onchange={(event) => updateFloat(row.number, false, event.currentTarget)}
-                /></td
-              ><td class="numeric" data-testid="register-double"
-                >{#if row.number % 2 === 0}<CellInput
-                    aria-label={`${row.name} double value`}
-                    value={doubleValue(row.number)}
-                    readonly={running}
-                    onchange={(event) => updateFloat(row.number, true, event.currentTarget)}
-                  />{/if}</td
-              >{:else}<td class="numeric" data-testid="register-number"
-                >{row.number < 32 ? row.number : ''}</td
-              ><td data-testid="register-value" class="numeric"
-                ><CellInput
-                  aria-label={`${row.name} value`}
-                  value={format(row.value, selected === 'Registers' && row.number === 32)}
-                  readonly={running ||
-                    (selected === 'Registers' && [0, 31, 32].includes(row.number))}
-                  onchange={(event) => update(row.number, event.currentTarget)}
-                /></td
-              >{/if}</tr
-          >{/each}
-      </tbody>
-    </MachineTable>
-  </div>
-  {#if selected === 'Coproc 1'}
-    <!-- Fit-width wrapper centers the caption, flags, and bulk actions as one left-aligned group. -->
-    <div class="mx-auto flex w-fit flex-col p-1.25" data-testid="condition-flags-controls">
-      <MultiSelect
-        class="flags [--selector-gap:3px]"
-        label="Condition flags"
-        tooltip="flags are used by certain floating point instructions, default flag is 0"
-        options={conditionFlagOptions}
-        value={selectedConditionFlags}
-        onchange={updateConditionFlags}
+<!-- @component Execute register banks sidebar, including its width divider. Observes engine-owned hardware across view changes while the sidebar preference is enabled. -->
+{#if display.view === 'Execute'}
+  {#if display.showRegisters}
+    <div
+      class="register-sidebar"
+      data-testid="register-sidebar"
+      style:--register-width={`${display.displayedRegisterWidth}px`}
+      transition:slide={{ axis: 'x', duration: desktop.visible ? 220 : 0 }}
+    >
+      <PaneDivider
+        class="register-divider"
+        label="Register panel width"
+        controls={id}
+        orientation="vertical"
+        min={MIN_REGISTER_WIDTH}
+        max={display.maxRegisterWidth}
+        value={display.displayedRegisterWidth}
+        reverse
+        onchange={display.setRegisterWidth}
+        oncommit={display.persistLayout}
       />
-      <div class="mt-1">
-        <SelectAllNone
-          values={conditionFlagOptions.map((option) => option.value)}
-          value={selectedConditionFlags}
-          onchange={updateConditionFlags}
-        />
-      </div>
+      <TabbedPane
+        element="aside"
+        label="Registers"
+        tabs={REGISTER_BANKS}
+        bind:selected={display.registerTab}
+        --pane-flex="0 0 auto"
+        --pane-min-width={`${MIN_REGISTER_WIDTH}px`}
+        --pane-width={`var(--register-width, ${DEFAULT_REGISTER_WIDTH}px)`}
+        --pane-overflow="auto"
+        --pane-background="var(--theme-surface, #fafafa)"
+        --tab-padding="4px 9px"
+        {id}
+        class="register-pane"
+      >
+        <div class="register-scroll">
+          <MachineTable>
+            {#snippet header()}
+              <th>Name</th><th>{selected === 'Coproc 1' ? 'Float' : 'Number'}</th><th
+                >{selected === 'Coproc 1' ? 'Double' : 'Value'}</th
+              >
+            {/snippet}
+            <tbody>
+              {#each rows as row (row.number)}<tr
+                  data-testid="register-row"
+                  data-highlight={changed[selected] === row.name ? 'register' : undefined}
+                  ><td class="identifier" data-testid="register-name-cell">
+                    <Tooltip text={row.tooltip}>
+                      {#snippet children(trigger, description)}
+                        <span
+                          data-testid="register-name"
+                          class="block cursor-pointer"
+                          {@attach trigger}
+                          aria-describedby={description}>{row.name}</span
+                        >
+                      {/snippet}
+                    </Tooltip>
+                  </td>{#if selected === 'Coproc 1'}<td class="numeric" data-testid="register-float"
+                      ><CellInput
+                        aria-label={`${row.name} float value`}
+                        value={floatValue(row.number)}
+                        readonly={running}
+                        onchange={(event) => updateFloat(row.number, false, event.currentTarget)}
+                      /></td
+                    ><td class="numeric" data-testid="register-double"
+                      >{#if row.number % 2 === 0}<CellInput
+                          aria-label={`${row.name} double value`}
+                          value={doubleValue(row.number)}
+                          readonly={running}
+                          onchange={(event) => updateFloat(row.number, true, event.currentTarget)}
+                        />{/if}</td
+                    >{:else}<td class="numeric" data-testid="register-number"
+                      >{row.number < 32 ? row.number : ''}</td
+                    ><td data-testid="register-value" class="numeric"
+                      ><CellInput
+                        aria-label={`${row.name} value`}
+                        value={format(row.value, selected === 'Registers' && row.number === 32)}
+                        readonly={running ||
+                          (selected === 'Registers' && [0, 31, 32].includes(row.number))}
+                        onchange={(event) => update(row.number, event.currentTarget)}
+                      /></td
+                    >{/if}</tr
+                >{/each}
+            </tbody>
+          </MachineTable>
+        </div>
+        {#if selected === 'Coproc 1'}
+          <!-- Fit-width wrapper centers the caption, flags, and bulk actions as one left-aligned group. -->
+          <div class="mx-auto flex w-fit flex-col p-1.25" data-testid="condition-flags-controls">
+            <MultiSelect
+              class="flags [--selector-gap:3px]"
+              label="Condition flags"
+              tooltip="flags are used by certain floating point instructions, default flag is 0"
+              options={conditionFlagOptions}
+              value={selectedConditionFlags}
+              onchange={updateConditionFlags}
+            />
+            <div class="mt-1">
+              <SelectAllNone
+                values={conditionFlagOptions.map((option) => option.value)}
+                value={selectedConditionFlags}
+                onchange={updateConditionFlags}
+              />
+            </div>
+          </div>
+        {/if}
+        <InlineAlert message={error} />
+      </TabbedPane>
     </div>
   {/if}
-  <InlineAlert message={error} />
-</TabbedPane>
+{/if}
 
 <style>
+  .register-sidebar {
+    display: flex;
+    flex: 0 0 auto;
+    min-height: 0;
+    padding-left: 5px;
+    gap: 5px;
+    overflow: hidden;
+  }
   .register-scroll {
     flex: 1;
     min-height: 0;

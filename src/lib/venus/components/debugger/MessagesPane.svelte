@@ -12,12 +12,14 @@
     highlightedShortcut: string | null;
   };
   let { highlightedShortcut }: Props = $props();
-  const { simulation } = getDesktop();
+  const { display, simulation } = getDesktop();
+  const executeView = $derived(display.view === 'Execute');
+  const selected = $derived(simulation.visibleMessageTab);
   const outputText = $derived(
-    simulation.messageTab === 'Mars Messages' ? simulation.messages : simulation.runIO
+    selected === 'Mars Messages' ? simulation.messages : simulation.runIO
   );
   const diagnosticRow = $derived(
-    simulation.messageTab === 'Mars Messages' && simulation.selectedDiagnostic
+    selected === 'Mars Messages' && simulation.selectedDiagnostic
       ? outputText.slice(0, simulation.selectedDiagnostic.start).split('\n').length - 1
       : null
   );
@@ -29,11 +31,10 @@
     let previousTab: string | undefined;
     $effect(() => {
       const text = outputText;
-      const selection =
-        simulation.messageTab === 'Mars Messages' ? simulation.selectedDiagnostic : null;
-      const changed = text !== previousText || previousTab !== simulation.messageTab;
+      const selection = selected === 'Mars Messages' ? simulation.selectedDiagnostic : null;
+      const changed = text !== previousText || previousTab !== selected;
       previousText = text;
-      previousTab = simulation.messageTab;
+      previousTab = selected;
       let active = true;
       // Wait for the textarea value and console layout to reflect this output.
       void tick().then(() => {
@@ -54,8 +55,7 @@
   }
 
   function navigateMessage(element: HTMLTextAreaElement) {
-    if (simulation.messageTab === 'Mars Messages')
-      simulation.selectDiagnostic(element.selectionStart, true);
+    if (selected === 'Mars Messages') simulation.selectDiagnostic(element.selectionStart, true);
   }
 
   function focusInput(element: HTMLTextAreaElement) {
@@ -67,8 +67,13 @@
 <TabbedPane
   class="messages"
   label="Messages and console"
-  tabs={MESSAGE_TABS}
-  bind:selected={simulation.messageTab}
+  tabs={executeView ? MESSAGE_TABS : ['Mars Messages']}
+  bind:selected={
+    () => selected,
+    (tab) => {
+      if (executeView) simulation.messageTab = tab;
+    }
+  }
   --pane-min-height="80px"
 >
   {#snippet actions()}
@@ -82,35 +87,37 @@
       onclick={() => simulation.clearOutput()}>{clear.label}</Button
     >
 
-    <Button
-      tooltip="Clear all outputs"
-      shortcut={clearAll.shortcut}
-      variant="outlined"
-      highlighted={highlightedShortcut === clearAll.command}
-      class="clear-all mb-0.5 rounded-none px-3 py-px"
-      aria-keyshortcuts={ariaKeyShortcuts(clearAll.shortcut!)}
-      onclick={() => simulation.clearOutput(true)}>{clearAll.label}</Button
-    >
+    {#if executeView}
+      <Button
+        tooltip="Clear all outputs"
+        shortcut={clearAll.shortcut}
+        variant="outlined"
+        highlighted={highlightedShortcut === clearAll.command}
+        class="clear-all mb-0.5 rounded-none px-3 py-px"
+        aria-keyshortcuts={ariaKeyShortcuts(clearAll.shortcut!)}
+        onclick={() => simulation.clearOutput(true)}>{clearAll.label}</Button
+      >
+    {/if}
   {/snippet}
   <textarea
     {@attach followOutput}
     readonly
-    aria-label={simulation.messageTab}
+    aria-label={selected}
     value={outputText}
     class={{ diagnostic: diagnosticRow !== null }}
     style:--diagnostic-row={diagnosticRow}
-    wrap={simulation.messageTab === 'Mars Messages' ? 'off' : 'soft'}
+    wrap={selected === 'Mars Messages' ? 'off' : 'soft'}
     onclick={(event) => {
       if (event.currentTarget.selectionStart === event.currentTarget.selectionEnd)
         navigateMessage(event.currentTarget);
     }}
     onkeydown={(event) => {
-      if (event.key === 'Enter' && simulation.messageTab === 'Mars Messages') {
+      if (event.key === 'Enter' && selected === 'Mars Messages') {
         event.preventDefault();
         navigateMessage(event.currentTarget);
       }
     }}></textarea>
-  {#if simulation.consoleInputPending && simulation.messageTab === 'Run I/O'}<form
+  {#if simulation.consoleInputPending && selected === 'Run I/O'}<form
       class="console-input"
       data-testid="console-input"
       onsubmit={(event) => {
