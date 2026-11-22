@@ -178,7 +178,7 @@ test('data highlights follow stores and backstep and clear after Reset and reass
   await action(page, 'Step').click();
   await action(page, 'Step').click();
   await expect(highlighted).toHaveCount(1);
-  await action(page, 'Assemble').click();
+  await page.keyboard.press('F3');
   await expect(highlighted).toHaveCount(0);
   await expect(page.getByLabel('Memory 0x10010000', { exact: true })).toBeVisible();
   await expect(
@@ -526,7 +526,8 @@ test('an identical rebuild keeps breakpoints and a changed build clears them', a
     await breakpoint.check();
     await toggle.click();
   });
-  await action(page, 'Assemble').click();
+  await page.getByTestId('menu-run-trigger').click();
+  await page.getByTestId('menu-run-content').getByTestId('menu-item-assemble').click();
   await expect(breakpoint).toBeChecked();
   await expect(toggle).toHaveAttribute('aria-pressed', 'false');
   // Suspended checkboxes gray out, as in the legacy renderer, without becoming read-only; only
@@ -786,7 +787,7 @@ test('data pages show sixteen rows and ASCII follows hexadecimal values inline',
   await expect(asciiToolbar).toHaveAttribute('aria-pressed', 'true');
   await expect(range).toHaveValue('gp');
   await expect(data.getByTestId('data-row').first()).toContainText('0x10008000');
-  await action(page, 'Assemble').click();
+  await page.keyboard.press('F3');
   await expect(ascii).toBeChecked();
   await range.selectOption('data');
   await expect(word).toHaveValue('  D  C  B  A');
@@ -1134,7 +1135,7 @@ test('Data Segment resizes from above and reselecting its range returns to the s
   page.once('dialog', (dialog) => dialog.accept());
   await page.reload();
   await waitForDesktop(page);
-  await action(page, 'Assemble').click();
+  await page.keyboard.press('F3');
   await expect(divider).toHaveAttribute('aria-valuenow', String(natural - 150));
   const restore = action(page, 'Restore full Data Segment height');
   await expect(restore).toBeEnabled();

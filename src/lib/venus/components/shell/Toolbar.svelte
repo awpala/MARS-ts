@@ -54,7 +54,7 @@
     {#if group.id !== 'edit' || !executeView}
       <ToolbarGroup label={group.label}>
         {#each group.actions as item (item.command)}
-          {#if group.id !== 'run' || executeView || item.command === 'assemble'}
+          {#if group.id !== 'run' || (executeView ? item.command !== 'assemble' : item.command === 'assemble')}
             {@render commandButton(item)}
           {/if}
         {/each}

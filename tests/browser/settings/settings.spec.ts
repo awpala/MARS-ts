@@ -485,7 +485,7 @@ test('automatic handler assembly uses working text, reports handler first, and r
   await expect(page.getByLabel('Execution status')).toHaveText('Status: terminated');
   await action(page, 'Registers').click();
   await expect(register(page, '$t0')).toHaveValue('0x0000002b');
-  await action(page, 'Assemble').click();
+  await page.keyboard.press('F3');
   await action(page, 'Go').click();
   await expect(page.getByLabel('Execution status')).toHaveText('Status: error');
 });

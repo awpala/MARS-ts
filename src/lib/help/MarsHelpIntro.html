@@ -57,9 +57,10 @@ Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSl
   editing key to repeat. Escape cancels a pending repeat.
 </p>
 <p>
-  Assemble (F3) translates the current source, including unsaved edits. To assemble additional
-  source, use explicit <code>.include</code> directives in the active program. Included sources
-  resolve from open buffers first and saved library sources second.
+  Assemble translates the current source, including unsaved edits. The toolbar button appears in
+  Edit, and a successful assembly opens Execute. Run → Assemble and F3 work from either view. To
+  assemble additional source, use explicit <code>.include</code> directives in the active program.
+  Included sources resolve from open buffers first and saved library sources second.
 </p>
 <p>
   When manual assembly fails, Mars Messages selects the first error with a source location and the
@@ -72,10 +73,10 @@ Copyright 2003–2013 Pete Sanderson and Kenneth Vollmar. MIT license; see MARSl
   inspection and editing of registers and memory while execution is stopped. Execute adds the Run
   I/O tab, Clear All button, and register sidebar. The Register Banks switch in the menu bar
   remembers if you hide the sidebar. Edit shows Mars Messages and editing tools, including line
-  numbers and current-line highlighting. Both views offer File actions, Assemble, and the Settings
-  menu. The Execute display toolbar controls labels, program arguments, number formats, ASCII data,
-  and popup input. Enable Args to enter program arguments below the Text Segment heading. The first
-  Go or Step after assembly or Reset supplies them through
+  numbers and current-line highlighting. Both views offer File actions and the Settings menu. The
+  Execute display toolbar controls labels, program arguments, number formats, ASCII data, and popup
+  input. Enable Args to enter program arguments below the Text Segment heading. The first Go or Step
+  after assembly or Reset supplies them through
   <code>$a0</code> (argc) and <code>$a1</code> (argv).
 </p>
 <p>

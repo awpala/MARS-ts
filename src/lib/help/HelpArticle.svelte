@@ -120,13 +120,14 @@
     <p>
       Edit shows Mars Messages and editing tools. Execute adds Run I/O, Clear All, the run and
       display controls, and the register sidebar, which is on by default. The Register Banks switch
-      remembers your choice. File actions, Assemble, and the Settings menu appear in both views.
+      remembers your choice. File actions and the Settings menu appear in both views.
     </p>
     <p>
-      Assemble (F3) translates the current source. Go (F5), Step (F7), Backstep (F8), Pause (F9),
-      Stop (F11), and Reset (F12) control execution. Select breakpoints in Text Segment below
-      unlimited speed, even while Go is running. File → Dump Memory (Ctrl+D) exports text or data
-      memory; Tools are deferred.
+      Assemble translates the current source and opens Execute on success. The toolbar button
+      appears in Edit. Run → Assemble and F3 work from either view. Go (F5), Step (F7), Backstep
+      (F8), Pause (F9), Stop (F11), and Reset (F12) control execution. Select breakpoints in Text
+      Segment below unlimited speed, even while Go is running. File → Dump Memory (Ctrl+D) exports
+      text or data memory; Tools are deferred.
     </p>
     <p>
       The Help menu also contains Introduction, Debugging, Settings, Syscalls, Exception Handlers,

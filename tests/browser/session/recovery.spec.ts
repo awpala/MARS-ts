@@ -161,7 +161,7 @@ test('localStorage retains label selection with the loaded program across Edit s
   await waitForDesktop(page);
   await expect(labels.locator('[data-selected="true"]')).toHaveCount(0);
   await selected.click();
-  await action(page, 'Assemble').click();
+  await page.keyboard.press('F3');
   await expect(page.getByTestId('footer-source')).toHaveText('Loaded: editing.asm');
   await expect(labels.locator('[data-selected="true"]')).toHaveCount(0);
   await expect.poll(stored).toBeNull();

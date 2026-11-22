@@ -34,7 +34,7 @@ test('toolbar keeps shared commands and shows tools for the active view', async 
   await expect(action('Open ...')).toBeVisible();
   await expect(file.getByRole('button')).toHaveCount(sharedFiles);
   await expect(edit).toHaveCount(0);
-  await expect(action('Assemble')).toBeVisible();
+  await expect(action('Assemble')).toHaveCount(0);
   await expect(action('Go')).toBeVisible();
   await expect(action('Toggle all breakpoints')).toBeVisible();
   await expect(
@@ -48,6 +48,7 @@ test('toolbar keeps shared commands and shows tools for the active view', async 
   await expect(edit).toBeVisible();
   await expect(display).toHaveCount(0);
   await expect(execution.getByRole('button')).toHaveCount(1);
+  await expect(action('Assemble')).toBeVisible();
 });
 
 test('shortcuts highlight only their matching enabled buttons', async ({ page }) => {
@@ -70,10 +71,16 @@ test('shortcuts highlight only their matching enabled buttons', async ({ page })
   expect(await highlights()).toEqual([]);
 
   await page.getByRole('button', { name: 'New', exact: true }).click();
-  await page.getByRole('textbox', { name: /^Source / }).fill('.text\nnop\nnop\nnop\n');
+  const source = page.getByRole('textbox', { name: /^Source / });
+  await source.fill('invalid_instruction');
+  await page.keyboard.press('F3');
+  await expect.poll(highlights).toContain('Assemble');
+  await expect(page.getByLabel('Execution status')).toHaveText('Status: error');
+
+  await source.fill('.text\nnop\nnop\nnop\n');
   await page.keyboard.press('F3');
   await expect(step).toBeEnabled();
-  await expect.poll(highlights).toContain('Assemble');
+  await expect(page.getByRole('button', { name: 'Assemble', exact: true })).toHaveCount(0);
   await page.keyboard.press('F7');
   await expect
     .poll(async () => (await highlights()).filter((name) => name === 'Step').length)
@@ -408,7 +415,7 @@ test('both consoles reveal the latest line after overflowing, appending, and swi
   await expect.poll(() => messages.evaluate(atBottom)).toBe(true);
   const previousLength = (await messages.inputValue()).length;
   await messages.evaluate((element) => (element.scrollTop = 0));
-  await page.getByRole('button', { name: 'Assemble', exact: true }).click();
+  await page.keyboard.press('F3');
   await expect
     .poll(async () => (await messages.inputValue()).slice(previousLength))
     .toContain('Assemble: operation completed successfully.');
