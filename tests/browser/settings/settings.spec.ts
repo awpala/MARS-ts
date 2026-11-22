@@ -676,7 +676,10 @@ test('bundled handler opens locked, restores canonical text, and copies to an ed
   await expect(
     page.getByRole('status').filter({ hasText: 'SPIM default exceptions handler — Read-only' })
   ).toBeVisible();
-  await expect(action(page, 'Go')).toBeEnabled();
+  const runMenu = page.getByTestId('menu-run-trigger');
+  await runMenu.click();
+  await expect(page.getByTestId('menu-run-content').getByTestId('menu-item-go')).toBeEnabled();
+  await runMenu.click();
   for (const label of ['Save', 'Save as ...', 'Cut', 'Paste', 'Undo', 'Redo', 'Assemble'])
     await expect(action(page, label)).toBeDisabled();
   await expect(action(page, 'Copy')).toBeEnabled();

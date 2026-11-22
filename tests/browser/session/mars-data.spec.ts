@@ -55,10 +55,10 @@ async function exportedData(page: Page): Promise<{ text: string; data: Exported 
     .getByRole('textbox', { name: 'Source mips1.asm', exact: true })
     .fill('# unsaved draft\n');
   await openStoredSources(page, [{ name: 'program.asm', source: PROGRAM }]);
+  await action(page, 'Show line numbers').click();
   await action(page, 'Assemble').click();
   await action(page, 'Step').click();
   await expect(page.getByLabel('$t0 value', { exact: true })).toHaveValue('0x00000007');
-  await action(page, 'Show line numbers').click();
   const download = page.waitForEvent('download');
   await action(page, 'Export MARS').click();
   const file = await download;
@@ -188,7 +188,6 @@ test('Import MARS summarizes a conforming file, replaces all stored data after c
     await expect(other).toHaveTitle('program.asm - MARS');
     await expect(action(other, '* other.asm')).toHaveCount(0);
     await expect(other.getByRole('switch', { name: 'Dark theme', exact: true })).toBeChecked();
-    await expect(action(other, 'Show line numbers')).toHaveAttribute('aria-pressed', 'false');
     await expect(other.getByTestId('footer-source')).toHaveText('Loaded: program.asm');
     await expect(other.getByLabel('Execution status')).toHaveText('Status: paused');
     await expect(other.getByLabel('$t0 value', { exact: true })).toHaveValue('0x00000007');
@@ -202,6 +201,7 @@ test('Import MARS summarizes a conforming file, replaces all stored data after c
     ).toBeChecked();
     await other.getByTestId('menu-settings-trigger').click();
     await action(other, 'Edit').click();
+    await expect(action(other, 'Show line numbers')).toHaveAttribute('aria-pressed', 'false');
     await action(other, '* mips1.asm').click();
     await expect(other.getByRole('textbox', { name: 'Source mips1.asm', exact: true })).toHaveValue(
       '# unsaved draft\n'
